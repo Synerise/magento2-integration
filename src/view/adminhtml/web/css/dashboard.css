@@ -1,0 +1,30 @@
+.status-box {
+    padding: 5% 4%;
+    margin: 5% 2%;
+    border: 1px solid #ADADAD;
+    float: left;
+    width: 95%;
+}
+
+h2 {
+    margin: 1.4rem 0;
+}
+
+.status-box h3 {
+    margin: 1rem 0;
+}
+
+.status-box .col-m-12 {
+    margin-top: 1.4rem;
+}
+
+.status-box .col-m-6 {
+    line-height: 3.4rem;
+}
+
+.status-box-items {
+    text-align: right;
+    color: #eb5202;
+    font-weight: bold;
+    font-size: 2.4rem;
+}

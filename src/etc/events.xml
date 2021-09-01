@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="catalog_product_delete_after">
+        <observer name="synerise_catalog_product_delete_after" instance="Synerise\Integration\Observer\CatalogProductDeleteAfter" />
+    </event>
+    <event name="catalog_product_save_after">
+        <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\CatalogProductSaveAfter" />
+    </event>
+    <event name="catalog_product_import_bunch_save_after">
+        <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\ProductImportBunchSaveAfter"/>
+    </event>
+    <event name="customer_register_success">
+        <observer name="synerise_customer_register_observer" instance="Synerise\Integration\Observer\CustomerRegister" />
+    </event>
+    <event name="customer_login">
+        <observer name="synerise_customer_login_observer" instance="Synerise\Integration\Observer\CustomerLogin" />
+    </event>
+    <event name="customer_logout">
+        <observer name="synerise_customer_logout_observer" instance="Synerise\Integration\Observer\CustomerLogout" />
+    </event>
+    <event name="customer_save_after">
+        <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\CustomerSaveAfter" />
+    </event>
+    <event name="adminhtml_customer_save_after">
+        <observer name="synerise_adminhtml_customer_save_after" instance="Synerise\Integration\Observer\AdminhtmlCustomerSaveAfter" />
+    </event>
+    <event name="sales_order_place_after">
+        <observer name="synerise_sales_order_place_after" instance="Synerise\Integration\Observer\OrderPlace" />
+    </event>
+    <event name="checkout_cart_add_product_complete">
+        <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\CartAddProduct" />
+    </event>
+    <event name="sales_quote_remove_item">
+        <observer name="synerise_sales_quote_remove_item" instance="Synerise\Integration\Observer\CartRemoveProduct" />
+    </event>
+    <event name="newsletter_subscriber_save_after">
+        <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\NewsletterSubscriberSaveAfter" />
+    </event>
+</config>

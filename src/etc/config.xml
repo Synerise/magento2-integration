@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <synerise>
+            <api>
+                <key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
+            </api>
+            <page_tracking>
+                <opengraph>1</opengraph>
+            </page_tracking>
+            <event_tracking>
+                <events>adminhtml_customer_save_after,customer_save_after,customer_login,customer_logout,customer_register_success,sales_order_place_after,checkout_cart_add_product_complete,sales_quote_remove_item,catalog_product_save_after,catalog_product_delete_after,newsletter_subscriber_save_after</events>
+            </event_tracking>
+            <cron_status>
+                <expr>*/5 * * * *</expr>
+                <page_size>500</page_size>
+            </cron_status>
+            <cron_queue>
+                <expr>* * * * *</expr>
+                <page_size>500</page_size>
+            </cron_queue>
+            <product>
+                <cron_enabled>1</cron_enabled>
+                <attributes>name</attributes>
+            </product>
+            <customer>
+                <cron_enabled>1</cron_enabled>
+                <attributes>dob,gender</attributes>
+            </customer>
+            <order>
+                <cron_enabled>1</cron_enabled>
+            </order>
+            <subscriber>
+                <cron_enabled>1</cron_enabled>
+            </subscriber>
+        </synerise>
+    </default>
+</config>

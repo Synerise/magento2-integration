@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Synerise\Integration\Api\SetupInterface" type="Synerise\Integration\Model\Setup"/>
+    <type name="Magento\Config\Model\Config\TypePool">
+        <arguments>
+            <argument name="sensitive" xsi:type="array">
+                <item name="synerise/credentials/api_key" xsi:type="string">1</item>
+            </argument>
+        </arguments>
+    </type>
+</config>
