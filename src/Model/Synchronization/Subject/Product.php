@@ -1,17 +1,14 @@
 <?php
 
-namespace Synerise\Integration\Model\Synchronization;
+namespace Synerise\Integration\Model\Synchronization\Subject;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
-use Synerise\Integration\Model\AbstractSynchronization;
 
-
-Class Product extends AbstractSynchronization
+class Product extends AbstractSubject
 {
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
@@ -79,7 +76,7 @@ Class Product extends AbstractSynchronization
     public function markAllAsUnsent()
     {
         $attribute = $this->getSyneriseUpdatedAtAttribute();
-        if($attribute->getId()) {
+        if ($attribute->getId()) {
             $this->connection->update(
                 'catalog_product_entity_datetime',
                 ['value' => null],

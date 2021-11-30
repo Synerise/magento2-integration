@@ -4,7 +4,7 @@ namespace Synerise\Integration\Model\Config\Source\EventTracking;
 
 class Events implements \Magento\Framework\Option\ArrayInterface
 {
-    CONST OPTIONS = [
+    const OPTIONS = [
         'customer_register_success'             => 'Customer registration',
         'customer_login'                        => 'Customer login',
         'customer_logout'                       => 'Customer logout',

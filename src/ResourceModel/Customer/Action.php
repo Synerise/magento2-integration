@@ -52,20 +52,19 @@ class Action extends \Magento\Customer\Model\ResourceModel\Customer
         $data = [],
         AccountConfirmation $accountConfirmation = null
     ) {
-        parent::__construct($context, $entitySnapshot, $entityRelationComposite, $scopeConfig, $validatorFactory,
-            $dateTime, $storeManager, $data, $accountConfirmation);
+        parent::__construct(
+            $context,
+            $entitySnapshot,
+            $entityRelationComposite,
+            $scopeConfig,
+            $validatorFactory,
+            $dateTime,
+            $storeManager,
+            $data,
+            $accountConfirmation
+        );
 
         $this->setConnection($this->_resource->getConnection('customer'));
-    }
-
-    /**
-     * Initialize connection
-     *
-     * @return void
-     */
-    protected function _construct()
-    {
-        parent::_construct();
     }
 
     /**

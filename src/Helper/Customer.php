@@ -12,11 +12,11 @@ use Magento\Newsletter\Model\Subscriber;
 
 class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    CONST GENDER = array(
+    const GENDER = [
         1 => InBodyClientSex::MALE,
         2 => InBodyClientSex::FEMALE,
         3 => InBodyClientSex::NOT_SPECIFIED
-    );
+    ];
 
     protected $configWriter;
     protected $cacheManager;
@@ -59,7 +59,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper
-    ){
+    ) {
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
@@ -81,14 +81,14 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addCustomersBatch($collection)
     {
-        if(!$collection->getSize()) {
+        if (!$collection->getSize()) {
             return;
         }
 
         $ids = [];
         $createAClientInCrmRequests = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
@@ -104,7 +104,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $this->sendCustomersToSynerise($createAClientInCrmRequests);
-        $this->markItemsAsSent($ids);
+        $this->markCustomersAsSent($ids);
     }
 
     /**
@@ -115,7 +115,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $createAClientInCrmRequests = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
@@ -133,13 +133,14 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $this->sendCustomersToSynerise($createAClientInCrmRequests);
+        $this->markSubscribersAsSent($collection->getIds());
     }
 
     public function addOrUpdateClient($customer, $prevUuid = null)
     {
         $emailUuid = $this->trackingHelper->genrateUuidByEmail($customer->getEmail());
 
-        if($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
+        if ($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
             $this->trackingHelper->setClientUuidAndResetCookie((string) $emailUuid);
         }
 
@@ -156,9 +157,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
         try {
             list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
-                ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $createAClientInCrmRequests);
+                ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-            if($statusCode != 202) {
+            if ($statusCode != 202) {
                 $this->logger->error('Client update failed');
             }
         } catch (\Exception $e) {
@@ -174,9 +175,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     public function sendCustomersToSynerise($createAClientInCrmRequests)
     {
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
-            ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $createAClientInCrmRequests);
+            ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-        if($statusCode != 202) {
+        if ($statusCode != 202) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
                 $statusCode,
@@ -184,11 +185,28 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    protected function markItemsAsSent($ids)
+    protected function markCustomersAsSent($ids)
     {
         $this->action->updateAttributes(
             $ids,
             ['synerise_updated_at' => $this->dateTime->gmtDate()],
+        );
+    }
+
+    public function markSubscribersAsSent($ids)
+    {
+        $timestamp = $this->dateTime->gmtDate();
+        $data = [];
+        foreach ($ids as $id) {
+            $data[] = [
+                'synerise_updated_at' => $timestamp,
+                'subscriber_id' => $id
+            ];
+        }
+
+        $this->connection->insertOnDuplicate(
+            $this->connection->getTableName('synerise_sync_subscriber'),
+            $data
         );
     }
 
@@ -221,17 +239,17 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         $attributes = $this->getAttributes();
         $data = (array) $customer;
 
-        foreach($attributes as $attribute) {
-            if(!isset($data[$attribute])) {
+        foreach ($attributes as $attribute) {
+            if (!isset($data[$attribute])) {
                 continue;
             }
 
-            switch($attribute) {
+            switch ($attribute) {
                 case 'default_billing':
                     $defaultAddress = $customer->getDefaultBilling() ?
                         $this->addressRepository->getById($customer->getDefaultBilling()) : null;
 
-                    if($defaultAddress) {
+                    if ($defaultAddress) {
                         $params['phone'] = $defaultAddress->getTelephone();
                         $params['city'] = $defaultAddress->getCity();
                         $street = $defaultAddress->getStreet();
@@ -254,7 +272,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $subscriber = $this->subscriber->loadByEmail($customer->getEmail());
-        if($subscriber) {
+        if ($subscriber) {
             $params['agreements'] = ['email' => $subscriber->isSubscribed()];
         }
 

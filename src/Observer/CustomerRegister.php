@@ -78,6 +78,5 @@ class CustomerRegister implements ObserverInterface
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }
-
     }
 }

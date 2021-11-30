@@ -58,7 +58,7 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            foreach($collection as $product) {
+            foreach ($collection as $product) {
                 $this->synchronization->addItemToQueueByWebsiteIds(
                     'product',
                     $product->getWebsiteIds(),
@@ -66,7 +66,12 @@ class MassUpdate extends Action
                 );
             }
 
-            $this->messageManager->addSuccess(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
+            $this->messageManager->addSuccess(
+                __(
+                    'A total of %1 record(s) have been added to synchronization queue.',
+                    $collection->getSize()
+                )
+            );
         } catch (\Exception $e) {
             $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
             $this->messageManager->addError(__('Failed to add records to synchronization queue'));
@@ -76,5 +81,4 @@ class MassUpdate extends Action
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('catalog/product/index');
     }
-
 }

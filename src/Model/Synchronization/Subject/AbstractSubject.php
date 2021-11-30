@@ -1,14 +1,12 @@
 <?php
 
-namespace Synerise\Integration\Model;
+namespace Synerise\Integration\Model\Synchronization\Subject;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Cron\Status;
 
-
-Abstract Class AbstractSynchronization
+abstract class AbstractSubject
 {
     const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
 
@@ -48,23 +46,24 @@ Abstract Class AbstractSynchronization
         return $this->collectionFactory->create()
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                array('gt' => $startId)
+                ['gt' => $startId]
             )
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                array('lteq' => $stopId)
+                ['lteq' => $stopId]
             )
-            ->setOrder(static::ENTITY_ID,'ASC')
+            ->setOrder(static::ENTITY_ID, 'ASC')
             ->setPageSize($this->getPageSize());
     }
 
-    public function getCollectionFilteredByEntityIds($storeId, $entityIds) {
+    public function getCollectionFilteredByEntityIds($storeId, $entityIds)
+    {
         return $this->collectionFactory->create()
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                array('in' => $entityIds)
+                ['in' => $entityIds]
             )
-            ->setOrder(static::ENTITY_ID,'ASC')
+            ->setOrder(static::ENTITY_ID, 'ASC')
             ->setPageSize($this->getPageSize());
     }
 

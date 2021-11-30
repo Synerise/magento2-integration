@@ -8,6 +8,7 @@ use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\UrlInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -68,7 +69,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         StockRegistry $stockRegistry,
         LoggerInterface $logger,
         Api $apiHelper
-    ){
+    ) {
         $this->stockRegistry = $stockRegistry;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
@@ -124,12 +125,12 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function getOrAddCatalog($storeId)
     {
         $catalogId = $this->getConfigCatalogId($storeId);
-        if($catalogId) {
+        if ($catalogId) {
             return $catalogId;
         }
 
         $catalog = $this->findExistingCatalogByStoreId($storeId);
-        if($catalog) {
+        if ($catalog) {
             $catalogId = $catalog->getId();
             $this->saveConfigCatalogId($catalog->getId(), $storeId);
         }
@@ -145,7 +146,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         $existingBags = $getBagsResponse->getData();
         foreach ($existingBags as $bag) {
-            if($bag->getName() == $catalogName) {
+            if ($bag->getName() == $catalogName) {
                 return $bag;
             }
         }
@@ -160,7 +161,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId)
     {
-        if(!$collection->getSize()) {
+        if (!$collection->getSize()) {
             return;
         }
 
@@ -168,8 +169,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $ids = [];
 
         /** @var $product \Magento\Catalog\Model\Product */
-        foreach ($collection as $product)
-        {
+        foreach ($collection as $product) {
             $ids[] = $product->getEntityId();
             $addItemRequest[] = $this->prepareItemRequest($product, $attributes, $websiteId);
         }
@@ -204,26 +204,27 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->getTypeSpecificData($product)
         );
 
-        foreach($attributes as $attribute) {
+        foreach ($attributes as $attribute) {
             $productValue = $product->getData($attribute);
-            if($productValue) {
+            if ($productValue) {
                 $value[$attribute] = $productValue;
             }
         }
 
         $categoryIds = $product->getCategoryIds();
-        if($categoryIds) {
+        if ($categoryIds) {
             $value['category'] = $this->getFormattedCategoryPath(array_shift($categoryIds));
         }
 
-        if($categoryIds) {
-            foreach($categoryIds as $categoryId) {
+        if ($categoryIds) {
+            foreach ($categoryIds as $categoryId) {
                 $value['additionalCategories'][] = $this->getFormattedCategoryPath($categoryId);
             }
         }
 
-        if($product->getImage()) {
-            $value['image'] = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
+        if ($product->getImage()) {
+            $value['image'] = $this->storeManager->getStore()
+                    ->getBaseUrl(UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
         }
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
@@ -237,18 +238,18 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getTypeSpecificData(\Magento\Catalog\Model\Product $product)
     {
-        if($product->getVisibility() == Visibility::VISIBILITY_NOT_VISIBLE) {
+        if ($product->getVisibility() == Visibility::VISIBILITY_NOT_VISIBLE) {
             $parentIds = $this->configurable->getParentIdsByChild($product->getId());
-            if(!isset($parentIds[0])) {
+            if (!isset($parentIds[0])) {
                 return [];
             }
 
-            if(isset($this->parentData[$parentIds[0]])) {
+            if (isset($this->parentData[$parentIds[0]])) {
                 return $this->parentData[$parentIds[0]];
             }
 
             $parent = $this->getProductById($parentIds[0], $product->getStoreId());
-            if(!$parent) {
+            if (!$parent) {
                 return [];
             }
 
@@ -261,7 +262,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         } else {
             $productUrl = $product->getUrlInStore();
 
-            if($product->getTypeId() == Configurable::TYPE_CODE) {
+            if ($product->getTypeId() == Configurable::TYPE_CODE) {
                 $this->parentData[$product->getId()] = [
                     'parentId' => $product->getSku(),
                     'productUrl' => $productUrl
@@ -276,7 +277,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     {
         try {
             return $this->productRepository->getById($productId, false, $storeId);
-        } catch(NoSuchEntityException $exception) {
+        } catch (NoSuchEntityException $exception) {
             $this->logger->error("Product Id not found", [$exception]);
         }
 
@@ -307,7 +308,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         try {
             $this->sendItemsToSynerise($catalogId, $addItemRequest);
         } catch (\Exception $e) {
-            if($e->getCode() === 404) {
+            if ($e->getCode() === 404) {
                 $catalogId = $this->addCatalog($storeId);
                 $this->sendItemsToSynerise($catalogId, $addItemRequest);
             } else {
@@ -321,7 +322,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance()
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
-        if(substr($statusCode, 0,1) != 2) {
+        if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
                 $statusCode,
@@ -336,11 +337,11 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getFormattedCategoryPath($categoryId)
     {
-        if(!isset($this->formattedCategoryPaths[$categoryId])) {
+        if (!isset($this->formattedCategoryPaths[$categoryId])) {
             /** @var $category \Magento\Catalog\Model\Category */
             $category = $this->categoryRepository->get($categoryId);
 
-            if($category->getParentId()) {
+            if ($category->getParentId()) {
                 $parentCategoryPath = $this->getFormattedCategoryPath($category->getParentId());
                 $this->formattedCategoryPaths[$categoryId] = $parentCategoryPath ?
                     $parentCategoryPath . ' > ' . $category->getName() : $category->getName();
@@ -397,10 +398,5 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->logger->error($localizedException->getMessage());
         }
         return $website;
-    }
-
-    public function getSelectedStoreViews()
-    {
-
     }
 }

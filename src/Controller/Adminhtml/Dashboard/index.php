@@ -7,9 +7,6 @@ use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\View\Result\Page;
 use Magento\Framework\View\Result\PageFactory;
 
-/**
- * Class Index
- */
 class Index extends Action implements HttpGetActionInterface
 {
     const MENU_ID = 'Synerise_Integration::synerise_dashboard';

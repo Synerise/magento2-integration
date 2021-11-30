@@ -1,18 +1,15 @@
 <?php
 
-namespace Synerise\Integration\Model\Synchronization;
+namespace Synerise\Integration\Model\Synchronization\Subject;
 
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use \Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
-use Synerise\Integration\Model\AbstractSynchronization;
 
-
-Class Customer extends AbstractSynchronization
+class Customer extends AbstractSubject
 {
     const MODEL = 'customer';
     const ENTITY_ID = 'entity_id';
@@ -35,8 +32,7 @@ Class Customer extends AbstractSynchronization
         CollectionFactory $collectionFactory,
         CustomerHelper $customerHelper,
         Attribute $eavAttribute
-    )
-    {
+    ) {
         $this->eavAttribute = $eavAttribute;
         $this->customerHelper = $customerHelper;
 
@@ -59,7 +55,7 @@ Class Customer extends AbstractSynchronization
     public function markAllAsUnsent()
     {
         $attributeId = $this->getSyneriseUpdatedAtAttributeId();
-        if($attributeId) {
+        if ($attributeId) {
             $this->connection->update(
                 'customer_entity_datetime',
                 ['value' => null],

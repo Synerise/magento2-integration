@@ -8,4 +8,14 @@
             </argument>
         </arguments>
     </type>
+    <type name="Synerise\Integration\Model\Synchronization\Subject\Resolver">
+        <arguments>
+            <argument name="subjectsPool" xsi:type="array">
+                <item name="customer" xsi:type="string">Synerise\Integration\Model\Synchronization\Subject\Customer</item>
+                <item name="order" xsi:type="string">Synerise\Integration\Model\Synchronization\Subject\Order</item>
+                <item name="product" xsi:type="string">Synerise\Integration\Model\Synchronization\Subject\Product</item>
+                <item name="subscriber" xsi:type="string">Synerise\Integration\Model\Synchronization\Subject\Subscriber</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

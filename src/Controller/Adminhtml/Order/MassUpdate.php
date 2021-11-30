@@ -63,7 +63,12 @@ class MassUpdate extends Action
                 $collection
             );
 
-            $this->messageManager->addSuccess(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
+            $this->messageManager->addSuccess(
+                __(
+                    'A total of %1 record(s) have been added to synchronization queue.',
+                    $collection->getSize()
+                )
+            );
         } catch (\Exception $e) {
             $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
             $this->messageManager->addError(__('Failed to add records to synchronization queue'));
@@ -73,5 +78,4 @@ class MassUpdate extends Action
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('sales/order/index');
     }
-
 }

@@ -76,7 +76,6 @@ class InstallData implements InstallDataInterface
             ->setData('used_in_forms', ['adminhtml_customer'])
             ->save();
 
-
         $eavSetup->addAttribute(
             \Magento\Catalog\Model\Product::ENTITY,
             'synerise_updated_at',
@@ -100,7 +99,7 @@ class InstallData implements InstallDataInterface
         );
 
         $defaultStoreView = $this->storeManager->getDefaultStoreView();
-        foreach(\Synerise\Integration\Helper\Config::MODELS as $model) {
+        foreach (\Synerise\Integration\Helper\Config::MODELS as $model) {
             $this->cronStatusFactory
                 ->create()
                 ->setData([

@@ -5,6 +5,7 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Order;
@@ -48,7 +49,7 @@ class OrderPlace implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -56,7 +57,7 @@ class OrderPlace implements ObserverInterface
             /** @var \Magento\Sales\Model\Order $order */
             $order = $observer->getEvent()->getOrder();
 
-            if(!$this->trackingHelper->isLoggedIn()) {
+            if (!$this->trackingHelper->isLoggedIn()) {
                 $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
             }
 
@@ -67,8 +68,10 @@ class OrderPlace implements ObserverInterface
             $this->apiHelper->getDefaultApiInstance()
                 ->createATransaction('4.4', $createatransactionRequest);
 
-            if(!$this->trackingHelper->isLoggedIn()) {
-                $createAClientInCrmRequest = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
+            $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
+
+            if (!$this->trackingHelper->isLoggedIn()) {
+                $createAClientInCrmRequest = new CreateaClientinCRMRequest(
                     [
                         'email' => $order->getCustomerEmail(),
                         'uuid' => $this->trackingHelper->getClientUuid(),

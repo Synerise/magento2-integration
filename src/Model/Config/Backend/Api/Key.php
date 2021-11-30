@@ -2,12 +2,16 @@
 
 namespace Synerise\Integration\Model\Config\Backend\Api;
 
-class Key extends \Magento\Config\Model\Config\Backend\Encrypted
+use Magento\Config\Model\Config\Backend\Encrypted;
+use Synerise\ApiClient\Api\AuthenticationControllerApi;
+use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+
+class Key extends Encrypted
 {
     /**
      * @var Synerise\ApiClient\Api\AuthenticationControllerApi
      */
-    var $authenticationApi;
+    protected $authenticationApi;
 
     /**
      * @var \Zend\Validator\Uuid
@@ -43,8 +47,17 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
     ) {
         $this->logger = $logger;
         $this->uuidValidator = $uuidValidator;
-        $this->authenticationApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi();
-        parent::__construct($context, $registry, $config, $cacheTypeList, $encryptor, $resource, $resourceCollection, $data);
+        $this->authenticationApi = new AuthenticationControllerApi();
+        parent::__construct(
+            $context,
+            $registry,
+            $config,
+            $cacheTypeList,
+            $encryptor,
+            $resource,
+            $resourceCollection,
+            $data
+        );
     }
 
     public function beforeSave()
@@ -53,18 +66,18 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
 
         // don't save value, if an obscured value was received. This indicates that data was not changed.
         if (!preg_match('/^\*+$/', $value) && !empty($value)) {
-            if($value != '' && !$this->uuidValidator->isValid($value)) {
+            if ($value != '' && !$this->uuidValidator->isValid($value)) {
                 throw new \Magento\Framework\Exception\ValidatorException(__('Invalid api key format'));
             }
 
-            $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
+            $business_profile_authentication_request = new BusinessProfileAuthenticationRequest([
                 'api_key' => $value
             ]);
 
             try {
                 $this->authenticationApi->profileLoginUsingPOST($business_profile_authentication_request);
             } catch (\Synerise\ApiClient\ApiException $e) {
-                if($e->getCode() === 401) {
+                if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
                         __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
                     );

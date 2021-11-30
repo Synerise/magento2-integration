@@ -7,13 +7,9 @@ use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Cron\QueueFactory;
 use Synerise\Integration\Model\Cron\StatusFactory;
-use Synerise\Integration\Model\Synchronization\Customer;
-use Synerise\Integration\Model\Synchronization\Order;
-use Synerise\Integration\Model\Synchronization\Product;
-use Synerise\Integration\Model\Synchronization\Subscriber;
+use Synerise\Integration\Model\Synchronization\Subject\Resolver;
 
-
-Class Synchronization
+class Synchronization
 {
     const CRON_STATUS_STATE_IN_PROGRESS = 0;
     const CRON_STATUS_STATE_COMPLETE= 1;
@@ -43,12 +39,8 @@ Class Synchronization
         LoggerInterface $logger,
         QueueFactory $queueFactory,
         StatusFactory $statusFactory,
-        Customer $customer,
-        Order $order,
-        Product $product,
-        Subscriber $subscriber,
-        ResourceConnection $resource
-
+        ResourceConnection $resource,
+        Resolver $subjectResolver
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->logger = $logger;
@@ -56,13 +48,7 @@ Class Synchronization
         $this->statusFactory = $statusFactory;
         $this->connection = $resource->getConnection();
         $this->resource = $resource;
-
-        $this->executors = [
-            'customer' => $customer,
-            'subscriber' => $subscriber,
-            'product' => $product,
-            'order' => $order
-        ];
+        $this->subjectResolver = $subjectResolver;
     }
 
     public function processByIds()
@@ -72,47 +58,46 @@ Class Synchronization
                 ->getCollection()
                 ->addFieldToFilter('state', static::CRON_STATUS_STATE_IN_PROGRESS);
 
-            if(!$statusCollection->count()) {
+            if (!$statusCollection->count()) {
                 return;
             }
 
             foreach ($statusCollection as $statusItem) {
-                $executor = $this->getExecutorByName($statusItem->getModel());
-                if($executor) {
-
-                    if(!$executor->isEnabled()){
+                $subject = $this->subjectResolver->create($statusItem->getModel());
+                if ($subject) {
+                    if (!$subject->isEnabled()) {
                         continue;
                     }
 
                     $stopId = $statusItem->getStopId();
-                    if(!$stopId) {
-                        $stopId = $executor->getCurrentLastId();
+                    if (!$stopId) {
+                        $stopId = $subject->getCurrentLastId();
                         $statusItem->setStopId($stopId);
                     }
 
                     $startId = $statusItem->getStartId();
-                    if($startId == $stopId) {
+                    if ($startId == $stopId) {
                         $statusItem
                             ->setState(static::CRON_STATUS_STATE_COMPLETE)
                             ->save();
                         continue;
                     }
 
-                    $collection = $executor->getCollectionFilteredByIdRange(
+                    $collection = $subject->getCollectionFilteredByIdRange(
                         $statusItem->getStoreId(),
                         $statusItem->getStartId(),
                         $statusItem->getStopId()
                     );
 
-                    if(!$collection->getSize()) {
+                    if (!$collection->getSize()) {
                         continue;
                     }
 
-                    $executor->sendItems($collection, $statusItem);
+                    $subject->sendItems($collection, $statusItem);
 
                     $lastItem = $collection->getLastItem();
-                    $statusItem->setStartId($lastItem->getData($executor->getEntityIdField()));
-                    if($startId == $stopId) {
+                    $statusItem->setStartId($lastItem->getData($subject->getEntityIdField()));
+                    if ($startId == $stopId) {
                         $statusItem
                             ->setState(static::CRON_STATUS_STATE_COMPLETE);
                     }
@@ -131,11 +116,11 @@ Class Synchronization
             $collection = $this->statusFactory->create()
                 ->getCollection();
 
-            foreach($collection as $statusItem) {
-                $executor = $this->getExecutorByName($statusItem->getModel());
-                if ($executor) {
+            foreach ($collection as $statusItem) {
+                $subject = $this->subjectResolver->create($statusItem->getModel());
+                if ($subject) {
 
-                    if (!$executor->isEnabled()) {
+                    if (!$subject->isEnabled()) {
                         continue;
                     }
 
@@ -152,7 +137,7 @@ Class Synchronization
 
                     $entityIds = $this->getAllEntityIds($queueCollection);
 
-                    $collection = $executor->getCollectionFilteredByEntityIds(
+                    $collection = $subject->getCollectionFilteredByEntityIds(
                         $statusItem->getStoreId(),
                         $entityIds
                     );
@@ -161,7 +146,7 @@ Class Synchronization
                         continue;
                     }
 
-                    $executor->sendItems($collection, $statusItem);
+                    $subject->sendItems($collection, $statusItem);
 
                     $this->deleteItemsFromQueue(
                         $statusItem->getModel(),
@@ -173,15 +158,6 @@ Class Synchronization
         } catch (\Exception $e) {
             $this->logger->error('Failed to process cron queue', ['exception' => $e]);
         }
-    }
-
-    /**
-     * @param String $name
-     * @return \Synerise\Integration\Model\AbstractSynchronization|null
-     */
-    protected function getExecutorByName(String $name)
-    {
-        return isset($this->executors[$name]) ? $this->executors[$name] : null;
     }
 
     public function addItemToQueueByStoreId($model, $storeId, $entityId)
@@ -200,8 +176,8 @@ Class Synchronization
 
     public function addItemsToQueue($model, $collection)
     {
-        if($collection->count()) {
-            foreach($collection as $item){
+        if ($collection->count()) {
+            foreach ($collection as $item) {
                 $data[] = [
                     'model' => $model,
                     'store_id' => $item->getStoreId(),
@@ -220,9 +196,9 @@ Class Synchronization
     {
         $collection = $this->getStoreStatusCollectionByWebsiteIds($model, $websiteIds);
 
-        if($collection->count()) {
+        if ($collection->count()) {
             $data = [];
-            foreach($collection as $status) {
+            foreach ($collection as $status) {
                 $data[] = [
                     'model' => $model,
                     'store_id' => $status->getStoreId(),
@@ -240,10 +216,10 @@ Class Synchronization
     public function addItemsToQueueByItemWebsiteIds($model, $items)
     {
         $data = [];
-        foreach($items as $item) {
+        foreach ($items as $item) {
             $collection = $this->getStoreStatusCollectionByWebsiteIds($model, $item->getWebsiteIds());
-            if($collection->count()) {
-                foreach($collection as $status) {
+            if ($collection->count()) {
+                foreach ($collection as $status) {
                     $data[] = [
                         'model' => $model,
                         'store_id' => $status->getStoreId(),
@@ -286,12 +262,12 @@ Class Synchronization
     {
         sort($websiteIds);
         $key = $model . implode($websiteIds, '|');
-        if(!isset($this->storeStatusCollectionCache[$key])) {
+        if (!isset($this->storeStatusCollectionCache[$key])) {
             $collection = $this->statusFactory->create()
                 ->getCollection()
                 ->addFieldToSelect('store_id')
                 ->addFieldToFilter('model', $model)
-                ->addFieldToFilter('website_id', array('in' => $websiteIds));
+                ->addFieldToFilter('website_id', ['in' => $websiteIds]);
 
             $this->storeStatusCollectionCache[$key] = $collection;
         }
@@ -310,8 +286,8 @@ Class Synchronization
             ['model = ?' => $model]
         );
 
-        $executor = $this->getExecutorByName($model);
-        $executor->markAllAsUnsent();
+        $subject = $this->subjectResolver->create($model);
+        $subject->markAllAsUnsent();
     }
 
     public function resetStopId($model)
@@ -329,5 +305,4 @@ Class Synchronization
     {
         return $this->scopeConfig->getValue(static::XML_PATH_CRON_QUEUE_PAGE_SIZE);
     }
-
 }

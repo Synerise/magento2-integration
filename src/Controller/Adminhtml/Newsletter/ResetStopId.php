@@ -46,5 +46,4 @@ class ResetStopId extends Action implements HttpGetActionInterface
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('synerise/dashboard/index');
     }
-
 }

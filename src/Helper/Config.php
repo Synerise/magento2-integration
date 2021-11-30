@@ -59,8 +59,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     public function __construct(
         DataInterfaceFactory $uiConfigFactory,
         Context $context
-    )
-    {
+    ) {
         $this->uiConfigFactory = $uiConfigFactory;
 
         parent::__construct($context);
