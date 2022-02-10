@@ -123,7 +123,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         if(substr($statusCode, 0,1) != 2) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
-                $statusCode,
+                $statusCode
             ));
         }
     }

@@ -1,4 +1,8 @@
-# Synerise integration module for Magento 2.x platform
+# Synerise integration module for Magento 2 platform
+
+## Requirments
+ * PHP 7.1+
+ * Magento 2.3+ 
 
 ## Installation
 

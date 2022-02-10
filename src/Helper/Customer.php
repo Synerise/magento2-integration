@@ -179,7 +179,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         if($statusCode != 202) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
-                $statusCode,
+                $statusCode
             ));
         }
     }
@@ -188,7 +188,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $this->action->updateAttributes(
             $ids,
-            ['synerise_updated_at' => $this->dateTime->gmtDate()],
+            ['synerise_updated_at' => $this->dateTime->gmtDate()]
         );
     }
 

@@ -5,8 +5,16 @@ namespace Synerise\Integration\ResourceModel\Customer;
 
 use Magento\Catalog\Model\AbstractModel;
 use Magento\Customer\Model\AccountConfirmation;
+use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
+use Magento\Eav\Model\Entity\Context;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\DataObject;
-use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Framework\Model\ResourceModel\Db\VersionControl\RelationComposite;
+use Magento\Framework\Model\ResourceModel\Db\VersionControl\Snapshot;
+use Magento\Framework\Stdlib\DateTime;
+use Magento\Framework\Validator\Factory;
+use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Customer Mass processing resource model
@@ -31,29 +39,35 @@ class Action extends \Magento\Customer\Model\ResourceModel\Customer
     /**
      * Customer constructor.
      *
-     * @param \Magento\Eav\Model\Entity\Context $context
-     * @param \Magento\Framework\Model\ResourceModel\Db\VersionControl\Snapshot $entitySnapshot
-     * @param \Magento\Framework\Model\ResourceModel\Db\VersionControl\RelationComposite $entityRelationComposite
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Framework\Validator\Factory $validatorFactory
-     * @param \Magento\Framework\Stdlib\DateTime $dateTime
-     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param Context $context
+     * @param Snapshot $entitySnapshot
+     * @param RelationComposite $entityRelationComposite
+     * @param ScopeConfigInterface $scopeConfig
+     * @param Factory $validatorFactory
+     * @param DateTime $dateTime
+     * @param StoreManagerInterface $storeManager
      * @param array $data
-     * @param AccountConfirmation $accountConfirmation
+     * @param AccountConfirmation|null $accountConfirmation
      */
     public function __construct(
-        \Magento\Eav\Model\Entity\Context $context,
-        \Magento\Framework\Model\ResourceModel\Db\VersionControl\Snapshot $entitySnapshot,
-        \Magento\Framework\Model\ResourceModel\Db\VersionControl\RelationComposite $entityRelationComposite,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Validator\Factory $validatorFactory,
-        \Magento\Framework\Stdlib\DateTime $dateTime,
-        \Magento\Store\Model\StoreManagerInterface $storeManager,
-        $data = [],
-        AccountConfirmation $accountConfirmation = null
+        Context $context,
+        Snapshot $entitySnapshot,
+        RelationComposite $entityRelationComposite,
+        ScopeConfigInterface $scopeConfig,
+        ProductMetadataInterface $productMetadata,
+        Factory $validatorFactory,
+        DateTime $dateTime,
+        StoreManagerInterface $storeManager,
+        array $data = [],
+        ?AccountConfirmation $accountConfirmation = null
     ) {
-        parent::__construct($context, $entitySnapshot, $entityRelationComposite, $scopeConfig, $validatorFactory,
-            $dateTime, $storeManager, $data, $accountConfirmation);
+        if (version_compare($productMetadata->getVersion(), '2.4', 'lt')) {
+            parent::__construct($context, $entitySnapshot, $entityRelationComposite, $scopeConfig, $validatorFactory,
+                $dateTime, $storeManager, $data);
+        } else {
+            parent::__construct($context, $entitySnapshot, $entityRelationComposite, $scopeConfig, $validatorFactory,
+                $dateTime, $storeManager, $data, $accountConfirmation);
+        }
 
         $this->setConnection($this->_resource->getConnection('customer'));
     }
@@ -73,7 +87,6 @@ class Action extends \Magento\Customer\Model\ResourceModel\Customer
      *
      * @param array $entityIds
      * @param array $attrData
-     * @param int $storeId
      * @return $this
      * @throws \Exception
      */
