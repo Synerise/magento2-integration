@@ -15,6 +15,11 @@ class CustomerSaveAfter implements ObserverInterface
 {
     const EVENT = 'customer_save_after';
 
+    const EXCLUDED_PATHS = [
+        '/customer/account/createpost/',
+        '/newsletter/manage/save/'
+    ];
+
     /**
      * @var Api
      */
@@ -60,7 +65,7 @@ class CustomerSaveAfter implements ObserverInterface
             return;
         }
 
-        if($this->request->getPathInfo() == '/customer/account/createpost/') {
+        if(in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
             return;
         }
 

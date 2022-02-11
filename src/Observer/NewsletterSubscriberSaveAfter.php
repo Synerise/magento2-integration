@@ -43,6 +43,10 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         $subscriber = $event->getDataObject();
 
         try {
+            if(!$this->trackingHelper->isLoggedIn()) {
+                $this->trackingHelper->manageClientUuid($subscriber->getEmail());
+            }
+
             $this->synchronization->addItemToQueueByStoreId(
                 'subscriber',
                 $subscriber->getStoreId(),

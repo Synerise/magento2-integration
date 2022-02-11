@@ -160,6 +160,8 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
             if($statusCode != 202) {
                 $this->logger->error('Client update failed');
+            } else {
+                $this->markItemsAsSent($customer->getId());
             }
         } catch (\Exception $e) {
             $this->logger->error('Client update failed', ['exception' => $e]);
@@ -184,7 +186,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    protected function markItemsAsSent($ids)
+    public function markItemsAsSent($ids)
     {
         $this->action->updateAttributes(
             $ids,
@@ -251,11 +253,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                 default:
                     $params[$attribute] = $data[$attribute];
             }
-        }
-
-        $subscriber = $this->subscriber->loadByEmail($customer->getEmail());
-        if($subscriber) {
-            $params['agreements'] = ['email' => $subscriber->isSubscribed()];
         }
 
         return $params;
