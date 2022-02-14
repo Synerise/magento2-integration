@@ -53,23 +53,7 @@ Class Order extends AbstractSynchronization
         $collection->addAttributeToSelect($attributes);
 
         $this->orderHelper->addOrdersBatch($collection);
-        $this->markItemsAsSent($collection->getAllIds());
-    }
-
-    public function markItemsAsSent($ids)
-    {
-        $timestamp = $this->dateTime->gmtDate();
-        $data = [];
-        foreach($ids as $id) {
-            $data[] = [
-                'synerise_updated_at' => $timestamp,
-                'order_id' => $id
-            ];
-        }
-        $this->connection->insertOnDuplicate(
-            $this->connection->getTableName('synerise_sync_order'),
-            $data
-        );
+        $this->orderHelper->markItemsAsSent($collection->getAllIds());
     }
 
     public function markAllAsUnsent()

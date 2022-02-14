@@ -56,9 +56,7 @@ class OrderPlace implements ObserverInterface
             /** @var \Magento\Sales\Model\Order $order */
             $order = $observer->getEvent()->getOrder();
 
-            if(!$this->trackingHelper->isLoggedIn()) {
-                $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
-            }
+            $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
 
             $createatransactionRequest = new CreateatransactionRequest(
                 $this->orderHelper->preapreOrderParams($order, $this->trackingHelper->getClientUuid())
@@ -67,7 +65,9 @@ class OrderPlace implements ObserverInterface
             $this->apiHelper->getDefaultApiInstance()
                 ->createATransaction('4.4', $createatransactionRequest);
 
-            if(!$this->trackingHelper->isLoggedIn()) {
+            $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
+
+            if($order->getCustomerIsGuest()) {
                 $createAClientInCrmRequest = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
                     [
                         'email' => $order->getCustomerEmail(),

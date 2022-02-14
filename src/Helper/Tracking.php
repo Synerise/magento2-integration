@@ -62,7 +62,13 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $cookieParams;
 
+    /**
+     * @var \Magento\Backend\Model\Auth\Session
+     */
+    private $backendSession;
+
     public function __construct(
+        \Magento\Backend\Model\Auth\Session $backendSession,
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
         \Magento\Framework\HTTP\Header $httpHeader,
@@ -75,6 +81,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Newsletter\Model\Subscriber $subscriber,
         Api $apiHelper
     ){
+        $this->backendSession = $backendSession;
         $this->cookieManager = $cookieManager;
         $this->cookieMetadataFactory = $cookieMetadataFactory;
         $this->httpHeader = $httpHeader;
@@ -389,6 +396,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function isAdminStore()
     {
-        return $this->scopeResolver->getScope()->getCode() == \Magento\Store\Model\Store::ADMIN_CODE;
+        return $this->isAdminLoggedIn() || $this->scopeResolver->getScope()->getCode() == \Magento\Store\Model\Store::ADMIN_CODE;
+    }
+
+    public function isAdminLoggedIn(): bool
+    {
+        return $this->backendSession->getUser() && $this->backendSession->getUser()->getId();
     }
 }
