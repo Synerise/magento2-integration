@@ -53,6 +53,7 @@ class CustomerRegister implements ObserverInterface
         }
 
         try {
+            /** @var \Magento\Customer\Model\Data\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
@@ -74,6 +75,10 @@ class CustomerRegister implements ObserverInterface
 
             $this->apiHelper->getDefaultApiInstance()
                 ->clientRegistered('4.4', $eventClientAction);
+
+            if($customer->getId()) {
+                $this->customerHelper->markItemsAsSent([$customer->getId()]);
+            }
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);

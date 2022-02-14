@@ -160,6 +160,8 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
             if($statusCode != 202) {
                 $this->logger->error('Client update failed');
+            } else {
+                $this->markItemsAsSent($customer->getId());
             }
         } catch (\Exception $e) {
             $this->logger->error('Client update failed', ['exception' => $e]);
@@ -179,16 +181,16 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         if($statusCode != 202) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
-                $statusCode,
+                $statusCode
             ));
         }
     }
 
-    protected function markItemsAsSent($ids)
+    public function markItemsAsSent($ids)
     {
         $this->action->updateAttributes(
             $ids,
-            ['synerise_updated_at' => $this->dateTime->gmtDate()],
+            ['synerise_updated_at' => $this->dateTime->gmtDate()]
         );
     }
 
@@ -251,11 +253,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                 default:
                     $params[$attribute] = $data[$attribute];
             }
-        }
-
-        $subscriber = $this->subscriber->loadByEmail($customer->getEmail());
-        if($subscriber) {
-            $params['agreements'] = ['email' => $subscriber->isSubscribed()];
         }
 
         return $params;

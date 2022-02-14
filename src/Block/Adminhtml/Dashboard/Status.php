@@ -1,7 +1,9 @@
 <?php
 namespace Synerise\Integration\Block\Adminhtml\Dashboard;
 
+use Magento\Backend\Block\Template\Context;
 use Magento\Directory\Helper\Data as DirectoryHelper;
+use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Json\Helper\Data as JsonHelper;
 
@@ -21,16 +23,29 @@ class Status extends \Magento\Backend\Block\Template
 
     protected $connection;
 
+    /**
+     * @param Context $context
+     * @param ResourceConnection $resource
+     * @param ProductMetadataInterface $productMetadata
+     * @param array $data
+     * @param JsonHelper|null $jsonHelper
+     * @param DirectoryHelper|null $directoryHelper
+     */
     public function __construct(
-        \Magento\Backend\Block\Template\Context $context,
+        Context $context,
+        ResourceConnection $resource,
+        ProductMetadataInterface $productMetadata,
         array $data = [],
         ?JsonHelper $jsonHelper = null,
-        ?DirectoryHelper $directoryHelper = null,
-        ResourceConnection $resource
+        ?DirectoryHelper $directoryHelper = null
     ) {
         $this->connection = $resource->getConnection();
 
-        parent::__construct($context, $data, $jsonHelper, $directoryHelper);
+        if (version_compare($productMetadata->getVersion(), '2.4', 'lt')) {
+            parent::__construct($context, $data);
+        } else {
+            parent::__construct($context, $data, $jsonHelper, $directoryHelper);
+        }
     }
 
     public function setCollectionFactory($collectionFactory)

@@ -305,7 +305,8 @@ Class Synchronization
             $this->connection->getTableName('synerise_cron_status'),
             [
                 'start_id' => null,
-                'stop_id' => null
+                'stop_id' => null,
+                'state' => self::CRON_STATUS_STATE_IN_PROGRESS
             ],
             ['model = ?' => $model]
         );
@@ -319,7 +320,8 @@ Class Synchronization
         $this->connection->update(
             $this->connection->getTableName('synerise_cron_status'),
             [
-                'stop_id' => null
+                'stop_id' => null,
+                'state' => self::CRON_STATUS_STATE_IN_PROGRESS
             ],
             ['model = ?' => $model]
         );

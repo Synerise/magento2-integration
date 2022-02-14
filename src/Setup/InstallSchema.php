@@ -153,7 +153,7 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                     'subscriber_id',
                     \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
                     null,
-                    ['identity' => true, 'nullable' => false, 'primary' => true, 'unsigned' => true],
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
                     'Subscriber ID'
                 )
                 ->addColumn(
@@ -176,7 +176,7 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                     'order_id',
                     \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
                     null,
-                    ['identity' => true, 'nullable' => false, 'primary' => true, 'unsigned' => true],
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
                     'Order ID'
                 )
                 ->addColumn(

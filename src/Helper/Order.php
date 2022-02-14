@@ -123,7 +123,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         if(substr($statusCode, 0,1) != 2) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
-                $statusCode,
+                $statusCode
             ));
         }
     }
@@ -271,5 +271,21 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $this->logger->error($localizedException->getMessage());
         }
         return $websiteCode;
+    }
+
+    public function markItemsAsSent($ids)
+    {
+        $timestamp = $this->dateTime->gmtDate();
+        $data = [];
+        foreach($ids as $id) {
+            $data[] = [
+                'synerise_updated_at' => $timestamp,
+                'order_id' => $id
+            ];
+        }
+        $this->resource->getConnection()->insertOnDuplicate(
+            $this->resource->getConnection()->getTableName('synerise_sync_order'),
+            $data
+        );
     }
 }
