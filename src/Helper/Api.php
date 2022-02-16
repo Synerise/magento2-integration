@@ -17,7 +17,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     protected $apiToken;
 
     /**
-     * Api key
+     * Api host
      *
      * @return string
      */

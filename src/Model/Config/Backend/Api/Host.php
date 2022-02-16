@@ -54,20 +54,6 @@ class Host extends \Magento\Framework\App\Config\Value
      */
     private function validateSecureUrl($value)
     {
-        return preg_match('/\/$/', $value) && $this->urlValidator->isValid($value, ['https']);
+        return !preg_match('/\/$/', $value) && $this->urlValidator->isValid($value, ['https']);
     }
-//
-//    /**
-//     * Get URL Validator
-//     *
-//     * @deprecated 100.1.12
-//     * @return UrlValidator
-//     */
-//    private function getUrlValidator()
-//    {
-//        if (!$this->urlValidator) {
-//            $this->urlValidator = ObjectManager::getInstance()->get(UrlValidator::class);
-//        }
-//        return $this->urlValidator;
-//    }
 }
