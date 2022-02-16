@@ -16,10 +16,16 @@
                     <backend_model>Synerise\Integration\Model\Config\Backend\Api\Key</backend_model>
                     <comment><![CDATA[Api key can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/apikeys/list" target="_blank">Settings > API Keys</a>. Please add an <i>Business Profile</i> api key, set the appropriate permissions over edit menu: <i>CLIENT, EVENTS, TRANSACTIONS</i> & copy paste the key.]]></comment>
                 </field>
+                <field id="host" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Host</label>
+                    <config_path>synerise/api/host</config_path>
+                    <backend_model>\Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
+                    <comment>Specify api host URL.</comment>
+                </field>
             </group>
             <group id="api_logger" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Request logging</label>
-                <field id="key" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enabled</label>
                     <config_path>synerise/api/logger_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>

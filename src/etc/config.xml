@@ -4,6 +4,7 @@
         <synerise>
             <api>
                 <key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
+                <host>https://api.synerise.com</host>
             </api>
             <page_tracking>
                 <opengraph>1</opengraph>

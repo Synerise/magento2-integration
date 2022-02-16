@@ -21,6 +21,18 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
+    public function getApiHost()
+    {
+        return $this->scopeConfig->getValue(
+            \Synerise\Integration\Helper\Config::XML_PATH_API_HOST
+        );
+    }
+
+    /**
+     * Api key
+     *
+     * @return string
+     */
     public function getApiKey()
     {
         return $this->scopeConfig->getValue(
@@ -57,7 +69,14 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     public function getAuthApiInstance()
     {
         if(!$this->authApi) {
-            $this->authApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi();
+            $client = new \GuzzleHttp\Client();
+            $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/v4', $this->getApiHost()));
+
+            $this->itemsApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
+                $client,
+                $config
+            );
         }
 
         return $this->authApi;
@@ -73,6 +92,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         if(!$this->defaultApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/v4', $this->getApiHost()))
                 ->setAccessToken($this->getApiToken());
 
             $this->defaultApi = new \Synerise\ApiClient\Api\DefaultApi(
@@ -94,6 +114,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         if(!$this->bagsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
                 ->setAccessToken($this->getApiToken());
 
             $this->bagsApi = new \Synerise\CatalogsApiClient\Api\BagsApi(
@@ -110,6 +131,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         if(!$this->itemsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
                 ->setAccessToken($this->getApiToken());
 
             $this->itemsApi = new \Synerise\CatalogsApiClient\Api\ItemsApi(
