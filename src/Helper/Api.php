@@ -73,7 +73,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost()));
 
-            $this->itemsApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
+            $this->authApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
                 $client,
                 $config
             );
