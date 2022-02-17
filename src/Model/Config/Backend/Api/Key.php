@@ -5,11 +5,6 @@ namespace Synerise\Integration\Model\Config\Backend\Api;
 class Key extends \Magento\Config\Model\Config\Backend\Encrypted
 {
     /**
-     * @var Synerise\ApiClient\Api\AuthenticationControllerApi
-     */
-    var $authenticationApi;
-
-    /**
      * @var \Zend\Validator\Uuid
      */
     protected $uuidValidator;
@@ -18,6 +13,11 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
      * @var Psr\Log\LoggerInterface
      */
     private $logger;
+
+    /**
+     * @var \Synerise\Integration\Helper\Api
+     */
+    private $apiHelper;
 
     /**
      * @param \Magento\Framework\Model\Context $context
@@ -39,11 +39,12 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         \Psr\Log\LoggerInterface $logger,
         \Zend\Validator\Uuid $uuidValidator,
+        \Synerise\Integration\Helper\Api $apiHelper,
         array $data = []
     ) {
         $this->logger = $logger;
         $this->uuidValidator = $uuidValidator;
-        $this->authenticationApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi();
+        $this->apiHelper = $apiHelper;
         parent::__construct($context, $registry, $config, $cacheTypeList, $encryptor, $resource, $resourceCollection, $data);
     }
 
@@ -62,7 +63,7 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
             ]);
 
             try {
-                $this->authenticationApi->profileLoginUsingPOST($business_profile_authentication_request);
+                $this->apiHelper->getAuthApiInstance()->profileLoginUsingPOST($business_profile_authentication_request);
             } catch (\Synerise\ApiClient\ApiException $e) {
                 if($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
