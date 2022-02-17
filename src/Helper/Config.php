@@ -10,6 +10,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * API SECTION.
      */
+    const XML_PATH_API_HOST = 'synerise/api/host';
     const XML_PATH_API_KEY = 'synerise/api/key';
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
 
