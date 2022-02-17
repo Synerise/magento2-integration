@@ -161,7 +161,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             if($statusCode != 202) {
                 $this->logger->error('Client update failed');
             } else {
-                $this->markItemsAsSent($customer->getId());
+                $this->markItemsAsSent([$customer->getId()]);
             }
         } catch (\Exception $e) {
             $this->logger->error('Client update failed', ['exception' => $e]);
