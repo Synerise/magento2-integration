@@ -36,4 +36,7 @@
     <event name="newsletter_subscriber_save_after">
         <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\NewsletterSubscriberSaveAfter" />
     </event>
+    <event name="newsletter_subscriber_delete_after">
+        <observer name="synerise_newsletter_subscriber_delete_after" instance="Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter" />
+    </event>
 </config>
