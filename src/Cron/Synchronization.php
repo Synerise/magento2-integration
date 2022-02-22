@@ -285,7 +285,7 @@ Class Synchronization
     protected function getStoreStatusCollectionByWebsiteIds($model, $websiteIds)
     {
         sort($websiteIds);
-        $key = $model . implode($websiteIds, '|');
+        $key = $model . implode('|', $websiteIds);
         if(!isset($this->storeStatusCollectionCache[$key])) {
             $collection = $this->statusFactory->create()
                 ->getCollection()
