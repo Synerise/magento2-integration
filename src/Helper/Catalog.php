@@ -181,7 +181,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function deleteItemWithCatalogCheck($product, $attributes, $storeId)
     {
         $addItemRequest = $this->prepareItemRequest($product, $attributes, $storeId);
-        $addItemRequest->setValue(array_merge(['deleted' => 1], $addItemRequest->getValue()));
+        $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
         $this->sendItemsToSyneriseWithCatalogCheck([$addItemRequest], $storeId);
     }
 
@@ -227,7 +227,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
-        $value['stock_status'] = $stockStatus['is_in_stock'];
+        $value['stock_status'] = $stockStatus['is_in_stock'] ?? 0;
 
         return new AddItem([
             'item_key' => $value['itemId'],
