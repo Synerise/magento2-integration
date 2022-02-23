@@ -73,5 +73,4 @@ class MassUpdate extends Action
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('sales/customer/index');
     }
-
 }

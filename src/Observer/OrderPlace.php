@@ -48,7 +48,7 @@ class OrderPlace implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -67,7 +67,7 @@ class OrderPlace implements ObserverInterface
 
             $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
 
-            if($order->getCustomerIsGuest()) {
+            if ($order->getCustomerIsGuest()) {
                 $createAClientInCrmRequest = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
                     [
                         'email' => $order->getCustomerEmail(),

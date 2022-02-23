@@ -61,11 +61,11 @@ class CustomerSaveAfter implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if(in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
+        if (in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
             return;
         }
 

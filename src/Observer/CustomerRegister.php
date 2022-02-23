@@ -76,13 +76,12 @@ class CustomerRegister implements ObserverInterface
             $this->apiHelper->getDefaultApiInstance()
                 ->clientRegistered('4.4', $eventClientAction);
 
-            if($customer->getId()) {
+            if ($customer->getId()) {
                 $this->customerHelper->markItemsAsSent([$customer->getId()]);
             }
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }
-
     }
 }

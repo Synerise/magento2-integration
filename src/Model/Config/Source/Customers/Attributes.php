@@ -35,7 +35,7 @@ class Attributes implements OptionSourceInterface
         $options = [];
 
         foreach ($collection as $item) {
-            if(!in_array($item->getAttributeCode(), self::REQUIRED)) {
+            if (!in_array($item->getAttributeCode(), self::REQUIRED)) {
                 $options[] = [
                     'value' => $item->getAttributeCode(),
                     'label' => $item->getAttributeCode()

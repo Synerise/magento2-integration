@@ -64,7 +64,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         Api $apiHelper,
         Tracking $trackingHelper,
         Image $imageHelper
-    ){
+    ) {
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
@@ -88,14 +88,14 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addOrdersBatch($collection)
     {
-        if(!$collection->getSize()) {
+        if (!$collection->getSize()) {
             return;
         }
 
         $ids = [];
         $createatransaction_request = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
@@ -120,7 +120,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
             ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createatransaction_request);
 
-        if(substr($statusCode, 0,1) != 2) {
+        if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
                 $statusCode
@@ -134,7 +134,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'email' => $order->getCustomerEmail()
         ];
 
-        if($uuid) {
+        if ($uuid) {
             $customerData["uuid"] = $uuid;
         }
 
@@ -143,8 +143,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $products = [];
-        foreach($order->getAllItems() as $item){
-            if(!$item->getParentItem()) {
+        foreach ($order->getAllItems() as $item) {
+            if (!$item->getParentItem()) {
                 $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
             }
         }
@@ -192,7 +192,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $product = $item->getProduct();
         $parent = $item->getParentItem();
 
-        if($parent && (float) $item->getOriginalPrice() == '0.00') {
+        if ($parent && (float) $item->getOriginalPrice() == '0.00') {
             $regularPrice = [
                 "amount" => $parent->getOriginalPrice(),
                 "currency" => $currency
@@ -204,7 +204,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             ];
         }
 
-        if($parent && (float) $item->getPrice() == '0.00') {
+        if ($parent && (float) $item->getPrice() == '0.00') {
             $finalUnitPrice = [
                 "amount" => $parent->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
                 "currency" => $currency
@@ -228,19 +228,19 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "quantity" => $item->getQtyOrdered()
         ];
 
-        if($sku!= $skuVariant) {
+        if ($sku!= $skuVariant) {
             $params['skuVariant'] = $skuVariant;
         }
 
         $categories = $item->getCategoryIds();
-        if($categories) {
+        if ($categories) {
             $params['categories'] = $categories;
         }
 
-        if($product->getImage()) {
+        if ($product->getImage()) {
             $imageUrl = $this->imageHelper->init($product, 'product_base_image')
                 ->setImageFile($product->getImage())->getUrl();
-            if($imageUrl) {
+            if ($imageUrl) {
                 $params['image'] = $imageUrl;
             }
         }
@@ -277,7 +277,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
-        foreach($ids as $id) {
+        foreach ($ids as $id) {
             $data[] = [
                 'synerise_updated_at' => $timestamp,
                 'order_id' => $id

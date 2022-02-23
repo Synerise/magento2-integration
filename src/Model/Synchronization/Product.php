@@ -10,8 +10,7 @@ use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 
-
-Class Product extends AbstractSynchronization
+class Product extends AbstractSynchronization
 {
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
@@ -79,7 +78,7 @@ Class Product extends AbstractSynchronization
     public function markAllAsUnsent()
     {
         $attribute = $this->getSyneriseUpdatedAtAttribute();
-        if($attribute->getId()) {
+        if ($attribute->getId()) {
             $this->connection->update(
                 'catalog_product_entity_datetime',
                 ['value' => null],

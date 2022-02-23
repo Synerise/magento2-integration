@@ -100,7 +100,7 @@ class InstallData implements InstallDataInterface
         );
 
         $defaultStoreView = $this->storeManager->getDefaultStoreView();
-        foreach(\Synerise\Integration\Helper\Config::MODELS as $model) {
+        foreach (\Synerise\Integration\Helper\Config::MODELS as $model) {
             $this->cronStatusFactory
                 ->create()
                 ->setData([

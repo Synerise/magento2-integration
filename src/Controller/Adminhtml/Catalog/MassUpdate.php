@@ -58,7 +58,7 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            foreach($collection as $product) {
+            foreach ($collection as $product) {
                 $this->synchronization->addItemToQueueByWebsiteIds(
                     'product',
                     $product->getWebsiteIds(),
@@ -76,5 +76,4 @@ class MassUpdate extends Action
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('catalog/product/index');
     }
-
 }

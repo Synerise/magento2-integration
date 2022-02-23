@@ -50,7 +50,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     private function getGuzzleClient()
     {
         $options = [];
-        if($this->isLoggerEnabled()) {
+        if ($this->isLoggerEnabled()) {
             $LogMiddleware = new LogMiddleware(
                 $this->_logger,
                 ['request_formatter' => new RequestCurlSanitizedFormatter()]
@@ -68,7 +68,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getAuthApiInstance()
     {
-        if(!$this->authApi) {
+        if (!$this->authApi) {
             $client = new \GuzzleHttp\Client();
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost()));
@@ -89,7 +89,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getDefaultApiInstance()
     {
-        if(!$this->defaultApi) {
+        if (!$this->defaultApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost()))
@@ -111,7 +111,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getBagsApiInstance()
     {
-        if(!$this->bagsApi) {
+        if (!$this->bagsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
@@ -128,7 +128,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getItemsApiInstance()
     {
-        if(!$this->itemsApi) {
+        if (!$this->itemsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
@@ -145,7 +145,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected function getApiToken()
     {
-        if(!$this->apiToken) {
+        if (!$this->apiToken) {
             $authApiInstance = $this->getAuthApiInstance();
 
             $this->getApiKey();
@@ -158,7 +158,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
                 $tokenResponse = $authApiInstance->profileLoginUsingPOST($business_profile_authentication_request);
                 $this->apiToken = $tokenResponse->getToken();
             } catch (\Synerise\ApiClient\ApiException $e) {
-                if($e->getCode() === 401) {
+                if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
                         __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
                     );
@@ -171,5 +171,4 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
         return $this->apiToken;
     }
-
 }
