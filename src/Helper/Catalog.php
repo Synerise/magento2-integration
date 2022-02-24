@@ -2,12 +2,12 @@
 
 namespace Synerise\Integration\Helper;
 
-use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\UrlInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -222,7 +222,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if ($product->getImage()) {
-            $value['image'] = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
+            $value['image'] = $this->storeManager->getStore()
+                    ->getBaseUrl(UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
         }
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
@@ -396,9 +397,5 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->logger->error($localizedException->getMessage());
         }
         return $website;
-    }
-
-    public function getSelectedStoreViews()
-    {
     }
 }

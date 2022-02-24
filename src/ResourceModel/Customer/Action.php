@@ -90,16 +90,6 @@ class Action extends \Magento\Customer\Model\ResourceModel\Customer
     }
 
     /**
-     * Initialize connection
-     *
-     * @return void
-     */
-    protected function _construct()
-    {
-        parent::_construct();
-    }
-
-    /**
      * Update attribute values for entity list per store
      *
      * @param array $entityIds

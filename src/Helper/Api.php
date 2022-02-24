@@ -6,6 +6,7 @@ use \GuzzleHttp\HandlerStack;
 use \GuzzleHttp\Middleware;
 use \GuzzleHttp\MessageFormatter;
 use Loguzz\Middleware\LogMiddleware;
+use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
@@ -150,7 +151,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
             $this->getApiKey();
 
-            $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
+            $business_profile_authentication_request = new BusinessProfileAuthenticationRequest([
                 'api_key' => $this->getApiKey()
             ]);
 

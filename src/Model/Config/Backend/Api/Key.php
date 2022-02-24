@@ -2,7 +2,10 @@
 
 namespace Synerise\Integration\Model\Config\Backend\Api;
 
-class Key extends \Magento\Config\Model\Config\Backend\Encrypted
+use Magento\Config\Model\Config\Backend\Encrypted;
+use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+
+class Key extends Encrypted
 {
     /**
      * @var \Zend\Validator\Uuid
@@ -35,17 +38,26 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
         \Magento\Framework\App\Config\ScopeConfigInterface $config,
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
-        \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         \Psr\Log\LoggerInterface $logger,
         \Zend\Validator\Uuid $uuidValidator,
         \Synerise\Integration\Helper\Api $apiHelper,
+        \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
+        \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->logger = $logger;
         $this->uuidValidator = $uuidValidator;
         $this->apiHelper = $apiHelper;
-        parent::__construct($context, $registry, $config, $cacheTypeList, $encryptor, $resource, $resourceCollection, $data);
+        parent::__construct(
+            $context,
+            $registry,
+            $config,
+            $cacheTypeList,
+            $encryptor,
+            $resource,
+            $resourceCollection,
+            $data
+        );
     }
 
     public function beforeSave()
@@ -58,7 +70,7 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
                 throw new \Magento\Framework\Exception\ValidatorException(__('Invalid api key format'));
             }
 
-            $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
+            $business_profile_authentication_request = new BusinessProfileAuthenticationRequest([
                 'api_key' => $value
             ]);
 

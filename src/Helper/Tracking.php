@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Magento\Store\Model\Store;
 use Ramsey\Uuid\Uuid;
 
 class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
@@ -26,11 +27,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      * @var  CookieMetadataFactory
      */
     protected $cookieMetadataFactory;
-
-    /**
-     * @var \Magento\Framework\HTTP\Header
-     */
-    protected $httpHeader;
 
     /**
      * @var \Magento\Framework\App\ScopeResolverInterfaceScopeResolverInterface
@@ -71,7 +67,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Backend\Model\Auth\Session $backendSession,
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
-        \Magento\Framework\HTTP\Header $httpHeader,
         \Magento\Framework\Stdlib\CookieManagerInterface $cookieManager,
         CookieMetadataFactory $cookieMetadataFactory,
         \Magento\Catalog\Helper\Image $imageHelper,
@@ -84,7 +79,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         $this->backendSession = $backendSession;
         $this->cookieManager = $cookieManager;
         $this->cookieMetadataFactory = $cookieMetadataFactory;
-        $this->httpHeader = $httpHeader;
         $this->storeManager = $storeManager;
         $this->imageHelper = $imageHelper;
         $this->addressRepository = $addressRepository;
@@ -236,8 +230,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getSource()
     {
-        $userAgent = $this->httpHeader->getHttpUserAgent();
-        return \Zend_Http_UserAgent_Mobile::match($userAgent, $_SERVER) ? "WEB_MOBILE" : "WEB_DESKTOP";
+        $userAgent = $this->_httpHeader->getHttpUserAgent();
+        $server = $this->_request->getServer();
+
+        return \Zend_Http_UserAgent_Mobile::match($userAgent, $server) ? "WEB_MOBILE" : "WEB_DESKTOP";
     }
 
     public function getApplicationName()
@@ -253,7 +249,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     public function getEventLabel($event)
     {
         if (!\Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event]) {
-            throw new \Exception('Invalid event');
+            throw new \InvalidArgumentException('Invalid event');
         }
 
         return \Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event];
@@ -363,7 +359,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    function overflow32($v)
+    protected function overflow32($v)
     {
         $v = $v % 4294967296;
         if ($v > 2147483647) {
@@ -375,7 +371,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    function hashString($s)
+    protected function hashString($s)
     {
         $h = 0;
         $len = strlen($s);
@@ -399,7 +395,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function isAdminStore()
     {
-        return $this->isAdminLoggedIn() || $this->scopeResolver->getScope()->getCode() == \Magento\Store\Model\Store::ADMIN_CODE;
+        return $this->isAdminLoggedIn() || $this->scopeResolver->getScope()->getCode() == Store::ADMIN_CODE;
     }
 
     public function isAdminLoggedIn(): bool

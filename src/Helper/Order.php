@@ -3,26 +3,23 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Catalog\Helper\Image;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Helper\Context;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Stdlib\DateTime\DateTime;
 use Synerise\ApiClient\ApiException;
 
 class Order extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    protected $configWriter;
-    protected $cacheManager;
+    /**
+     * @var DateTime
+     */
     protected $dateTime;
 
     /**
-     * @var StoreManagerInterface
+     * @var ResourceConnection
      */
-    private $storeManager;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    protected $resource;
 
     /**
      * @var Api
@@ -39,40 +36,18 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected $imageHelper;
 
-    protected $categoryRepository;
-
     protected $formattedCategoryPaths = [];
 
-    protected $addressRepository;
-
-    protected $subscriber;
-
-    protected $resource;
-
     public function __construct(
-        \Magento\Catalog\Model\CategoryRepository $categoryRepository,
-        \Magento\Framework\App\ResourceConnection $resource,
-        \Magento\Framework\App\Helper\Context $context,
-        \Magento\Framework\App\Cache\Manager $cacheManager,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
-        \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
-        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
-        \Magento\Newsletter\Model\Subscriber $subscriber,
-        StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
+        Context $context,
+        ResourceConnection $resource,
+        ScopeConfigInterface $scopeConfig,
+        DateTime $dateTime,
         Api $apiHelper,
         Tracking $trackingHelper,
         Image $imageHelper
     ) {
-        $this->addressRepository = $addressRepository;
-        $this->subscriber= $subscriber;
-        $this->storeManager = $storeManager;
-        $this->logger = $logger;
-        $this->categoryRepository = $categoryRepository;
         $this->resource = $resource;
-        $this->cacheManager = $cacheManager;
-        $this->configWriter = $configWriter;
         $this->scopeConfig = $scopeConfig;
         $this->dateTime = $dateTime;
         $this->apiHelper = $apiHelper;
@@ -260,17 +235,6 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     public function getAttributesToSelect()
     {
         return '*';
-    }
-
-    public function getDefaultWebsiteCode()
-    {
-        try {
-            $websiteCode = $this->storeManager->getWebsite()->getCode();
-        } catch (LocalizedException $localizedException) {
-            $websiteCode = null;
-            $this->logger->error($localizedException->getMessage());
-        }
-        return $websiteCode;
     }
 
     public function markItemsAsSent($ids)

@@ -15,8 +15,8 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
     protected function _construct()
     {
         $this->_init(
-            'Synerise\Integration\Model\Cron\Status',
-            'Synerise\Integration\ResourceModel\Cron\Status'
+            \Synerise\Integration\Model\Cron\Status::class,
+            \Synerise\Integration\ResourceModel\Cron\Status::class
         );
     }
 }

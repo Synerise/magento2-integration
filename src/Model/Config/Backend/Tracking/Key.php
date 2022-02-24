@@ -7,7 +7,7 @@ class Key extends \Magento\Framework\App\Config\Value
     /**
      * @var \Synerise\Integration\Helper\Tracking
      */
-    var $trackingHelper;
+    protected $trackingHelper;
 
     /**
      * @param \Magento\Framework\Model\Context $context

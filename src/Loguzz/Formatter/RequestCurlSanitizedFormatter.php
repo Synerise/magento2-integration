@@ -16,7 +16,8 @@ class RequestCurlSanitizedFormatter extends RequestCurlFormatter
 
         $authorizationString = $this->options['headers']['Authorization'];
         if ($authorizationString) {
-            $this->options['headers']['Authorization'] = preg_replace('/(Bearer )(.*)/', '$1{TOKEN}', $authorizationString);
+            $this->options['headers']['Authorization'] =
+                preg_replace('/(Bearer )(.*)/', '$1{TOKEN}', $authorizationString);
         }
     }
 }

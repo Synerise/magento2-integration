@@ -76,7 +76,6 @@ class InstallData implements InstallDataInterface
             ->setData('used_in_forms', ['adminhtml_customer'])
             ->save();
 
-
         $eavSetup->addAttribute(
             \Magento\Catalog\Model\Product::ENTITY,
             'synerise_updated_at',
