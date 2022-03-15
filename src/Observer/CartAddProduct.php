@@ -35,7 +35,7 @@ class CartAddProduct implements ObserverInterface
                 "uuid" => $this->trackingHelper->getClientUuid(),
             ],
             'params' => $this->trackingHelper->prepareParamsfromQuoteProduct(
-                $observer->getEvent()->getProduct()
+                $observer->getQuoteItem()->getProduct()
             )
         ]);
 

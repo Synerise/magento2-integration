@@ -27,7 +27,7 @@
     <event name="sales_order_save_after">
         <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\OrderPlace" />
     </event>
-    <event name="checkout_cart_add_product_complete">
+    <event name="sales_quote_add_item">
         <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\CartAddProduct" />
     </event>
     <event name="sales_quote_remove_item">
