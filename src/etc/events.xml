@@ -30,6 +30,9 @@
     <event name="sales_quote_add_item">
         <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\CartAddProduct" />
     </event>
+    <event name="sales_quote_save_after">
+        <observer name="synerise_sales_quote_product_add_after" instance="Synerise\Integration\Observer\CartStatus" />
+    </event>
     <event name="sales_quote_remove_item">
         <observer name="synerise_sales_quote_remove_item" instance="Synerise\Integration\Observer\CartRemoveProduct" />
     </event>

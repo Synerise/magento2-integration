@@ -47,11 +47,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected $apiHelper;
 
-    /**
-     * @var \Magento\Catalog\Helper\Image
-     */
-    protected $imageHelper;
-
     protected $addressRepository;
 
     protected $customerSession;
@@ -74,7 +69,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\HTTP\Header $httpHeader,
         \Magento\Framework\Stdlib\CookieManagerInterface $cookieManager,
         CookieMetadataFactory $cookieMetadataFactory,
-        \Magento\Catalog\Helper\Image $imageHelper,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
         \Magento\Customer\Model\Session $customerSession,
@@ -86,7 +80,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         $this->cookieMetadataFactory = $cookieMetadataFactory;
         $this->httpHeader = $httpHeader;
         $this->storeManager = $storeManager;
-        $this->imageHelper = $imageHelper;
         $this->addressRepository = $addressRepository;
         $this->customerSession = $customerSession;
         $this->subscriber= $subscriber;
@@ -229,11 +222,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return $dateTime->format(self::FORMAT_ISO_8601);
     }
 
-    public function getCurrencyCode()
-    {
-        return $this->storeManager->getStore()->getCurrentCurrency()->getCode();
-    }
-
     public function getSource()
     {
         $userAgent = $this->httpHeader->getHttpUserAgent();
@@ -257,65 +245,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return \Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event];
-    }
-
-    /**
-     * @param \Magento\Catalog\Model\Product $product
-     * @return array
-     * @throws \Exception
-     */
-    public function prepareParamsfromQuoteProduct($product)
-    {
-        $sku = $product->getData('sku');
-        $skuVariant = $product->getSku();
-
-        $params = [
-            "source" => $this->getSource(),
-            "applicationName" => $this->getApplicationName(),
-            "sku" => $sku,
-            "name" => $product->getName(),
-            "regularUnitPrice" => [
-                "amount" => (float) $product->getPrice(),
-                "currency" => $this->getCurrencyCode()
-            ],
-            "finalUnitPrice" => [
-                "amount" => (float) $product->getFinalPrice(),
-                "currency" => $this->getCurrencyCode()
-            ],
-            "productUrl" => $product->getUrlInStore(),
-            "quantity" => $product->getQty()
-        ];
-
-        if($sku!= $skuVariant) {
-            $params['skuVariant'] = $skuVariant;
-        }
-
-        if($product->getSpecialPrice())
-        {
-            $params['discountedUnitPrice'] = [
-                "amount" => $product->getSpecialPrice(),
-                "currency" => $this->getCurrencyCode()
-            ];
-        }
-
-        $categories = $product->getCategoryIds();
-        if($categories) {
-            $params['categories'] = $categories;
-
-            $category = $product->getCategoryId();
-            if($category) {
-                $params['category'] = $category;
-            }
-        }
-
-        if($product->getImage()) {
-            $imageUrl = $this->imageHelper->init($product, 'product_base_image')->getUrl();
-            if($imageUrl) {
-                $params['image'] = $imageUrl;
-            }
-        }
-
-        return $params;
     }
 
     public function manageClientUuid($email)

@@ -38,6 +38,11 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected $apiHelper;
 
+    /**
+     * @var \Magento\Catalog\Helper\Image
+     */
+    protected $imageHelper;
+
     protected $categoryRepository;
 
     /**
@@ -57,6 +62,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Catalog\Model\ResourceModel\Product\Action $action,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
+        \Magento\Catalog\Helper\Image $imageHelper,
         \Magento\ConfigurableProduct\Model\Product\Type\Configurable $configurable,
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\Cache\Manager $cacheManager,
@@ -74,6 +80,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->logger = $logger;
         $this->categoryRepository = $categoryRepository;
         $this->productRepository = $productRepository;
+        $this->imageHelper = $imageHelper;
         $this->configurable = $configurable;
         $this->action = $action;
         $this->cacheManager = $cacheManager;
@@ -233,6 +240,105 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             'item_key' => $value['itemId'],
             'value' => $value
         ]);
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\Product $product
+     * @return array
+     * @throws \Exception
+     */
+    public function prepareParamsFromQuoteProduct($product)
+    {
+        $sku = $product->getData('sku');
+        $skuVariant = $product->getSku();
+
+        $params = [
+            "sku" => $sku,
+            "name" => $product->getName(),
+            "regularUnitPrice" => [
+                "amount" => (float) $product->getPrice(),
+                "currency" => $this->getCurrencyCode()
+            ],
+            "finalUnitPrice" => [
+                "amount" => (float) $product->getFinalPrice(),
+                "currency" => $this->getCurrencyCode()
+            ],
+            "productUrl" => $product->getUrlInStore(),
+            "quantity" => $product->getQty()
+        ];
+
+        if($sku!= $skuVariant) {
+            $params['skuVariant'] = $skuVariant;
+        }
+
+        if($product->getSpecialPrice())
+        {
+            $params['discountedUnitPrice'] = [
+                "amount" => $product->getSpecialPrice(),
+                "currency" => $this->getCurrencyCode()
+            ];
+        }
+
+        $categoryIds = $product->getCategoryIds();
+        if($categoryIds) {
+            $params['categories'] = [];
+            foreach($categoryIds as $categoryId) {
+                $params['categories'][] = $this->getFormattedCategoryPath($categoryId);
+            }
+
+            if($product->getCategoryId()) {
+                $category = $this->getFormattedCategoryPath($product->getCategoryId());
+                if($category) {
+                    $params['category'] = $category;
+                }
+            }
+        }
+
+        if($product->getImage()) {
+            $imageUrl = $this->imageHelper->init($product, 'product_base_image')->getUrl();
+            if($imageUrl) {
+                $params['image'] = $imageUrl;
+            }
+        }
+
+        return $params;
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\Product $product
+     * @return array
+     * @throws \Exception
+     */
+    public function prepareParamsfromQuoteItemForStatus($item)
+    {
+        $product = $item->getProduct();
+
+        $sku = $product->getData('sku');
+        $skuVariant = $item->getSku();
+
+        $params = [
+            "sku" => $sku,
+            "quantity" => $item->getQty()
+        ];
+
+        if($sku!= $skuVariant) {
+            $params['skuVariant'] = $skuVariant;
+        }
+
+        $categoryIds = $product->getCategoryIds();
+        if($categoryIds) {
+            $params['categories'] = [];
+            foreach($categoryIds as $categoryId) {
+                $params['categories'][] = $this->getFormattedCategoryPath($categoryId);
+            }
+        }
+
+        return $params;
+    }
+
+    public function getCurrencyCode()
+    {
+        return $this->storeManager->getStore()->getCurrentCurrency()->getCode();
     }
 
     public function getTypeSpecificData(\Magento\Catalog\Model\Product $product)
