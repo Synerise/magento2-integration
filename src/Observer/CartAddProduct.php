@@ -30,9 +30,12 @@ class CartAddProduct implements ObserverInterface
             return;
         }
 
-        $params = $this->catalogHelper->prepareParamsfromQuoteProduct(
-            $observer->getQuoteItem()->getProduct()
-        );
+        $product = $observer->getQuoteItem()->getProduct();
+        if($product->getParentProductId()) {
+            return;
+        }
+
+        $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
 
         $params["source"] = $this->trackingHelper->getSource();
         $params["applicationName"] = $this->trackingHelper->getApplicationName();

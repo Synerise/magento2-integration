@@ -52,7 +52,7 @@ class CartStatus implements ObserverInterface
             }
         }
 
-        $customeventRequest = new \Synerise\ApiClient\Model\CustomeventRequest([
+        $customEventRequest = new \Synerise\ApiClient\Model\CustomeventRequest([
             'time' => $this->trackingHelper->getCurrentTime(),
             'action' => 'cart.status',
             'label' => 'CartStatus',
@@ -68,7 +68,7 @@ class CartStatus implements ObserverInterface
 
         try {
             $this->apiHelper->getDefaultApiInstance()
-                ->customEvent('4.4', $customeventRequest);
+                ->customEvent('4.4', $customEventRequest);
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
