@@ -7,7 +7,7 @@ use function Webmozart\Assert\Tests\StaticAnalysis\resource;
 
 class CartStatus implements ObserverInterface
 {
-    const EVENT = 'checkout_cart_add_product_complete';
+    const EVENT = 'sales_quote_save_after';
 
     protected $apiHelper;
     protected $catalogHelper;
