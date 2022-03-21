@@ -167,8 +167,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getCookieDomain()
     {
-        $baseUrl = $this->storeManager->getStore()->getBaseUrl();
-        return rtrim(preg_replace('#^https?://#', '.', $baseUrl), DIRECTORY_SEPARATOR);
+        $parsedUrl = parse_url($this->storeManager->getStore()->getBaseUrl());
+        return '.'.$parsedUrl['host'];
     }
 
     public function setClientUuidAndResetCookie($uuid)
