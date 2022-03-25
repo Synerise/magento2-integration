@@ -7,11 +7,12 @@ use \Magento\Framework\Data\OptionSourceInterface;
 
 class Attributes implements OptionSourceInterface
 {
-    const REQUIRED = [
+    const EXCLUDED = [
         'email',
         'entity_id',
         'firstname',
-        'lastname'
+        'lastname',
+        'password_hash'
     ];
 
     /** @var CollectionFactory */
@@ -35,7 +36,7 @@ class Attributes implements OptionSourceInterface
         $options = [];
 
         foreach ($collection as $item) {
-            if(!in_array($item->getAttributeCode(), self::REQUIRED)) {
+            if(!in_array($item->getAttributeCode(), self::EXCLUDED)) {
                 $options[] = [
                     'value' => $item->getAttributeCode(),
                     'label' => $item->getAttributeCode()

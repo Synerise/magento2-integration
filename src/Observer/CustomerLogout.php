@@ -54,18 +54,13 @@ class CustomerLogout implements ObserverInterface
 
         try {
             $customer = $observer->getEvent()->getCustomer();
+
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $this->customerHelper->prepareIdentityParams(
                     $customer,
                     $this->trackingHelper->getClientUuid()
-                ),
-                'params' => array_merge(
-                    [
-                        "applicationName" => $this->trackingHelper->getApplicationName()
-                    ],
-                    $this->customerHelper->preapreAdditionalParams($customer)
                 )
             ]);
 
