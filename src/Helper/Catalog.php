@@ -304,12 +304,25 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         return $params;
     }
 
+    public function prepareProductsFromQuote($quote)
+    {
+        $products = [];
+        $items = $quote->getAllVisibleItems();
+        if(is_array($items)) {
+            foreach($items as $item) {
+                $products[] = $this->prepareProductFromQuoteItem($item);
+            }
+        }
+
+        return $products;
+    }
+
     /**
      * @param \Magento\Catalog\Model\Product $product
      * @return array
      * @throws \Exception
      */
-    public function prepareParamsfromQuoteItemForStatus($item)
+    private function prepareProductFromQuoteItem($item)
     {
         $product = $item->getProduct();
 

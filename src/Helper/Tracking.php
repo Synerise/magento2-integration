@@ -293,6 +293,36 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    public function sendCartStatusEvent($products, $totalAmount, $totalQuantity)
+    {
+        $customEventRequest = new \Synerise\ApiClient\Model\CustomeventRequest([
+            'time' => $this->getCurrentTime(),
+            'action' => 'cart.status',
+            'label' => 'CartStatus',
+            'client' => [
+                "uuid" => $this->getClientUuid(),
+            ],
+            'params' => [
+                'products' => $products,
+                'totalAmount' => $totalAmount,
+                'totalQuantity' => $totalQuantity
+            ]
+        ]);
+
+        try {
+            $this->apiHelper->getDefaultApiInstance()
+                ->customEvent('4.4', $customEventRequest);
+
+        } catch (\Exception $e) {
+            $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
+        }
+    }
+
+    public function hasItemDataChanges(\Magento\Quote\Model\Quote $quote)
+    {
+        return ($quote->dataHasChangedFor('sub_total') || $quote->dataHasChangedFor('items_qty'));
+    }
+
     function overflow32($v)
     {
         $v = $v % 4294967296;

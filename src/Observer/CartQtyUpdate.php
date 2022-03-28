@@ -4,9 +4,9 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 
-class CartStatus implements ObserverInterface
+class CartQtyUpdate implements ObserverInterface
 {
-    const EVENT = 'sales_quote_save_after';
+    const EVENT = 'checkout_cart_update_items_after';
 
     protected $catalogHelper;
     protected $trackingHelper;
@@ -33,16 +33,16 @@ class CartStatus implements ObserverInterface
         }
 
         /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $observer->getQuote();
+        $quote = $observer->getCart()->getQuote();
+        $quote->collectTotals();
 
-        if($this->trackingHelper->hasItemDataChanges($quote)) {
+        if(!$this->trackingHelper->hasItemDataChanges($quote)) {
+            // quote save won't be triggered, send event.
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),
                 $quote->getSubtotalWithDiscount(),
                 $quote->getItemsQty()
             );
-        } elseif($quote->dataHasChangedFor('reserved_order_id')) {
-            $this->trackingHelper->sendCartStatusEvent([], 0, 0);
         }
     }
 }
