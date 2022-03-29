@@ -30,6 +30,10 @@ class CartAddProduct implements ObserverInterface
             return;
         }
 
+        if($this->trackingHelper->isAdminStore()) {
+            return;
+        }
+
         $product = $observer->getQuoteItem()->getProduct();
         if($product->getParentProductId()) {
             return;

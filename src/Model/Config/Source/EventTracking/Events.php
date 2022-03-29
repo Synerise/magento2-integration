@@ -13,6 +13,7 @@ class Events implements \Magento\Framework\Option\ArrayInterface
         'checkout_cart_add_product_complete'    => 'Customer added product to cart',
         'sales_quote_remove_item'               => 'Customer removed product from cart',
         'sales_quote_save_after'                => 'Cart updated',
+        'checkout_cart_update_items_after'      => 'Cart quantities updated',
         'sales_order_place_after'               => 'Order updated',
         'catalog_product_save_after'            => 'Product updated',
         'catalog_product_delete_after'          => 'Product deleted',

@@ -31,6 +31,10 @@ class CartRemoveProduct implements ObserverInterface
             return;
         }
 
+        if($this->trackingHelper->isAdminStore()) {
+            return;
+        }
+
         $params = $this->catalogHelper->prepareParamsFromQuoteProduct(
             $observer->getQuoteItem()->getProduct()
         );

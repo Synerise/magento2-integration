@@ -10,7 +10,7 @@
                 <opengraph>1</opengraph>
             </page_tracking>
             <event_tracking>
-                <events>adminhtml_customer_save_after,customer_save_after,customer_login,customer_logout,customer_register_success,sales_order_place_after,checkout_cart_add_product_complete,sales_quote_save_after,sales_quote_remove_item,catalog_product_save_after,catalog_product_delete_after,newsletter_subscriber_save_after</events>
+                <events>adminhtml_customer_save_after,customer_save_after,customer_login,customer_logout,customer_register_success,sales_order_place_after,checkout_cart_add_product_complete,sales_quote_save_after,checkout_cart_update_items_after,sales_quote_remove_item,catalog_product_save_after,catalog_product_delete_after,newsletter_subscriber_save_after</events>
             </event_tracking>
             <cron_status>
                 <expr>*/5 * * * *</expr>
