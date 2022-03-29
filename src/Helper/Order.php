@@ -216,7 +216,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             ];
         }
 
-        $sku = $product->getSku();
+        $sku = $product ? $product->getSku() : $item->getSku();
         $skuVariant = $item->getSku();
 
         $params = [
@@ -237,9 +237,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $params['categories'] = $categories;
         }
 
-        if($product->getImage()) {
+        $productImage = $product ? $product->getImage() : null;
+        if($productImage) {
             $imageUrl = $this->imageHelper->init($product, 'product_base_image')
-                ->setImageFile($product->getImage())->getUrl();
+                ->setImageFile($productImage)->getUrl();
             if($imageUrl) {
                 $params['image'] = $imageUrl;
             }
