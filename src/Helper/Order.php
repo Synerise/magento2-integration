@@ -7,6 +7,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\CreateatransactionRequest;
 
 class Order extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -102,12 +103,15 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         foreach ($collection as $order) {
             $ids[] = $order->getEntityId();
 
-            $createatransaction_request[] = new \Synerise\ApiClient\Model\CreateatransactionRequest(
-                $this->preapreOrderParams($order)
-            );
+            $params = $this->preapreOrderParams($order);
+            if($params) {
+                $createatransaction_request[] = new CreateatransactionRequest($params);
+            }
         }
 
-        $this->sendOrdersToSynerise($createatransaction_request, $ids);
+        if(!empty($createatransaction_request)) {
+            $this->sendOrdersToSynerise($createatransaction_request, $ids);
+        }
     }
 
     /**
@@ -144,9 +148,19 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
         $products = [];
         foreach($order->getAllItems() as $item){
-            if(!$item->getParentItem()) {
-                $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
+            if($item->getParentItem()) {
+                continue;
             }
+
+            if(!$item->getProduct() && $this->isSent($order->getEntityId())) {
+                $this->_logger->debug(
+                    sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
+                );
+
+                return [];
+            }
+
+            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
         }
 
         $params = [
@@ -176,6 +190,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "amount" => $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
+            'source' => $this->trackingHelper->getSource(),
             'event_salt'  => $order->getRealOrderId()
         ];
 
@@ -190,34 +205,23 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     public function prepareProductParamsFromOrderItem($item, $currency)
     {
         $product = $item->getProduct();
-        $parent = $item->getParentItem();
 
-        if($parent && (float) $item->getOriginalPrice() == '0.00') {
-            $regularPrice = [
-                "amount" => $parent->getOriginalPrice(),
-                "currency" => $currency
-            ];
-        } else {
-            $regularPrice = [
-                "amount" => $item->getOriginalPrice(),
-                "currency" => $currency
-            ];
-        }
+        $regularPrice = [
+            "amount" => $item->getOriginalPrice(),
+            "currency" => $currency
+        ];
 
-        if($parent && (float) $item->getPrice() == '0.00') {
-            $finalUnitPrice = [
-                "amount" => $parent->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
-                "currency" => $currency
-            ];
-        } else {
-            $finalUnitPrice = [
-                "amount" => $item->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
-                "currency" => $currency
-            ];
-        }
+        $finalUnitPrice = [
+            "amount" => $item->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
+            "currency" => $currency
+        ];
 
-        $sku = $product ? $product->getSku() : $item->getSku();
         $skuVariant = $item->getSku();
+        if($item->getProductType() == 'configurable') {
+            $sku = $product ? $product->getSku() : 'N\A';
+        } else {
+            $sku = $item->getSku();
+        }
 
         $params = [
             "sku" => $sku,
@@ -272,6 +276,18 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $this->logger->error($localizedException->getMessage());
         }
         return $websiteCode;
+    }
+
+    public function isSent($orderId)
+    {
+        $connection = $this->resource->getConnection();
+        $select = $connection->select();
+        $tableName = $connection->getTableName('synerise_sync_order');
+
+        $select->from($tableName, ['synerise_updated_at'])
+            ->where('order_id = ?', $orderId);
+
+        return $connection->fetchOne($select);
     }
 
     public function markItemsAsSent($ids)
