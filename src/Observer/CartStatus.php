@@ -38,7 +38,7 @@ class CartStatus implements ObserverInterface
         if($this->trackingHelper->hasItemDataChanges($quote)) {
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),
-                $quote->getSubtotalWithDiscount(),
+                $quote->getSubtotal(),
                 $quote->getItemsQty()
             );
         } elseif($quote->dataHasChangedFor('reserved_order_id')) {

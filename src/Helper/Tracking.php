@@ -320,7 +320,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function hasItemDataChanges(\Magento\Quote\Model\Quote $quote)
     {
-        return ($quote->dataHasChangedFor('sub_total') || $quote->dataHasChangedFor('items_qty'));
+        return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
     }
 
     function overflow32($v)
