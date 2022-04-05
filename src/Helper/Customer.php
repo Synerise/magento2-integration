@@ -153,7 +153,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         if($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
             $this->trackingHelper->setClientUuidAndResetCookie((string) $emailUuid);
         }
-
         $params = $this->preapreAdditionalParams($customer);
 
         $params['email'] = $customer->getEmail();
@@ -291,13 +290,15 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     break;
                 case 'displayName':
                 case 'avatarUrl':
-                    $params[$attribute] = $data[$attribute];
+                    $params[$attribute] = $data[$attribute] ?? null;
                     break;
                 default:
-                    if($includeAttributesNode) {
-                        $params['attributes'][$attribute] = $data[$attribute];
-                    } else {
-                        $params[$attribute] = $data[$attribute];
+                    if(!empty($data[$attribute])) {
+                        if($includeAttributesNode) {
+                            $params['attributes'][$attribute] = $data[$attribute];
+                        } else {
+                            $params[$attribute] = $data[$attribute];
+                        }
                     }
             }
         }

@@ -9,7 +9,6 @@ class Events implements \Magento\Framework\Option\ArrayInterface
         'customer_login'                        => 'Customer login',
         'customer_logout'                       => 'Customer logout',
         'customer_save_after'                   => 'Customer updated',
-        'adminhtml_customer_save_after'         => 'Customer updated by admin',
         'checkout_cart_add_product_complete'    => 'Customer added product to cart',
         'sales_quote_remove_item'               => 'Customer removed product from cart',
         'sales_quote_save_after'                => 'Cart updated',

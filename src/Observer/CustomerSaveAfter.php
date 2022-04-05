@@ -6,7 +6,6 @@ use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Tracking;
