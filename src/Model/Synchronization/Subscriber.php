@@ -12,8 +12,7 @@ use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 
-
-Class Subscriber extends AbstractSynchronization
+class Subscriber extends AbstractSynchronization
 {
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
@@ -64,7 +63,7 @@ Class Subscriber extends AbstractSynchronization
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
-        foreach($ids as $id) {
+        foreach ($ids as $id) {
             $data[] = [
                 'synerise_updated_at' => $timestamp,
                 'subscriber_id' => $id

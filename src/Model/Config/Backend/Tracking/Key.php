@@ -37,7 +37,7 @@ class Key extends \Magento\Framework\App\Config\Value
     {
         $value = trim($this->getValue());
 
-        if($value != '' && !$this->trackingHelper->validateKeyFormat($value)) {
+        if ($value != '' && !$this->trackingHelper->validateKeyFormat($value)) {
             throw new \Magento\Framework\Exception\ValidatorException(__('Invalid tracking key format'));
         }
 

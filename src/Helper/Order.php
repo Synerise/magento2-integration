@@ -58,7 +58,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         Api $apiHelper,
         Catalog $catalogHelper,
         Tracking $trackingHelper
-    ){
+    ) {
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
@@ -81,14 +81,14 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addOrdersBatch($collection)
     {
-        if(!$collection->getSize()) {
+        if (!$collection->getSize()) {
             return;
         }
 
         $ids = [];
         $createatransaction_request = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
@@ -99,12 +99,12 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $uuid = $email ? $this->trackingHelper->genrateUuidByEmail($email): null;
 
             $params = $this->preapreOrderParams($order, $uuid);
-            if($params) {
+            if ($params) {
                 $createatransaction_request[] = new CreateatransactionRequest($params);
             }
         }
 
-        if(!empty($createatransaction_request)) {
+        if (!empty($createatransaction_request)) {
             $this->sendOrdersToSynerise($createatransaction_request, $ids);
         }
     }
@@ -119,7 +119,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
             ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createatransaction_request);
 
-        if(substr($statusCode, 0,1) != 2) {
+        if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
                 $statusCode
@@ -133,7 +133,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'email' => $order->getCustomerEmail()
         ];
 
-        if($uuid) {
+        if ($uuid) {
             $customerData["uuid"] = $uuid;
         }
 
@@ -142,12 +142,12 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $products = [];
-        foreach($order->getAllItems() as $item){
-            if($item->getParentItem()) {
+        foreach ($order->getAllItems() as $item) {
+            if ($item->getParentItem()) {
                 continue;
             }
 
-            if(!$item->getProduct() && $this->isSent($order->getEntityId())) {
+            if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
                 $this->_logger->debug(
                     sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
                 );
@@ -212,7 +212,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         ];
 
         $skuVariant = $item->getSku();
-        if($item->getProductType() == 'configurable') {
+        if ($item->getProductType() == 'configurable') {
             $sku = $product ? $product->getSku() : 'N/A';
         } else {
             $sku = $item->getSku();
@@ -226,23 +226,23 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "quantity" => $item->getQtyOrdered()
         ];
 
-        if($product) {
+        if ($product) {
             $params['url'] = $product->setStoreId($item->getStoreId())->getUrlInStore();
 
             $categoryIds = $product->getCategoryIds();
-            if($categoryIds) {
+            if ($categoryIds) {
                 $params['categories'] = [];
-                foreach($categoryIds as $categoryId) {
+                foreach ($categoryIds as $categoryId) {
                     $params['categories'][] = $this->catalogHelper->getFormattedCategoryPath($categoryId);
                 }
             }
 
-            if($product->getImage()) {
+            if ($product->getImage()) {
                 $params['image'] = $this->catalogHelper->getOriginalImageUrl($product->getImage());
             }
         }
 
-        if($sku!= $skuVariant) {
+        if ($sku!= $skuVariant) {
             $params['skuVariant'] = $skuVariant;
         }
 
@@ -290,7 +290,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
-        foreach($ids as $id) {
+        foreach ($ids as $id) {
             $data[] = [
                 'synerise_updated_at' => $timestamp,
                 'order_id' => $id

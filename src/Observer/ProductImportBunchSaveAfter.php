@@ -92,5 +92,4 @@ class ProductImportBunchSaveAfter implements ObserverInterface
         $products = $this->productRepository->getList($this->searchCriteria);
         return $products->getItems();
     }
-
 }

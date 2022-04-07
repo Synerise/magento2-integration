@@ -7,15 +7,15 @@ use Ramsey\Uuid\Uuid;
 
 class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    CONST COOKIE_CLIENT_PARAMS = '_snrs_p';
+    const COOKIE_CLIENT_PARAMS = '_snrs_p';
 
-    CONST COOKIE_CLIENT_UUID = '_snrs_uuid';
+    const COOKIE_CLIENT_UUID = '_snrs_uuid';
 
-    CONST COOKIE_CLIENT_UUID_RESET = '_snrs_reset_uuid';
+    const COOKIE_CLIENT_UUID_RESET = '_snrs_reset_uuid';
 
-    CONST FORMAT_ISO_8601 = 'Y-m-d\TH:i:s.v\Z';
+    const FORMAT_ISO_8601 = 'Y-m-d\TH:i:s.v\Z';
 
-    CONST APPLICATION_NAME = 'magento2';
+    const APPLICATION_NAME = 'magento2';
 
     /**
      * @var \Magento\Framework\Stdlib\CookieManagerInterface
@@ -74,7 +74,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Customer\Model\Session $customerSession,
         \Magento\Newsletter\Model\Subscriber $subscriber,
         Api $apiHelper
-    ){
+    ) {
         $this->backendSession = $backendSession;
         $this->cookieManager = $cookieManager;
         $this->cookieMetadataFactory = $cookieMetadataFactory;
@@ -107,13 +107,13 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function isEventTrackingEnabled($event = null)
     {
-        if(!$this->scopeConfig->isSetFlag(
+        if (!$this->scopeConfig->isSetFlag(
             \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED
         )) {
             return false;
         }
 
-        if(!$event) {
+        if (!$event) {
             return true;
         }
 
@@ -150,11 +150,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getClientUuid()
     {
-        if($this->isAdminStore()) {
+        if ($this->isAdminStore()) {
             return null;
         }
 
-        if(!$this->clientUuid) {
+        if (!$this->clientUuid) {
             $this->clientUuid = $this->getClientUuidFromCookie();
         }
         return $this->clientUuid;
@@ -191,13 +191,13 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getCookieParams($value = null)
     {
-        if(!$this->cookieParams) {
+        if (!$this->cookieParams) {
             $paramsArray = [];
             $items = explode('&', $this->getCookieParamsString());
-            if($items) {
-                foreach($items as $item) {
+            if ($items) {
+                foreach ($items as $item) {
                     $values = explode(':', $item);
-                    if(isset($values[1])) {
+                    if (isset($values[1])) {
                         $paramsArray[$values[0]] = $values[1];
                     }
                 }
@@ -205,7 +205,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        if($value) {
+        if ($value) {
             return isset($this->cookieParams[$value]) ? $this->cookieParams[$value] : null;
         }
 
@@ -240,7 +240,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getEventLabel($event)
     {
-        if(!\Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event]) {
+        if (!\Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event]) {
             throw new \Exception('Invalid event');
         }
 
@@ -249,14 +249,14 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function manageClientUuid($email)
     {
-        if($this->isAdminStore()) {
+        if ($this->isAdminStore()) {
             return;
         }
 
         $uuid = $this->getClientUuidFromCookie();
         $emailUuid = $this->genrateUuidByEmail($email);
 
-        if($uuid == $emailUuid) {
+        if ($uuid == $emailUuid) {
             // email uuid already set
             return;
         }
@@ -265,7 +265,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         $this->setClientUuidAndResetCookie((string) $emailUuid);
 
         $identityHash = $this->getCookieParams('identityHash');
-        if($identityHash && $identityHash != $this->hashString($email)) {
+        if ($identityHash && $identityHash != $this->hashString($email)) {
             // Different user, skip merge.
             return;
         }
@@ -283,9 +283,9 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
         try {
             list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
-                ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $createAClientInCrmRequests);
+                ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-            if($statusCode != 202) {
+            if ($statusCode != 202) {
                 $this->_logger->error('Client update with uuid reset failed');
             }
         } catch (\Exception $e) {
@@ -326,16 +326,20 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     function overflow32($v)
     {
         $v = $v % 4294967296;
-        if ($v > 2147483647) return $v - 4294967296;
-        elseif ($v < -2147483648) return $v + 4294967296;
-        else return $v;
+        if ($v > 2147483647) {
+            return $v - 4294967296;
+        } elseif ($v < -2147483648) {
+            return $v + 4294967296;
+        } else {
+            return $v;
+        }
     }
 
     function hashString($s)
     {
         $h = 0;
         $len = strlen($s);
-        for($i = 0; $i < $len; $i++) {
+        for ($i = 0; $i < $len; $i++) {
             $h = $this->overflow32(31 * $h + ord($s[$i]));
         }
 

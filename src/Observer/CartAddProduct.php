@@ -26,16 +26,16 @@ class CartAddProduct implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if($this->trackingHelper->isAdminStore()) {
+        if ($this->trackingHelper->isAdminStore()) {
             return;
         }
 
         $product = $observer->getQuoteItem()->getProduct();
-        if($product->getParentProductId()) {
+        if ($product->getParentProductId()) {
             return;
         }
 

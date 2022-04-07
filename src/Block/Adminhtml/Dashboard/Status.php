@@ -79,7 +79,7 @@ class Status extends \Magento\Backend\Block\Template
      */
     public function getProcessedItemsCount()
     {
-        if($this->table) {
+        if ($this->table) {
             $connection = $this->connection;
             $select = $connection->select()->from($connection->getTableName($this->table), 'COUNT(*)');
             return (int)$connection->fetchOne($select);
@@ -89,9 +89,9 @@ class Status extends \Magento\Backend\Block\Template
             }
 
             $collection = $this->collectionFactory->create()
-                ->addAttributeToFilter('synerise_updated_at', array(
+                ->addAttributeToFilter('synerise_updated_at', [
                     'gteq' => new \Zend_Db_Expr('updated_at')
-                ));
+                ]);
 
             return $collection->getSize();
         }
@@ -104,7 +104,7 @@ class Status extends \Magento\Backend\Block\Template
      */
     public function getTotalItemsCount()
     {
-        if(!$this->collectionFactory) {
+        if (!$this->collectionFactory) {
             return '';
         }
 
@@ -122,5 +122,4 @@ class Status extends \Magento\Backend\Block\Template
     {
         return $this->getUrl($this->resetStopIdUrlPath);
     }
-
 }

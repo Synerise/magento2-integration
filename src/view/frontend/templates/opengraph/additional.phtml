@@ -7,7 +7,7 @@ $catalogHelper = $this->helper(\Synerise\Integration\Helper\Catalog::class);
 /** @var $trackingHelper \Synerise\Integration\Helper\Tracking */
 $trackingHelper = $this->helper(\Synerise\Integration\Helper\Tracking::class);
 
-if($trackingHelper->isPageTrackingEnabled() && $trackingHelper->isOpengraphEnabled() && $product = $block->getProduct()):
+if ($trackingHelper->isPageTrackingEnabled() && $trackingHelper->isOpengraphEnabled() && $product = $block->getProduct()):
     if ($priceAmount = $block->getProduct()
         ->getPriceInfo()
         ->getPrice(\Magento\Catalog\Pricing\Price\RegularPrice::PRICE_CODE)
@@ -15,15 +15,15 @@ if($trackingHelper->isPageTrackingEnabled() && $trackingHelper->isOpengraphEnabl
         <meta property="product:original_price:amount" content="<?= $block->escapeHtmlAttr($priceAmount) ?>"/>
         <?= $block->getChildHtml('meta.currency') ?>
 <meta property="product:retailer_part_no" content="<?php echo $product->getSku(); ?>"/>
-<?php
+        <?php
     endif;
 
     $categoryIds = $product->getCategoryIds();
-    if($categoryIds):
+    if ($categoryIds):
         foreach ($categoryIds as $categoryId):
-?>
+            ?>
 <meta property="product:category" content="<?php echo $catalogHelper->getFormattedCategoryPath($categoryId); ?>"/>
-<?php
+            <?php
         endforeach;
     endif;
 endif;

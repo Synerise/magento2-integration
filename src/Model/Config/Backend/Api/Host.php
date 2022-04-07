@@ -43,7 +43,7 @@ class Host extends \Magento\Framework\App\Config\Value
     {
         $value = rtrim($this->getValue(), DIRECTORY_SEPARATOR);
         $this->setValue($value);
-        if(!$this->validateSecureUrl($value)) {
+        if (!$this->validateSecureUrl($value)) {
             throw new \Magento\Framework\Exception\LocalizedException(__('Specify a valid secure URL.'));
         }
     }
