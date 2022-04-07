@@ -12,11 +12,17 @@ use Magento\Newsletter\Model\Subscriber;
 
 class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    CONST GENDER = array(
+    CONST UPDATE_GENDER = [
         1 => InBodyClientSex::MALE,
         2 => InBodyClientSex::FEMALE,
         3 => InBodyClientSex::NOT_SPECIFIED
-    );
+    ];
+
+    CONST EVENT_GENDER = [
+        1 => 2,
+        2 => 1,
+        3 => 0
+    ];
 
     protected $configWriter;
     protected $cacheManager;
@@ -95,12 +101,12 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         foreach ($collection as $customer) {
             $ids[] = $customer->getEntityId();
 
-            $createAClientInCrmRequests[] = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
-                array_merge(
-                    $this->prepareIdentityParams($customer),
-                    $this->preapreAdditionalParams($customer)
-                )
-            );
+            $params = $this->preapreAdditionalParams($customer);
+            $params['email'] = $customer->getEmail();
+            $params['custom_id'] = $customer->getId();
+            $params['attributes'] = !empty($attributes) ? $attributes : null;
+
+            $createAClientInCrmRequests[] = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest($params);
         }
 
         $this->sendCustomersToSynerise($createAClientInCrmRequests);
@@ -135,6 +141,11 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         $this->sendCustomersToSynerise($createAClientInCrmRequests);
     }
 
+    /**
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
+     * @param string|null $prevUuid
+     * @throws LocalizedException
+     */
     public function addOrUpdateClient($customer, $prevUuid = null)
     {
         $emailUuid = $this->trackingHelper->genrateUuidByEmail($customer->getEmail());
@@ -142,21 +153,23 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         if($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
             $this->trackingHelper->setClientUuidAndResetCookie((string) $emailUuid);
         }
+        $params = $this->preapreAdditionalParams($customer);
 
-        $createAClientInCrmRequests = [
-            new \Synerise\ApiClient\Model\CreateaClientinCRMRequest([
-                'email' => $customer->getEmail(),
-                'uuid' => $emailUuid,
-                'custom_id' => $customer->getId(),
-                'first_name' => $customer->getFirstname(),
-                'last_name' => $customer->getLastname(),
-                $this->preapreAdditionalParams($customer)
-            ])
-        ];
+        $params['email'] = $customer->getEmail();
+        $params['custom_id'] = $customer->getId();
+        $params['uuid'] = $emailUuid;
+        $params['first_name'] = $customer->getFirstname();
+        $params['last_name'] = $customer->getLastname();
 
         try {
             list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
-                ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $createAClientInCrmRequests);
+                ->batchAddOrUpdateClientsWithHttpInfo(
+                    'application/json',
+                    '4.4',
+                    [
+                        new \Synerise\ApiClient\Model\CreateaClientinCRMRequest($params)
+                    ]
+                );
 
             if($statusCode != 202) {
                 $this->logger->error('Client update failed');
@@ -215,23 +228,40 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function preapreAdditionalParams($customer)
     {
-        $params = [
-            'firstname' => $customer->getFirstname(),
-            'lastname' => $customer->getLastname(),
-        ];
+        return $this->mapAttributesToParams($customer->getData(), true);
+    }
 
-        $attributes = $this->getAttributes();
-        $data = (array) $customer;
+    public function preapreParamsForEvent($customer)
+    {
+        if(is_a($customer, 'Magento\Customer\Model\Data\Customer')) {
+            /** @var \Magento\Customer\Model\Data\Customer $customer */
+            $data = $customer->__toArray();
+        } else {
+            /** @var \Magento\Customer\Model\Customer\Interceptor $customer */
+            $data = (array) $customer->getData();
+        }
 
-        foreach($attributes as $attribute) {
+        $params = $this->mapAttributesToParams($data);
+        $params['applicationName'] = $this->trackingHelper->getApplicationName();
+        $params['firstname'] = $customer->getFirstname();
+        $params['lastname'] = $customer->getLastname();
+
+        return $params;
+    }
+
+    protected function mapAttributesToParams($data, $includeAttributesNode = false)
+    {
+        $params = [];
+        $selectedAttributes = $this->getAttributes();
+        foreach($selectedAttributes as $attribute) {
             if(!isset($data[$attribute])) {
                 continue;
             }
 
             switch($attribute) {
                 case 'default_billing':
-                    $defaultAddress = $customer->getDefaultBilling() ?
-                        $this->addressRepository->getById($customer->getDefaultBilling()) : null;
+                    $defaultAddress = !empty($data['default_billing']) ?
+                        $this->addressRepository->getById($data['default_billing']) : null;
 
                     if($defaultAddress) {
                         $params['phone'] = $defaultAddress->getTelephone();
@@ -245,22 +275,35 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     }
                     break;
                 case 'dob':
-                    $params['birth_date'] = $customer->getDob();
+                    if($includeAttributesNode) {
+                        $params['birth_date'] = !empty($data['dob']) ? substr($data['dob'],0,10) : null;
+                    } else {
+                        $params['birthdate'] = !empty($data['dob']) ? substr($data['dob'],0,10) : null;
+                    }
                     break;
                 case 'gender':
-                    $params['sex'] = $this->prepareCustomerGender($customer);
+                    if($includeAttributesNode) {
+                        $params['sex'] = self::UPDATE_GENDER[$data['gender']] ?? null;
+                    } else {
+                        $params['sex'] = self::EVENT_GENDER[$data['gender']] ?? null;
+                    }
+                    break;
+                case 'displayName':
+                case 'avatarUrl':
+                    $params[$attribute] = $data[$attribute] ?? null;
                     break;
                 default:
-                    $params[$attribute] = $data[$attribute];
+                    if(!empty($data[$attribute])) {
+                        if($includeAttributesNode) {
+                            $params['attributes'][$attribute] = $data[$attribute];
+                        } else {
+                            $params[$attribute] = $data[$attribute];
+                        }
+                    }
             }
         }
 
         return $params;
-    }
-
-    public function prepareCustomerGender($customer)
-    {
-        return isset(self::GENDER[$customer->getGender()]) ? self::GENDER[$customer->getGender()] : null;
     }
 
     public function getAttributes()

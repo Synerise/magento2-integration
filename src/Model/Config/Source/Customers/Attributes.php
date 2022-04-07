@@ -14,6 +14,10 @@ class Attributes implements OptionSourceInterface
         'lastname'
     ];
 
+    const EXCLUDED = [
+        'password_hash'
+    ];
+
     /** @var CollectionFactory */
     private $collectionFactory;
 
@@ -34,8 +38,10 @@ class Attributes implements OptionSourceInterface
         $collection = $this->collectionFactory->create();
         $options = [];
 
+        $excluded = array_merge(self::REQUIRED, self::EXCLUDED);
+
         foreach ($collection as $item) {
-            if(!in_array($item->getAttributeCode(), self::REQUIRED)) {
+            if (!in_array($item->getAttributeCode(), $excluded)) {
                 $options[] = [
                     'value' => $item->getAttributeCode(),
                     'label' => $item->getAttributeCode()

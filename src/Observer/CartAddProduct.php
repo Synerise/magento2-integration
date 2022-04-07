@@ -15,10 +15,12 @@ class CartAddProduct implements ObserverInterface
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
+        \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
+        $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
     }
 
@@ -28,15 +30,27 @@ class CartAddProduct implements ObserverInterface
             return;
         }
 
+        if($this->trackingHelper->isAdminStore()) {
+            return;
+        }
+
+        $product = $observer->getQuoteItem()->getProduct();
+        if($product->getParentProductId()) {
+            return;
+        }
+
+        $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
+
+        $params["source"] = $this->trackingHelper->getSource();
+        $params["applicationName"] = $this->trackingHelper->getApplicationName();
+
         $eventClientAction = new \Synerise\ApiClient\Model\ClientaddedproducttocartRequest([
             'time' => $this->trackingHelper->getCurrentTime(),
             'label' => $this->trackingHelper->getEventLabel(self::EVENT),
             'client' => [
                 "uuid" => $this->trackingHelper->getClientUuid(),
             ],
-            'params' => $this->trackingHelper->prepareParamsfromQuoteProduct(
-                $observer->getEvent()->getProduct()
-            )
+            'params' => $params
         ]);
 
         try {
