@@ -194,14 +194,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function prepareItemRequest($product, $attributes, $websiteId)
     {
-        $value = array_merge(
-            [
-                'itemId' => $product->getSku(),
-                'price' => $product->getPrice(),
-                'deleted' => 0
-            ],
-            $this->getTypeSpecificData($product)
-        );
+        $value = $this->getTypeSpecificData($product);
+        $value['itemId'] = $product->getSku();
+        $value['price'] = $product->getPrice();
+        $value['deleted'] = 0;
 
         foreach ($attributes as $attribute) {
             $productValue = $product->getData($attribute);
