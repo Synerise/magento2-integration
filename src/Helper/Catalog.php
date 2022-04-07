@@ -29,24 +29,14 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     private $stockRegistry;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * @var Api
      */
     protected $apiHelper;
 
-    /**
-     * @var \Magento\Catalog\Helper\Image
-     */
-    protected $imageHelper;
-
     protected $categoryRepository;
 
     /**
-     * @var ProductRepositoryInterface
+     * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
     private $productRepository;
 
@@ -58,35 +48,38 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $parentData = [];
 
+    /**
+     * @var \Magento\Framework\View\Asset\ContextInterface
+     */
+    private $assetContext;
+
     public function __construct(
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Catalog\Model\ResourceModel\Product\Action $action,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Catalog\Helper\Image $imageHelper,
         \Magento\ConfigurableProduct\Model\Product\Type\Configurable $configurable,
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\Cache\Manager $cacheManager,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
+        \Magento\Framework\View\Asset\ContextInterface $assetContext,
         \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
-        LoggerInterface $logger,
         Api $apiHelper
     ){
         $this->stockRegistry = $stockRegistry;
         $this->storeManager = $storeManager;
-        $this->logger = $logger;
         $this->categoryRepository = $categoryRepository;
         $this->productRepository = $productRepository;
-        $this->imageHelper = $imageHelper;
         $this->configurable = $configurable;
         $this->action = $action;
         $this->cacheManager = $cacheManager;
         $this->configWriter = $configWriter;
         $this->scopeConfig = $scopeConfig;
         $this->dateTime = $dateTime;
+        $this->assetContext = $assetContext;
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
 
@@ -230,7 +223,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if($product->getImage()) {
-            $value['image'] = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
+            $value['image'] = $this->getOriginalImageUrl($product->getImage());
         }
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
@@ -295,10 +288,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if($product->getImage()) {
-            $imageUrl = $this->imageHelper->init($product, 'product_base_image')->getUrl();
-            if($imageUrl) {
-                $params['image'] = $imageUrl;
-            }
+            $params['image'] = $this->getOriginalImageUrl($product->getImage());
         }
 
         return $params;
@@ -396,7 +386,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         try {
             return $this->productRepository->getById($productId, false, $storeId);
         } catch(NoSuchEntityException $exception) {
-            $this->logger->error("Product Id not found", [$exception]);
+            $this->_logger->error("Product Id not found", [$exception]);
         }
 
         return null;
@@ -414,7 +404,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $stockData = $stockStatus->getStockItem();
 
         } catch (\Exception $exception) {
-            $this->logger->error($exception->getMessage());
+            $this->_logger->error($exception->getMessage());
         }
         return $stockData;
     }
@@ -490,18 +480,15 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
+
     /**
-     * @return int|null
+     * Get URL to the original version of the product image.
+     *
+     * @return string
      */
-    public function getDefaultWebsiteId()
+    public function getOriginalImageUrl($filePath)
     {
-        try {
-            $website = $this->storeManager->getDefaultStoreView()->getWebsiteId();
-        } catch (LocalizedException $localizedException) {
-            $website = null;
-            $this->logger->error($localizedException->getMessage());
-        }
-        return $website;
+        return $filePath ? $this->assetContext->getBaseUrl() . $filePath : null;
     }
 
     /**
@@ -513,13 +500,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $website = $this->storeManager->getDefaultStoreView()->getId();
         } catch (LocalizedException $localizedException) {
             $website = null;
-            $this->logger->error($localizedException->getMessage());
+            $this->_logger->error($localizedException->getMessage());
         }
         return $website;
-    }
-
-    public function getSelectedStoreViews()
-    {
-
     }
 }

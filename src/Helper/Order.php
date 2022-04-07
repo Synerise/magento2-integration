@@ -5,7 +5,6 @@ namespace Synerise\Integration\Helper;
 use Magento\Catalog\Helper\Image;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 
@@ -21,24 +20,19 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     private $storeManager;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * @var Api
      */
     protected $apiHelper;
 
     /**
+     * @var Catalog
+     */
+    private $catalogHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
-
-    /**
-     * @var Image
-     */
-    protected $imageHelper;
 
     protected $categoryRepository;
 
@@ -61,15 +55,13 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
         \Magento\Newsletter\Model\Subscriber $subscriber,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
         Api $apiHelper,
-        Tracking $trackingHelper,
-        Image $imageHelper
+        Catalog $catalogHelper,
+        Tracking $trackingHelper
     ){
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
-        $this->logger = $logger;
         $this->categoryRepository = $categoryRepository;
         $this->resource = $resource;
         $this->cacheManager = $cacheManager;
@@ -77,8 +69,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $this->scopeConfig = $scopeConfig;
         $this->dateTime = $dateTime;
         $this->apiHelper = $apiHelper;
+        $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->imageHelper = $imageHelper;
 
         parent::__construct($context);
     }
@@ -103,7 +95,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         foreach ($collection as $order) {
             $ids[] = $order->getEntityId();
 
-            $params = $this->preapreOrderParams($order);
+            $email = $order->getCustomerEmail();
+            $uuid = $email ? $this->trackingHelper->genrateUuidByEmail($email): null;
+
+            $params = $this->preapreOrderParams($order, $uuid);
             if($params) {
                 $createatransaction_request[] = new CreateatransactionRequest($params);
             }
@@ -218,7 +213,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
         $skuVariant = $item->getSku();
         if($item->getProductType() == 'configurable') {
-            $sku = $product ? $product->getSku() : 'N\A';
+            $sku = $product ? $product->getSku() : 'N/A';
         } else {
             $sku = $item->getSku();
         }
@@ -228,26 +223,27 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "name" => $item->getName(),
             "regularPrice" => $regularPrice,
             "finalUnitPrice" => $finalUnitPrice,
-            "url" => $item->getUrlInStore(),
             "quantity" => $item->getQtyOrdered()
         ];
 
+        if($product) {
+            $params['url'] = $product->setStoreId($item->getStoreId())->getUrlInStore();
+
+            $categoryIds = $product->getCategoryIds();
+            if($categoryIds) {
+                $params['categories'] = [];
+                foreach($categoryIds as $categoryId) {
+                    $params['categories'][] = $this->catalogHelper->getFormattedCategoryPath($categoryId);
+                }
+            }
+
+            if($product->getImage()) {
+                $params['image'] = $this->catalogHelper->getOriginalImageUrl($product->getImage());
+            }
+        }
+
         if($sku!= $skuVariant) {
             $params['skuVariant'] = $skuVariant;
-        }
-
-        $categories = $item->getCategoryIds();
-        if($categories) {
-            $params['categories'] = $categories;
-        }
-
-        $productImage = $product ? $product->getImage() : null;
-        if($productImage) {
-            $imageUrl = $this->imageHelper->init($product, 'product_base_image')
-                ->setImageFile($productImage)->getUrl();
-            if($imageUrl) {
-                $params['image'] = $imageUrl;
-            }
         }
 
         return $params;
@@ -273,7 +269,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $websiteCode = $this->storeManager->getWebsite()->getCode();
         } catch (LocalizedException $localizedException) {
             $websiteCode = null;
-            $this->logger->error($localizedException->getMessage());
+            $this->_logger->error($localizedException->getMessage());
         }
         return $websiteCode;
     }
