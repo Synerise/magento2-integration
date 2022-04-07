@@ -11,8 +11,7 @@ use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Order as OrderHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 
-
-Class Order extends AbstractSynchronization
+class Order extends AbstractSynchronization
 {
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';

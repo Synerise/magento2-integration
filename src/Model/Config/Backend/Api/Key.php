@@ -54,7 +54,7 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
 
         // don't save value, if an obscured value was received. This indicates that data was not changed.
         if (!preg_match('/^\*+$/', $value) && !empty($value)) {
-            if($value != '' && !$this->uuidValidator->isValid($value)) {
+            if ($value != '' && !$this->uuidValidator->isValid($value)) {
                 throw new \Magento\Framework\Exception\ValidatorException(__('Invalid api key format'));
             }
 
@@ -65,7 +65,7 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
             try {
                 $this->apiHelper->getAuthApiInstance()->profileLoginUsingPOST($business_profile_authentication_request);
             } catch (\Synerise\ApiClient\ApiException $e) {
-                if($e->getCode() === 401) {
+                if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
                         __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
                     );

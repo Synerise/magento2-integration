@@ -12,13 +12,13 @@ use Magento\Newsletter\Model\Subscriber;
 
 class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    CONST UPDATE_GENDER = [
+    const UPDATE_GENDER = [
         1 => InBodyClientSex::MALE,
         2 => InBodyClientSex::FEMALE,
         3 => InBodyClientSex::NOT_SPECIFIED
     ];
 
-    CONST EVENT_GENDER = [
+    const EVENT_GENDER = [
         1 => 2,
         2 => 1,
         3 => 0
@@ -65,7 +65,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper
-    ){
+    ) {
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
@@ -87,14 +87,14 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addCustomersBatch($collection)
     {
-        if(!$collection->getSize()) {
+        if (!$collection->getSize()) {
             return;
         }
 
         $ids = [];
         $createAClientInCrmRequests = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
@@ -121,7 +121,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $createAClientInCrmRequests = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
@@ -150,7 +150,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $emailUuid = $this->trackingHelper->genrateUuidByEmail($customer->getEmail());
 
-        if($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
+        if ($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
             $this->trackingHelper->setClientUuidAndResetCookie((string) $emailUuid);
         }
         $params = $this->preapreAdditionalParams($customer);
@@ -171,7 +171,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     ]
                 );
 
-            if($statusCode != 202) {
+            if ($statusCode != 202) {
                 $this->logger->error('Client update failed');
             } else {
                 $this->markItemsAsSent([$customer->getId()]);
@@ -189,9 +189,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     public function sendCustomersToSynerise($createAClientInCrmRequests)
     {
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
-            ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $createAClientInCrmRequests);
+            ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-        if($statusCode != 202) {
+        if ($statusCode != 202) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
                 $statusCode
@@ -233,7 +233,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function preapreParamsForEvent($customer)
     {
-        if(is_a($customer, 'Magento\Customer\Model\Data\Customer')) {
+        if (is_a($customer, 'Magento\Customer\Model\Data\Customer')) {
             /** @var \Magento\Customer\Model\Data\Customer $customer */
             $data = $customer->__toArray();
         } else {
@@ -253,17 +253,17 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $params = [];
         $selectedAttributes = $this->getAttributes();
-        foreach($selectedAttributes as $attribute) {
-            if(!isset($data[$attribute])) {
+        foreach ($selectedAttributes as $attribute) {
+            if (!isset($data[$attribute])) {
                 continue;
             }
 
-            switch($attribute) {
+            switch ($attribute) {
                 case 'default_billing':
                     $defaultAddress = !empty($data['default_billing']) ?
                         $this->addressRepository->getById($data['default_billing']) : null;
 
-                    if($defaultAddress) {
+                    if ($defaultAddress) {
                         $params['phone'] = $defaultAddress->getTelephone();
                         $params['city'] = $defaultAddress->getCity();
                         $street = $defaultAddress->getStreet();
@@ -275,14 +275,14 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     }
                     break;
                 case 'dob':
-                    if($includeAttributesNode) {
-                        $params['birth_date'] = !empty($data['dob']) ? substr($data['dob'],0,10) : null;
+                    if ($includeAttributesNode) {
+                        $params['birth_date'] = !empty($data['dob']) ? substr($data['dob'], 0, 10) : null;
                     } else {
-                        $params['birthdate'] = !empty($data['dob']) ? substr($data['dob'],0,10) : null;
+                        $params['birthdate'] = !empty($data['dob']) ? substr($data['dob'], 0, 10) : null;
                     }
                     break;
                 case 'gender':
-                    if($includeAttributesNode) {
+                    if ($includeAttributesNode) {
                         $params['sex'] = self::UPDATE_GENDER[$data['gender']] ?? null;
                     } else {
                         $params['sex'] = self::EVENT_GENDER[$data['gender']] ?? null;
@@ -293,8 +293,8 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     $params[$attribute] = $data[$attribute] ?? null;
                     break;
                 default:
-                    if(!empty($data[$attribute])) {
-                        if($includeAttributesNode) {
+                    if (!empty($data[$attribute])) {
+                        if ($includeAttributesNode) {
                             $params['attributes'][$attribute] = $data[$attribute];
                         } else {
                             $params[$attribute] = $data[$attribute];

@@ -45,9 +45,9 @@ class Status extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Config\ValueFactory              $configValueFactory,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb           $resourceCollection = null,
-                                                                $runModelPath = '',
-        array                                                   $data = [])
-    {
+        $runModelPath = '',
+        array                                                   $data = []
+    ) {
         $this->_runModelPath = $runModelPath;
         $this->_configValueFactory = $configValueFactory;
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);

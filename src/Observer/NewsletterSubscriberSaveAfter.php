@@ -35,7 +35,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -43,7 +43,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         $subscriber = $event->getDataObject();
 
         try {
-            if(!$this->trackingHelper->isLoggedIn()) {
+            if (!$this->trackingHelper->isLoggedIn()) {
                 $this->trackingHelper->manageClientUuid($subscriber->getEmail());
             }
 

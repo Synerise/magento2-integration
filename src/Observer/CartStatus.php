@@ -24,24 +24,24 @@ class CartStatus implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if($this->trackingHelper->isAdminStore()) {
+        if ($this->trackingHelper->isAdminStore()) {
             return;
         }
 
         /** @var \Magento\Quote\Model\Quote $quote */
         $quote = $observer->getQuote();
 
-        if($this->trackingHelper->hasItemDataChanges($quote)) {
+        if ($this->trackingHelper->hasItemDataChanges($quote)) {
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),
                 $quote->getSubtotal(),
                 $quote->getItemsQty()
             );
-        } elseif($quote->dataHasChangedFor('reserved_order_id')) {
+        } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
             $this->trackingHelper->sendCartStatusEvent([], 0, 0);
         }
     }

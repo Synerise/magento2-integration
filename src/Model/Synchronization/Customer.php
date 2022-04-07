@@ -11,8 +11,7 @@ use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 
-
-Class Customer extends AbstractSynchronization
+class Customer extends AbstractSynchronization
 {
     const MODEL = 'customer';
     const ENTITY_ID = 'entity_id';
@@ -35,8 +34,7 @@ Class Customer extends AbstractSynchronization
         CollectionFactory $collectionFactory,
         CustomerHelper $customerHelper,
         Attribute $eavAttribute
-    )
-    {
+    ) {
         $this->eavAttribute = $eavAttribute;
         $this->customerHelper = $customerHelper;
 
@@ -59,7 +57,7 @@ Class Customer extends AbstractSynchronization
     public function markAllAsUnsent()
     {
         $attributeId = $this->getSyneriseUpdatedAtAttributeId();
-        if($attributeId) {
+        if ($attributeId) {
             $this->connection->update(
                 'customer_entity_datetime',
                 ['value' => null],

@@ -24,11 +24,11 @@ class CartQtyUpdate implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if($this->trackingHelper->isAdminStore()) {
+        if ($this->trackingHelper->isAdminStore()) {
             return;
         }
 
@@ -36,7 +36,7 @@ class CartQtyUpdate implements ObserverInterface
         $quote = $observer->getCart()->getQuote();
         $quote->collectTotals();
 
-        if(!$this->trackingHelper->hasItemDataChanges($quote)) {
+        if (!$this->trackingHelper->hasItemDataChanges($quote)) {
             // quote save won't be triggered, send event.
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),

@@ -5,8 +5,8 @@ namespace Synerise\Integration\Helper;
 use Magento\Catalog\Helper\Image;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\CreateatransactionRequest;
 
 class Order extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -20,24 +20,19 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     private $storeManager;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * @var Api
      */
     protected $apiHelper;
 
     /**
+     * @var Catalog
+     */
+    private $catalogHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
-
-    /**
-     * @var Image
-     */
-    protected $imageHelper;
 
     protected $categoryRepository;
 
@@ -60,15 +55,13 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
         \Magento\Newsletter\Model\Subscriber $subscriber,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
         Api $apiHelper,
-        Tracking $trackingHelper,
-        Image $imageHelper
-    ){
+        Catalog $catalogHelper,
+        Tracking $trackingHelper
+    ) {
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
-        $this->logger = $logger;
         $this->categoryRepository = $categoryRepository;
         $this->resource = $resource;
         $this->cacheManager = $cacheManager;
@@ -76,8 +69,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $this->scopeConfig = $scopeConfig;
         $this->dateTime = $dateTime;
         $this->apiHelper = $apiHelper;
+        $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->imageHelper = $imageHelper;
 
         parent::__construct($context);
     }
@@ -88,26 +81,32 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addOrdersBatch($collection)
     {
-        if(!$collection->getSize()) {
+        if (!$collection->getSize()) {
             return;
         }
 
         $ids = [];
         $createatransaction_request = [];
 
-        if(!$collection->count()) {
+        if (!$collection->count()) {
             return;
         }
 
         foreach ($collection as $order) {
             $ids[] = $order->getEntityId();
 
-            $createatransaction_request[] = new \Synerise\ApiClient\Model\CreateatransactionRequest(
-                $this->preapreOrderParams($order)
-            );
+            $email = $order->getCustomerEmail();
+            $uuid = $email ? $this->trackingHelper->genrateUuidByEmail($email): null;
+
+            $params = $this->preapreOrderParams($order, $uuid);
+            if ($params) {
+                $createatransaction_request[] = new CreateatransactionRequest($params);
+            }
         }
 
-        $this->sendOrdersToSynerise($createatransaction_request, $ids);
+        if (!empty($createatransaction_request)) {
+            $this->sendOrdersToSynerise($createatransaction_request, $ids);
+        }
     }
 
     /**
@@ -120,7 +119,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
             ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createatransaction_request);
 
-        if(substr($statusCode, 0,1) != 2) {
+        if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf(
                 'Invalid Status [%d]',
                 $statusCode
@@ -134,7 +133,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'email' => $order->getCustomerEmail()
         ];
 
-        if($uuid) {
+        if ($uuid) {
             $customerData["uuid"] = $uuid;
         }
 
@@ -143,10 +142,20 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $products = [];
-        foreach($order->getAllItems() as $item){
-            if(!$item->getParentItem()) {
-                $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
+        foreach ($order->getAllItems() as $item) {
+            if ($item->getParentItem()) {
+                continue;
             }
+
+            if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
+                $this->_logger->debug(
+                    sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
+                );
+
+                return [];
+            }
+
+            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
         }
 
         $params = [
@@ -176,6 +185,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "amount" => $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
+            'source' => $this->trackingHelper->getSource(),
             'event_salt'  => $order->getRealOrderId()
         ];
 
@@ -190,59 +200,50 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     public function prepareProductParamsFromOrderItem($item, $currency)
     {
         $product = $item->getProduct();
-        $parent = $item->getParentItem();
 
-        if($parent && (float) $item->getOriginalPrice() == '0.00') {
-            $regularPrice = [
-                "amount" => $parent->getOriginalPrice(),
-                "currency" => $currency
-            ];
-        } else {
-            $regularPrice = [
-                "amount" => $item->getOriginalPrice(),
-                "currency" => $currency
-            ];
-        }
+        $regularPrice = [
+            "amount" => $item->getOriginalPrice(),
+            "currency" => $currency
+        ];
 
-        if($parent && (float) $item->getPrice() == '0.00') {
-            $finalUnitPrice = [
-                "amount" => $parent->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
-                "currency" => $currency
-            ];
-        } else {
-            $finalUnitPrice = [
-                "amount" => $item->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
-                "currency" => $currency
-            ];
-        }
+        $finalUnitPrice = [
+            "amount" => $item->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
+            "currency" => $currency
+        ];
 
-        $sku = $product->getSku();
         $skuVariant = $item->getSku();
+        if ($item->getProductType() == 'configurable') {
+            $sku = $product ? $product->getSku() : 'N/A';
+        } else {
+            $sku = $item->getSku();
+        }
 
         $params = [
             "sku" => $sku,
             "name" => $item->getName(),
             "regularPrice" => $regularPrice,
             "finalUnitPrice" => $finalUnitPrice,
-            "url" => $item->getUrlInStore(),
             "quantity" => $item->getQtyOrdered()
         ];
 
-        if($sku!= $skuVariant) {
-            $params['skuVariant'] = $skuVariant;
-        }
+        if ($product) {
+            $params['url'] = $product->setStoreId($item->getStoreId())->getUrlInStore();
 
-        $categories = $item->getCategoryIds();
-        if($categories) {
-            $params['categories'] = $categories;
-        }
-
-        if($product->getImage()) {
-            $imageUrl = $this->imageHelper->init($product, 'product_base_image')
-                ->setImageFile($product->getImage())->getUrl();
-            if($imageUrl) {
-                $params['image'] = $imageUrl;
+            $categoryIds = $product->getCategoryIds();
+            if ($categoryIds) {
+                $params['categories'] = [];
+                foreach ($categoryIds as $categoryId) {
+                    $params['categories'][] = $this->catalogHelper->getFormattedCategoryPath($categoryId);
+                }
             }
+
+            if ($product->getImage()) {
+                $params['image'] = $this->catalogHelper->getOriginalImageUrl($product->getImage());
+            }
+        }
+
+        if ($sku!= $skuVariant) {
+            $params['skuVariant'] = $skuVariant;
         }
 
         return $params;
@@ -268,16 +269,28 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $websiteCode = $this->storeManager->getWebsite()->getCode();
         } catch (LocalizedException $localizedException) {
             $websiteCode = null;
-            $this->logger->error($localizedException->getMessage());
+            $this->_logger->error($localizedException->getMessage());
         }
         return $websiteCode;
+    }
+
+    public function isSent($orderId)
+    {
+        $connection = $this->resource->getConnection();
+        $select = $connection->select();
+        $tableName = $connection->getTableName('synerise_sync_order');
+
+        $select->from($tableName, ['synerise_updated_at'])
+            ->where('order_id = ?', $orderId);
+
+        return $connection->fetchOne($select);
     }
 
     public function markItemsAsSent($ids)
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
-        foreach($ids as $id) {
+        foreach ($ids as $id) {
             $data[] = [
                 'synerise_updated_at' => $timestamp,
                 'order_id' => $id

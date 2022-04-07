@@ -62,11 +62,28 @@ class Action extends \Magento\Customer\Model\ResourceModel\Customer
         ?AccountConfirmation $accountConfirmation = null
     ) {
         if (version_compare($productMetadata->getVersion(), '2.4', 'lt')) {
-            parent::__construct($context, $entitySnapshot, $entityRelationComposite, $scopeConfig, $validatorFactory,
-                $dateTime, $storeManager, $data);
+            parent::__construct(
+                $context,
+                $entitySnapshot,
+                $entityRelationComposite,
+                $scopeConfig,
+                $validatorFactory,
+                $dateTime,
+                $storeManager,
+                $data
+            );
         } else {
-            parent::__construct($context, $entitySnapshot, $entityRelationComposite, $scopeConfig, $validatorFactory,
-                $dateTime, $storeManager, $data, $accountConfirmation);
+            parent::__construct(
+                $context,
+                $entitySnapshot,
+                $entityRelationComposite,
+                $scopeConfig,
+                $validatorFactory,
+                $dateTime,
+                $storeManager,
+                $data,
+                $accountConfirmation
+            );
         }
 
         $this->setConnection($this->_resource->getConnection('customer'));
