@@ -21,14 +21,17 @@
     <event name="customer_save_after">
         <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\CustomerSaveAfter" />
     </event>
-    <event name="adminhtml_customer_save_after">
-        <observer name="synerise_adminhtml_customer_save_after" instance="Synerise\Integration\Observer\AdminhtmlCustomerSaveAfter" />
-    </event>
     <event name="sales_order_save_after">
         <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\OrderPlace" />
     </event>
-    <event name="checkout_cart_add_product_complete">
+    <event name="sales_quote_add_item">
         <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\CartAddProduct" />
+    </event>
+    <event name="checkout_cart_update_items_after">
+        <observer name="synerise_checkout_cart_update_items_after" instance="Synerise\Integration\Observer\CartQtyUpdate" />
+    </event>
+    <event name="sales_quote_save_after">
+        <observer name="synerise_sales_quote_save_after" instance="Synerise\Integration\Observer\CartStatus" />
     </event>
     <event name="sales_quote_remove_item">
         <observer name="synerise_sales_quote_remove_item" instance="Synerise\Integration\Observer\CartRemoveProduct" />

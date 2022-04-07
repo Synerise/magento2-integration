@@ -58,6 +58,9 @@ class CustomerRegister implements ObserverInterface
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
 
+            $params = $this->customerHelper->preapreParamsForEvent($customer);
+            $params['applicationName'] = $this->trackingHelper->getApplicationName();
+
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
@@ -65,12 +68,7 @@ class CustomerRegister implements ObserverInterface
                     $customer,
                     $this->trackingHelper->getClientUuid()
                 ),
-                'params' => array_merge(
-                    [
-                        "applicationName" => $this->trackingHelper->getApplicationName()
-                    ],
-                    $this->customerHelper->preapreAdditionalParams($customer)
-                )
+                'params' => $params
             ]);
 
             $this->apiHelper->getDefaultApiInstance()

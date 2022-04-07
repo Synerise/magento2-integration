@@ -65,12 +65,7 @@ class CustomerLogin implements ObserverInterface
                     $customer,
                     $this->trackingHelper->getClientUuid()
                 ),
-                'params' => array_merge(
-                    [
-                        "applicationName" => $this->trackingHelper->getApplicationName()
-                    ],
-                    $this->customerHelper->preapreAdditionalParams($customer)
-                )
+                'params' => $this->customerHelper->preapreParamsForEvent($customer)
             ]);
 
             $this->apiHelper->getDefaultApiInstance()
