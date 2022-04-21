@@ -4,11 +4,8 @@ namespace Synerise\Integration\Model\Synchronization;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
-use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 
@@ -17,11 +14,6 @@ class Subscriber extends AbstractSynchronization
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
     const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/subscriber/cron_enabled';
-
-    /**
-     * @var DateTime
-     */
-    protected $dateTime;
 
     /**
      * @var CustomerHelper
@@ -33,11 +25,9 @@ class Subscriber extends AbstractSynchronization
         LoggerInterface $logger,
         ResourceConnection $resource,
         CollectionFactory $collectionFactory,
-        CustomerHelper $customerHelper,
-        DateTime $dateTime
+        CustomerHelper $customerHelper
     ) {
         $this->customerHelper = $customerHelper;
-        $this->dateTime = $dateTime;
 
         parent::__construct(
             $scopeConfig,
@@ -53,27 +43,15 @@ class Subscriber extends AbstractSynchronization
             ->addFieldToSelect(['subscriber_email', 'subscriber_status', 'change_status_at']);
     }
 
+    /**
+     * @param \Magento\Newsletter\Model\ResourceModel\Subscriber\Collection $collection
+     * @param \Synerise\Integration\Model\Cron\Status $status
+     * @throws \Synerise\ApiClient\ApiException
+     */
     public function sendItems($collection, $status)
     {
         $this->customerHelper->addCustomerSubscriptionsBatch($collection);
-        $this->markItemsAsSent($collection->getAllIds());
-    }
-
-    public function markItemsAsSent($ids)
-    {
-        $timestamp = $this->dateTime->gmtDate();
-        $data = [];
-        foreach ($ids as $id) {
-            $data[] = [
-                'synerise_updated_at' => $timestamp,
-                'subscriber_id' => $id
-            ];
-        }
-
-        $this->connection->insertOnDuplicate(
-            $this->connection->getTableName('synerise_sync_subscriber'),
-            $data
-        );
+        $this->customerHelper->markSubscribersAsSent($collection->getAllIds());
     }
 
     public function markAllAsUnsent()

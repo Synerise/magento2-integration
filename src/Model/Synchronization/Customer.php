@@ -46,6 +46,9 @@ class Customer extends AbstractSynchronization
         );
     }
 
+    /**
+     * @throws \Synerise\ApiClient\ApiException
+     */
     public function sendItems($collection, $status)
     {
         $attributes = $this->customerHelper->getAttributesToSelect();

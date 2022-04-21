@@ -3,36 +3,50 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Cron\Synchronization;
+use Synerise\Integration\Helper\Customer;
+use Synerise\Integration\Helper\Tracking;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var \Synerise\Integration\Cron\Synchronization
+     * @var Synchronization
      */
     protected $synchronization;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Customer
+     */
+    private $customerHelper;
+
+    /**
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Cron\Synchronization $synchronization,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        LoggerInterface $logger,
+        Synchronization $synchronization,
+        Customer $customerHelper,
+        Tracking $trackingHelper
     ) {
         $this->logger = $logger;
         $this->synchronization = $synchronization;
+        $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
     }
 
+    /**
+     * @param \Magento\Framework\Event\Observer $observer
+     */
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
         if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
@@ -47,13 +61,22 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
                 $this->trackingHelper->manageClientUuid($subscriber->getEmail());
             }
 
+            $this->customerHelper->sendCustomersToSynerise([
+                $this->customerHelper->prepareRequestFromSubscription($subscriber)
+            ]);
+
+            $this->customerHelper->markSubscribersAsSent([
+                $subscriber->getId()
+            ]);
+
+        } catch (\Exception $e) {
             $this->synchronization->addItemToQueueByStoreId(
                 'subscriber',
                 $subscriber->getStoreId(),
                 $subscriber->getId()
             );
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to add subscriber to cron queue', ['exception' => $e]);
+
+            $this->logger->error('Subscription update request failed', ['exception' => $e]);
         }
     }
 }
