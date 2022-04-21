@@ -58,7 +58,7 @@ class StockStatusChange implements ObserverInterface
                     try {
                         $this->synchronization->addItemToQueueByWebsiteIds(
                             'product',
-                            $stockItem->getWebsiteId(),
+                            [$stockItem->getWebsiteId()],
                             $stockItem->getProductId()
                         );
                         $this->logger->info('Product '.$stockItem->getProductId().' added to cron queue');
