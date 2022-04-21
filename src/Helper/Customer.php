@@ -201,11 +201,10 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-        if ($statusCode != 202) {
-            throw new ApiException(sprintf(
-                'Invalid Status [%d]',
-                $statusCode
-            ));
+        if (substr($statusCode, 0, 1) != 2) {
+            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
+        } else if ($statusCode == 207) {
+            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
 
