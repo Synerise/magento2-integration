@@ -108,7 +108,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $params = $this->preapreAdditionalParams($customer);
             $params['email'] = $customer->getEmail();
             $params['custom_id'] = $customer->getId();
-            $params['attributes'] = !empty($attributes) ? $attributes : null;
 
             $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($params);
         }

@@ -261,7 +261,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => $product->getSpecialPrice(),
+                "amount" => (float) $product->getSpecialPrice(),
                 "currency" => $this->getCurrencyCode()
             ];
         }
