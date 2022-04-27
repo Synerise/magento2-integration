@@ -3,7 +3,11 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Magento\Quote\Model\Quote;
 use Ramsey\Uuid\Uuid;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\Client;
+use Synerise\ApiClient\Model\CustomeventRequest;
 
 class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -247,6 +251,40 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return \Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event];
     }
 
+    /**
+     * @param Quote $quote
+     * @return Client
+     * @throws ApiException
+     */
+    public function prepareClientDataFromQuote($quote)
+    {
+        $data = [];
+
+        $uuid = $this->getClientUuid();
+        if($uuid) {
+            $data['uuid'] = $uuid;
+        }
+
+        if($quote && !$quote->getCustomerIsGuest()) {
+            if($quote->getCustomerEmail()) {
+                $data['email'] = $quote->getCustomerEmail();
+                if(!isset($data['uuid'])) {
+                    $data['uuid'] = $this->genrateUuidByEmail($data['email']);
+                }
+            }
+
+            if($quote->getCustomerId()) {
+                $data['custom_id'] = $quote->getCustomerId();
+            }
+        }
+
+        if(!$data) {
+            throw new ApiException('Missing client identity data');
+        }
+
+        return new Client($data);
+    }
+
     public function manageClientUuid($email)
     {
         if ($this->isAdminStore()) {
@@ -293,23 +331,27 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    public function sendCartStatusEvent($products, $totalAmount, $totalQuantity)
+    /**
+     * @param array $products
+     * @param float $totalAmount
+     * @param integer $totalQuantity
+     * @param Quote $quote
+     */
+    public function sendCartStatusEvent($products, $totalAmount, $totalQuantity, $quote)
     {
-        $customEventRequest = new \Synerise\ApiClient\Model\CustomeventRequest([
-            'time' => $this->getCurrentTime(),
-            'action' => 'cart.status',
-            'label' => 'CartStatus',
-            'client' => [
-                "uuid" => $this->getClientUuid(),
-            ],
-            'params' => [
-                'products' => $products,
-                'totalAmount' => $totalAmount,
-                'totalQuantity' => $totalQuantity
-            ]
-        ]);
-
         try {
+            $customEventRequest = new CustomeventRequest([
+                'time' => $this->getCurrentTime(),
+                'action' => 'cart.status',
+                'label' => 'CartStatus',
+                'client' => $this->prepareClientDataFromQuote($quote),
+                'params' => [
+                    'products' => $products,
+                    'totalAmount' => $totalAmount,
+                    'totalQuantity' => $totalQuantity
+                ]
+            ]);
+
             $this->apiHelper->getDefaultApiInstance()
                 ->customEvent('4.4', $customEventRequest);
 
@@ -318,7 +360,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    public function hasItemDataChanges(\Magento\Quote\Model\Quote $quote)
+    public function hasItemDataChanges(Quote $quote)
     {
         return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
     }

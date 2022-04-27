@@ -2,13 +2,18 @@
 
 namespace Synerise\Integration\Helper;
 
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Helper\Context;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Newsletter\Model\Subscriber;
+use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
-use Magento\Newsletter\Model\Subscriber;
+use Synerise\Integration\ResourceModel\Customer\Action;
 
 class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -24,57 +29,56 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         3 => 0
     ];
 
-    protected $configWriter;
-    protected $cacheManager;
+    /**
+     * @var Action
+     */
     protected $action;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    protected $scopeConfig;
+
+    /**
+     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     */
+    private $connection;
+
+    /**
+     * @var DateTime
+     */
     protected $dateTime;
 
     /**
-     * @var StoreManagerInterface
+     * @var AddressRepositoryInterface
      */
-    private $storeManager;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    protected $addressRepository;
 
     /**
      * @var Api
      */
     protected $apiHelper;
+
     /**
      * @var Tracking
      */
     protected $trackingHelper;
 
-    protected $addressRepository;
-
-    protected $subscriber;
-
     public function __construct(
-        \Synerise\Integration\ResourceModel\Customer\Action $action,
-        \Magento\Framework\App\Helper\Context $context,
-        \Magento\Framework\App\Cache\Manager $cacheManager,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
-        \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
-        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
-        \Magento\Newsletter\Model\Subscriber $subscriber,
-        StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
+        Action $action,
+        Context $context,
+        ScopeConfigInterface $scopeConfig,
+        ResourceConnection $resource,
+        DateTime $dateTime,
+        AddressRepositoryInterface $addressRepository,
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
-        $this->addressRepository = $addressRepository;
-        $this->subscriber= $subscriber;
-        $this->storeManager = $storeManager;
-        $this->logger = $logger;
         $this->action = $action;
-        $this->cacheManager = $cacheManager;
-        $this->configWriter = $configWriter;
         $this->scopeConfig = $scopeConfig;
+        $this->connection = $resource->getConnection();
         $this->dateTime = $dateTime;
+        $this->addressRepository = $addressRepository;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
 
@@ -83,7 +87,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * @param $collection
-     * @throws ApiException
+     * @throws ApiException|\Exception
      */
     public function addCustomersBatch($collection)
     {
@@ -104,47 +108,53 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $params = $this->preapreAdditionalParams($customer);
             $params['email'] = $customer->getEmail();
             $params['custom_id'] = $customer->getId();
-            $params['attributes'] = !empty($attributes) ? $attributes : null;
 
-            $createAClientInCrmRequests[] = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest($params);
+            $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($params);
         }
 
         $this->sendCustomersToSynerise($createAClientInCrmRequests);
-        $this->markItemsAsSent($ids);
+        $this->markCustomersAsSent($ids);
     }
 
     /**
-     * @param $collection
+     * @param Collection $collection
      * @throws ApiException
      */
     public function addCustomerSubscriptionsBatch($collection)
     {
-        $createAClientInCrmRequests = [];
-
         if (!$collection->count()) {
             return;
         }
 
-        foreach ($collection as $subscription) {
-            $email = $subscription->getSubscriberEmail();
-            $createAClientInCrmRequests[] = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
-                [
-                    'email' => $email,
-                    'uuid' => $this->trackingHelper->genrateUuidByEmail($email),
-                    'agreements' => [
-                        'email' => $subscription->getSubscriberStatus() == Subscriber::STATUS_SUBSCRIBED ? 1 : 0
-                    ]
-                ]
-            );
+        $requests = [];
+        foreach ($collection as $subscriber) {
+            $requests[] = $this->prepareRequestFromSubscription($subscriber);
         }
 
-        $this->sendCustomersToSynerise($createAClientInCrmRequests);
+        $this->sendCustomersToSynerise($requests);
+    }
+
+    /**
+     * @param Subscriber $subscriber
+     * @return CreateaClientinCRMRequest
+     */
+    public function prepareRequestFromSubscription($subscriber)
+    {
+        $email = $subscriber->getSubscriberEmail();
+        return new CreateaClientinCRMRequest(
+            [
+                'email' => $email,
+                'uuid' => $this->trackingHelper->genrateUuidByEmail($email),
+                'agreements' => [
+                    'email' => $subscriber->getSubscriberStatus() == Subscriber::STATUS_SUBSCRIBED ? 1 : 0
+                ]
+            ]
+        );
     }
 
     /**
      * @param \Magento\Customer\Api\Data\CustomerInterface $customer
      * @param string|null $prevUuid
-     * @throws LocalizedException
      */
     public function addOrUpdateClient($customer, $prevUuid = null)
     {
@@ -167,43 +177,65 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     'application/json',
                     '4.4',
                     [
-                        new \Synerise\ApiClient\Model\CreateaClientinCRMRequest($params)
+                        new CreateaClientinCRMRequest($params)
                     ]
                 );
 
             if ($statusCode != 202) {
-                $this->logger->error('Client update failed');
+                $this->_logger->error('Client update failed');
             } else {
-                $this->markItemsAsSent([$customer->getId()]);
+                $this->markCustomersAsSent([$customer->getId()]);
             }
         } catch (\Exception $e) {
-            $this->logger->error('Client update failed', ['exception' => $e]);
+            $this->_logger->error('Client update failed', ['exception' => $e]);
         }
     }
 
     /**
-     * @param $createAClientInCrmRequests
-     * @param $ids
-     * @throws ApiException
+     * @param CreateaClientinCRMRequest[] $createAClientInCrmRequests
+     * @throws ApiException|\Magento\Framework\Exception\ValidatorException
      */
     public function sendCustomersToSynerise($createAClientInCrmRequests)
     {
         list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-        if ($statusCode != 202) {
-            throw new ApiException(sprintf(
-                'Invalid Status [%d]',
-                $statusCode
-            ));
+        if (substr($statusCode, 0, 1) != 2) {
+            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
+        } else if ($statusCode == 207) {
+            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
 
-    public function markItemsAsSent($ids)
+    /**
+     * @param int[] $ids
+     * @throws \Exception
+     */
+    public function markCustomersAsSent($ids)
     {
         $this->action->updateAttributes(
             $ids,
             ['synerise_updated_at' => $this->dateTime->gmtDate()]
+        );
+    }
+
+    /**
+     * @param int[] $ids
+     */
+    public function markSubscribersAsSent($ids)
+    {
+        $timestamp = $this->dateTime->gmtDate();
+        $data = [];
+        foreach ($ids as $id) {
+            $data[] = [
+                'synerise_updated_at' => $timestamp,
+                'subscriber_id' => $id
+            ];
+        }
+
+        $this->connection->insertOnDuplicate(
+            $this->connection->getTableName('synerise_sync_subscriber'),
+            $data
         );
     }
 
@@ -222,9 +254,8 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
+     * @param \Magento\Customer\Model\Customer $customer
      * @return array
-     * @throws LocalizedException
      */
     public function preapreAdditionalParams($customer)
     {

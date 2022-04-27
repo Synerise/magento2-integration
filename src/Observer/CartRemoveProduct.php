@@ -3,6 +3,8 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Quote\Model\Quote;
+use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
 
 class CartRemoveProduct implements ObserverInterface
 {
@@ -35,23 +37,28 @@ class CartRemoveProduct implements ObserverInterface
             return;
         }
 
-        $params = $this->catalogHelper->prepareParamsFromQuoteProduct(
-            $observer->getQuoteItem()->getProduct()
-        );
-
-        $params["source"] = $this->trackingHelper->getSource();
-        $params["applicationName"] = $this->trackingHelper->getApplicationName();
-
-        $eventClientAction = new \Synerise\ApiClient\Model\ClientaddedproducttocartRequest([
-            'time' => $this->trackingHelper->getCurrentTime(),
-            'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-            'client' => [
-                "uuid" => $this->trackingHelper->getClientUuid(),
-            ],
-            'params' => $params
-        ]);
-
         try {
+            /** @var Quote\Item $quoteItem */
+            $quoteItem = $observer->getQuoteItem();
+
+            $product = $quoteItem->getProduct();
+            if ($product->getParentProductId()) {
+                return;
+            }
+
+            $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
+            $params = $this->catalogHelper->prepareParamsFromQuoteProduct($product);
+
+            $params["source"] = $this->trackingHelper->getSource();
+            $params["applicationName"] = $this->trackingHelper->getApplicationName();
+
+            $eventClientAction = new ClientaddedproducttocartRequest([
+                'time' => $this->trackingHelper->getCurrentTime(),
+                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
+                'client' => $client,
+                'params' => $params
+            ]);
+
             $this->apiHelper->getDefaultApiInstance()
                 ->clientRemovedProductFromCart('4.4', $eventClientAction);
 

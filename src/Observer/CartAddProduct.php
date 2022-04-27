@@ -3,6 +3,8 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Quote\Model\Quote;
+use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
 
 class CartAddProduct implements ObserverInterface
 {
@@ -34,26 +36,28 @@ class CartAddProduct implements ObserverInterface
             return;
         }
 
-        $product = $observer->getQuoteItem()->getProduct();
-        if ($product->getParentProductId()) {
-            return;
-        }
-
-        $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
-
-        $params["source"] = $this->trackingHelper->getSource();
-        $params["applicationName"] = $this->trackingHelper->getApplicationName();
-
-        $eventClientAction = new \Synerise\ApiClient\Model\ClientaddedproducttocartRequest([
-            'time' => $this->trackingHelper->getCurrentTime(),
-            'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-            'client' => [
-                "uuid" => $this->trackingHelper->getClientUuid(),
-            ],
-            'params' => $params
-        ]);
-
         try {
+            /** @var Quote\Item $quoteItem */
+            $quoteItem = $observer->getQuoteItem();
+
+            $product = $quoteItem->getProduct();
+            if ($product->getParentProductId()) {
+                return;
+            }
+
+            $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
+            $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
+
+            $params["source"] = $this->trackingHelper->getSource();
+            $params["applicationName"] = $this->trackingHelper->getApplicationName();
+
+            $eventClientAction = new ClientaddedproducttocartRequest([
+                'time' => $this->trackingHelper->getCurrentTime(),
+                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
+                'client' => $client,
+                'params' => $params
+            ]);
+
             $this->apiHelper->getDefaultApiInstance()
                 ->clientAddedProductToCart('4.4', $eventClientAction);
 

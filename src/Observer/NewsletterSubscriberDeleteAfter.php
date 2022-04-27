@@ -4,15 +4,12 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
+use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
-
-    /**
-     * @var \Synerise\Integration\Cron\Synchronization
-     */
-    protected $synchronization;
 
     /**
      * @var \Synerise\Integration\Helper\Customer
@@ -25,18 +22,16 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Cron\Synchronization $synchronization,
+        LoggerInterface $logger,
         \Synerise\Integration\Helper\Customer $customerHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
         $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
     }
@@ -54,7 +49,7 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
 
         try {
             $createAClientInCrmRequests = [
-                new \Synerise\ApiClient\Model\CreateaClientinCRMRequest([
+                new CreateaClientinCRMRequest([
                     'email' => $subscriber->getSubscriberEmail(),
                     'agreements' => ['email' =>  0]
                 ])

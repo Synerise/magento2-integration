@@ -40,6 +40,9 @@ abstract class AbstractSynchronization
         $this->collectionFactory = $collectionFactory;
     }
 
+    /**
+     * @throws \Synerise\ApiClient\ApiException
+     */
     abstract public function sendItems($collection, $status);
 
     public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)

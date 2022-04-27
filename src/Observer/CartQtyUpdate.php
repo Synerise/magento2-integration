@@ -40,8 +40,9 @@ class CartQtyUpdate implements ObserverInterface
             // quote save won't be triggered, send event.
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),
-                $quote->getSubtotal(),
-                $quote->getItemsQty()
+                (float) $quote->getSubtotal(),
+                (int) $quote->getItemsQty(),
+                $quote
             );
         }
     }

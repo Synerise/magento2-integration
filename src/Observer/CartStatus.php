@@ -38,11 +38,12 @@ class CartStatus implements ObserverInterface
         if ($this->trackingHelper->hasItemDataChanges($quote)) {
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),
-                $quote->getSubtotal(),
-                $quote->getItemsQty()
+                (float) $quote->getSubtotal(),
+                (int) $quote->getItemsQty(),
+                $quote
             );
         } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
-            $this->trackingHelper->sendCartStatusEvent([], 0, 0);
+            $this->trackingHelper->sendCartStatusEvent([], 0, 0, $quote);
         }
     }
 }

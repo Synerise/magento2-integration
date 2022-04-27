@@ -261,7 +261,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => $product->getSpecialPrice(),
+                "amount" => (float) $product->getSpecialPrice(),
                 "currency" => $this->getCurrencyCode()
             ];
         }
@@ -425,10 +425,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
         if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf(
-                'Invalid Status [%d]',
-                $statusCode
-            ));
+            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
+        } else if ($statusCode == 207) {
+            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
 
