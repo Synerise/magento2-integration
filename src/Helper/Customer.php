@@ -6,6 +6,7 @@ use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Newsletter\Model\Subscriber;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
@@ -202,7 +203,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } else if ($statusCode == 207) {
+        } elseif ($statusCode == 207) {
             $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
@@ -291,18 +292,16 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
             switch ($attribute) {
                 case 'default_billing':
-                    $defaultAddress = !empty($data['default_billing']) ?
-                        $this->addressRepository->getById($data['default_billing']) : null;
-
+                    $defaultAddress = $this->getAddressIfAvailable($this->valOrNull($data['default_billing']));
                     if ($defaultAddress) {
-                        $params['phone'] = $defaultAddress->getTelephone();
-                        $params['city'] = $defaultAddress->getCity();
-                        $street = $defaultAddress->getStreet();
+                        $params['phone'] = $this->valOrNull($defaultAddress->getTelephone());
+                        $params['city'] = $this->valOrNull($defaultAddress->getCity());
+                        $street = $this->valOrNull($defaultAddress->getStreet());
                         $params['address'] = is_array($street) ? implode(" ", $street) : $street;
-                        $params['zip_code'] = $defaultAddress->getPostcode();
-                        $params['province'] = $defaultAddress->getRegion()->getRegion();
-                        $params['country_code'] = $defaultAddress->getCountryId();
-                        $params['company'] = $defaultAddress->getCompany();
+                        $params['zip_code'] = $this->valOrNull($defaultAddress->getPostcode());
+                        $params['province'] = $this->valOrNull($defaultAddress->getRegion()->getRegion());
+                        $params['country_code'] = $this->valOrNull($defaultAddress->getCountryId());
+                        $params['company'] = $this->valOrNull($defaultAddress->getCompany());
                     }
                     break;
                 case 'dob':
@@ -319,9 +318,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                         $params['sex'] = self::EVENT_GENDER[$data['gender']] ?? null;
                     }
                     break;
-                case 'displayName':
-                case 'avatarUrl':
-                    $params[$attribute] = $data[$attribute] ?? null;
+                case 'display_name':
+                case 'avatar_url':
+                    $params[$attribute] = $this->valOrNull($data[$attribute]);
                     break;
                 default:
                     if (!empty($data[$attribute])) {
@@ -353,5 +352,27 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $attributes,
             Attributes::REQUIRED
         );
+    }
+
+    /**
+     * @param int $addressId
+     * @return \Magento\Customer\Api\Data\AddressInterface|null
+     */
+    protected function getAddressIfAvailable($addressId)
+    {
+        try {
+            return $addressId ? $this->addressRepository->getById($addressId) : null;
+        } catch (LocalizedException $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param mixed $val
+     * @return mixed
+     */
+    protected function valOrNull($val)
+    {
+        return empty(trim($val)) ? null : $val;
     }
 }
