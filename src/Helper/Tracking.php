@@ -261,24 +261,24 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         $data = [];
 
         $uuid = $this->getClientUuid();
-        if($uuid) {
+        if ($uuid) {
             $data['uuid'] = $uuid;
         }
 
-        if($quote && !$quote->getCustomerIsGuest()) {
-            if($quote->getCustomerEmail()) {
+        if ($quote && !$quote->getCustomerIsGuest()) {
+            if ($quote->getCustomerEmail()) {
                 $data['email'] = $quote->getCustomerEmail();
-                if(!isset($data['uuid'])) {
+                if (!isset($data['uuid'])) {
                     $data['uuid'] = $this->genrateUuidByEmail($data['email']);
                 }
             }
 
-            if($quote->getCustomerId()) {
+            if ($quote->getCustomerId()) {
                 $data['custom_id'] = $quote->getCustomerId();
             }
         }
 
-        if(!$data) {
+        if (!$data) {
             throw new ApiException('Missing client identity data');
         }
 

@@ -203,7 +203,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } else if ($statusCode == 207) {
+        } elseif ($statusCode == 207) {
             $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
@@ -373,6 +373,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected function valOrNull($val)
     {
-        return empty($val) ? null: $val;
+        return empty(trim($val)) ? null : $val;
     }
 }
