@@ -55,7 +55,7 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
                 ])
             ];
 
-            $this->customerHelper->sendCustomersToSynerise($createAClientInCrmRequests);
+            $this->customerHelper->sendCustomersToSynerise($createAClientInCrmRequests, $subscriber->getStoreId());
         } catch (\Exception $e) {
             $this->logger->error('Failed to unsubscribe user', ['exception' => $e]);
         }

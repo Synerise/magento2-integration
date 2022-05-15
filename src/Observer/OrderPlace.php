@@ -62,7 +62,7 @@ class OrderPlace implements ObserverInterface
                 $this->orderHelper->preapreOrderParams($order, $this->trackingHelper->getClientUuid())
             );
 
-            $this->apiHelper->getDefaultApiInstance()
+            $this->apiHelper->getDefaultApiInstance($order->getStoreId())
                 ->createATransaction('4.4', $createatransactionRequest);
 
             $this->orderHelper->markItemsAsSent([$order->getEntityId()]);

@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 
 class CatalogProductSaveAfter implements ObserverInterface
@@ -39,14 +40,11 @@ class CatalogProductSaveAfter implements ObserverInterface
             return;
         }
 
+        /** @var Product $product */
         $product = $observer->getEvent()->getProduct();
 
         try {
-            $this->synchronization->addItemToQueueByWebsiteIds(
-                'product',
-                $product->getWebsiteIds(),
-                $product->getId()
-            );
+            $this->synchronization->addProductsToQueue([$product]);
         } catch (\Exception $e) {
             $this->logger->error('Failed to add product to cron queue', ['exception' => $e]);
         }

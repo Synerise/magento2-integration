@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Cron\Synchronization;
 use Synerise\Integration\Helper\Customer;
@@ -54,6 +55,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         }
 
         $event = $observer->getEvent();
+        /** @var Subscriber $subscriber */
         $subscriber = $event->getDataObject();
 
         try {
@@ -62,7 +64,8 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
             }
 
             $this->customerHelper->sendCustomersToSynerise([
-                $this->customerHelper->prepareRequestFromSubscription($subscriber)
+                $this->customerHelper->prepareRequestFromSubscription($subscriber),
+                $subscriber->getStoreId()
             ]);
 
             $this->customerHelper->markSubscribersAsSent([

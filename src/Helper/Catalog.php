@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
@@ -20,6 +21,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     protected $cacheManager;
     protected $action;
     protected $dateTime;
+    protected $storeToWebsite = [];
 
     /**
      * @var StoreManagerInterface
@@ -112,7 +114,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             'name' => $this->getCatalogNameByStoreId($storeId)
         ]);
 
-        $response = $this->apiHelper->getBagsApiInstance()
+        $response = $this->apiHelper->getBagsApiInstance($storeId)
             ->addBagWithHttpInfo($addBagRequest);
         $catalogId = $response[0]->getData()->getId();
 
@@ -134,13 +136,13 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->saveConfigCatalogId($catalog->getId(), $storeId);
         }
 
-        return $catalogId ? $catalogId : $this->addCatalog($storeId);
+        return $catalogId ?: $this->addCatalog($storeId);
     }
 
     public function findExistingCatalogByStoreId($storeId)
     {
         $catalogName = $this->getCatalogNameByStoreId($storeId);
-        $getBagsResponse = $this->apiHelper->getBagsApiInstance()
+        $getBagsResponse = $this->apiHelper->getBagsApiInstance($storeId)
             ->getBags($catalogName);
 
         $existingBags = $getBagsResponse->getData();
@@ -164,6 +166,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             return;
         }
 
+        if(!$websiteId) {
+            $websiteId = $this->getWebsiteIdByStoreId($storeId);
+        }
+
         $addItemRequest = [];
         $ids = [];
 
@@ -177,11 +183,16 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->markItemsAsSent($ids);
     }
 
-    public function deleteItemWithCatalogCheck($product, $attributes, $storeId)
+    /**
+     * @param Product $product
+     * @param string[] $attributes
+     * @throws \Exception
+     */
+    public function deleteItemWithCatalogCheck($product, $attributes)
     {
-        $addItemRequest = $this->prepareItemRequest($product, $attributes, $storeId);
+        $addItemRequest = $this->prepareItemRequest($product, $attributes);
         $addItemRequest->setValue(array_merge(['deleted' => 1], $addItemRequest->getValue()));
-        $this->sendItemsToSyneriseWithCatalogCheck([$addItemRequest], $storeId);
+        $this->sendItemsToSyneriseWithCatalogCheck([$addItemRequest], $product->getStoreId());
     }
 
     protected function markItemsAsSent($ids, $storeId = 0)
@@ -192,7 +203,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         ], $storeId);
     }
 
-    public function prepareItemRequest($product, $attributes, $websiteId)
+    public function prepareItemRequest($product, $attributes, $websiteId = null)
     {
         $value = $this->getTypeSpecificData($product);
         $value['itemId'] = $product->getSku();
@@ -221,8 +232,12 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $value['image'] = $this->getOriginalImageUrl($product->getImage());
         }
 
-        $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
-        $value['stock_status'] = $stockStatus['is_in_stock'];
+        if ($websiteId) {
+            $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
+            if ($stockStatus) {
+                $value['stock_status'] = $stockStatus['is_in_stock'];
+            }
+        }
 
         return new AddItem([
             'item_key' => $value['itemId'],
@@ -408,20 +423,20 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $catalogId = $this->getOrAddCatalog($storeId);
 
         try {
-            $this->sendItemsToSynerise($catalogId, $addItemRequest);
+            $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
         } catch (\Exception $e) {
             if ($e->getCode() === 404) {
                 $catalogId = $this->addCatalog($storeId);
-                $this->sendItemsToSynerise($catalogId, $addItemRequest);
+                $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
             } else {
                 throw $e;
             }
         }
     }
 
-    public function sendItemsToSynerise($catalogId, $addItemRequest)
+    public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance()
+        list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId)
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -455,24 +470,34 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->formattedCategoryPaths[$categoryId] : null;
     }
 
-    public function getProductAttributes()
+    public function getProductAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_ATTRIBUTES
+            \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_ATTRIBUTES,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
 
         return $attributes ? explode(',', $attributes) : [];
     }
 
-    public function getProductAttributesToSelect()
+    public function getProductAttributesToSelect($storeId = null)
     {
-        $attributes = $this->getProductAttributes();
+        $attributes = $this->getProductAttributes($storeId);
         return array_merge(
             $attributes,
             \Synerise\Integration\Model\Config\Source\Products\Attributes::REQUIRED
         );
     }
 
+    public function getStoresForCatalogs()
+    {
+        $attributes = $this->scopeConfig->getValue(
+            \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_STORES
+        );
+
+        return $attributes ? explode(',', $attributes) : [];
+    }
 
     /**
      * Get URL to the original version of the product image.
@@ -496,5 +521,25 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->_logger->error($localizedException->getMessage());
         }
         return $website;
+    }
+
+    /**
+     * Get Website code by store id
+     *
+     * @param int $storeId
+     * @return string|null
+     */
+    public function getWebsiteIdByStoreId(int $storeId): ?string
+    {
+        try {
+            if(!isset($storeToWebsite[$storeId])) {
+                $storeToWebsite[$storeId] = (int) $this->storeManager->getStore($storeId)->getWebsiteId();
+            }
+            return $storeToWebsite[$storeId];
+        } catch (NoSuchEntityException $entityException) {
+            $this->_logger->debug('Store not found '.$storeId);
+        }
+
+        return null;
     }
 }

@@ -5,6 +5,7 @@ namespace Synerise\Integration\Model\Synchronization;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Config;
@@ -46,12 +47,25 @@ class Order extends AbstractSynchronization
         );
     }
 
-    public function sendItems($collection, $status)
+    /**
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return mixed
+     */
+    protected function createCollectionWithScope($storeId, $websiteId = null)
     {
-        $attributes = $this->orderHelper->getAttributesToSelect();
-        $collection->addAttributeToSelect($attributes);
+        $collection = $this->collectionFactory->create();
+        $collection->getSelect()
+            ->where('main_table.store_id=?', $storeId);
 
-        $this->orderHelper->addOrdersBatch($collection);
+        return $collection;
+    }
+
+    public function sendItems($collection, $storeId, $websiteId = null)
+    {
+        $collection->addAttributeToSelect($this->orderHelper->getAttributesToSelect());
+
+        $this->orderHelper->addOrdersBatch($collection, $storeId);
         $this->orderHelper->markItemsAsSent($collection->getAllIds());
     }
 

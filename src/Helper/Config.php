@@ -31,6 +31,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
      * PRODUCTS SECTION
      */
     const XML_PATH_PRODUCTS_ATTRIBUTES = 'synerise/product/attributes';
+    const XML_PATH_PRODUCTS_STORES = 'synerise/product/stores';
     const XML_PATH_PRODUCTS_CRON_ENABLED = 'synerise/product/cron_enabled';
 
     /**

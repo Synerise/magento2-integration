@@ -26,6 +26,9 @@ abstract class AbstractSynchronization
      */
     protected $connection;
 
+    /**
+     * @var mixed
+     */
     protected $collectionFactory;
 
     public function __construct(
@@ -43,18 +46,22 @@ abstract class AbstractSynchronization
     /**
      * @throws \Synerise\ApiClient\ApiException
      */
-    abstract public function sendItems($collection, $status);
+    abstract public function sendItems($collection, $storeId, $websiteId = null);
 
-    public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)
+    /**
+     * @param Status $status
+     * @return mixed
+     */
+    public function getCollectionFilteredByIdRange($status)
     {
-        return $this->collectionFactory->create()
+        return $this->createCollectionWithScope($status->getStoreId(), $status->getWebsiteId())
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                ['gt' => $startId]
+                ['gt' => $status->getStartId()]
             )
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                ['lteq' => $stopId]
+                ['lteq' => $status->getStopId()]
             )
             ->setOrder(static::ENTITY_ID, 'ASC')
             ->setPageSize($this->getPageSize());
@@ -62,7 +69,7 @@ abstract class AbstractSynchronization
 
     public function getCollectionFilteredByEntityIds($storeId, $entityIds)
     {
-        return $this->collectionFactory->create()
+        return $this->createCollectionWithScope($storeId)
             ->addFieldToFilter(
                 static::ENTITY_ID,
                 ['in' => $entityIds]
@@ -71,9 +78,9 @@ abstract class AbstractSynchronization
             ->setPageSize($this->getPageSize());
     }
 
-    public function getCurrentLastId()
+    public function getCurrentLastId($status)
     {
-        $collection = $this->collectionFactory->create()
+        $collection = $this->createCollectionWithScope($status->getStoreId(), $status->getWebsiteId())
             ->addFieldToSelect(static::ENTITY_ID)
             ->setOrder(static::ENTITY_ID, 'DESC')
             ->setPageSize(1);
@@ -83,15 +90,23 @@ abstract class AbstractSynchronization
         return $item ? $item->getData(static::ENTITY_ID) : 0;
     }
 
-    protected function getPageSize()
+    abstract protected function createCollectionWithScope($storeId, $websiteId = null);
+
+    protected function getPageSize($storeId = null)
     {
-        return $this->scopeConfig->getValue(static::XML_PATH_CRON_STATUS_PAGE_SIZE);
+        return $this->scopeConfig->getValue(
+            static::XML_PATH_CRON_STATUS_PAGE_SIZE,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 
-    public function isEnabled()
+    public function isEnabled($storeId)
     {
         return $this->scopeConfig->isSetFlag(
-            static::CONFIG_XML_PATH_CRON_ENABLED
+            static::CONFIG_XML_PATH_CRON_ENABLED,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 

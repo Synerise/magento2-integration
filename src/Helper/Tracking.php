@@ -97,10 +97,12 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return bool
      */
-    public function isPageTrackingEnabled()
+    public function isPageTrackingEnabled($storeId = null)
     {
         return $this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_ENABLED
+            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_ENABLED,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
@@ -109,10 +111,12 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return bool
      */
-    public function isEventTrackingEnabled($event = null)
+    public function isEventTrackingEnabled($event = null, $storeId = null)
     {
         if (!$this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED
+            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         )) {
             return false;
         }
@@ -122,7 +126,9 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $events = explode(',', $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_EVENTS
+            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_EVENTS,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         ));
 
         return in_array($event, $events);
@@ -145,10 +151,12 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
-    public function getTrackingKey()
+    public function getTrackingKey($storeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_KEY
+            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_KEY,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
@@ -269,7 +277,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
             if ($quote->getCustomerEmail()) {
                 $data['email'] = $quote->getCustomerEmail();
                 if (!isset($data['uuid'])) {
-                    $data['uuid'] = $this->genrateUuidByEmail($data['email']);
+                    $data['uuid'] = $this->generateUuidByEmail($data['email']);
                 }
             }
 
@@ -292,7 +300,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $uuid = $this->getClientUuidFromCookie();
-        $emailUuid = $this->genrateUuidByEmail($email);
+        if(!$uuid) {
+            return;
+        }
+
+        $emailUuid = $this->generateUuidByEmail($email);
 
         if ($uuid == $emailUuid) {
             // email uuid already set
@@ -388,7 +400,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return $h;
     }
 
-    public function genrateUuidByEmail($email)
+    public function generateUuidByEmail($email)
     {
         $namespace = 'ea1c3a9d-64a6-45d0-a70c-d2a055f350d3';
         return (string) Uuid::uuid5($namespace, $email);

@@ -2,6 +2,11 @@
 
 namespace Synerise\Integration\Model\Config\Backend\Api;
 
+use Magento\Store\Api\StoreWebsiteRelationInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManager;
+use Synerise\Integration\ResourceModel\Cron\Status;
+
 class Key extends \Magento\Config\Model\Config\Backend\Encrypted
 {
     /**
@@ -18,6 +23,21 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
      * @var \Synerise\Integration\Helper\Api
      */
     private $apiHelper;
+
+    /**
+     * @var StoreWebsiteRelationInterface
+     */
+    private StoreWebsiteRelationInterface $storeWebsiteRelation;
+
+    /**
+     * @var Status
+     */
+    private Status $statusResourceModel;
+
+    /**
+     * @var StoreManager
+     */
+    private StoreManager $storeManager;
 
     /**
      * @param \Magento\Framework\Model\Context $context
@@ -40,11 +60,18 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
         \Psr\Log\LoggerInterface $logger,
         \Zend\Validator\Uuid $uuidValidator,
         \Synerise\Integration\Helper\Api $apiHelper,
+        StoreManager $storeManager,
+        StoreWebsiteRelationInterface $storeWebsiteRelation,
+        Status $statusResourceModel,
         array $data = []
     ) {
+        $this->storeManager = $storeManager;
+        $this->storeWebsiteRelation = $storeWebsiteRelation;
         $this->logger = $logger;
         $this->uuidValidator = $uuidValidator;
         $this->apiHelper = $apiHelper;
+        $this->statusResourceModel = $statusResourceModel;
+
         parent::__construct($context, $registry, $config, $cacheTypeList, $encryptor, $resource, $resourceCollection, $data);
     }
 
@@ -80,4 +107,36 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
 
         parent::beforeSave();
     }
+
+//    public function afterSave()
+//    {
+//        if ($this->isValueChanged() && $this->getScope() == ScopeInterface::SCOPE_WEBSITES) {
+//            $this->addStatusItemsForWebsiteId($this->getScopeId());
+//        }
+//
+//        return parent::afterSave();
+//    }
+//
+//    protected function addStatusItemsForWebsiteId($websiteId)
+//    {
+//        $defaultStoreId = $this->storeManager->getWebsite($websiteId)->getDefaultStore()->getId();
+//        $websiteStoreIds = $this->storeWebsiteRelation->getStoreByWebsiteId($websiteId);
+//
+//        foreach (\Synerise\Integration\Helper\Config::MODELS as $model) {
+//            Switch ($model) {
+//                case 'customer':
+//                    $websiteIds = explode(',', $this->_config->getValue("synerise/$model/websites"));
+//                    if (in_array($websiteId, $websiteIds)) {
+//                        $this->statusResourceModel->insertOrUpdate($model, $defaultStoreId, $websiteId);
+//                    }
+//                    break;
+//                default:
+//                    $storeIds = explode(',', $this->_config->getValue("synerise/$model/stores"));
+//                    $enabledStoreIds = array_intersect($storeIds, $websiteStoreIds);
+//                    if(!empty($enabledStoreIds)) {
+//                        $this->statusResourceModel->enableByModel($model, $enabledStoreIds);
+//                    }
+//            }
+//        }
+//    }
 }

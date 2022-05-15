@@ -37,20 +37,37 @@ class Subscriber extends AbstractSynchronization
         );
     }
 
-    public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)
+    public function getCollectionFilteredByIdRange($status)
     {
-        return parent::getCollectionFilteredByIdRange($storeId, $startId, $stopId)
+        $collection = parent::getCollectionFilteredByIdRange($status)
             ->addFieldToSelect(['subscriber_email', 'subscriber_status', 'change_status_at']);
+
+        return $collection;
+    }
+
+    /**
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return mixed
+     */
+    protected function createCollectionWithScope($storeId, $websiteId = null)
+    {
+        $collection = $this->collectionFactory->create();
+        $collection->getSelect()
+            ->where('main_table.store_id=?', $storeId);
+
+        return $collection;
     }
 
     /**
      * @param \Magento\Newsletter\Model\ResourceModel\Subscriber\Collection $collection
-     * @param \Synerise\Integration\Model\Cron\Status $status
+     * @param int $storeId
+     * @param int|null $websiteId
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function sendItems($collection, $status)
+    public function sendItems($collection, $storeId, $websiteId = null)
     {
-        $this->customerHelper->addCustomerSubscriptionsBatch($collection);
+        $this->customerHelper->addCustomerSubscriptionsBatch($collection, $storeId);
         $this->customerHelper->markSubscribersAsSent($collection->getAllIds());
     }
 

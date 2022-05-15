@@ -14,17 +14,19 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     protected $bagsApi;
     protected $itemsApi;
     protected $defaultApi;
-    protected $apiToken;
+    protected $apiToken = [];
 
     /**
      * Api host
      *
      * @return string
      */
-    public function getApiHost()
+    public function getApiHost($storeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_HOST
+            \Synerise\Integration\Helper\Config::XML_PATH_API_HOST,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
@@ -33,17 +35,21 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
-    public function getApiKey()
+    public function getApiKey($storeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY
+            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
-    public function isLoggerEnabled()
+    public function isLoggerEnabled($storeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_LOGGER_ENABLED
+            \Synerise\Integration\Helper\Config::XML_PATH_API_LOGGER_ENABLED,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
@@ -87,13 +93,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws \Magento\Framework\Exception\ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function getDefaultApiInstance()
+    public function getDefaultApiInstance($storeId = null)
     {
         if (!$this->defaultApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken());
+                ->setAccessToken($this->getApiToken($storeId));
 
             $this->defaultApi = new \Synerise\ApiClient\Api\DefaultApi(
                 $client,
@@ -109,13 +115,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws \Magento\Framework\Exception\ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function getBagsApiInstance()
+    public function getBagsApiInstance($storeId)
     {
         if (!$this->bagsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken());
+                ->setAccessToken($this->getApiToken($storeId));
 
             $this->bagsApi = new \Synerise\CatalogsApiClient\Api\BagsApi(
                 $client,
@@ -126,13 +132,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->bagsApi;
     }
 
-    public function getItemsApiInstance()
+    public function getItemsApiInstance($storeId = null)
     {
         if (!$this->itemsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken());
+                ->setAccessToken($this->getApiToken($storeId));
 
             $this->itemsApi = new \Synerise\CatalogsApiClient\Api\ItemsApi(
                 $client,
@@ -143,20 +149,18 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->itemsApi;
     }
 
-    protected function getApiToken()
+    protected function getApiToken($storeId = null)
     {
-        if (!$this->apiToken) {
+        if (!isset($this->apiToken[$storeId])) {
             $authApiInstance = $this->getAuthApiInstance();
 
-            $this->getApiKey();
-
             $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
-                'api_key' => $this->getApiKey()
+                'api_key' => $this->getApiKey($storeId)
             ]);
 
             try {
                 $tokenResponse = $authApiInstance->profileLoginUsingPOST($business_profile_authentication_request);
-                $this->apiToken = $tokenResponse->getToken();
+                $this->apiToken[$storeId] = $tokenResponse->getToken();
             } catch (\Synerise\ApiClient\ApiException $e) {
                 if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
@@ -169,6 +173,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return $this->apiToken;
+        return $this->apiToken[$storeId];
     }
 }

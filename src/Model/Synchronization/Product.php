@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Model\Synchronization;
 
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
@@ -15,6 +16,11 @@ class Product extends AbstractSynchronization
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
     const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/product/cron_enabled';
+
+    /**
+     * @var CollectionFactory
+     */
+    protected $collectionFactory;
 
     /**
      * @var catalogHelper
@@ -43,35 +49,27 @@ class Product extends AbstractSynchronization
         return $this->catalogHelper->getSyneriseUpdatedAtAttribute();
     }
 
-    public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)
+    /**
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return mixed
+     */
+    protected function createCollectionWithScope($storeId, $websiteId = null)
     {
-        $collection = parent::getCollectionFilteredByIdRange($storeId, $startId, $stopId);
-        $collection
-            ->setStoreId($storeId);
-
-        return $collection;
+        return $this->collectionFactory->create()->addStoreFilter($storeId);
     }
 
-    public function getCollectionFilteredByEntityIds($storeId, $startId)
+    public function sendItems($collection, $storeId, $websiteId = null)
     {
-        $collection = parent::getCollectionFilteredByEntityIds($storeId, $startId);
-        $collection
-            ->setStoreId($storeId);
-
-        return $collection;
-    }
-
-    public function sendItems($collection, $status)
-    {
-        $attributes = $this->catalogHelper->getProductAttributesToSelect();
+        $attributes = $this->catalogHelper->getProductAttributesToSelect($storeId);
         $collection
             ->addAttributeToSelect($attributes);
 
         $this->catalogHelper->addItemsBatchWithCatalogCheck(
             $collection,
             $attributes,
-            $status->getWebsiteId(),
-            $status->getStoreId()
+            $websiteId,
+            $storeId
         );
     }
 

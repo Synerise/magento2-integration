@@ -5,21 +5,28 @@ namespace Synerise\Integration\Cron;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Cron\QueueFactory;
-use Synerise\Integration\Model\Cron\StatusFactory;
+use Synerise\Integration\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
+use Synerise\Integration\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
 use Synerise\Integration\Model\Synchronization\Customer;
 use Synerise\Integration\Model\Synchronization\Order;
 use Synerise\Integration\Model\Synchronization\Product;
 use Synerise\Integration\Model\Synchronization\Subscriber;
+use Synerise\Integration\ResourceModel\Cron\Queue;
 
 class Synchronization
 {
     const CRON_STATUS_STATE_IN_PROGRESS = 0;
-    const CRON_STATUS_STATE_COMPLETE= 1;
+    const CRON_STATUS_STATE_COMPLETE = 1;
     const CRON_STATUS_STATE_RETRY_REQUIRED = 2;
     const CRON_STATUS_STATE_ERROR = 3;
+    const CRON_STATUS_STATE_DISABLED = 4;
 
     const XML_PATH_CRON_QUEUE_PAGE_SIZE = 'synerise/cron_queue/page_size';
+
+    /**
+     * @var array
+     */
+    private $storesForCatalogs = [];
 
     /**
      * @var LoggerInterface
@@ -31,29 +38,32 @@ class Synchronization
      */
     protected $scopeConfig;
 
-    protected $queueFactory;
+    protected $queueCollectionFactory;
 
-    protected $statusFactory;
+    protected $statusCollectionFactory;
 
     protected $storeStatusCollectionCache;
+    private $queueResourceModel;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        QueueFactory $queueFactory,
-        StatusFactory $statusFactory,
+        QueueCollectionFactory $queueCollectionFactory,
+        StatusCollectionFactory $statusCollectionFactory,
         Customer $customer,
         Order $order,
         Product $product,
         Subscriber $subscriber,
-        ResourceConnection $resource
+        ResourceConnection $resource,
+        Queue $queueResourceModel
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->logger = $logger;
-        $this->queueFactory = $queueFactory;
-        $this->statusFactory = $statusFactory;
+        $this->queueCollectionFactory = $queueCollectionFactory;
+        $this->statusCollectionFactory = $statusCollectionFactory;
         $this->connection = $resource->getConnection();
         $this->resource = $resource;
+        $this->queueResourceModel = $queueResourceModel;
 
         $this->executors = [
             'customer' => $customer,
@@ -66,25 +76,39 @@ class Synchronization
     public function processByIds()
     {
         try {
-            $statusCollection = $this->statusFactory->create()
-                ->getCollection()
-                ->addFieldToFilter('state', static::CRON_STATUS_STATE_IN_PROGRESS);
+            $statusCollection = $this->statusCollectionFactory->create()
+                ->addFieldToFilter('state', static::CRON_STATUS_STATE_IN_PROGRESS)
+                ->setPageSize(3);
 
             if (!$statusCollection->count()) {
                 return;
             }
 
             foreach ($statusCollection as $statusItem) {
-                $executor = $this->getExecutorByName($statusItem->getModel());
-                if ($executor) {
 
-                    if (!$executor->isEnabled()) {
+                if($statusItem->getModel() == 'product') {
+                    if(in_array($statusItem->getStoreId(), $this->getStoresForCatalogs())) {
+                        $statusItem
+                            ->setState(static::CRON_STATUS_STATE_DISABLED)
+                            ->save();
+                        continue;
+                    }
+                }
+
+                $executor = $this->getExecutorByName($statusItem->getModel());
+
+                if ($executor) {
+                    if (!$executor->isEnabled($statusItem->getStoreId())) {
+                        /** todo: enable on config change */
+                        $statusItem
+                            ->setState(static::CRON_STATUS_STATE_DISABLED)
+                            ->save();
                         continue;
                     }
 
                     $stopId = $statusItem->getStopId();
                     if (!$stopId) {
-                        $stopId = $executor->getCurrentLastId();
+                        $stopId = $executor->getCurrentLastId($statusItem);
                         $statusItem->setStopId($stopId);
                     }
 
@@ -96,17 +120,16 @@ class Synchronization
                         continue;
                     }
 
-                    $collection = $executor->getCollectionFilteredByIdRange(
-                        $statusItem->getStoreId(),
-                        $statusItem->getStartId(),
-                        $statusItem->getStopId()
-                    );
+                    $collection = $executor->getCollectionFilteredByIdRange($statusItem);
 
                     if (!$collection->getSize()) {
+                        $statusItem
+                            ->setState(static::CRON_STATUS_STATE_COMPLETE)
+                            ->save();
                         continue;
                     }
 
-                    $executor->sendItems($collection, $statusItem);
+                    $executor->sendItems($collection, $statusItem->getStoreId(), $statusItem->getWebsiteId());
 
                     $lastItem = $collection->getLastItem();
                     $statusItem->setStartId($lastItem->getData($executor->getEntityIdField()));
@@ -126,44 +149,40 @@ class Synchronization
     public function processByQueue()
     {
         try {
-            $collection = $this->statusFactory->create()
-                ->getCollection();
-
-            foreach ($collection as $statusItem) {
-                $executor = $this->getExecutorByName($statusItem->getModel());
+            $groupedItems = $this->queueResourceModel->getGroupedQueueItems();
+            foreach ($groupedItems as $groupedItem) {
+                $executor = $this->getExecutorByName($groupedItem['model']);
                 if ($executor) {
-
-                    if (!$executor->isEnabled()) {
+                    if (!$executor->isEnabled($groupedItem['store_id'])) {
                         continue;
                     }
 
-                    $queueCollection = $this->queueFactory->create()
-                        ->getCollection()
+                    $queueCollection = $this->queueCollectionFactory->create()
                         ->addFieldToSelect('entity_id')
-                        ->addFieldToFilter('model', $statusItem->getModel())
-                        ->addFieldToFilter('store_id', $statusItem->getStoreId())
-                        ->setPageSize($this->getPageSize());
+                        ->addFieldToFilter('model', $groupedItem['model'])
+                        ->addFieldToFilter('store_id', $groupedItem['store_id'])
+                        ->setPageSize($this->getPageSize($groupedItem['store_id']));
 
                     if (!$queueCollection->getSize()) {
                         continue;
                     }
 
-                    $entityIds = $this->getAllEntityIds($queueCollection);
+                    $entityIds = $queueCollection->getColumnValues('entity_id');
 
-                    $collection = $executor->getCollectionFilteredByEntityIds(
-                        $statusItem->getStoreId(),
+                    $items = $executor->getCollectionFilteredByEntityIds(
+                        $groupedItem['store_id'],
                         $entityIds
                     );
 
-                    if (!$collection->getSize()) {
+                    if (!$items->getSize()) {
                         continue;
                     }
 
-                    $executor->sendItems($collection, $statusItem);
+                    $executor->sendItems($items, $groupedItem['store_id']);
 
                     $this->deleteItemsFromQueue(
-                        $statusItem->getModel(),
-                        $statusItem->getStoreId(),
+                        $groupedItem['model'],
+                        $groupedItem['store_id'],
                         $entityIds
                     );
                 }
@@ -214,47 +233,33 @@ class Synchronization
         );
     }
 
-    public function addItemToQueueByWebsiteIds($model, $websiteIds, $entityId)
+    /**
+     * @param \Magento\Catalog\Model\Product[] $products
+     */
+    public function addProductsToQueue($products)
     {
-        $collection = $this->getStoreStatusCollectionByWebsiteIds($model, $websiteIds);
-
-        if ($collection->count()) {
-            $data = [];
-            foreach ($collection as $status) {
-                $data[] = [
-                    'model' => $model,
-                    'store_id' => $status->getStoreId(),
-                    'entity_id' => $entityId,
-                ];
-            }
-
-            $this->connection->insertOnDuplicate(
-                $this->connection->getTableName('synerise_cron_queue'),
-                $data
-            );
-        }
-    }
-
-    public function addItemsToQueueByItemWebsiteIds($model, $items)
-    {
+        $enabledCatalogStores = $this->getStoresForCatalogs();
         $data = [];
-        foreach ($items as $item) {
-            $collection = $this->getStoreStatusCollectionByWebsiteIds($model, $item->getWebsiteIds());
-            if ($collection->count()) {
-                foreach ($collection as $status) {
+
+        foreach ($products as $product) {
+            $storeIds = $product->getStoreIds();
+            foreach ($storeIds as $storeId) {
+                if(in_array($storeId, $enabledCatalogStores)) {
                     $data[] = [
-                        'model' => $model,
-                        'store_id' => $status->getStoreId(),
-                        'entity_id' => $item->getEntityId(),
+                        'model' => 'product',
+                        'store_id' => $storeId,
+                        'entity_id' => $product->getId(),
                     ];
                 }
             }
         }
 
-        $this->connection->insertOnDuplicate(
-            $this->connection->getTableName('synerise_cron_queue'),
-            $data
-        );
+        if (!empty($data)) {
+            $this->connection->insertOnDuplicate(
+                $this->connection->getTableName('synerise_cron_queue'),
+                $data
+            );
+        }
     }
 
     public function deleteItemsFromQueue($model, $storeId, $entityIds)
@@ -271,22 +276,12 @@ class Synchronization
         );
     }
 
-    public function getAllEntityIds($collection)
-    {
-        $ids = [];
-        foreach ($collection as $item) {
-            $ids[] = $item->getEntityId();
-        }
-        return $ids;
-    }
-
     protected function getStoreStatusCollectionByWebsiteIds($model, $websiteIds)
     {
         sort($websiteIds);
         $key = $model . implode('|', $websiteIds);
         if (!isset($this->storeStatusCollectionCache[$key])) {
-            $collection = $this->statusFactory->create()
-                ->getCollection()
+            $collection = $this->statusCollectionFactory->create()
                 ->addFieldToSelect('store_id')
                 ->addFieldToFilter('model', $model)
                 ->addFieldToFilter('website_id', ['in' => $websiteIds]);
@@ -325,8 +320,38 @@ class Synchronization
         );
     }
 
-    protected function getPageSize()
+    protected function getPageSize($storeId)
     {
-        return $this->scopeConfig->getValue(static::XML_PATH_CRON_QUEUE_PAGE_SIZE);
+        return $this->scopeConfig->getValue(
+            static::XML_PATH_CRON_QUEUE_PAGE_SIZE,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
+
+    public function getStoresForCatalogs()
+    {
+        if(!empty($this->storesForCatalogs)) {
+            $storesForCatalogs = $this->scopeConfig->getValue(
+                \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_STORES
+            );
+
+            $this->storesForCatalogs = $storesForCatalogs ? explode(',', $storesForCatalogs) : [];
+        }
+
+        return $this->storesForCatalogs;
+    }
+
+//    public function getGroupedQueueItems($limit = 1000)
+//    {
+//        $queueCollection = $this->queueCollectionFactory->create()
+//            ->addFieldToSelect(['model', 'store_id']);
+//
+//        $queueCollection
+//            ->getSelect()
+//            ->group(['model', 'store_id'])
+//            ->limit($limit);
+//
+//        return $queueCollection;
+//    }
 }

@@ -2,7 +2,7 @@
 
 namespace Synerise\Integration\Model\Config\Source\EventTracking;
 
-class Events implements \Magento\Framework\Option\ArrayInterface
+class Events implements \Magento\Framework\Data\OptionSourceInterface
 {
     const OPTIONS = [
         'customer_register_success'             => 'Customer registration',

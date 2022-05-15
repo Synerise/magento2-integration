@@ -10,17 +10,17 @@
             <resource>Synerise_SystemConfig::synerise</resource>
             <group id="api" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Synerise Api Setup</label>
-                <field id="key" type="obscure" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Key</label>
-                    <config_path>synerise/api/key</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Api\Key</backend_model>
-                    <comment><![CDATA[Api key can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/apikeys/list" target="_blank">Settings > API Keys</a>. Please add an <i>Business Profile</i> api key, set the appropriate permissions over edit menu: <i>CLIENT, EVENTS, TRANSACTIONS</i> & copy paste the key.]]></comment>
-                </field>
-                <field id="host" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="host" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1">
                     <label>Host</label>
                     <config_path>synerise/api/host</config_path>
                     <backend_model>\Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
                     <comment>Specify Api host URL.</comment>
+                </field>
+                <field id="key" type="obscure" translate="label" sortOrder="20" showInWebsite="1">
+                    <label>Key</label>
+                    <config_path>synerise/api/key</config_path>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Api\Key</backend_model>
+                    <comment><![CDATA[Api key can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/apikeys/list" target="_blank">Settings > API Keys</a>. Please add an <i>Business Profile</i> api key, set the appropriate permissions over edit menu: <i>CLIENT, EVENTS, TRANSACTIONS</i> & copy paste the key.]]></comment>
                 </field>
             </group>
             <group id="api_logger" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -43,7 +43,7 @@
                     <config_path>synerise/page_tracking/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="script" type="textarea" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="script" type="textarea" translate="label" sortOrder="20" showInWebsite="1">
                     <label>Script</label>
                     <config_path>synerise/page_tracking/script</config_path>
                     <comment><![CDATA[Script can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/profile/tracking-codes/list" target="_blank">Settings > Tracking codes</a>. Please copy & paste the whole script.]]></comment>
@@ -77,48 +77,54 @@
             <label>Synchronization</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
-            <group id="cron_status" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="cron_status" translate="label" sortOrder="20" showInDefault="1">
                 <label>Data Synchronization</label>
-                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
                     <label>Enabled</label>
                     <config_path>synerise/cron_status/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="expr" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="expr" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Cron expression</label>
                     <config_path>synerise/cron_status/expr</config_path>
                     <backend_model>Synerise\Integration\Model\Config\Backend\Cron\Status</backend_model>
                 </field>
-                <field id="page_size" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="page_size" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Page size</label>
                     <config_path>synerise/cron_status/page_size</config_path>
                     <validate>integer validate-greater-than-zero</validate>
                 </field>
             </group>
-            <group id="cron_queue" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="cron_queue" translate="label" sortOrder="20" showInDefault="1">
                 <label>Updates Synchronization</label>
-                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
                     <label>Enabled</label>
                     <config_path>synerise/cron_queue/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="expr" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="expr" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Cron expression</label>
                     <config_path>synerise/cron_queue/expr</config_path>
                     <backend_model>Synerise\Integration\Model\Config\Backend\Cron\Queue</backend_model>
                 </field>
-                <field id="page_size" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="page_size" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Page size</label>
                     <config_path>synerise/cron_queue/page_size</config_path>
                     <validate>integer validate-greater-than-zero</validate>
                 </field>
             </group>
-            <group id="products" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="product" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Products</label>
-                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Data synchronization</label>
+                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
+                    <label>Synchronization enabled</label>
                     <config_path>synerise/product/cron_enabled</config_path>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Cron\EnabledStores</backend_model>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
+                    <label>Synchronized stores</label>
+                    <config_path>synerise/product/stores</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Store</source_model>
                 </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
@@ -126,12 +132,18 @@
                     <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes</source_model>
                 </field>
             </group>
-            <group id="customers" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="customer" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Customers</label>
-                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
                     <label>Data synchronization</label>
                     <config_path>synerise/customer/cron_enabled</config_path>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Cron\EnabledWebsites</backend_model>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="websites" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
+                    <label>Synchronized websites</label>
+                    <config_path>synerise/customer/websites</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Website</source_model>
                 </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
@@ -139,20 +151,32 @@
                     <source_model>Synerise\Integration\Model\Config\Source\Customers\Attributes</source_model>
                 </field>
             </group>
-            <group id="orders" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="order" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Orders</label>
-                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
                     <label>Data synchronization</label>
                     <config_path>synerise/order/cron_enabled</config_path>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Cron\EnabledStores</backend_model>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
+                    <label>Synchronized stores</label>
+                    <config_path>synerise/order/stores</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Store</source_model>
                 </field>
             </group>
             <group id="subscriber" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Subscribers</label>
-                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="cron_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
                     <label>Data synchronization</label>
                     <config_path>synerise/subscriber/cron_enabled</config_path>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Cron\EnabledStores</backend_model>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1">
+                    <label>Synchronized stores</label>
+                    <config_path>synerise/subscriber/stores</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Store</source_model>
                 </field>
             </group>
         </section>

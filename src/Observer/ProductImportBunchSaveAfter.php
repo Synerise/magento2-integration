@@ -70,7 +70,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
 
         foreach ($chunkBunches as $chunk) {
             $products = $this->getProductsBySkuInBunch($chunk);
-            $this->synchronization->addItemsToQueueByItemWebsiteIds('product', $products);
+            $this->synchronization->addProductsToQueue($products);
         }
     }
 

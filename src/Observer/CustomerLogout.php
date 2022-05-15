@@ -52,6 +52,10 @@ class CustomerLogout implements ObserverInterface
             return;
         }
 
+        if ($this->trackingHelper->isAdminStore()) {
+            return;
+        }
+
         try {
             $customer = $observer->getEvent()->getCustomer();
 
