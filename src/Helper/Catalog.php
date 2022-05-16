@@ -223,6 +223,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
+        $value['is_salable'] = (int) ($product->isSalable() && $product->getStatus() == 1 && $value['stock_status']);
 
         return new AddItem([
             'item_key' => $value['itemId'],
