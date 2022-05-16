@@ -6,6 +6,7 @@ use \GuzzleHttp\HandlerStack;
 use \GuzzleHttp\Middleware;
 use \GuzzleHttp\MessageFormatter;
 use Loguzz\Middleware\LogMiddleware;
+use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
@@ -21,12 +22,12 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
-    public function getApiHost($storeId = null)
+    public function getApiHost($scope, $scopeId = null)
     {
         return $this->scopeConfig->getValue(
             \Synerise\Integration\Helper\Config::XML_PATH_API_HOST,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $storeId
+            $scope,
+            $scopeId
         );
     }
 
@@ -35,12 +36,10 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
-    public function getApiKey($storeId = null)
+    public function getApiKey($scope, $scopeId)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $storeId
+            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY, $scope, $scopeId
         );
     }
 
@@ -48,7 +47,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     {
         return $this->scopeConfig->getValue(
             \Synerise\Integration\Helper\Config::XML_PATH_API_LOGGER_ENABLED,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         );
     }
@@ -72,20 +71,25 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return new \GuzzleHttp\Client($options);
     }
 
-    public function getAuthApiInstance()
+    public function getAuthApiInstance($scope, $scopeId, $token = null)
     {
-        if (!$this->authApi) {
+        $key = md5(serialize(func_get_args()));
+        if (!isset($this->authApi[$key])) {
             $client = new \GuzzleHttp\Client();
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost()));
+                ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
 
-            $this->authApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
+            if ($token) {
+                $config->setAccessToken($token);
+            }
+
+            $this->authApi[$key] = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
                 $client,
                 $config
             );
         }
 
-        return $this->authApi;
+        return $this->authApi[$key];
     }
 
     /**
@@ -98,8 +102,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         if (!$this->defaultApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken($storeId));
+                ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
 
             $this->defaultApi = new \Synerise\ApiClient\Api\DefaultApi(
                 $client,
@@ -120,8 +124,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         if (!$this->bagsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken($storeId));
+                ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
 
             $this->bagsApi = new \Synerise\CatalogsApiClient\Api\BagsApi(
                 $client,
@@ -137,8 +141,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         if (!$this->itemsApi) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken($storeId));
+                ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
 
             $this->itemsApi = new \Synerise\CatalogsApiClient\Api\ItemsApi(
                 $client,
@@ -149,22 +153,22 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->itemsApi;
     }
 
-    protected function getApiToken($storeId = null)
+    public function getApiToken($scope, $scopeId, $key = null)
     {
-        if (!isset($this->apiToken[$storeId])) {
-            $authApiInstance = $this->getAuthApiInstance();
-
+        $key = $key ?: $this->getApiKey($scope, $scopeId);
+        if (!isset($this->apiToken[$key])) {
             $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
-                'api_key' => $this->getApiKey($storeId)
+                'api_key' => $key
             ]);
 
             try {
-                $tokenResponse = $authApiInstance->profileLoginUsingPOST($business_profile_authentication_request);
-                $this->apiToken[$storeId] = $tokenResponse->getToken();
+                $tokenResponse = $this->getAuthApiInstance($scope, $scopeId)
+                    ->profileLoginUsingPOST($business_profile_authentication_request);
+                $this->apiToken[$key] = $tokenResponse->getToken();
             } catch (\Synerise\ApiClient\ApiException $e) {
                 if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
-                        __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
+                        __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
                     );
                 } else {
                     $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
@@ -173,6 +177,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return $this->apiToken[$storeId];
+        return $this->apiToken[$key];
     }
 }

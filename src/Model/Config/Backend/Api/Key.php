@@ -90,7 +90,8 @@ class Key extends \Magento\Config\Model\Config\Backend\Encrypted
             ]);
 
             try {
-                $this->apiHelper->getAuthApiInstance()->profileLoginUsingPOST($business_profile_authentication_request);
+                $this->apiHelper->getAuthApiInstance($this->getScope(), $this->getScopeId())
+                    ->profileLoginUsingPOST($business_profile_authentication_request);
             } catch (\Synerise\ApiClient\ApiException $e) {
                 if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
