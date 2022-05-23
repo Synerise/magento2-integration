@@ -51,10 +51,10 @@ class ProductIsSalableChange implements ObserverInterface
         $changedProducts = [];
 
         if ($eventName === 'sales_order_item_save_before') {
-            $salesOrderItem = $observer->getObject();
+            $salesOrderItem = $observer->getData('item');
             $this->data->setData($salesOrderItem->getSku(), $salesOrderItem->getProduct());
         } elseif ($eventName === 'sales_order_item_save_after') {
-            $salesOrderItem = $observer->getObject();
+            $salesOrderItem = $observer->getData('item');
             $product = $this->productRepository->get($salesOrderItem->getSku(), false, $salesOrderItem->getStoreId(), true);
             $productFromDataStorage = $this->data->getData($salesOrderItem->getSku());
             if ($productFromDataStorage &&
@@ -62,7 +62,7 @@ class ProductIsSalableChange implements ObserverInterface
                 $changedProducts[] = $product;
             }
         } elseif ($eventName === 'sales_order_place_after') {
-            $order = $observer->getObject();
+            $order = $observer->getData('order');
             $orderItems = $order->getAllItems();
             foreach ($orderItems as $orderItem) {
                 $product = $orderItem->getProduct();
