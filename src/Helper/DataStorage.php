@@ -20,6 +20,23 @@ class DataStorage extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * Gets data from internal cache by key and unset.
+     *
+     * @param string $key
+     * @return mixed|null
+     */
+    public function getAndUnsetData(string $key)
+    {
+        $preparedKey = $this->prepareKey($key);
+        if(isset($this->data[$preparedKey])){
+            $data = $this->data[$preparedKey];
+            $this->removeFromData($key);
+            return $data;
+        }
+        return null;
+    }
+
+    /**
      * Add data to internal cache.
      *
      * @param string $key
@@ -30,6 +47,18 @@ class DataStorage extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $preparedKey = $this->prepareKey($key);
         $this->data[$preparedKey] = $data;
+    }
+
+    /**
+     * Unset variable from data
+     *
+     * @param string $key
+     * @return void
+     */
+    public function removeFromData(string $key)
+    {
+        $preparedKey = $this->prepareKey($key);
+        unset($this->data[$preparedKey]);
     }
 
     /**
