@@ -4,29 +4,35 @@
         <tab id="synerise" translate="label" sortOrder="1000">
             <label>Synerise</label>
         </tab>
-        <section id="synerise_api" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>Synerise Api</label>
+        <section id="synerise_general_setup" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>General Setup</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
+            <group id="business_profile" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Business Profile</label>
+                <field id="id" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1">
+                    <label>Select</label>
+                    <config_path>synerise/business_profile/id</config_path>
+                    <backend_model>\Synerise\Integration\Model\Config\Backend\BusinessProfile</backend_model>
+                    <source_model>Synerise\Integration\Model\Config\Source\BusinessProfile</source_model>
+                    <comment><![CDATA[Select business profiles in website scope to track them separately.]]></comment>
+                </field>
+            </group>
             <group id="api" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Synerise Api Setup</label>
-                <field id="host" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1">
+                <label>Api</label>
+                <field id="host" translate="label comment" type="text" sortOrder="10" showInDefault="1">
                     <label>Host</label>
                     <config_path>synerise/api/host</config_path>
                     <backend_model>\Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
                     <comment>Specify Api host URL.</comment>
                 </field>
-                <field id="key" type="obscure" translate="label" sortOrder="20" showInWebsite="1">
+                <field id="key" translate="label comment" type="text" sortOrder="10">
                     <label>Key</label>
                     <config_path>synerise/api/key</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Api\Key</backend_model>
-                    <comment><![CDATA[Api key can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/apikeys/list" target="_blank">Settings > API Keys</a>. Please add an <i>Business Profile</i> api key, set the appropriate permissions over edit menu: <i>CLIENT, EVENTS, TRANSACTIONS</i> & copy paste the key.]]></comment>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
-            </group>
-            <group id="api_logger" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Request logging</label>
                 <field id="enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Enabled</label>
+                    <label>Request logging</label>
                     <config_path>synerise/api/logger_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
@@ -36,21 +42,39 @@
             <label>Page Tracking</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
-            <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="general" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Page Tracking</label>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enabled</label>
                     <config_path>synerise/page_tracking/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="script" type="textarea" translate="label" sortOrder="20" showInWebsite="1">
-                    <label>Script</label>
-                    <config_path>synerise/page_tracking/script</config_path>
-                    <comment><![CDATA[Script can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/profile/tracking-codes/list" target="_blank">Settings > Tracking codes</a>. Please copy & paste the whole script.]]></comment>
-                </field>
                 <field id="opengraph" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Open Graph</label>
                     <config_path>synerise/page_tracking/opengraph</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Include additional product tags for tracking.]]></comment>
+                </field>
+            </group>
+            <group id="advanced" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Advanced</label>
+                <field id="domain" type="text" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Cookie domain</label>
+                    <config_path>synerise/page_tracking/domain</config_path>
+                    <backend_model>\Synerise\Integration\Model\Config\Backend\Tracking\Domain</backend_model>
+                    <comment><![CDATA[Optional. Cookie domain can be set manually.]]></comment>
+                </field>
+                <field id="custom_page_visit" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Custom Page Visit</label>
+                    <config_path>synerise/page_tracking/custom_page_visit</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="dynamic_content" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Dynamic Content</label>
+                <field id="virtual_page" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Virtual Page</label>
+                    <config_path>synerise/dynamic_content/virtual_page</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>

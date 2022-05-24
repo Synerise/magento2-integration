@@ -3,6 +3,7 @@
     <menu>
         <add id="Synerise_Integration::synerise" title="Synerise" translate="title" module="Synerise_Integration" parent="Magento_Backend::marketing" sortOrder="1" dependsOnModule="Synerise_Integration" resource="Synerise_Integration::synerise"/>
         <add id="Synerise_Integration::synerise_dashboard" title="Dashboard" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="10" dependsOnModule="Synerise_Integration" action="synerise/dashboard" resource="Synerise_Integration::synerise"/>
-        <add id="Synerise_Integration::synerise_configuration" title="Configuration" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="11" dependsOnModule="Synerise_Integration" action="adminhtml/system_config/edit/section/synerise_api" resource="Synerise_Integration::synerise"/>
+        <add id="Synerise_Integration::synerise_businessprofile" title="Business Profiles" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="11" dependsOnModule="Synerise_Integration" action="synerise/business_profile" resource="Synerise_Integration::synerise"/>
+        <add id="Synerise_Integration::synerise_configuration" title="Configuration" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="12" dependsOnModule="Synerise_Integration" action="adminhtml/system_config/edit/section/synerise_general_setup" resource="Synerise_Integration::synerise"/>
     </menu>
 </config>

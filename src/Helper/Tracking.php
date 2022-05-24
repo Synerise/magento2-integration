@@ -4,6 +4,7 @@ namespace Synerise\Integration\Helper;
 
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Magento\Quote\Model\Quote;
+use Magento\Store\Model\ScopeInterface;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\Client;
@@ -20,6 +21,14 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     const FORMAT_ISO_8601 = 'Y-m-d\TH:i:s.v\Z';
 
     const APPLICATION_NAME = 'magento2';
+
+    const XML_PATH_PAGE_TRACKING_ENABLED = 'synerise/page_tracking/enabled';
+
+    const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/key';
+
+    const XML_PATH_PAGE_TRACKING_DOMAIN = 'synerise/page_tracking/domain';
+
+    const XML_PATH_PAGE_TRACKING_OPENGRAPH = 'synerise/page_tracking/opengraph';
 
     /**
      * @var \Magento\Framework\Stdlib\CookieManagerInterface
@@ -64,7 +73,17 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @var \Magento\Backend\Model\Auth\Session
      */
-    private $backendSession;
+    protected $backendSession;
+
+    /**
+     * @var string|null
+     */
+    protected $cookieDomain;
+
+    /**
+     * @var string|null
+     */
+    protected $trackerKey;
 
     public function __construct(
         \Magento\Backend\Model\Auth\Session $backendSession,
@@ -97,12 +116,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return bool
      */
-    public function isPageTrackingEnabled($storeId = null)
+    public function isPageTrackingEnabled()
     {
         return $this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_ENABLED,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $storeId
+            self::XML_PATH_PAGE_TRACKING_ENABLED,
+            ScopeInterface::SCOPE_STORE
         );
     }
 
@@ -115,7 +133,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     {
         if (!$this->scopeConfig->isSetFlag(
             \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         )) {
             return false;
@@ -127,7 +145,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
         $events = explode(',', $this->scopeConfig->getValue(
             \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_EVENTS,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         ));
 
@@ -142,7 +160,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     public function isOpengraphEnabled()
     {
         return $this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_OPENGRAPH
+            self::XML_PATH_PAGE_TRACKING_OPENGRAPH
         );
     }
 
@@ -151,13 +169,16 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
-    public function getTrackingKey($storeId = null)
+    public function getTrackerKey()
     {
-        return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_KEY,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
+        if (!isset($this->trackerKey)) {
+            $this->trackerKey = $this->scopeConfig->getValue(
+                self::XML_PATH_PAGE_TRACKING_KEY,
+                ScopeInterface::SCOPE_STORE
+            );
+        }
+
+        return $this->trackerKey;
     }
 
     public function getClientUuid()
@@ -179,8 +200,19 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getCookieDomain()
     {
-        $parsedUrl = parse_url($this->storeManager->getStore()->getBaseUrl());
-        return '.'.$parsedUrl['host'];
+        if (!$this->cookieDomain) {
+            $this->cookieDomain = $this->scopeConfig->getValue(
+                self::XML_PATH_PAGE_TRACKING_DOMAIN,
+                ScopeInterface::SCOPE_STORE
+            );
+
+            if (!$this->cookieDomain) {
+                $parsedBasedUrl = parse_url($this->storeManager->getStore()->getBaseUrl());
+                $this->cookieDomain = isset($parsedBasedUrl['host']) ? '.'.$parsedBasedUrl['host'] : null;
+            }
+        }
+
+        return $this->cookieDomain;
     }
 
     public function setClientUuidAndResetCookie($uuid)
