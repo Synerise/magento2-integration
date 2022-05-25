@@ -6,14 +6,17 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Ui\Component\MassAction\Filter;
+use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Model\BusinessProfile;
 use Synerise\Integration\ResourceModel\BusinessProfile\CollectionFactory;
 
 
-class MassDelete extends Action implements HttpPostActionInterface
+class MassUpdate extends Action implements HttpPostActionInterface
 {
     /**
      * Authorization level
@@ -29,6 +32,10 @@ class MassDelete extends Action implements HttpPostActionInterface
      * @var Filter
      */
     protected $filter;
+    /**
+     * @var Api
+     */
+    protected $apiHelper;
 
     /**
      * Constructor
@@ -40,10 +47,13 @@ class MassDelete extends Action implements HttpPostActionInterface
     public function __construct(
         Context $context,
         Filter $filter,
-        CollectionFactory $collectionFactory
+        CollectionFactory $collectionFactory,
+        Api $apiHelper
     ) {
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
+        $this->apiHelper = $apiHelper;
+
         parent::__construct($context);
     }
 
@@ -58,19 +68,51 @@ class MassDelete extends Action implements HttpPostActionInterface
             throw new NotFoundException(__('Page not found'));
         }
         $collection = $this->filter->getCollection($this->collectionFactory->create());
-        $deleted = 0;
+        $updated = 0;
 
         /** @var BusinessProfile $businessProfile */
         foreach ($collection->getItems() as $businessProfile) {
-            $businessProfile->delete();
-            $deleted++;
+            $this->update($businessProfile);
+            $updated++;
         }
 
-        if ($deleted) {
+        if ($updated) {
             $this->messageManager->addSuccessMessage(
-                __('A total of %1 record(s) have been deleted.', $deleted)
+                __('A total of %1 record(s) have been updated.', $updated)
             );
         }
         return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('*/*/index');
+    }
+
+    protected function update($businessProfile)
+    {
+        $permissionCheck = $this->checkPermissions($businessProfile->getApiKey());
+        $missingPermissions = [];
+        $permissions = $permissionCheck->getPermissions();
+        foreach ($permissions as $permission => $isSet) {
+            if (!$isSet) {
+                $missingPermissions[] = $permission;
+            }
+        }
+
+        $businessProfile
+            ->setName($permissionCheck->getBusinessProfileName())
+            ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
+            ->save();
+    }
+
+    /**
+     * @param $apiKey
+     * @param string $scope
+     * @param null $scopeId
+     * @return \Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse
+     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
+     */
+    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
+        $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);
+
+        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+            ->checkPermissions(BusinessProfile::REQUIRED_PERMISSIONS);
     }
 }

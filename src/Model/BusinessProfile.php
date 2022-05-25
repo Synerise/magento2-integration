@@ -6,10 +6,19 @@ use Ramsey\Uuid\Uuid;
 class BusinessProfile extends \Magento\Framework\Model\AbstractModel
 {
     const REQUIRED_PERMISSIONS = [
-        "TRACKER_CREATE",
-        "EVENTS",
-        "CLIENT",
-        "TRANSACTION"
+        "API_BATCH_CLIENT_CREATE",
+        "API_BATCH_TRANSACTION_CREATE",
+        "API_TRANSACTION_CREATE",
+        "API_CUSTOM_EVENTS_CREATE",
+        "API_ADDED_TO_CART_EVENTS_CREATE",
+        "API_REMOVED_FROM_CART_EVENTS_CREATE",
+        "API_LOGGED_IN_EVENTS_CREATE",
+        "API_LOGGED_OUT_EVENTS_CREATE",
+        "API_REGISTERED_EVENTS_CREATE",
+        "CATALOGS_CATALOG_CREATE",
+        "CATALOGS_CATALOG_READ",
+        "CATALOGS_ITEM_BATCH_CREATE",
+        "TRACKER_CREATE"
     ];
 
     /**

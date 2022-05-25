@@ -4,6 +4,7 @@ namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
 
 use Magento\Backend\App\Action;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\ErrorLog\Logger;
 use Synerise\Integration\Model\BusinessProfile;
 
@@ -35,6 +36,7 @@ class Save extends \Magento\Backend\App\Action
      * Save action
      *
      * @return \Magento\Framework\Controller\ResultInterface
+     * @throws LocalizedException
      */
     public function execute()
     {
@@ -50,15 +52,33 @@ class Save extends \Magento\Backend\App\Action
                 $model->load($id);
             }
 
-            $permissionCheck = $this->checkPermissions($data['api_key']);
-
-            $model->setName($permissionCheck->getBusinessProfileName());
-            $model->setApiKey($data['api_key']);
-
-            $permissions = $permissionCheck->getPermissions();
+            if (isset($data['api_key'])) {
+                $apiKey = $data['api_key'];
+                $model->setApiKey($apiKey);
+            } else {
+                $apiKey = $model->getApiKey();
+            }
 
             try {
-                $model->save();
+
+                if (!$apiKey) {
+                    throw new LocalizedException(__('Missing api key'));
+                }
+
+                $permissionCheck = $this->checkPermissions($apiKey);
+                $missingPermissions = [];
+                $permissions = $permissionCheck->getPermissions();
+                foreach ($permissions as $permission => $isSet) {
+                    if (!$isSet) {
+                        $missingPermissions[] = $permission;
+                    }
+                }
+
+                $model
+                    ->setName($permissionCheck->getBusinessProfileName())
+                    ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
+                    ->save();
+
                 $this->messageManager->addSuccess(__('You saved this Business Profile.'));
                 $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
                 if ($this->getRequest()->getParam('back')) {

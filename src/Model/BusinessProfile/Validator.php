@@ -13,7 +13,6 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
         $this->apiHelper = $apiHelper;
     }
 
-
     public function isValid($businessProfile)
     {
         $messages = [];

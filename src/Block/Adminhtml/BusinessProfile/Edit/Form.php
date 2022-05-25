@@ -46,12 +46,6 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
         }
 
         $fieldset->addField(
-            'name',
-            'text',
-            ['name' => 'name', 'label' => __('Name'), 'title' => __('Name'), 'required' => true]
-        );
-
-        $fieldset->addField(
             'api_key',
             'obscure',
             ['name' => 'api_key', 'label' => __('Api Key'), 'title' => __('Api Key'), 'required' => true]
