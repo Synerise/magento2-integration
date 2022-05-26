@@ -38,11 +38,6 @@ class Product extends AbstractSynchronization
         );
     }
 
-    public function getSyneriseUpdatedAtAttribute()
-    {
-        return $this->catalogHelper->getSyneriseUpdatedAtAttribute();
-    }
-
     public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)
     {
         $collection = parent::getCollectionFilteredByIdRange($storeId, $startId, $stopId);
@@ -52,9 +47,9 @@ class Product extends AbstractSynchronization
         return $collection;
     }
 
-    public function getCollectionFilteredByEntityIds($storeId, $startId)
+    public function getCollectionFilteredByEntityIds($storeId, $entityIds)
     {
-        $collection = parent::getCollectionFilteredByEntityIds($storeId, $startId);
+        $collection = parent::getCollectionFilteredByEntityIds($storeId, $entityIds);
         $collection
             ->setStoreId($storeId);
 
@@ -77,13 +72,6 @@ class Product extends AbstractSynchronization
 
     public function markAllAsUnsent()
     {
-        $attribute = $this->getSyneriseUpdatedAtAttribute();
-        if ($attribute->getId()) {
-            $this->connection->update(
-                'catalog_product_entity_datetime',
-                ['value' => null],
-                ['attribute_id', $attribute->getId()]
-            );
-        }
+        $this->connection->truncateTable($this->connection->getTableName('synerise_sync_product'));
     }
 }

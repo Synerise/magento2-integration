@@ -12,6 +12,7 @@
                         <argument name="subHeader" xsi:type="string">Products sent</argument>
                         <argument name="resendUrlPath" xsi:type="string">synerise/catalog/resend</argument>
                         <argument name="resetStopIdUrlPath" xsi:type="string">synerise/catalog/resetStopId</argument>
+                        <argument name="table" xsi:type="string">synerise_sync_product</argument>
                     </action>
                 </block>
                 <block class="Synerise\Integration\Block\Adminhtml\Dashboard\Status" name="customers-status" template="Synerise_Integration::dashboard-status.phtml">
@@ -20,6 +21,7 @@
                         <argument name="subHeader" xsi:type="string">Customers sent</argument>
                         <argument name="resendUrlPath" xsi:type="string">synerise/customer/resend</argument>
                         <argument name="resetStopIdUrlPath" xsi:type="string">synerise/customer/resetStopId</argument>
+                        <argument name="table" xsi:type="string">synerise_sync_customer</argument>
                     </action>
                 </block>
                 <block class="Synerise\Integration\Block\Adminhtml\Dashboard\Status" name="orders-status" template="Synerise_Integration::dashboard-status.phtml">

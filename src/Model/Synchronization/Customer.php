@@ -59,18 +59,6 @@ class Customer extends AbstractSynchronization
 
     public function markAllAsUnsent()
     {
-        $attributeId = $this->getSyneriseUpdatedAtAttributeId();
-        if ($attributeId) {
-            $this->connection->update(
-                'customer_entity_datetime',
-                ['value' => null],
-                ['attribute_id', $attributeId]
-            );
-        }
-    }
-
-    public function getSyneriseUpdatedAtAttributeId()
-    {
-        return $this->eavAttribute->getIdByCode('customer', 'synerise_updated_at');
+        $this->connection->truncateTable($this->connection->getTableName('synerise_sync_customer'));
     }
 }
