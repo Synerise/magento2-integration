@@ -10,7 +10,10 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Ui\Component\MassAction\Filter;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Model\BusinessProfile;
 use Synerise\Integration\ResourceModel\BusinessProfile\CollectionFactory;
@@ -43,6 +46,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @param Context $context
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
+     * @param Api $apiHelper
      */
     public function __construct(
         Context $context,
@@ -61,6 +65,8 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * Business Profile delete action
      *
      * @return Redirect
+     * @throws NotFoundException
+     * @throws LocalizedException
      */
     public function execute(): Redirect
     {
@@ -72,7 +78,11 @@ class MassUpdate extends Action implements HttpPostActionInterface
 
         /** @var BusinessProfile $businessProfile */
         foreach ($collection->getItems() as $businessProfile) {
-            $this->update($businessProfile);
+            try {
+                $this->update($businessProfile);
+            } catch (\Exception $e) {
+                $this->messageManager->addError(__($e->getMessage()));
+            }
             $updated++;
         }
 
@@ -84,6 +94,11 @@ class MassUpdate extends Action implements HttpPostActionInterface
         return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('*/*/index');
     }
 
+    /**
+     * @param $businessProfile
+     * @throws ValidatorException
+     * @throws ApiException
+     */
     protected function update($businessProfile)
     {
         $permissionCheck = $this->checkPermissions($businessProfile->getApiKey());
@@ -102,12 +117,12 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
-     * @param $apiKey
+     * @param string $apiKey
      * @param string $scope
      * @param null $scopeId
-     * @return \Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
+     * @return ApiKeyPermissionCheckResponse
+     * @throws ValidatorException
+     * @throws ApiException
      */
     protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
         $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);

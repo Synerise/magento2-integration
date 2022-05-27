@@ -4,8 +4,8 @@
         <tab id="synerise" translate="label" sortOrder="1000">
             <label>Synerise</label>
         </tab>
-        <section id="synerise_general_setup" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>General Setup</label>
+        <section id="synerise_business_profile" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1">
+            <label>Business Profile</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
             <group id="business_profile" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -18,6 +18,11 @@
                     <comment><![CDATA[Select business profiles in website scope to track them separately.]]></comment>
                 </field>
             </group>
+        </section>
+        <section id="synerise_api" translate="label" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Api</label>
+            <tab>synerise</tab>
+            <resource>Synerise_SystemConfig::synerise</resource>
             <group id="api" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Api</label>
                 <field id="host" translate="label comment" type="text" sortOrder="10" showInDefault="1">
@@ -26,19 +31,19 @@
                     <backend_model>\Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
                     <comment>Specify Api host URL.</comment>
                 </field>
-                <field id="key" translate="label comment" type="text" sortOrder="10">
+                <field id="key" translate="label comment" type="text">
                     <label>Key</label>
                     <config_path>synerise/api/key</config_path>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
-                <field id="enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="logger_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Request logging</label>
                     <config_path>synerise/api/logger_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
         </section>
-        <section id="synerise_page_tacking" translate="label" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_page_tacking" translate="label" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Page Tracking</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
@@ -79,7 +84,7 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_event_tacking" translate="label" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_event_tacking" translate="label" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Event Tracking</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
@@ -97,7 +102,7 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_sync" translate="label" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_sync" translate="label" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Synchronization</label>
             <tab>synerise</tab>
             <resource>Synerise_SystemConfig::synerise</resource>
