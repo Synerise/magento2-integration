@@ -13,7 +13,6 @@ class Subscriber extends AbstractSynchronization
 {
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
-    const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/subscriber/cron_enabled';
 
     /**
      * @var CustomerHelper

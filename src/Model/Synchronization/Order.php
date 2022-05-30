@@ -16,7 +16,6 @@ class Order extends AbstractSynchronization
 {
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';
-    const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/order/cron_enabled';
 
     /**
      * @var DateTime

@@ -15,7 +15,6 @@ class Product extends AbstractSynchronization
 {
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
-    const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/product/cron_enabled';
 
     /**
      * @var CollectionFactory

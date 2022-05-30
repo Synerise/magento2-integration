@@ -50,7 +50,7 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
         );
     }
 
-    public function enableByModel($model, $enabledStoreIds = [])
+    public function enableByModels($models, $enabledStoreIds = [])
     {
 
         if (empty($enabledStoreIds)) {
@@ -60,17 +60,20 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
         $allStores = $this->storeManager->getStores();
 
         $rows = [];
-        foreach($enabledStoreIds as $storeId) {
-            if(!isset($allStores[$storeId])) {
-                continue;
-            }
 
-            $rows[] = [
-                'model' => $model,
-                'state' => \Synerise\Integration\Model\Cron\Status::STATE_IN_PROGRESS,
-                'store_id' => $storeId,
-                'website_id' => $allStores[$storeId]->getWebsiteId()
-            ];
+        foreach($models as $model) {
+            foreach($enabledStoreIds as $storeId) {
+                if(!isset($allStores[$storeId])) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'model' => $model,
+                    'state' => \Synerise\Integration\Model\Cron\Status::STATE_IN_PROGRESS,
+                    'store_id' => $storeId,
+                    'website_id' => $allStores[$storeId]->getWebsiteId()
+                ];
+            }
         }
 
         if(!empty($rows)) {
@@ -81,11 +84,19 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
         }
     }
 
-    public function disableByModel($model, $enabledStoreIds = [])
+    public function disableAll()
     {
-        $where = ['model = ?' => $model];
+        $this->getConnection()->update(
+            $this->getMainTable(),
+            ['state' => \Synerise\Integration\Model\Cron\Status::STATE_DISABLED]
+        );
+    }
+
+    public function disableByModels($models, $enabledStoreIds = [])
+    {
+        $where = ['`model` IN (?)' => $models];
         if (!empty($enabledStoreIds)) {
-            $where['store_id NOT IN (?)'] = $enabledStoreIds;
+            $where['`store_id` NOT IN (?)'] = $enabledStoreIds;
         }
 
         $this->getConnection()->update(

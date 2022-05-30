@@ -2,10 +2,14 @@
 
 namespace Synerise\Integration\Model\Config\Backend;
 
+use Magento\Framework\Exception\LocalizedException;
+use Synerise\ApiClient\ApiException;
+
 class BusinessProfile extends \Magento\Framework\App\Config\Value
 {
     const XML_PATH_API_KEY = 'synerise/api/key';
     const XML_PATH_PROFILE_ID = 'synerise/business_profile/id';
+    const ERROR_MSG_403 = 'Please make sure this api key has all required roles.';
 
     public function __construct(
         \Magento\Framework\Model\Context $context,
@@ -32,10 +36,18 @@ class BusinessProfile extends \Magento\Framework\App\Config\Value
             $businessProfile = $this->businessProfile->load($businessProfileId);
             $token = $this->getApiToken($businessProfile->getApiKey());
 
-            $response = $this->apiHelper->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
-                ->getOrCreateByDomain(new \Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest([
-                    'domain' => $this->getConfigDomain() ?? $this->getBaseUrlDomain()
-                ]));
+            try {
+                $response = $this->apiHelper->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
+                    ->getOrCreateByDomain(new \Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest([
+                        'domain' => $this->getConfigDomain() ?? $this->getBaseUrlDomain()
+                    ]));
+            } catch (ApiException $e) {
+                if ($e->getCode() == 403) {
+                    throw new LocalizedException(__(self::ERROR_MSG_403));
+                } else {
+                    throw $e;
+                }
+            }
 
             $this->configWriter->save(
                 self::XML_PATH_API_KEY,

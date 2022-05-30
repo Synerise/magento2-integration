@@ -4,6 +4,7 @@ namespace Synerise\Integration\Cron;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
 use Synerise\Integration\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
@@ -22,11 +23,12 @@ class Synchronization
     const CRON_STATUS_STATE_DISABLED = 4;
 
     const XML_PATH_CRON_QUEUE_PAGE_SIZE = 'synerise/cron_queue/page_size';
+    const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
 
     /**
      * @var array
      */
-    private $storesForCatalogs = [];
+    private $enabledStores = [];
 
     /**
      * @var LoggerInterface
@@ -48,6 +50,7 @@ class Synchronization
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
+        WebsiteCollectionFactory $websiteCollectionFactory,
         QueueCollectionFactory $queueCollectionFactory,
         StatusCollectionFactory $statusCollectionFactory,
         Customer $customer,
@@ -59,6 +62,7 @@ class Synchronization
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->logger = $logger;
+        $this->websiteCollectionFactory = $websiteCollectionFactory;
         $this->queueCollectionFactory = $queueCollectionFactory;
         $this->statusCollectionFactory = $statusCollectionFactory;
         $this->connection = $resource->getConnection();
@@ -85,20 +89,18 @@ class Synchronization
             }
 
             foreach ($statusCollection as $statusItem) {
-
-                if($statusItem->getModel() == 'product') {
-                    if(in_array($statusItem->getStoreId(), $this->getStoresForCatalogs())) {
-                        $statusItem
-                            ->setState(static::CRON_STATUS_STATE_DISABLED)
-                            ->save();
-                        continue;
-                    }
+                $enabledStores = $this->getEnabledStores($statusItem->getModel());
+                if(!in_array($statusItem->getStoreId(), $enabledStores)) {
+                    $statusItem
+                        ->setState(static::CRON_STATUS_STATE_DISABLED)
+                        ->save();
+                    continue;
                 }
 
                 $executor = $this->getExecutorByName($statusItem->getModel());
 
                 if ($executor) {
-                    if (!$executor->isEnabled($statusItem->getStoreId())) {
+                    if (!$executor->isEnabled()) {
                         /** todo: enable on config change */
                         $statusItem
                             ->setState(static::CRON_STATUS_STATE_DISABLED)
@@ -153,7 +155,7 @@ class Synchronization
             foreach ($groupedItems as $groupedItem) {
                 $executor = $this->getExecutorByName($groupedItem['model']);
                 if ($executor) {
-                    if (!$executor->isEnabled($groupedItem['store_id'])) {
+                    if (!$executor->isEnabled()) {
                         continue;
                     }
 
@@ -238,7 +240,7 @@ class Synchronization
      */
     public function addProductsToQueue($products)
     {
-        $enabledCatalogStores = $this->getStoresForCatalogs();
+        $enabledCatalogStores = $this->getEnabledStores('product');
         $data = [];
 
         foreach ($products as $product) {
@@ -329,29 +331,34 @@ class Synchronization
         );
     }
 
-    public function getStoresForCatalogs()
+    public function getEnabledStores($model)
     {
-        if(!empty($this->storesForCatalogs)) {
-            $storesForCatalogs = $this->scopeConfig->getValue(
-                \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_STORES
+        if(!empty($this->enabledStores)) {
+            $enabledStores = $this->scopeConfig->getValue(
+                self::XML_PATH_SYNCHRONIZATION_STORES
             );
 
-            $this->storesForCatalogs = $storesForCatalogs ? explode(',', $storesForCatalogs) : [];
+            $this->enabledStores = $enabledStores ? explode(',', $enabledStores) : [];
         }
 
-        return $this->storesForCatalogs;
+        if ($model == 'customer') {
+            return $this->getWebsitesDefaultStores($enabledStores);
+        } else {
+            return $this->enabledStores;
+        }
     }
 
-//    public function getGroupedQueueItems($limit = 1000)
-//    {
-//        $queueCollection = $this->queueCollectionFactory->create()
-//            ->addFieldToSelect(['model', 'store_id']);
-//
-//        $queueCollection
-//            ->getSelect()
-//            ->group(['model', 'store_id'])
-//            ->limit($limit);
-//
-//        return $queueCollection;
-//    }
+    protected function getWebsitesDefaultStores($enabledStoreIds)
+    {
+        $storeIds = [];
+        $websites = $this->websiteCollectionFactory->create();
+        foreach($websites as $website) {
+            $storeId = $website->getDefaultStore()->getId();
+            if (in_array($storeId, $enabledStoreIds)) {
+                $storeIds[] = $storeId;
+            }
+        }
+
+        return $storeIds;
+    }
 }

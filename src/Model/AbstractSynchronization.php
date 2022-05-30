@@ -10,6 +10,7 @@ use Synerise\Integration\Model\Cron\Status;
 abstract class AbstractSynchronization
 {
     const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
+    const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
 
     /**
      * @var LoggerInterface
@@ -101,13 +102,13 @@ abstract class AbstractSynchronization
         );
     }
 
-    public function isEnabled($storeId)
+    public function isEnabled()
     {
-        return $this->scopeConfig->isSetFlag(
-            static::CONFIG_XML_PATH_CRON_ENABLED,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $storeId
+        $enabledModels = $this->scopeConfig->getValue(
+            static::XML_PATH_SYNCHRONIZATION_MODELS
         );
+
+        return in_array(static::MODEL, $enabledModels);
     }
 
     public function getEntityIdField()

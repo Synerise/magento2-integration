@@ -14,7 +14,6 @@ class Customer extends AbstractSynchronization
 {
     const MODEL = 'customer';
     const ENTITY_ID = 'entity_id';
-    const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/customer/cron_enabled';
 
     /**
      * @var CollectionFactory
