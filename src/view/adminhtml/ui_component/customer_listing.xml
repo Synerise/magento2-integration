@@ -15,14 +15,4 @@
             </action>
         </massaction>
     </listingToolbar>
-    <columns name="customer_columns" class="Magento\Customer\Ui\Component\Listing\Columns">
-        <column name="synerise_updated_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
-            <settings>
-                <filter>dateRange</filter>
-                <dataType>date</dataType>
-                <timezone>false</timezone>
-                <label translate="true">Synerise updated at</label>
-            </settings>
-        </column>
-    </columns>
 </listing>

@@ -37,8 +37,8 @@ class UpgradeData implements UpgradeDataInterface
             if($eavSetup->getAttributeId(\Magento\Catalog\Model\Product::ENTITY, 'synerise_updated_at')) {
                 $eavSetup->removeAttribute(\Magento\Catalog\Model\Product::ENTITY, 'synerise_updated_at');
             }
-            if($eavSetup->getAttributeId(\Magento\Catalog\Model\Customer::ENTITY, 'synerise_updated_at')) {
-                $eavSetup->removeAttribute(\Magento\Catalog\Model\Customer::ENTITY, 'synerise_updated_at');
+            if($eavSetup->getAttributeId(\Magento\Customer\Model\Customer::ENTITY, 'synerise_updated_at')) {
+                $eavSetup->removeAttribute(\Magento\Customer\Model\Customer::ENTITY, 'synerise_updated_at');
             }
 
             $setup->endSetup();
