@@ -10,12 +10,19 @@
             <resource>Synerise_SystemConfig::synerise</resource>
             <group id="business_profile" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Business Profile</label>
-                <field id="id" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1">
+                <field id="id" type="select" translate="label" sortOrder="20">
                     <label>Select</label>
                     <config_path>synerise/business_profile/id</config_path>
                     <backend_model>\Synerise\Integration\Model\Config\Backend\BusinessProfile</backend_model>
                     <source_model>Synerise\Integration\Model\Config\Source\BusinessProfile</source_model>
                     <comment><![CDATA[Select business profiles in website scope to track them separately.]]></comment>
+                </field>
+                <field id="map" translate="label" sortOrder="20" showInDefault="1">
+                    <label>Mapping</label>
+                    <config_path>synerise/business_profile/map</config_path>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\BusinessProfiles</backend_model>
+                    <frontend_model>Synerise\Integration\Block\Adminhtml\Form\Field\BusinessProfiles</frontend_model>
+                    <source_model>Synerise\Integration\Model\Config\Source\BusinessProfile</source_model>
                 </field>
             </group>
         </section>
