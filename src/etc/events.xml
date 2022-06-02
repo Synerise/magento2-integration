@@ -45,4 +45,16 @@
     <event name="store_save_after">
         <observer name="synerise_store_save_after" instance="Synerise\Integration\Observer\StoreSaveAfter" />
     </event>
+    <event name="sales_order_save_commit_after">
+        <observer name="synerise_sales_order_save_commit_after" instance="Synerise\Integration\Observer\StockStatusChange" />
+    </event>
+    <event name="sales_order_place_after">
+        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
+    </event>
+    <event name="sales_order_item_save_before">
+        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
+    </event>
+    <event name="sales_order_item_save_after">
+        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
+    </event>
 </config>
