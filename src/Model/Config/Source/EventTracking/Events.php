@@ -17,7 +17,9 @@ class Events implements \Magento\Framework\Option\ArrayInterface
         'catalog_product_save_after'                => 'Product updated',
         'catalog_product_delete_after'              => 'Product deleted',
         'catalog_product_import_bunch_save_after'   => 'Product import',
-        'newsletter_subscriber_save_after'          => 'Subscription updated'
+        'newsletter_subscriber_save_after'          => 'Subscription updated',
+        'product_is_salable_change'                 => 'Variable "is salable" changed',
+        'stock_status_change'                       => 'Stock status changed'
     ];
 
     public function toOptionArray()
