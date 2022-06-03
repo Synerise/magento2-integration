@@ -35,17 +35,23 @@ class ProductIsSalableChange implements ObserverInterface
     public function __construct(
         \Psr\Log\LoggerInterface                        $logger,
         \Synerise\Integration\Cron\Synchronization      $synchronization,
+        \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Synerise\Integration\Helper\DataStorage        $data
     ) {
         $this->logger = $logger;
         $this->synchronization = $synchronization;
+        $this->trackingHelper = $trackingHelper;
         $this->productRepository = $productRepository;
         $this->data = $data;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+            return;
+        }
+
         $eventName = $observer->getEvent()->getName();
 
         try {
