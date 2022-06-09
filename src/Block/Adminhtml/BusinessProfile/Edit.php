@@ -33,7 +33,7 @@ class Edit extends \Magento\Backend\Block\Widget\Form\Container
     {
         $this->_objectId = 'id';
         $this->_blockGroup = 'Synerise_Integration';
-        $this->_controller = 'adminhtml_businessprofile';
+        $this->_controller = 'adminhtml_businessProfile';
 
         parent::_construct();
 

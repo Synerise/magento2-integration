@@ -98,17 +98,5 @@ class InstallData implements InstallDataInterface
                 'input_filter' => 'date'
             ]
         );
-
-        $defaultStoreView = $this->storeManager->getDefaultStoreView();
-        foreach (\Synerise\Integration\Helper\Config::MODELS as $model) {
-            $this->cronStatusFactory
-                ->create()
-                ->setData([
-                    'model' => $model,
-                    'website_id' => $defaultStoreView->getWebsiteId(),
-                    'store_id' => $defaultStoreView->getId()
-                ])
-                ->save();
-        }
     }
 }
