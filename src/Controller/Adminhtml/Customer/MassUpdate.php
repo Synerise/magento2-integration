@@ -8,7 +8,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization;
+use Synerise\Integration\Model\Synchronization\Customer as SyncCustomer;
 
 class MassUpdate extends Action
 {
@@ -28,21 +28,21 @@ class MassUpdate extends Action
     protected $collectionFactory;
 
     /**
-     * @var Synchronization
+     * @var SyncCustomer
      */
-    protected $synchronization;
+    protected $syncCustomer;
 
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
         LoggerInterface $logger,
-        Synchronization $synchronization
+        SyncCustomer $syncCustomer
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->synchronization = $synchronization;
+        $this->syncCustomer = $syncCustomer;
 
         parent::__construct($context);
     }
@@ -58,8 +58,7 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            $this->synchronization->addItemsToQueue(
-                'customer',
+            $this->syncCustomer->addItemsToQueue(
                 $collection
             );
 

@@ -2,13 +2,15 @@
 
 namespace Synerise\Integration\Model\Synchronization;
 
+use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Customer extends AbstractSynchronization
 {
@@ -30,21 +32,30 @@ class Customer extends AbstractSynchronization
      */
     protected $eavAttribute;
 
+    /**
+     * @var WebsiteCollectionFactory
+     */
+    private $websiteCollectionFactory;
+
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         ResourceConnection $resource,
+        QueueResourceModel $queueResourceModel,
+        WebsiteCollectionFactory $websiteCollectionFactory,
         CollectionFactory $collectionFactory,
         CustomerHelper $customerHelper,
         Attribute $eavAttribute
     ) {
         $this->eavAttribute = $eavAttribute;
         $this->customerHelper = $customerHelper;
+        $this->websiteCollectionFactory = $websiteCollectionFactory;
 
         parent::__construct(
             $scopeConfig,
             $logger,
             $resource,
+            $queueResourceModel,
             $collectionFactory
         );
     }
@@ -90,5 +101,24 @@ class Customer extends AbstractSynchronization
     public function getSyneriseUpdatedAtAttributeId()
     {
         return $this->eavAttribute->getIdByCode('customer', 'synerise_updated_at');
+    }
+
+    /**
+     * @return array
+     */
+    public function getEnabledStores()
+    {
+        $allEnabledStoreIds = parent::getEnabledStores();
+        $storeIds = [];
+
+        $websites = $this->websiteCollectionFactory->create();
+        foreach($websites as $website) {
+            $storeId = $website->getDefaultStore()->getId();
+            if (in_array($storeId, $allEnabledStoreIds)) {
+                $storeIds[] = $storeId;
+            }
+        }
+
+        return $storeIds;
     }
 }

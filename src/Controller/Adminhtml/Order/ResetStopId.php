@@ -7,27 +7,27 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization;
+use Synerise\Integration\ResourceModel\Cron\Status as StatusResourceModel;
 
 class ResetStopId extends Action implements HttpGetActionInterface
 {
-    /**
-     * @var Synchronization
-     */
-    protected $synchronization;
-
     /**
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
 
+    /**
+     * @var StatusResourceModel
+     */
+    protected $statusResourceModel;
+
     public function __construct(
         Context $context,
         LoggerInterface $logger,
-        Synchronization $synchronization
+        StatusResourceModel $statusResourceModel
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
+        $this->statusResourceModel = $statusResourceModel;
 
         parent::__construct($context);
     }
@@ -40,7 +40,7 @@ class ResetStopId extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $this->synchronization->resetStopId('order');
+        $this->statusResourceModel->resetStopId('order');
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

@@ -5,12 +5,11 @@ namespace Synerise\Integration\Model\Synchronization;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Stdlib\DateTime\DateTime;
-use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Order as OrderHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Order extends AbstractSynchronization
 {
@@ -31,6 +30,7 @@ class Order extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         ResourceConnection $resource,
+        QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
         OrderHelper $orderHelper,
         DateTime $dateTime
@@ -42,6 +42,7 @@ class Order extends AbstractSynchronization
             $scopeConfig,
             $logger,
             $resource,
+            $queueResourceModel,
             $collectionFactory
         );
     }

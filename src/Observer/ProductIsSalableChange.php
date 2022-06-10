@@ -2,44 +2,44 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\DataStorage;
+use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class ProductIsSalableChange implements ObserverInterface
 {
     public const EVENT = 'product_is_salable_change';
 
     /**
-     * @var \Synerise\Integration\Cron\Synchronization
-     */
-    protected $synchronization;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
+
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var SyncProduct
+     */
+    protected $syncProduct;
+
+    /**
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Synerise\Integration\Helper\DataStorage
+     * @var DataStorage
      */
     protected $data;
 
     public function __construct(
-        \Psr\Log\LoggerInterface                        $logger,
-        \Synerise\Integration\Cron\Synchronization      $synchronization,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Synerise\Integration\Helper\DataStorage        $data
+        LoggerInterface $logger,
+        SyncProduct $syncProduct,
+        ProductRepositoryInterface $productRepository,
+        DataStorage $data
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
+        $this->syncProduct = $syncProduct;
         $this->productRepository = $productRepository;
         $this->data = $data;
     }
@@ -75,8 +75,7 @@ class ProductIsSalableChange implements ObserverInterface
 
             if (!empty($changedProducts)) {
                 try{
-                    $this->synchronization->addItemsToQueueByItemWebsiteIds(
-                        'product',
+                    $this->syncProduct->addItemsToQueue(
                         $changedProducts
                     );
                 } catch (\Exception $e){

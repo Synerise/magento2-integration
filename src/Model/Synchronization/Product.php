@@ -7,9 +7,9 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Product extends AbstractSynchronization
 {
@@ -30,6 +30,8 @@ class Product extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         ResourceConnection $resource,
+        QueueResourceModel $queueResourceModel,
+
         CollectionFactory $collectionFactory,
         CatalogHelper $catalogHelper
     ) {
@@ -39,6 +41,7 @@ class Product extends AbstractSynchronization
             $scopeConfig,
             $logger,
             $resource,
+            $queueResourceModel,
             $collectionFactory
         );
     }
@@ -81,6 +84,31 @@ class Product extends AbstractSynchronization
                 ['value' => null],
                 ['attribute_id', $attribute->getId()]
             );
+        }
+    }
+
+    /**
+     * @param \Magento\Framework\Data\Collection\AbstractDb|array $collection
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function addItemsToQueue($collection)
+    {
+        $enabledStores = $this->getEnabledStores();
+        foreach ($collection as $item) {
+            $storeIds = $item->getStoreIds();
+            foreach ($storeIds as $storeId) {
+                if (in_array($storeId, $enabledStores)) {
+                    $data[] = [
+                        'model' => static::MODEL,
+                        'store_id' => $item->getStoreId(),
+                        'entity_id' => $item->getData(static::ENTITY_ID),
+                    ];
+                }
+            }
+        }
+
+        if (!empty($data)) {
+            $this->queueResourceModel->addItems($data);
         }
     }
 }

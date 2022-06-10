@@ -3,15 +3,11 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
 {
     const EVENT = 'catalog_product_import_bunch_save_after';
-
-    /**
-     * @var \Synerise\Integration\Cron\Synchronization
-     */
-    protected $synchronization;
 
     /**
      * @var \Synerise\Integration\Helper\Tracking
@@ -43,9 +39,14 @@ class ProductImportBunchSaveAfter implements ObserverInterface
      */
     private $searchCriteria;
 
+    /**
+     * @var SyncProduct
+     */
+    private $syncProduct;
+
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Cron\Synchronization $synchronization,
+        SyncProduct $syncProduct,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Framework\Api\FilterBuilder $filterBuilder,
@@ -53,7 +54,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
         \Magento\Framework\Api\SearchCriteriaInterface $criteria
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
+        $this->syncProduct = $syncProduct;
         $this->trackingHelper = $trackingHelper;
         $this->productRepository = $productRepository;
         $this->filterBuilder = $filterBuilder;
@@ -74,7 +75,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
 
         foreach ($chunkBunches as $chunk) {
             $products = $this->getProductsBySkuInBunch($chunk);
-            $this->synchronization->addProductsToQueue($products);
+            $this->syncProduct->addItemsToQueue($products);
         }
     }
 

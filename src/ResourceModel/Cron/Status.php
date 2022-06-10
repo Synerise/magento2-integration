@@ -1,10 +1,17 @@
 <?php
 namespace Synerise\Integration\ResourceModel\Cron;
 
-use \Magento\Config\Model\Config\Source\Website;
+use Magento\Framework\Model\ResourceModel\Db\Context;
+use Magento\Store\Model\StoreManagerInterface;
 
 class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
 {
+    const STATE_IN_PROGRESS = 0;
+    const STATE_COMPLETE = 1;
+    const STATE_RETRY_REQUIRED = 2;
+    const STATE_ERROR = 3;
+    const STATE_DISABLED = 4;
+
     const GROUP_TO_MODEL = [
         'products'      => 'product',
         'customers'     => 'customer',
@@ -18,8 +25,8 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
     private $storeManager;
 
     public function __construct(
-        \Magento\Framework\Model\ResourceModel\Db\Context $context,
-        \Magento\Store\Model\StoreManagerInterface $storeManager
+        Context $context,
+        StoreManagerInterface $storeManager
     ) {
         $this->storeManager = $storeManager;
 
@@ -32,33 +39,17 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
     }
 
     /**
-     * @param string $model
-     * @param int $storeId
-     * @param int $websiteId
-     * @return int
+     * @param $models
+     * @param array $enabledStoreIds
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function insertOrUpdate($model, $storeId, $websiteId)
-    {
-        return $this->getConnection()->insertOnDuplicate(
-            $this->getMainTable(),
-            [
-                'model' => $model,
-                'store_id' => $storeId,
-                'website_id' => $websiteId
-            ]
-        );
-    }
-
     public function enableByModels($models, $enabledStoreIds = [])
     {
-
         if (empty($enabledStoreIds)) {
             return;
         }
 
         $allStores = $this->storeManager->getStores();
-
         $rows = [];
 
         foreach($models as $model) {
@@ -69,7 +60,7 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
 
                 $rows[] = [
                     'model' => $model,
-                    'state' => \Synerise\Integration\Model\Cron\Status::STATE_IN_PROGRESS,
+                    'state' => self::STATE_IN_PROGRESS,
                     'store_id' => $storeId,
                     'website_id' => $allStores[$storeId]->getWebsiteId()
                 ];
@@ -84,25 +75,47 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
         }
     }
 
+    /**
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
     public function disableAll()
     {
         $this->getConnection()->update(
             $this->getMainTable(),
-            ['state' => \Synerise\Integration\Model\Cron\Status::STATE_DISABLED]
+            ['state' => self::STATE_DISABLED]
         );
     }
 
-    public function disableByModels($models, $enabledStoreIds = [])
+    /**
+     * @param string $model
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function resendItems($model)
     {
-        $where = ['`model` IN (?)' => $models];
-        if (!empty($enabledStoreIds)) {
-            $where['`store_id` NOT IN (?)'] = $enabledStoreIds;
-        }
-
         $this->getConnection()->update(
             $this->getMainTable(),
-            ['state' => \Synerise\Integration\Model\Cron\Status::STATE_DISABLED],
-            $where
+            [
+                'start_id' => null,
+                'stop_id' => null,
+                'state' => self::STATE_IN_PROGRESS
+            ],
+            ['model = ?' => $model]
+        );
+    }
+
+    /**
+     * @param string $model
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function resetStopId($model)
+    {
+        $this->getConnection()->update(
+            $this->getMainTable(),
+            [
+                'stop_id' => null,
+                'state' => self::STATE_IN_PROGRESS
+            ],
+            ['model = ?' => $model]
         );
     }
 }

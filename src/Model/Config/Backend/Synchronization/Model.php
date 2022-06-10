@@ -2,22 +2,37 @@
 
 namespace Synerise\Integration\Model\Config\Backend\Synchronization;
 
-class Model extends \Magento\Framework\App\Config\Value
+use Magento\Framework\App\Cache\TypeListInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Config\Value;
+use Magento\Framework\Data\Collection\AbstractDb;
+use Magento\Framework\Model\Context;
+use Magento\Framework\Model\ResourceModel\AbstractResource;
+use Magento\Framework\Registry;
+use Magento\Store\Model\ResourceModel\Website\CollectionFactory;
+use Synerise\Integration\ResourceModel\Cron\Status;
+
+class Model extends Value
 {
     /**
-     * @var \Synerise\Integration\ResourceModel\Cron\Status
+     * @var Status
      */
     private $statusResourceModel;
 
+    /**
+     * @var CollectionFactory
+     */
+    private $websiteCollectionFactory;
+
     public function __construct(
-        \Magento\Framework\Model\Context $context,
-        \Magento\Framework\Registry $registry,
-        \Magento\Framework\App\Config\ScopeConfigInterface $config,
-        \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
-        \Magento\Store\Model\ResourceModel\Website\CollectionFactory $websiteCollectionFactory,
-        \Synerise\Integration\ResourceModel\Cron\Status $statusResourceModel,
-        \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
-        \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
+        Context $context,
+        Registry $registry,
+        ScopeConfigInterface $config,
+        TypeListInterface $cacheTypeList,
+        CollectionFactory $websiteCollectionFactory,
+        Status $statusResourceModel,
+        AbstractResource $resource = null,
+        AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->statusResourceModel = $statusResourceModel;
@@ -26,6 +41,10 @@ class Model extends \Magento\Framework\App\Config\Value
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
+    /**
+     * @return Model
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
     public function afterSave()
     {
         $enabledModels = explode(',', $this->getValue());
@@ -47,11 +66,19 @@ class Model extends \Magento\Framework\App\Config\Value
         return parent::afterSave();
     }
 
+    /**
+     * @param string $groupId
+     * @return string|null
+     */
     protected function getModelByGroupId($groupId)
     {
-        return \Synerise\Integration\ResourceModel\Cron\Status::GROUP_TO_MODEL[$groupId] ?? null;
+        return Status::GROUP_TO_MODEL[$groupId] ?? null;
     }
 
+    /**
+     * @param array $enabledStoreIds
+     * @return array
+     */
     protected function getWebsitesDefaultStores($enabledStoreIds)
     {
         $storeIds = [];
