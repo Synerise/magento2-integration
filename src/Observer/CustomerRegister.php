@@ -79,7 +79,7 @@ class CustomerRegister implements ObserverInterface
                 ->clientRegistered('4.4', $eventClientAction);
 
             if ($customer->getId()) {
-                $this->customerHelper->markCustomersAsSent([$customer->getId()]);
+                $this->customerHelper->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
             }
 
         } catch (\Exception $e) {

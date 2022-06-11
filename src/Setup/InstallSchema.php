@@ -274,6 +274,13 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                     'Order ID'
                 )
                 ->addColumn(
+                    'store_id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
+                    'Store ID'
+                )
+                ->addColumn(
                     'synerise_updated_at',
                     \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
                     null,

@@ -111,7 +111,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $this->sendCustomersToSynerise($createAClientInCrmRequests, $storeId);
-        $this->markCustomersAsSent($ids);
+        $this->markCustomersAsSent($ids, $storeId);
     }
 
     /**
@@ -182,7 +182,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             if ($statusCode != 202) {
                 $this->_logger->error('Client update failed');
             } else {
-                $this->markCustomersAsSent([$customer->getId()]);
+                $this->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
             }
         } catch (\Exception $e) {
             $this->_logger->error('Client update failed', ['exception' => $e]);
@@ -378,15 +378,17 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @param int[] $ids
      * @return void
+     * @param int $storeId
      */
-    public function markCustomersAsSent(array $ids)
+    public function markCustomersAsSent(array $ids, $storeId = 0)
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
         foreach ($ids as $id) {
             $data[] = [
                 'synerise_updated_at' => $timestamp,
-                'customer_id' => $id
+                'customer_id' => $id,
+                'store_id' => $storeId
             ];
         }
         $this->connection->insertOnDuplicate(

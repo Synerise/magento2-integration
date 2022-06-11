@@ -196,7 +196,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $this->sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId);
-        $this->markItemsAsSent($ids);
+        $this->markItemsAsSent($ids, $storeId);
     }
 
     /**
@@ -214,6 +214,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @param int[] $ids
      * @return void
+     * @param int $storeId
      */
     protected function markItemsAsSent(array $ids, $storeId = 0)
     {
