@@ -7,6 +7,7 @@ use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventorySalesApi\Api\AreProductsSalableInterface;
@@ -61,6 +62,11 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private $areProductsSalable;
 
+    /**
+     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     */
+    private $connection;
+
     public function __construct(
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Catalog\Model\ResourceModel\Product\Action $action,
@@ -73,6 +79,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Framework\View\Asset\ContextInterface $assetContext,
         \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository,
+        ResourceConnection $resource,
         AreProductsSalableInterface $areProductsSalable,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
@@ -92,6 +99,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
         $this->areProductsSalable = $areProductsSalable;
+        $this->connection = $resource->getConnection();
 
         parent::__construct($context);
     }
@@ -203,12 +211,25 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->sendItemsToSyneriseWithCatalogCheck([$addItemRequest], $product->getStoreId());
     }
 
-    protected function markItemsAsSent($ids, $storeId = 0)
+    /**
+     * @param int[] $ids
+     * @return void
+     */
+    protected function markItemsAsSent(array $ids, $storeId = 0)
     {
         $timestamp = $this->dateTime->gmtDate();
-        $this->action->updateAttributes($ids, [
-            'synerise_updated_at' => $timestamp
-        ], $storeId);
+        $data = [];
+        foreach ($ids as $id) {
+            $data[] = [
+                'synerise_updated_at' => $timestamp,
+                'product_id' => $id,
+                'store_id' => $storeId
+            ];
+        }
+        $this->connection->insertOnDuplicate(
+            $this->connection->getTableName('synerise_sync_product'),
+            $data
+        );
     }
 
     public function prepareItemRequest($product, $attributes, $websiteId = null)
@@ -450,11 +471,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         } elseif ($statusCode == 207) {
             $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
-    }
-
-    public function getSyneriseUpdatedAtAttribute()
-    {
-        return $this->action->getAttribute('synerise_updated_at');
     }
 
     public function getFormattedCategoryPath($categoryId)

@@ -16,7 +16,6 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
-use Synerise\Integration\ResourceModel\Customer\Action;
 
 class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -31,11 +30,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         2 => 1,
         3 => 0
     ];
-
-    /**
-     * @var Action
-     */
-    protected $action;
 
     /**
      * @var ScopeConfigInterface
@@ -69,7 +63,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     private StoreManagerInterface $storeManager;
 
     public function __construct(
-        Action $action,
         Context $context,
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
@@ -79,7 +72,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
-        $this->action = $action;
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
         $this->dateTime = $dateTime;
@@ -213,18 +205,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         } elseif ($statusCode == 207) {
             $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
-    }
-
-    /**
-     * @param int[] $ids
-     * @throws \Exception
-     */
-    public function markCustomersAsSent($ids)
-    {
-        $this->action->updateAttributes(
-            $ids,
-            ['synerise_updated_at' => $this->dateTime->gmtDate()]
-        );
     }
 
     /**
@@ -393,5 +373,25 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     public function getWebsiteIdByStoreId(int $storeId)
     {
         return $this->storeManager->getStore($storeId)->getWebsiteId();
+    }
+
+    /**
+     * @param int[] $ids
+     * @return void
+     */
+    public function markCustomersAsSent(array $ids)
+    {
+        $timestamp = $this->dateTime->gmtDate();
+        $data = [];
+        foreach ($ids as $id) {
+            $data[] = [
+                'synerise_updated_at' => $timestamp,
+                'customer_id' => $id
+            ];
+        }
+        $this->connection->insertOnDuplicate(
+            $this->connection->getTableName('synerise_sync_customer'),
+            $data
+        );
     }
 }

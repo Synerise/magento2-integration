@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization;
 
-use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
@@ -46,11 +45,6 @@ class Product extends AbstractSynchronization
         );
     }
 
-    public function getSyneriseUpdatedAtAttribute()
-    {
-        return $this->catalogHelper->getSyneriseUpdatedAtAttribute();
-    }
-
     /**
      * @param int $storeId
      * @param int|null $websiteId
@@ -77,14 +71,7 @@ class Product extends AbstractSynchronization
 
     public function markAllAsUnsent()
     {
-        $attribute = $this->getSyneriseUpdatedAtAttribute();
-        if ($attribute->getId()) {
-            $this->connection->update(
-                'catalog_product_entity_datetime',
-                ['value' => null],
-                ['attribute_id', $attribute->getId()]
-            );
-        }
+        $this->connection->truncateTable($this->connection->getTableName('synerise_sync_product'));
     }
 
     /**
