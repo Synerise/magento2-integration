@@ -11,7 +11,7 @@ use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class StockStatusChange implements ObserverInterface
 {
-    const EVENT = 'sales_order_save_commit_after';
+    const EVENT = 'stock_status_change';
 
     /**
      * @var Tracking
@@ -41,7 +41,7 @@ class StockStatusChange implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(CatalogProductSaveAfter::EVENT)) {
+        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
