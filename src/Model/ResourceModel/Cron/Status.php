@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\ResourceModel\Cron;
+namespace Synerise\Integration\Model\ResourceModel\Cron;
 
 use Magento\Framework\Model\ResourceModel\Db\Context;
 use Magento\Store\Model\StoreManagerInterface;

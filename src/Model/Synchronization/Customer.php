@@ -10,7 +10,7 @@ use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollec
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Customer extends AbstractSynchronization
 {

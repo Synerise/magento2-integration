@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\ResourceModel\Cron;
+namespace Synerise\Integration\Model\ResourceModel\Cron;
 
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;

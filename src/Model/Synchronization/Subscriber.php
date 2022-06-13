@@ -8,7 +8,7 @@ use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Subscriber extends AbstractSynchronization
 {

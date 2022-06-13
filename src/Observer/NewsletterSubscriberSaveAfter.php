@@ -9,7 +9,7 @@ use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {

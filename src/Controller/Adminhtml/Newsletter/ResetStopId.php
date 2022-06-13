@@ -7,7 +7,7 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class ResetStopId extends Action implements HttpGetActionInterface
 {

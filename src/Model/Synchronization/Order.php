@@ -9,7 +9,7 @@ use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Order as OrderHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Order extends AbstractSynchronization
 {

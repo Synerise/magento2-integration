@@ -7,7 +7,7 @@ use Magento\Config\Block\System\Config\Form\Field;
 use Magento\Framework\Data\Form\Element\AbstractElement;
 use Magento\Framework\View\Helper\SecureHtmlRenderer;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
-use Synerise\Integration\ResourceModel\BusinessProfile\CollectionFactory as BusinessProfileCollectionFactory;
+use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory as BusinessProfileCollectionFactory;
 
 class BusinessProfiles extends Field
 {

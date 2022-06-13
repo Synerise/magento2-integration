@@ -8,7 +8,7 @@ use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Synchronization\Customer as SyncCustomer;
-use Synerise\Integration\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class Resend extends Action implements HttpGetActionInterface
 {

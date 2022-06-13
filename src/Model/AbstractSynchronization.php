@@ -7,8 +7,8 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Data\Collection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Cron\Status;
-use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
-use Synerise\Integration\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 abstract class AbstractSynchronization
 {

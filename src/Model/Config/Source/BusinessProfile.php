@@ -2,7 +2,7 @@
 
 namespace Synerise\Integration\Model\Config\Source;
 
-use Synerise\Integration\ResourceModel\BusinessProfile\CollectionFactory;
+use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory;
 
 class BusinessProfile implements \Magento\Framework\Data\OptionSourceInterface
 {

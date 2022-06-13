@@ -10,7 +10,7 @@ use Magento\Framework\Model\Context;
 use Magento\Framework\Model\ResourceModel\AbstractResource;
 use Magento\Framework\Registry;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory;
-use Synerise\Integration\ResourceModel\Cron\Status;
+use Synerise\Integration\Model\ResourceModel\Cron\Status;
 
 class Model extends Value
 {

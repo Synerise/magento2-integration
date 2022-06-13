@@ -45,7 +45,7 @@ class BusinessProfile extends \Magento\Framework\Model\AbstractModel
 
     protected function _construct()
     {
-        $this->_init('Synerise\Integration\ResourceModel\BusinessProfile');
+        $this->_init('Synerise\Integration\Model\ResourceModel\BusinessProfile');
     }
 
     public function setApiKey($apiKey)

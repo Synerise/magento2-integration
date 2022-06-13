@@ -12,14 +12,14 @@ class StoreSaveAfter implements ObserverInterface
     protected $logger;
 
     /**
-     * @var \Synerise\Integration\ResourceModel\Cron\Status
+     * @var \Synerise\Integration\Model\ResourceModel\Cron\Status
      */
     protected $statusResourceModel;
 
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
         \Magento\Framework\App\Config\ScopeConfigInterface $config,
-        \Synerise\Integration\ResourceModel\Cron\Status $statusResourceModel
+        \Synerise\Integration\Model\ResourceModel\Cron\Status $statusResourceModel
     ) {
         $this->logger = $logger;
         $this->statusResourceModel = $statusResourceModel;

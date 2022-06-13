@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\ResourceModel\BusinessProfile;
+namespace Synerise\Integration\Model\ResourceModel\BusinessProfile;
 
 class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection
 {
@@ -14,7 +14,7 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
      */
     protected function _construct()
     {
-        $this->_init('Synerise\Integration\Model\BusinessProfile', 'Synerise\Integration\ResourceModel\BusinessProfile');
+        $this->_init('Synerise\Integration\Model\BusinessProfile', 'Synerise\Integration\Model\ResourceModel\BusinessProfile');
     }
 
 }

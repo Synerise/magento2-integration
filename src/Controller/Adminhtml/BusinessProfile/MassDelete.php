@@ -10,7 +10,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Ui\Component\MassAction\Filter;
 use Synerise\Integration\Model\BusinessProfile;
-use Synerise\Integration\ResourceModel\BusinessProfile\CollectionFactory;
+use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory;
 
 
 class MassDelete extends Action implements HttpPostActionInterface

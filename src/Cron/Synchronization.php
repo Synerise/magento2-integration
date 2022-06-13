@@ -6,14 +6,14 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
-use Synerise\Integration\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
+use Synerise\Integration\Model\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
 use Synerise\Integration\Model\Synchronization\Customer;
 use Synerise\Integration\Model\Synchronization\Order;
 use Synerise\Integration\Model\Synchronization\Product;
 use Synerise\Integration\Model\Synchronization\Subscriber;
-use Synerise\Integration\ResourceModel\Cron\Queue as QueueResourceModel;
-use Synerise\Integration\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class Synchronization
 {

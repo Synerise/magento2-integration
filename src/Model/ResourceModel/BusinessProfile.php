@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\ResourceModel;
+namespace Synerise\Integration\Model\ResourceModel;
 
 class BusinessProfile extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
 {

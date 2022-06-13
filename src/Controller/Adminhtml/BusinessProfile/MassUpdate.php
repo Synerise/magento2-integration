@@ -16,7 +16,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Model\BusinessProfile;
-use Synerise\Integration\ResourceModel\BusinessProfile\CollectionFactory;
+use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory;
 
 
 class MassUpdate extends Action implements HttpPostActionInterface
