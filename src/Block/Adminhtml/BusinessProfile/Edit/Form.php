@@ -45,10 +45,18 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
             $fieldset->addField('id', 'hidden', ['name' => 'id']);
         }
 
+        $afterElementHtml = '<p class="nm">Api keys can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/apikeys/list" target="_blank">Settings > API Keys</a>.<br /><small>Create a <i>Business Profile</i> api key with following permissions: <i>CLIENT, CATALOG, EVENTS, TRACKER, TRANSACTION</i>.</small></p>';
+
         $fieldset->addField(
             'api_key',
             'obscure',
-            ['name' => 'api_key', 'label' => __('Api Key'), 'title' => __('Api Key'), 'required' => true]
+            [
+                'name' => 'api_key',
+                'label' => __('Api Key'),
+                'title' => __('Api Key'),
+                'required' => true,
+                'after_element_html' => $afterElementHtml
+            ]
         );
 
         if($model) {

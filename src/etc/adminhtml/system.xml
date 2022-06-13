@@ -15,7 +15,6 @@
                     <config_path>synerise/business_profile/id</config_path>
                     <backend_model>\Synerise\Integration\Model\Config\Backend\BusinessProfile</backend_model>
                     <source_model>Synerise\Integration\Model\Config\Source\BusinessProfile</source_model>
-                    <comment><![CDATA[Select business profiles in website scope to track them separately.]]></comment>
                 </field>
                 <field id="map" translate="label" sortOrder="20" showInDefault="1">
                     <label>Mapping</label>
@@ -23,6 +22,9 @@
                     <backend_model>Synerise\Integration\Model\Config\Backend\BusinessProfiles</backend_model>
                     <frontend_model>Synerise\Integration\Block\Adminhtml\Form\Field\BusinessProfiles</frontend_model>
                     <source_model>Synerise\Integration\Model\Config\Source\BusinessProfile</source_model>
+                    <comment>
+                        <model>Synerise\Integration\Model\Config\Backend\BusinessProfiles\Comment</model>
+                    </comment>
                 </field>
             </group>
         </section>
@@ -33,15 +35,17 @@
             <group id="scope" translate="label" sortOrder="20" showInDefault="1">
                 <label>Scope</label>
                 <field id="models" type="multiselect" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
-                    <label>Synchronized models</label>
+                    <label>Models</label>
                     <config_path>synerise/synchronization/models</config_path>
                     <backend_model>Synerise\Integration\Model\Config\Backend\Synchronization\Model</backend_model>
                     <source_model>Synerise\Integration\Model\Config\Source\Synchronization\Model</source_model>
+                    <comment><![CDATA[Deselect models to exclude them from synchronization.]]></comment>
                 </field>
                 <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
-                    <label>Synchronized stores</label>
+                    <label>Store views</label>
                     <config_path>synerise/synchronization/stores</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Store</source_model>
+                    <comment><![CDATA[Deselect store views to exclude their data from synchronization.]]></comment>
                 </field>
             </group>
             <group id="cron_status" translate="label" sortOrder="20" showInDefault="1">
@@ -126,12 +130,13 @@
                     <label>Cookie domain</label>
                     <config_path>synerise/page_tracking/domain</config_path>
                     <backend_model>\Synerise\Integration\Model\Config\Backend\Tracking\Domain</backend_model>
-                    <comment><![CDATA[Optional. Cookie domain can be set manually.]]></comment>
+                    <comment><![CDATA[Common cookie domain can be set if a single Business Profile is shared across many subdomains.]]></comment>
                 </field>
                 <field id="custom_page_visit" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Custom Page Visit</label>
                     <config_path>synerise/page_tracking/custom_page_visit</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Recommended for PWA. Enabling this option requires a custom page visit implementation. To find out more refer with <a href="https://help.synerise.com/developers/web/installation-and-configuration/#automatic-tracking-of-page-visits">Page Tracking documentation</a>]]></comment>
                 </field>
             </group>
             <group id="dynamic_content" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">

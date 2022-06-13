@@ -87,7 +87,7 @@ class Product extends AbstractSynchronization
                 if (in_array($storeId, $enabledStores)) {
                     $data[] = [
                         'model' => static::MODEL,
-                        'store_id' => $item->getStoreId(),
+                        'store_id' => $storeId,
                         'entity_id' => $item->getData(static::ENTITY_ID),
                     ];
                 }
