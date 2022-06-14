@@ -7,9 +7,11 @@ use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\InventorySales\Model\AreProductsSalable;
 use Magento\InventorySalesApi\Api\AreProductsSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -58,7 +60,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     private $assetContext;
 
     /**
-     * @var AreProductsSalableInterface
+     * @var AreProductsSalableInterface|null
      */
     private $areProductsSalable;
 
@@ -80,7 +82,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\View\Asset\ContextInterface $assetContext,
         \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository,
         ResourceConnection $resource,
-        AreProductsSalableInterface $areProductsSalable,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
         Api $apiHelper
@@ -98,8 +99,13 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->assetContext = $assetContext;
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
-        $this->areProductsSalable = $areProductsSalable;
         $this->connection = $resource->getConnection();
+
+        if (class_exists(AreProductsSalable::class)) {
+            $this->areProductsSalable = ObjectManager::getInstance()->get(AreProductsSalable::class);;
+        } else {
+            $this->areProductsSalable = null;
+        }
 
         parent::__construct($context);
     }
@@ -264,8 +270,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
-        $productsAreSalableArray = $this->areProductsSalable->execute([$product->getSku()], $stockStatus->getStockId());
-        $value['is_salable'] = (int) ($productsAreSalableArray[0]->isSalable() && $product->getStatus() == 1 && (int) $value['stock_status']);
+        if ($this->areProductsSalable) {
+            $productsAreSalableArray = $this->areProductsSalable->execute([$product->getSku()], $stockStatus->getStockId());
+            $value['is_salable'] = (int) ($productsAreSalableArray[0]->isSalable() && $product->getStatus() == 1 && (int) $value['stock_status']);
+        }
 
         return new AddItem([
             'item_key' => $value['itemId'],

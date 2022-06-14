@@ -20,20 +20,9 @@
                 <expr>* * * * *</expr>
                 <page_size>500</page_size>
             </cron_queue>
-            <product>
-                <cron_enabled>1</cron_enabled>
-                <attributes>name</attributes>
-            </product>
-            <customer>
-                <cron_enabled>1</cron_enabled>
-                <attributes>dob,gender</attributes>
-            </customer>
-            <order>
-                <cron_enabled>1</cron_enabled>
-            </order>
-            <subscriber>
-                <cron_enabled>1</cron_enabled>
-            </subscriber>
+            <synchronization>
+                <models>customer,order,product,subscriber</models>
+            </synchronization>
         </synerise>
     </default>
 </config>

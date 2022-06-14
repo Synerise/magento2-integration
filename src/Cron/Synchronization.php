@@ -105,7 +105,6 @@ class Synchronization
             foreach ($statusCollection as $statusItem) {
                 $executor = $this->getExecutorByName($statusItem->getModel());
                 if (!$executor || !$executor->isEnabled() || !in_array($statusItem->getStoreId(), $executor->getEnabledStores())) {
-                    /** todo: enable on config change */
                     $statusItem
                         ->setState(StatusResourceModel::STATE_DISABLED)
                         ->save();

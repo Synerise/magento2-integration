@@ -131,6 +131,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function isEventTrackingEnabled($event = null, $storeId = null)
     {
+        if (!$this->apiHelper->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
+            return false;
+        }
+
         if (!$this->scopeConfig->isSetFlag(
             \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED,
             ScopeInterface::SCOPE_STORE,

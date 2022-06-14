@@ -60,7 +60,11 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      * @var Tracking
      */
     protected $trackingHelper;
-    private StoreManagerInterface $storeManager;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
 
     public function __construct(
         Context $context,
