@@ -2,20 +2,16 @@
 
 namespace Synerise\Integration\Helper;
 
-use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
-use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\InventorySales\Model\AreProductsSalable;
-use Magento\InventorySalesApi\Api\AreProductsSalableInterface;
+use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
 
@@ -60,9 +56,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     private $assetContext;
 
     /**
-     * @var AreProductsSalableInterface|null
+     * @var IsProductSalableInterface
      */
-    private $areProductsSalable;
+    private $isProductSalable;
 
     /**
      * @var \Magento\Framework\DB\Adapter\AdapterInterface
@@ -81,6 +77,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Framework\View\Asset\ContextInterface $assetContext,
         \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository,
+        IsProductSalableInterface $isProductSalable,
         ResourceConnection $resource,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
@@ -100,12 +97,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
         $this->connection = $resource->getConnection();
-
-        if (class_exists(AreProductsSalable::class)) {
-            $this->areProductsSalable = ObjectManager::getInstance()->get(AreProductsSalable::class);;
-        } else {
-            $this->areProductsSalable = null;
-        }
+        $this->isProductSalable = $isProductSalable;
 
         parent::__construct($context);
     }
@@ -270,10 +262,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
-        if ($this->areProductsSalable) {
-            $productsAreSalableArray = $this->areProductsSalable->execute([$product->getSku()], $stockStatus->getStockId());
-            $value['is_salable'] = (int) ($productsAreSalableArray[0]->isSalable() && $product->getStatus() == 1 && (int) $value['stock_status']);
-        }
+
+        $isSalable = $this->isProductSalable->execute($product->getSku(), $stockStatus->getStockId());
+        $value['is_salable'] = (int) ($isSalable && $product->getStatus() == 1 && (int) $value['stock_status']);
 
         return new AddItem([
             'item_key' => $value['itemId'],
