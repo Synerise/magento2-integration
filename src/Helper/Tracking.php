@@ -192,7 +192,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     public function isCustomScriptEnabled()
     {
         return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_PAGE_TRACKING_KEY,
+            self::XML_PATH_PAGE_TRACKING_CUSTOM_ENABLED,
             ScopeInterface::SCOPE_STORE
         );
     }
