@@ -4,7 +4,12 @@ namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
 
 class Index extends \Magento\Backend\App\Action
 {
-    protected $resultPageFactory = false;
+    /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile';
+
+    protected $resultPageFactory;
 
     public function __construct(
         \Magento\Backend\App\Action\Context $context,
@@ -19,7 +24,6 @@ class Index extends \Magento\Backend\App\Action
     {
         $resultPage = $this->resultPageFactory->create();
         $resultPage
-            ->setActiveMenu('Synerise_Integration::synerise_businessprofile')
             ->getConfig()->getTitle()->prepend((__('Business Profiles')));
 
         return $resultPage;

@@ -37,13 +37,13 @@ class Edit extends \Magento\Backend\Block\Widget\Form\Container
 
         parent::_construct();
 
-        if ($this->_isAllowedAction('Synerise_Integration::save')) {
+        if ($this->_isAllowedAction('Synerise_Integration::business_profile_add')) {
             $this->buttonList->update('save', 'label', __('Save Business Profile'));
         } else {
             $this->buttonList->remove('save');
         }
 
-        if ($this->_isAllowedAction('Synerise_Integration::delete')) {
+        if ($this->_isAllowedAction('Synerise_Integration::business_profile_delete')) {
             $this->buttonList->update('delete', 'label', __('Delete Business Profile'));
         } else {
             $this->buttonList->remove('delete');

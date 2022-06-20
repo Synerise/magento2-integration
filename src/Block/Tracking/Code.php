@@ -47,6 +47,13 @@ class Code extends \Magento\Framework\View\Element\Template
 
     public function toHtml()
     {
+        if ($this->helper->isCustomScriptEnabled()) {
+           $script = $this->helper->getCustomTrackingScript();
+           if ($script) {
+               return $script;
+           }
+        }
+
         return $this->helper->getTrackerKey() ? parent::toHtml() : null;
     }
 }

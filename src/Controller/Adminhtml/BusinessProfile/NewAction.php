@@ -5,6 +5,11 @@ namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
 class NewAction extends \Magento\Backend\App\Action
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_add';
+
+    /**
      * @var \Magento\Backend\Model\View\Result\Forward
      */
     protected $resultForwardFactory;
@@ -20,14 +25,6 @@ class NewAction extends \Magento\Backend\App\Action
     {
         $this->resultForwardFactory = $resultForwardFactory;
         parent::__construct($context);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function _isAllowed()
-    {
-        return $this->_authorization->isAllowed('Synerise_Integration::save');
     }
 
     /**

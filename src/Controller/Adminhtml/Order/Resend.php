@@ -14,6 +14,11 @@ use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 class Resend extends Action implements HttpGetActionInterface
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
+
+    /**
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;

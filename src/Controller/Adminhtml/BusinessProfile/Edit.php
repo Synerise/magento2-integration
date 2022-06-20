@@ -7,6 +7,11 @@ use Magento\Backend\App\Action;
 class Edit extends \Magento\Backend\App\Action
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_add';
+
+    /**
      * Core registry
      *
      * @var \Magento\Framework\Registry
@@ -34,14 +39,6 @@ class Edit extends \Magento\Backend\App\Action
     }
 
     /**
-     * {@inheritdoc}
-     */
-    protected function _isAllowed()
-    {
-        return $this->_authorization->isAllowed('Synerise_Integration::save');
-    }
-
-    /**
      * Init actions
      *
      * @return \Magento\Backend\Model\View\Result\Page
@@ -51,7 +48,7 @@ class Edit extends \Magento\Backend\App\Action
         // load layout, set active menu and breadcrumbs
         /** @var \Magento\Backend\Model\View\Result\Page $resultPage */
         $resultPage = $this->resultPageFactory->create();
-        $resultPage->setActiveMenu('Synerise_Integration::synerise_businessprofile')
+        $resultPage->setActiveMenu('Synerise_Integration::business_profile')
             ->addBreadcrumb(__('Synerise'), __('Synerise'))
             ->addBreadcrumb(__('Manage Business Profiles'), __('Manage Business Profiles'));
         return $resultPage;

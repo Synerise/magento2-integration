@@ -12,6 +12,11 @@ use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 class ResetStopId extends Action implements HttpGetActionInterface
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_subscriber';
+
+    /**
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;

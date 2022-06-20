@@ -13,6 +13,11 @@ use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 class MassUpdate extends Action
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
+
+    /**
      * @var LoggerInterface
      */
     private $logger;

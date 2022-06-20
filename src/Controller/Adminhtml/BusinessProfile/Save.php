@@ -10,6 +10,10 @@ use Synerise\Integration\Model\BusinessProfile;
 
 class Save extends \Magento\Backend\App\Action
 {
+    /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_add';
 
     /**
      * @param Action\Context $context
@@ -22,14 +26,6 @@ class Save extends \Magento\Backend\App\Action
         $this->apiHelper = $apiHelper;
 
         parent::__construct($context);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function _isAllowed()
-    {
-        return $this->_authorization->isAllowed('Synerise_Integration::save');
     }
 
     /**

@@ -7,7 +7,7 @@
         <section id="synerise_business_profile" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1">
             <label>Business Profile</label>
             <tab>synerise</tab>
-            <resource>Synerise_SystemConfig::synerise</resource>
+            <resource>Synerise_Integration::configuration_business_profile</resource>
             <group id="business_profile" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Business Profile</label>
                 <field id="id" type="select" translate="label" sortOrder="20">
@@ -31,7 +31,7 @@
         <section id="synerise_sync" translate="label" sortOrder="2" showInDefault="1">
             <label>Synchronization</label>
             <tab>synerise</tab>
-            <resource>Synerise_SystemConfig::synerise</resource>
+            <resource>Synerise_Integration::configuration_synchronization</resource>
             <group id="scope" translate="label" sortOrder="20" showInDefault="1">
                 <label>Scope</label>
                 <field id="models" type="multiselect" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
@@ -44,7 +44,7 @@
                 <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
                     <label>Store views</label>
                     <config_path>synerise/synchronization/stores</config_path>
-                    <source_model>Magento\Config\Model\Config\Source\Store</source_model>
+                    <source_model>Magento\Store\Model\System\Store</source_model>
                     <comment><![CDATA[Deselect store views to exclude their data from synchronization.]]></comment>
                 </field>
             </group>
@@ -88,7 +88,7 @@
         <section id="synerise_attributes" translate="label" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Attributes</label>
             <tab>synerise</tab>
-            <resource>Synerise_SystemConfig::synerise</resource>
+            <resource>Synerise_Integration::configuration_attributes</resource>
             <group id="product" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Products</label>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -109,7 +109,7 @@
         <section id="synerise_page_tacking" translate="label" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Page Tracking</label>
             <tab>synerise</tab>
-            <resource>Synerise_SystemConfig::synerise</resource>
+            <resource>Synerise_Integration::configuration_page_tracking</resource>
             <group id="general" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Page Tracking</label>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -122,6 +122,23 @@
                     <config_path>synerise/page_tracking/opengraph</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <comment><![CDATA[Include additional product tags for tracking.]]></comment>
+                </field>
+            </group>
+            <group id="custom" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Custom script</label>
+                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <config_path>synerise/page_tracking/custom_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Custom script should be used only if basic config is insufficient. By default, the tracking script will be rendered automatically upon Business Profile assignment.]]></comment>
+                </field>
+                <field id="script" type="textarea" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Script</label>
+                    <config_path>synerise/page_tracking/script</config_path>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                    <comment><![CDATA[Script can be generated in Synerise application under <a href="https://app.synerise.com/spa/modules/settings/profile/tracking-codes/list" target="_blank">Settings > Tracking codes</a>.]]></comment>
                 </field>
             </group>
             <group id="advanced" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -151,7 +168,7 @@
         <section id="synerise_event_tacking" translate="label" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Event Tracking</label>
             <tab>synerise</tab>
-            <resource>Synerise_SystemConfig::synerise</resource>
+            <resource>Synerise_Integration::configuration_event_tracking</resource>
             <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Event Tracking</label>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -169,7 +186,7 @@
         <section id="synerise_api" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Api</label>
             <tab>synerise</tab>
-            <resource>Synerise_SystemConfig::synerise</resource>
+            <resource>Synerise_Integration::configuration_api</resource>
             <group id="api" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Api</label>
                 <field id="host" translate="label comment" type="text" sortOrder="10" showInDefault="1">

@@ -18,7 +18,7 @@ class MassDelete extends Action implements HttpPostActionInterface
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::delete';
+    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_delete';
 
     /**
      * @var CollectionFactory

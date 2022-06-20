@@ -13,6 +13,11 @@ use Synerise\Integration\Model\Synchronization\Customer as SyncCustomer;
 class MassUpdate extends Action
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
+
+    /**
      * @var LoggerInterface
      */
     private $logger;

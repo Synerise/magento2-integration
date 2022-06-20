@@ -30,6 +30,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_PAGE_TRACKING_OPENGRAPH = 'synerise/page_tracking/opengraph';
 
+    const XML_PATH_PAGE_TRACKING_CUSTOM_ENABLED = 'synerise/page_tracking/custom_enabled';
+
+    const XML_PATH_PAGE_TRACKING_SCRIPT = 'synerise/page_tracking/script';
+
     /**
      * @var \Magento\Framework\Stdlib\CookieManagerInterface
      */
@@ -183,6 +187,22 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $this->trackerKey;
+    }
+
+    public function isCustomScriptEnabled()
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_PAGE_TRACKING_KEY,
+            ScopeInterface::SCOPE_STORE
+        );
+    }
+
+    public function getCustomTrackingScript()
+    {
+        return $this->scopeConfig->getValue(
+            self::XML_PATH_PAGE_TRACKING_SCRIPT,
+            ScopeInterface::SCOPE_STORE
+        );
     }
 
     public function getClientUuid()

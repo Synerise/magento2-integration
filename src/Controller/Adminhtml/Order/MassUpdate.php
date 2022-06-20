@@ -13,6 +13,11 @@ use Synerise\Integration\Model\Synchronization\Order as SyncOrder;
 class MassUpdate extends Action
 {
     /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
+
+    /**
      * @var LoggerInterface
      */
     private $logger;

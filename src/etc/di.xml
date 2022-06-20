@@ -11,7 +11,7 @@
     <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
         <arguments>
             <argument name="collections" xsi:type="array">
-                <item name="synerise_integration_business_profile_listing_data_source" xsi:type="string">Synerise\Integration\Model\ResourceModel\BusinessProfile\Grid\Collection</item>
+                <item name="synerise_business_profile_listing_data_source" xsi:type="string">Synerise\Integration\Model\ResourceModel\BusinessProfile\Grid\Collection</item>
             </argument>
         </arguments>
     </type>
