@@ -171,7 +171,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     private function getCatalogNameByStoreId($storeId)
     {
-        return 'store_'.$storeId;
+        return 'store-'.$storeId;
     }
 
     public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId)
