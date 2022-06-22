@@ -5,10 +5,10 @@ namespace Synerise\Integration\Model\Config\Backend;
 use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
 
-class BusinessProfile extends \Magento\Framework\App\Config\Value
+class Workspace extends \Magento\Framework\App\Config\Value
 {
     const XML_PATH_API_KEY = 'synerise/api/key';
-    const XML_PATH_PROFILE_ID = 'synerise/business_profile/id';
+    const XML_PATH_WORKSPACE_ID = 'synerise/workspace/id';
     const ERROR_MSG_403 = 'Please make sure this api key has all required roles.';
 
     public function __construct(
@@ -18,23 +18,23 @@ class BusinessProfile extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Model\BusinessProfile $businessProfile,
+        \Synerise\Integration\Model\Workspace $workspace,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->configWriter = $configWriter;
         $this->apiHelper = $apiHelper;
-        $this->businessProfile = $businessProfile;
+        $this->workspace = $workspace;
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
     public function beforeSave()
     {
-        $businessProfileId = (int) $this->getValue();
-        if ($businessProfileId) {
-            $businessProfile = $this->businessProfile->load($businessProfileId);
-            $token = $this->getApiToken($businessProfile->getApiKey());
+        $workspaceId = (int) $this->getValue();
+        if ($workspaceId) {
+            $workspace = $this->workspace->load($workspaceId);
+            $token = $this->getApiToken($workspace->getApiKey());
 
             try {
                 $response = $this->apiHelper->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
@@ -51,7 +51,7 @@ class BusinessProfile extends \Magento\Framework\App\Config\Value
 
             $this->configWriter->save(
                 self::XML_PATH_API_KEY,
-                $businessProfile->getData('api_key'),
+                $workspace->getData('api_key'),
                 $this->getScope(),
                 $this->getScopeId()
             );

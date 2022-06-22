@@ -11,14 +11,14 @@
     <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
         <arguments>
             <argument name="collections" xsi:type="array">
-                <item name="synerise_business_profile_listing_data_source" xsi:type="string">Synerise\Integration\Model\ResourceModel\BusinessProfile\Grid\Collection</item>
+                <item name="synerise_workspace_listing_data_source" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace\Grid\Collection</item>
             </argument>
         </arguments>
     </type>
-    <virtualType name="Synerise\Integration\Model\ResourceModel\BusinessProfile\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+    <virtualType name="Synerise\Integration\Model\ResourceModel\Workspace\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
         <arguments>
-            <argument name="mainTable" xsi:type="string">synerise_business_profile</argument>
-            <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\BusinessProfile</argument>
+            <argument name="mainTable" xsi:type="string">synerise_workspace</argument>
+            <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace</argument>
         </arguments>
     </virtualType>
 </config>

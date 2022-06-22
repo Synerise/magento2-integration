@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\BusinessProfile;
+namespace Synerise\Integration\Model\Workspace;
 
 use Ramsey\Uuid\Uuid;
 use Zend_Validate_Exception;
@@ -13,11 +13,11 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
         $this->apiHelper = $apiHelper;
     }
 
-    public function isValid($businessProfile)
+    public function isValid($workspace)
     {
         $messages = [];
 
-        $apiKey = $businessProfile->getApiKey();
+        $apiKey = $workspace->getApiKey();
         if (!Uuid::isValid($apiKey)) {
             $messages['invalid_api_key_format'] = 'Invalid api key format';
         }

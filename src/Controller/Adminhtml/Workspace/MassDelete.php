@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
@@ -9,8 +9,8 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Ui\Component\MassAction\Filter;
-use Synerise\Integration\Model\BusinessProfile;
-use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory;
+use Synerise\Integration\Model\Workspace;
+use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 
 
 class MassDelete extends Action implements HttpPostActionInterface
@@ -18,7 +18,7 @@ class MassDelete extends Action implements HttpPostActionInterface
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_delete';
+    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_delete';
 
     /**
      * @var CollectionFactory
@@ -48,7 +48,7 @@ class MassDelete extends Action implements HttpPostActionInterface
     }
 
     /**
-     * Business Profile delete action
+     * Workspace delete action
      *
      * @return Redirect
      */
@@ -60,9 +60,9 @@ class MassDelete extends Action implements HttpPostActionInterface
         $collection = $this->filter->getCollection($this->collectionFactory->create());
         $deleted = 0;
 
-        /** @var BusinessProfile $businessProfile */
-        foreach ($collection->getItems() as $businessProfile) {
-            $businessProfile->delete();
+        /** @var Workspace $workspace */
+        foreach ($collection->getItems() as $workspace) {
+            $workspace->delete();
             $deleted++;
         }
 

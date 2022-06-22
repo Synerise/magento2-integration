@@ -13,7 +13,7 @@ use Magento\Framework\Registry;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
 
-class BusinessProfiles extends Value
+class Workspaces extends Value
 {
     /**
      * @var SerializerInterface
@@ -61,9 +61,9 @@ class BusinessProfiles extends Value
         $oldValue = $encodedOldValue ? $this->serializer->unserialize($encodedOldValue) : [];
 
         if (!empty($value)) {
-            foreach($value as $websiteId => $businessProfileId) {
-                if (!isset($oldValue[$websiteId]) || $oldValue[$websiteId] != $businessProfileId) {
-                    $this->saveLinkedConfig($websiteId, $businessProfileId);
+            foreach($value as $websiteId => $workspaceId) {
+                if (!isset($oldValue[$websiteId]) || $oldValue[$websiteId] != $workspaceId) {
+                    $this->saveLinkedConfig($websiteId, $workspaceId);
                 }
             }
         }
@@ -92,17 +92,17 @@ class BusinessProfiles extends Value
         $this->setValue(!empty($decodedValue) ? $decodedValue : null);
     }
 
-    protected function saveLinkedConfig($websiteId, $businessProfileId)
+    protected function saveLinkedConfig($websiteId, $workspaceId)
     {
         $configData = [
-            'section' => 'synerise_business_profile',
+            'section' => 'synerise_workspace',
             'website' => $websiteId,
             'store' => null,
             'groups' => [
-                'business_profile' => [
+                'workspace' => [
                     'fields' => [
                         'id' => [
-                            'value' => $businessProfileId
+                            'value' => $workspaceId
                         ]
                     ]
                 ]

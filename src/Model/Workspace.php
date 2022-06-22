@@ -3,7 +3,7 @@ namespace Synerise\Integration\Model;
 
 use Ramsey\Uuid\Uuid;
 
-class BusinessProfile extends \Magento\Framework\Model\AbstractModel
+class Workspace extends \Magento\Framework\Model\AbstractModel
 {
     const REQUIRED_PERMISSIONS = [
         "API_BATCH_CLIENT_CREATE",
@@ -32,7 +32,7 @@ class BusinessProfile extends \Magento\Framework\Model\AbstractModel
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Synerise\Integration\Model\BusinessProfile\Validator $validator, 
+        \Synerise\Integration\Model\Workspace\Validator $validator, 
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = [])
@@ -45,7 +45,7 @@ class BusinessProfile extends \Magento\Framework\Model\AbstractModel
 
     protected function _construct()
     {
-        $this->_init('Synerise\Integration\Model\ResourceModel\BusinessProfile');
+        $this->_init('Synerise\Integration\Model\ResourceModel\Workspace');
     }
 
     public function setApiKey($apiKey)

@@ -6,9 +6,9 @@ use Magento\Backend\Block\Template\Context;
 use Magento\Config\Block\System\Config\Form\Field;
 use Magento\Framework\Data\Form\Element\AbstractElement;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
-use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory as BusinessProfileCollectionFactory;
+use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory as WorkspaceCollectionFactory;
 
-class BusinessProfiles extends Field
+class Workspaces extends Field
 {
     /**
      * @var WebsiteCollectionFactory 
@@ -16,27 +16,27 @@ class BusinessProfiles extends Field
     protected $websiteCollectionFactory;
 
     /**
-     * @var BusinessProfileCollectionFactory 
+     * @var WorkspaceCollectionFactory 
      */
-    protected $businessProfileCollectionFactory;
+    protected $workspaceCollectionFactory;
 
     /**
      * @param Context $context
      * @param WebsiteCollectionFactory $websiteCollectionFactory
-     * @param BusinessProfileCollectionFactory $businessProfileCollectionFactory
+     * @param WorkspaceCollectionFactory $workspaceCollectionFactory
      * @param array $data
      */
     public function __construct(
         Context $context,
         WebsiteCollectionFactory $websiteCollectionFactory,
-        BusinessProfileCollectionFactory $businessProfileCollectionFactory,
+        WorkspaceCollectionFactory $workspaceCollectionFactory,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->websiteCollectionFactory = $websiteCollectionFactory;
-        $this->businessProfileCollectionFactory = $businessProfileCollectionFactory;
+        $this->workspaceCollectionFactory = $workspaceCollectionFactory;
 
-        $this->setTemplate('Synerise_Integration::form/field/business_profiles.phtml');
+        $this->setTemplate('Synerise_Integration::form/field/workspaces.phtml');
     }
 
     protected function _getElementHtml(AbstractElement $element)
@@ -62,9 +62,9 @@ class BusinessProfiles extends Field
         return $rows;
     }
 
-    public function getBusinessProfiles()
+    public function getWorkspaces()
     {
-        return $this->businessProfileCollectionFactory->create();
+        return $this->workspaceCollectionFactory->create();
     }
 
 }

@@ -2,9 +2,9 @@
 
 namespace Synerise\Integration\Model\Config\Source;
 
-use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory;
+use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 
-class BusinessProfile implements \Magento\Framework\Data\OptionSourceInterface
+class Workspace implements \Magento\Framework\Data\OptionSourceInterface
 {
     /**
      * @var CollectionFactory
@@ -27,7 +27,7 @@ class BusinessProfile implements \Magento\Framework\Data\OptionSourceInterface
         ];
 
         $profiles = $this->collectionFactory->create();
-        /** @var \Synerise\Integration\Model\BusinessProfile $profile */
+        /** @var \Synerise\Integration\Model\Workspace $profile */
         foreach ($profiles as $profile) {
             $options[] = [
                 'value' => $profile->getId(),

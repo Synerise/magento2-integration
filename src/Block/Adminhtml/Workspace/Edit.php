@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Block\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Block\Adminhtml\Workspace;
 
 class Edit extends \Magento\Backend\Block\Widget\Form\Container
 {
@@ -25,7 +25,7 @@ class Edit extends \Magento\Backend\Block\Widget\Form\Container
     }
 
     /**
-     * Initialize Business Profile edit block
+     * Initialize Workspace edit block
      *
      * @return void
      */
@@ -33,31 +33,31 @@ class Edit extends \Magento\Backend\Block\Widget\Form\Container
     {
         $this->_objectId = 'id';
         $this->_blockGroup = 'Synerise_Integration';
-        $this->_controller = 'adminhtml_businessProfile';
+        $this->_controller = 'adminhtml_workspace';
 
         parent::_construct();
 
-        if ($this->_isAllowedAction('Synerise_Integration::business_profile_add')) {
-            $this->buttonList->update('save', 'label', __('Save Business Profile'));
+        if ($this->_isAllowedAction('Synerise_Integration::workspace_add')) {
+            $this->buttonList->update('save', 'label', __('Save Workspace'));
         } else {
             $this->buttonList->remove('save');
         }
 
-        if ($this->_isAllowedAction('Synerise_Integration::business_profile_delete')) {
-            $this->buttonList->update('delete', 'label', __('Delete Business Profile'));
+        if ($this->_isAllowedAction('Synerise_Integration::workspace_delete')) {
+            $this->buttonList->update('delete', 'label', __('Delete Workspace'));
         } else {
             $this->buttonList->remove('delete');
         }
     }
 
     /**
-     * Retrieve text for header element depending on loaded Business Profile
+     * Retrieve text for header element depending on loaded Workspace
      *
      * @return \Magento\Framework\Phrase
      */
     public function getHeaderText()
     {
-        return __('New Business Profile');
+        return __('New Workspace');
     }
 
     /**
@@ -79,6 +79,6 @@ class Edit extends \Magento\Backend\Block\Widget\Form\Container
      */
     protected function _getSaveAndContinueUrl()
     {
-        return $this->getUrl('businessprofile/*/save', ['_current' => true, 'back' => 'edit', 'active_tab' => '']);
+        return $this->getUrl('workspace/*/save', ['_current' => true, 'back' => 'edit', 'active_tab' => '']);
     }
 }

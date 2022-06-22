@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
@@ -15,8 +15,8 @@ use Magento\Ui\Component\MassAction\Filter;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Model\BusinessProfile;
-use Synerise\Integration\Model\ResourceModel\BusinessProfile\CollectionFactory;
+use Synerise\Integration\Model\Workspace;
+use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 
 
 class MassUpdate extends Action implements HttpPostActionInterface
@@ -24,7 +24,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile';
+    const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
 
     /**
      * @var CollectionFactory
@@ -62,7 +62,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
-     * Business Profile delete action
+     * Workspace delete action
      *
      * @return Redirect
      * @throws NotFoundException
@@ -76,10 +76,10 @@ class MassUpdate extends Action implements HttpPostActionInterface
         $collection = $this->filter->getCollection($this->collectionFactory->create());
         $updated = 0;
 
-        /** @var BusinessProfile $businessProfile */
-        foreach ($collection->getItems() as $businessProfile) {
+        /** @var Workspace $workspace */
+        foreach ($collection->getItems() as $workspace) {
             try {
-                $this->update($businessProfile);
+                $this->update($workspace);
             } catch (\Exception $e) {
                 $this->messageManager->addError(__($e->getMessage()));
             }
@@ -95,13 +95,13 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
-     * @param $businessProfile
+     * @param $workspace
      * @throws ValidatorException
      * @throws ApiException
      */
-    protected function update($businessProfile)
+    protected function update($workspace)
     {
-        $permissionCheck = $this->checkPermissions($businessProfile->getApiKey());
+        $permissionCheck = $this->checkPermissions($workspace->getApiKey());
         $missingPermissions = [];
         $permissions = $permissionCheck->getPermissions();
         foreach ($permissions as $permission => $isSet) {
@@ -110,7 +110,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
             }
         }
 
-        $businessProfile
+        $workspace
             ->setName($permissionCheck->getBusinessProfileName())
             ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
             ->save();
@@ -128,6 +128,6 @@ class MassUpdate extends Action implements HttpPostActionInterface
         $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);
 
         return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
-            ->checkPermissions(BusinessProfile::REQUIRED_PERMISSIONS);
+            ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 }

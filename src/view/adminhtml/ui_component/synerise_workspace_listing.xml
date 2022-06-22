@@ -1,23 +1,23 @@
 <listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
     <argument name="data" xsi:type="array">
         <item name="js_config" xsi:type="array">
-            <item name="provider" xsi:type="string">synerise_business_profile_listing.synerise_business_profile_listing_data_source</item>
-            <item name="deps" xsi:type="string">synerise_business_profile_listing.synerise_business_profile_listing_data_source</item>
+            <item name="provider" xsi:type="string">synerise_workspace_listing.synerise_workspace_listing_data_source</item>
+            <item name="deps" xsi:type="string">synerise_workspace_listing.synerise_workspace_listing_data_source</item>
         </item>
         <item name="spinner" xsi:type="string">spinner_columns</item>
         <item name="buttons" xsi:type="array">
             <item name="add" xsi:type="array">
                 <item name="name" xsi:type="string">add</item>
-                <item name="label" xsi:type="string" translate="true">Add Business Profile</item>
+                <item name="label" xsi:type="string" translate="true">Add Workspace</item>
                 <item name="class" xsi:type="string">primary</item>
                 <item name="url" xsi:type="string">*/*/new</item>
             </item>
         </item>
     </argument>
-    <dataSource name="synerise_business_profile_listing_data_source">
+    <dataSource name="synerise_workspace_listing_data_source">
         <argument name="dataProvider" xsi:type="configurableObject">
             <argument name="class" xsi:type="string">Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider</argument>
-            <argument name="name" xsi:type="string">synerise_business_profile_listing_data_source</argument>
+            <argument name="name" xsi:type="string">synerise_workspace_listing_data_source</argument>
             <argument name="primaryFieldName" xsi:type="string">id</argument>
             <argument name="requestFieldName" xsi:type="string">id</argument>
             <argument name="data" xsi:type="array">
@@ -54,7 +54,7 @@
                         <item name="label" xsi:type="string" translate="true">Delete</item>
                         <item name="url" xsi:type="url" path="*/*/massDelete"/>
                         <item name="confirm" xsi:type="array">
-                            <item name="title" xsi:type="string" translate="true">Delete Business Profile</item>
+                            <item name="title" xsi:type="string" translate="true">Delete Workspace</item>
                             <item name="message" xsi:type="string" translate="true">Are you sure you want to delete selected items?</item>
                         </item>
                     </item>

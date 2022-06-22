@@ -9,9 +9,9 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
         $installer = $setup;
         $installer->startSetup();
 
-        if (!$installer->tableExists('synerise_business_profile')) {
+        if (!$installer->tableExists('synerise_workspace')) {
             $table = $installer->getConnection()->newTable(
-                $installer->getTable('synerise_business_profile')
+                $installer->getTable('synerise_workspace')
             )
                 ->addColumn(
                     'id',
@@ -23,28 +23,28 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                         'primary'  => true,
                         'unsigned' => true,
                     ],
-                    'Business Profile ID'
+                    'Workspace ID'
                 )
                 ->addColumn(
                     'name',
                     \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                     100,
                     ['nullable => false'],
-                    'Business Profile Name'
+                    'Workspace Name'
                 )
                 ->addColumn(
                     'api_key',
                     \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                     100,
                     ['nullable => false'],
-                    'Business Profile Api Key'
+                    'Workspace Api Key'
                 )
                 ->addColumn(
                     'uuid',
                     \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                     36,
                     ['nullable => false'],
-                    'Business Profile Unique Identifier'
+                    'Workspace Unique Identifier'
                 )
                 ->addColumn(
                     'missing_permissions',
@@ -65,13 +65,13 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                     null,
                     ['nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT_UPDATE],
                     'Updated At')
-                ->setComment('Business Profile Table');
+                ->setComment('Workspace Table');
             $installer->getConnection()->createTable($table);
 
             $installer->getConnection()->addIndex(
-                $installer->getTable('synerise_business_profile'),
+                $installer->getTable('synerise_workspace'),
                 $setup->getIdxName(
-                    $installer->getTable('synerise_business_profile'),
+                    $installer->getTable('synerise_workspace'),
                     ['uuid'],
                     \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE
                 ),

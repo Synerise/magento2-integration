@@ -1,13 +1,13 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 class Index extends \Magento\Backend\App\Action
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile';
+    const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
 
     protected $resultPageFactory;
 
@@ -24,7 +24,7 @@ class Index extends \Magento\Backend\App\Action
     {
         $resultPage = $this->resultPageFactory->create();
         $resultPage
-            ->getConfig()->getTitle()->prepend((__('Business Profiles')));
+            ->getConfig()->getTitle()->prepend((__('Workspaces')));
 
         return $resultPage;
     }

@@ -16,7 +16,7 @@ use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory;
 class Uninstall implements UninstallInterface
 {
     const TABLES = [
-        'synerise_business_profile',
+        'synerise_workspace',
         'synerise_cron_status',
         'synerise_cron_queue',
         'synerise_sync_subscriber',

@@ -1,13 +1,13 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 class NewAction extends \Magento\Backend\App\Action
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_add';
+    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
      * @var \Magento\Backend\Model\View\Result\Forward

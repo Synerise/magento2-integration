@@ -9,7 +9,7 @@
     <update handle="editor"/>
     <body>
         <referenceContainer name="content">
-            <block class="Synerise\Integration\Block\Adminhtml\BusinessProfile\Edit" name="synerise_business_profile_edit"/>
+            <block class="Synerise\Integration\Block\Adminhtml\Workspace\Edit" name="synerise_workspace_edit"/>
         </referenceContainer>
     </body>
 </page>

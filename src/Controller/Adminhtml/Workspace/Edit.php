@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
 
@@ -9,7 +9,7 @@ class Edit extends \Magento\Backend\App\Action
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_add';
+    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
      * Core registry
@@ -48,14 +48,14 @@ class Edit extends \Magento\Backend\App\Action
         // load layout, set active menu and breadcrumbs
         /** @var \Magento\Backend\Model\View\Result\Page $resultPage */
         $resultPage = $this->resultPageFactory->create();
-        $resultPage->setActiveMenu('Synerise_Integration::business_profile')
+        $resultPage->setActiveMenu('Synerise_Integration::workspace')
             ->addBreadcrumb(__('Synerise'), __('Synerise'))
-            ->addBreadcrumb(__('Manage Business Profiles'), __('Manage Business Profiles'));
+            ->addBreadcrumb(__('Manage Workspaces'), __('Manage Workspaces'));
         return $resultPage;
     }
 
     /**
-     * Edit Business Profile
+     * Edit Workspace
      *
      * @return \Magento\Backend\Model\View\Result\Page|\Magento\Framework\Controller\Result\Redirect
      * @SuppressWarnings(PHPMD.NPathComplexity)
@@ -63,12 +63,12 @@ class Edit extends \Magento\Backend\App\Action
     public function execute()
     {
         $id = $this->getRequest()->getParam('id');
-        $model = $this->_objectManager->create('Synerise\Integration\Model\BusinessProfile');
+        $model = $this->_objectManager->create('Synerise\Integration\Model\Workspace');
 
         if ($id) {
             $model->load($id);
             if (!$model->getId()) {
-                $this->messageManager->addError(__('This Business Profile no longer exists.'));
+                $this->messageManager->addError(__('This Workspace no longer exists.'));
                 /** \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
                 $resultRedirect = $this->resultRedirectFactory->create();
 
@@ -84,12 +84,12 @@ class Edit extends \Magento\Backend\App\Action
         /** @var \Magento\Backend\Model\View\Result\Page $resultPage */
         $resultPage = $this->_initAction();
         $resultPage->addBreadcrumb(
-            $id ? __('Edit Business Profile') : __('New Business Profile'),
-            $id ? __('Edit Business Profile') : __('New Business Profile')
+            $id ? __('Edit Workspace') : __('New Workspace'),
+            $id ? __('Edit Workspace') : __('New Workspace')
         );
-        $resultPage->getConfig()->getTitle()->prepend(__('Business Profiles'));
+        $resultPage->getConfig()->getTitle()->prepend(__('Workspaces'));
         $resultPage->getConfig()->getTitle()
-            ->prepend($model->getId() ? $model->getTitle() : __('New Business Profile'));
+            ->prepend($model->getId() ? $model->getTitle() : __('New Workspace'));
 
         return $resultPage;
     }

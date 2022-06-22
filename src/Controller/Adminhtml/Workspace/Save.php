@@ -1,19 +1,18 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\BusinessProfile;
+namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\TestFramework\ErrorLog\Logger;
-use Synerise\Integration\Model\BusinessProfile;
+use Synerise\Integration\Model\Workspace;
 
 class Save extends \Magento\Backend\App\Action
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::business_profile_add';
+    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
      * @param Action\Context $context
@@ -41,8 +40,8 @@ class Save extends \Magento\Backend\App\Action
         $resultRedirect = $this->resultRedirectFactory->create();
 
         if ($data) {
-            /** @var \Synerise\Integration\Model\BusinessProfile $model */
-            $model = $this->_objectManager->create('Synerise\Integration\Model\BusinessProfile');
+            /** @var \Synerise\Integration\Model\Workspace $model */
+            $model = $this->_objectManager->create('Synerise\Integration\Model\Workspace');
             $id = $this->getRequest()->getParam('id');
             if ($id) {
                 $model->load($id);
@@ -75,7 +74,7 @@ class Save extends \Magento\Backend\App\Action
                     ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
                     ->save();
 
-                $this->messageManager->addSuccess(__('You saved this Business Profile.'));
+                $this->messageManager->addSuccess(__('You saved this Workspace.'));
                 $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
                 if ($this->getRequest()->getParam('back')) {
                     return $resultRedirect->setPath('*/*/edit', ['id' => $model->getId(), '_current' => true]);
@@ -86,7 +85,7 @@ class Save extends \Magento\Backend\App\Action
             } catch (\RuntimeException $e) {
                 $this->messageManager->addError($e->getMessage());
             } catch (\Exception $e) {
-                $this->messageManager->addException($e, __('Something went wrong while saving the Business Profile.'));
+                $this->messageManager->addException($e, __('Something went wrong while saving the Workspace.'));
             }
 
             $this->_getSession()->setFormData($data);
@@ -107,6 +106,6 @@ class Save extends \Magento\Backend\App\Action
         $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);
 
         return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
-            ->checkPermissions(BusinessProfile::REQUIRED_PERMISSIONS);
+            ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 }

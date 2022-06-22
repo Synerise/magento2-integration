@@ -3,11 +3,11 @@
     <body>
         <referenceBlock name="menu">
             <action method="setActive">
-                <argument name="itemId" xsi:type="string">Synerise_Integration::business_profile</argument>
+                <argument name="itemId" xsi:type="string">Synerise_Integration::workspace</argument>
             </action>
         </referenceBlock>
         <referenceContainer name="content">
-            <uiComponent name="synerise_business_profile_listing"/>
+            <uiComponent name="synerise_workspace_listing"/>
         </referenceContainer>
     </body>
 </page>
