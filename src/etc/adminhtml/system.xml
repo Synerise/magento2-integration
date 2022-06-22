@@ -65,7 +65,7 @@
                     <config_path>synerise/cron_status/page_size</config_path>
                     <validate>integer validate-greater-than-zero</validate>
                 </field>
-                <comment><![CDATA[This process will send all the data collected prior to its start. Visit the Synerise dashboard to resend all the items or the items created since the process started.]]></comment>
+                <comment><![CDATA[This process will send all the data collected prior to its start. To resend all the items or the items created since the integration, go to Marketing > Synerise > Dashboard.]]></comment>
             </group>
             <group id="cron_queue" translate="label" sortOrder="20" showInDefault="1">
                 <label>Updates Synchronization</label>
@@ -84,7 +84,7 @@
                     <config_path>synerise/cron_queue/page_size</config_path>
                     <validate>integer validate-greater-than-zero</validate>
                 </field>
-                <comment><![CDATA[This process will send the data that has recently changed. It is is based on items queue & the data will be send in the background.]]></comment>
+                <comment><![CDATA[This process will send the data that has recently changed. It is based on items queue & the data will be send in the background.]]></comment>
             </group>
         </section>
         <section id="synerise_attributes" translate="label" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -149,13 +149,13 @@
                     <label>Cookie domain</label>
                     <config_path>synerise/page_tracking/domain</config_path>
                     <backend_model>\Synerise\Integration\Model\Config\Backend\Tracking\Domain</backend_model>
-                    <comment><![CDATA[Common cookie domain can be set if a single Workspace is shared across many subdomains.]]></comment>
+                    <comment><![CDATA[Common cookie domain can be set if a single Workspace is shared across many subdomains. Otherwise it should be left blank.]]></comment>
                 </field>
                 <field id="custom_page_visit" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Custom Page Visit</label>
                     <config_path>synerise/page_tracking/custom_page_visit</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment><![CDATA[Recommended for PWA. Enabling this option requires a custom page visit implementation. To find out more refer with <a href="https://help.synerise.com/developers/web/installation-and-configuration/#automatic-tracking-of-page-visits">Page Tracking documentation</a>]]></comment>
+                    <comment><![CDATA[Recommended for PWA themes. Enabling this option requires a custom page visit implementation. To find out more refer with <a href="https://help.synerise.com/developers/web/installation-and-configuration/#automatic-tracking-of-page-visits">Page Tracking documentation</a>]]></comment>
                 </field>
             </group>
             <group id="dynamic_content" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -164,6 +164,7 @@
                     <label>Virtual Page</label>
                     <config_path>synerise/dynamic_content/virtual_page</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Recommended for PWA themes.]]></comment>
                 </field>
             </group>
         </section>
