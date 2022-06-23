@@ -99,7 +99,7 @@ class Workspaces extends Value
             'website' => $websiteId,
             'store' => null,
             'groups' => [
-                'workspace' => [
+                'websites' => [
                     'fields' => [
                         'id' => [
                             'value' => $workspaceId

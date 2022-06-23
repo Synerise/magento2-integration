@@ -29,7 +29,7 @@
             </group>
             <group id="stores" translate="label" sortOrder="10" showInDefault="1">
                 <label>Stores</label>
-                <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
+                <field id="enabled" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
                     <label>Enabled</label>
                     <config_path>synerise/synchronization/stores</config_path>
                     <backend_model>Synerise\Integration\Model\Config\Backend\Synchronization\Store</backend_model>

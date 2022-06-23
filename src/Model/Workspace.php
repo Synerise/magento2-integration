@@ -17,7 +17,7 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
         "API_REGISTERED_EVENTS_CREATE",
         "CATALOGS_CATALOG_CREATE",
         "CATALOGS_CATALOG_READ",
-        "CATALOGS_ITEM_BATCH_CREATE",
+        "CATALOGS_ITEM_BATCH_CATALOG_CREATE",
         "TRACKER_CREATE"
     ];
 

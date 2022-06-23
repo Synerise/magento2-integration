@@ -12,7 +12,7 @@
             <tr id="<?php echo $row['id']; ?>">
                 <td class="value"><?php echo $row['name']; ?></td>
                 <td>
-                    <select id="synerise_workspace_id" name="groups[workspace][fields][map][value][<?php echo $row['id']; ?>]" class=" select admin__control-select">
+                    <select id="synerise_workspace_id" name="groups[websites][fields][map][value][<?php echo $row['id']; ?>]" class=" select admin__control-select">
                         <option value="" style="display:block"></option>
                     <?php foreach($this->getWorkspaces() as $workspace): ?>
                         <?php $isSelected = ($row['value'] == $workspace->getId()); ?>
