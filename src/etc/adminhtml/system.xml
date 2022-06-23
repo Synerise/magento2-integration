@@ -4,12 +4,12 @@
         <tab id="synerise" translate="label" sortOrder="1000">
             <label>Synerise</label>
         </tab>
-        <section id="synerise_workspace" translate="label" sortOrder="2" showInDefault="1" showInWebsite="1">
+        <section id="synerise_workspace" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1">
             <label>Workspaces</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_workspace</resource>
-            <group id="workspace" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Workspace</label>
+            <group id="websites" translate="label" sortOrder="10" showInDefault="1">
+                <label>Websites</label>
                 <field id="id" type="select" translate="label" sortOrder="20">
                     <label>Select</label>
                     <config_path>synerise/workspace/id</config_path>
@@ -17,7 +17,7 @@
                     <source_model>Synerise\Integration\Model\Config\Source\Workspace</source_model>
                 </field>
                 <field id="map" translate="label" sortOrder="1" showInDefault="1">
-                    <label>Websites</label>
+                    <label>Mapping</label>
                     <config_path>synerise/workspace/map</config_path>
                     <backend_model>Synerise\Integration\Model\Config\Backend\Workspaces</backend_model>
                     <frontend_model>Synerise\Integration\Block\Adminhtml\Form\Field\Workspaces</frontend_model>
@@ -26,8 +26,11 @@
                         <model>Synerise\Integration\Model\Config\Backend\Workspaces\Comment</model>
                     </comment>
                 </field>
+            </group>
+            <group id="stores" translate="label" sortOrder="10" showInDefault="1">
+                <label>Stores</label>
                 <field id="stores" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
-                    <label>Store views</label>
+                    <label>Enabled</label>
                     <config_path>synerise/synchronization/stores</config_path>
                     <backend_model>Synerise\Integration\Model\Config\Backend\Synchronization\Store</backend_model>
                     <source_model>Magento\Store\Model\System\Store</source_model>
@@ -80,7 +83,7 @@
                 <comment><![CDATA[This process will send the data that has recently changed. It is based on items queue & the data will be send in the background.]]></comment>
             </group>
         </section>
-        <section id="synerise_data" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_data" translate="label" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Data</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_attributes</resource>
@@ -160,7 +163,7 @@
                     <label>Custom Page Visit</label>
                     <config_path>synerise/page_tracking/custom_page_visit</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment><![CDATA[Recommended for PWA themes. Enabling this option requires a custom page visit implementation. To find out more refer with <a href="https://help.synerise.com/developers/web/installation-and-configuration/#automatic-tracking-of-page-visits">Page Tracking documentation</a>]]></comment>
+                    <comment><![CDATA[Recommended for PWA themes. Enabling this option requires a custom page visit implementation. To find out more refer to <a href="https://help.synerise.com/developers/web/installation-and-configuration/#automatic-tracking-of-page-visits">Page Tracking documentation</a>]]></comment>
                 </field>
             </group>
             <group id="dynamic_content" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
