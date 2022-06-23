@@ -12,7 +12,7 @@ use Magento\Framework\Registry;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory;
 use Synerise\Integration\Model\ResourceModel\Cron\Status;
 
-class Model extends Value
+class Store extends Value
 {
     /**
      * @var Status
@@ -42,13 +42,13 @@ class Model extends Value
     }
 
     /**
-     * @return Model
+     * @return Store
      * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function afterSave()
     {
-        $enabledModels = explode(',', $this->getValue());
-        $enabledStoreIds = $this->getEnabledStoreIds();
+        $enabledStoreIds = explode(',', $this->getValue());
+        $enabledModels = $this->getEnabledModels();
 
         $this->statusResourceModel->disableAll();
 
@@ -84,10 +84,10 @@ class Model extends Value
         return $storeIds;
     }
 
-    public function getEnabledStoreIds()
+    public function getEnabledModels()
     {
         return explode(',', (string) $this->_config->getValue(
-            'synerise/synchronization/stores',
+            'synerise/synchronization/models',
             $this->getScope() ?: ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
             $this->getScopeCode()
         ));
