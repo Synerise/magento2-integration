@@ -2,7 +2,7 @@
   "name": "synerise/magento2-integration",
   "description": "Synerise Magento 2 integration module.",
   "type": "magento2-module",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "license": [
     "OSL-3.0",
     "AFL-3.0"
@@ -12,8 +12,8 @@
     "ext-curl": "*",
     "ext-json": "*",
     "ext-mbstring": "*",
-    "guzzlehttp/guzzle": "^6.2",
-    "anik/loguzz": "^1.2"
+    "guzzlehttp/guzzle": "^6.2 || ^7.3",
+    "anik/loguzz": "^1.2 || ^2.1"
   },
   "autoload": {
     "files": [
