@@ -12,8 +12,8 @@
     "ext-curl": "*",
     "ext-json": "*",
     "ext-mbstring": "*",
-    "guzzlehttp/guzzle": "^6.2",
-    "anik/loguzz": "^1.2"
+    "guzzlehttp/guzzle": "^6.2 || ^7.3",
+    "anik/loguzz": "^1.2 || ^2.1"
   },
   "autoload": {
     "files": [

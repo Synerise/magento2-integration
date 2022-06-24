@@ -9,7 +9,7 @@ class RequestCurlSanitizedFormatter extends RequestCurlFormatter
 {
     protected function extractArguments(RequestInterface $request, array $options)
     {
-        parent::extractArguments($request, $options);
+        parent::format($request, $options);
         if (!isset($this->options['headers']['Authorization'])) {
             return;
         }
