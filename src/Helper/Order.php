@@ -185,7 +185,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'source' => $this->trackingHelper->getSource(),
-            'event_salt'  => $order->getRealOrderId()
+            'event_salt' => $order->getRealOrderId()
         ];
 
         return $params;
