@@ -8,10 +8,15 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization;
+use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class MassUpdate extends Action
 {
+    /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
+
     /**
      * @var LoggerInterface
      */
@@ -28,21 +33,21 @@ class MassUpdate extends Action
     protected $collectionFactory;
 
     /**
-     * @var Synchronization
+     * @var SyncProduct
      */
-    protected $synchronization;
+    protected $syncProduct;
 
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
         LoggerInterface $logger,
-        Synchronization $synchronization
+        SyncProduct $syncProduct
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->synchronization = $synchronization;
+        $this->syncProduct = $syncProduct;
 
         parent::__construct($context);
     }
@@ -58,14 +63,7 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            foreach ($collection as $product) {
-                $this->synchronization->addItemToQueueByWebsiteIds(
-                    'product',
-                    $product->getWebsiteIds(),
-                    $product->getId()
-                );
-            }
-
+            $this->syncProduct->addItemsToQueue($collection);
             $this->messageManager->addSuccess(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
         } catch (\Exception $e) {
             $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);

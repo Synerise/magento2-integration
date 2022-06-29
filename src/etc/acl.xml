@@ -4,7 +4,33 @@
         <resources>
             <resource id="Magento_Backend::admin">
                 <resource id="Magento_Backend::marketing">
-                    <resource id="Synerise_Integration::synerise_dashboard" title="Synerise" sortOrder="50" />
+                    <resource id="Synerise_Integration::synerise" title="Synerise" sortOrder="5">
+                        <resource id="Synerise_Integration::dashboard" title="Dashboard" sortOrder="1" />
+                        <resource id="Synerise_Integration::workspace" title="Workspaces" sortOrder="2" >
+                            <resource id="Synerise_Integration::workspace_add" title="Add Workspaces" sortOrder="1" />
+                            <resource id="Synerise_Integration::workspace_delete" title="Delete Workspaces" sortOrder="1" />
+                        </resource>
+                        <resource id="Synerise_Integration::synchronization" title="Synchronization" sortOrder="4" >
+                            <resource id="Synerise_Integration::synchronization_catalog" title="Catalog" sortOrder="1" />
+                            <resource id="Synerise_Integration::synchronization_customer" title="Customer" sortOrder="2" />
+                            <resource id="Synerise_Integration::synchronization_order" title="Order" sortOrder="3" />
+                            <resource id="Synerise_Integration::synchronization_subscriber" title="Subscriber" sortOrder="4" />
+                        </resource>
+                    </resource>
+                </resource>
+                <resource id="Magento_Backend::stores">
+                    <resource id="Magento_Backend::stores_settings">
+                        <resource id="Magento_Config::config">
+                            <resource id="Synerise_Integration::configuration" title="Synerise">
+                                <resource id="Synerise_Integration::configuration_workspace" title="Workspace" sortOrder="1" />
+                                <resource id="Synerise_Integration::configuration_synchronization" title="Synchronization" sortOrder="2" />
+                                <resource id="Synerise_Integration::configuration_attributes" title="Attributes" sortOrder="3"/>
+                                <resource id="Synerise_Integration::configuration_page_tracking" title="Page Tracking" sortOrder="4"/>
+                                <resource id="Synerise_Integration::configuration_event_tracking" title="Event Tracking" sortOrder="5"/>
+                                <resource id="Synerise_Integration::configuration_api" title="Api" sortOrder="6" />
+                            </resource>
+                        </resource>
+                    </resource>
                 </resource>
             </resource>
         </resources>

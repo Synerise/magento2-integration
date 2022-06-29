@@ -12,7 +12,7 @@ use Magento\Framework\View\Result\PageFactory;
  */
 class Index extends Action implements HttpGetActionInterface
 {
-    const MENU_ID = 'Synerise_Integration::synerise_dashboard';
+    const MENU_ID = 'Synerise_Integration::dashboard';
 
     /**
      * @var PageFactory
@@ -32,11 +32,6 @@ class Index extends Action implements HttpGetActionInterface
         parent::__construct($context);
 
         $this->resultPageFactory = $resultPageFactory;
-    }
-
-    protected function _isAllowed()
-    {
-        return $this->_authorization->isAllowed('Synerise_Integration::synerise_dashboard');
     }
 
     /**

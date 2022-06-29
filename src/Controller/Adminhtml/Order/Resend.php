@@ -7,27 +7,41 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization;
+use Synerise\Integration\Model\Synchronization\Order as SyncOrder;
+use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
+
 
 class Resend extends Action implements HttpGetActionInterface
 {
     /**
-     * @var Synchronization
+     * Authorization level
      */
-    protected $synchronization;
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
 
     /**
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
 
+    /**
+     * @var SyncOrder
+     */
+    protected $syncOrder;
+
+    /**
+     * @var StatusResourceModel
+     */
+    protected $statusResourceModel;
+
     public function __construct(
         Context $context,
         LoggerInterface $logger,
-        Synchronization $synchronization
+        SyncOrder $syncOrder,
+        StatusResourceModel $statusResourceModel
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
+        $this->syncOrder = $syncOrder;
+        $this->statusResourceModel = $statusResourceModel;
 
         parent::__construct($context);
     }
@@ -40,7 +54,8 @@ class Resend extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $this->synchronization->resendItems('order');
+        $this->statusResourceModel->resendItems('order');
+        $this->syncOrder->markAllAsUnsent();
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

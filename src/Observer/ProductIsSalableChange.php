@@ -2,50 +2,62 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\DataStorage;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class ProductIsSalableChange implements ObserverInterface
 {
     public const EVENT = 'product_is_salable_change';
 
     /**
-     * @var \Synerise\Integration\Cron\Synchronization
-     */
-    protected $synchronization;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-    /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Synerise\Integration\Helper\DataStorage
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * @var DataStorage
      */
     protected $data;
 
+    /**
+     * @var Tracking
+     */
+    protected $trackingHelper;
+
+    /**
+     * @var SyncProduct
+     */
+    protected $syncProduct;
+
     public function __construct(
-        \Psr\Log\LoggerInterface                        $logger,
-        \Synerise\Integration\Cron\Synchronization      $synchronization,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Synerise\Integration\Helper\DataStorage        $data
+        ProductRepositoryInterface $productRepository,
+        LoggerInterface $logger,
+        DataStorage $data,
+        Tracking $trackingHelper,
+        SyncProduct $syncProduct
     ) {
-        $this->logger = $logger;
-        $this->synchronization = $synchronization;
         $this->productRepository = $productRepository;
+        $this->logger = $logger;
         $this->data = $data;
+        $this->trackingHelper = $trackingHelper;
+        $this->syncProduct = $syncProduct;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+            return;
+        }
+
         $eventName = $observer->getEvent()->getName();
 
         try {
@@ -75,8 +87,7 @@ class ProductIsSalableChange implements ObserverInterface
 
             if (!empty($changedProducts)) {
                 try{
-                    $this->synchronization->addItemsToQueueByItemWebsiteIds(
-                        'product',
+                    $this->syncProduct->addItemsToQueue(
                         $changedProducts
                     );
                 } catch (\Exception $e){

@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Indexer/etc/indexer.xsd">
-    <indexer id="customer_grid">
-        <fieldset name="customer">
-            <field name="synerise_updated_at" xsi:type="filterable" dataType="date" />
-        </fieldset>
-    </indexer>
-</config>

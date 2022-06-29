@@ -4,12 +4,17 @@ namespace Synerise\Integration\Model;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Data\Collection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Cron\Status;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 abstract class AbstractSynchronization
 {
     const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
+    const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
+    const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
 
     /**
      * @var LoggerInterface
@@ -26,35 +31,88 @@ abstract class AbstractSynchronization
      */
     protected $connection;
 
+    /**
+     * @var mixed
+     */
     protected $collectionFactory;
+
+    /**
+     * @var string[]
+     */
+    protected $enabledModels;
+
+    /**
+     * @var QueueResourceModel
+     */
+    protected $queueResourceModel;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        ResourceConnection $resource,
-        $collectionFactory
-    ) {
+        LoggerInterface      $logger,
+        ResourceConnection   $resource,
+        QueueResourceModel   $queueResourceModel,
+                             $collectionFactory
+    )
+    {
         $this->scopeConfig = $scopeConfig;
         $this->logger = $logger;
         $this->connection = $resource->getConnection();
+        $this->queueResourceModel = $queueResourceModel;
         $this->collectionFactory = $collectionFactory;
     }
 
     /**
      * @throws \Synerise\ApiClient\ApiException
      */
-    abstract public function sendItems($collection, $status);
+    abstract public function sendItems($collection, $storeId, $websiteId = null);
 
-    public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)
+    /**
+     * @param \Magento\Framework\Data\Collection\AbstractDb $collection
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function addItemsToQueue($collection)
     {
-        return $this->collectionFactory->create()
+        $enabledStores = $this->getEnabledStores();
+
+        foreach ($collection as $item) {
+            if (in_array($item->getStoreId(), $enabledStores)) {
+                $data[] = [
+                    'model' => static::MODEL,
+                    'store_id' => $item->getStoreId(),
+                    'entity_id' => $item->getData(static::ENTITY_ID),
+                ];
+            }
+        }
+
+        if (!empty($data)) {
+            $this->queueResourceModel->addItems($data);
+        }
+    }
+
+    /**
+     * @param string $storeId
+     * @param array $entityIds
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function deleteItemsFromQueue($storeId, $entityIds)
+    {
+        $this->queueResourceModel->deleteItems(static::MODEL, $storeId, $entityIds);
+    }
+
+    /**
+     * @param Status $status
+     * @return Collection
+     */
+    public function getCollectionFilteredByIdRange($status)
+    {
+        return $this->createCollectionWithScope($status->getStoreId(), $status->getWebsiteId())
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                ['gt' => $startId]
+                ['gt' => $status->getStartId()]
             )
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                ['lteq' => $stopId]
+                ['lteq' => $status->getStopId()]
             )
             ->setOrder(static::ENTITY_ID, 'ASC')
             ->setPageSize($this->getPageSize());
@@ -62,7 +120,7 @@ abstract class AbstractSynchronization
 
     public function getCollectionFilteredByEntityIds($storeId, $entityIds)
     {
-        return $this->collectionFactory->create()
+        return $this->createCollectionWithScope($storeId)
             ->addFieldToFilter(
                 static::ENTITY_ID,
                 ['in' => $entityIds]
@@ -71,9 +129,9 @@ abstract class AbstractSynchronization
             ->setPageSize($this->getPageSize());
     }
 
-    public function getCurrentLastId()
+    public function getCurrentLastId($status)
     {
-        $collection = $this->collectionFactory->create()
+        $collection = $this->createCollectionWithScope($status->getStoreId(), $status->getWebsiteId())
             ->addFieldToSelect(static::ENTITY_ID)
             ->setOrder(static::ENTITY_ID, 'DESC')
             ->setPageSize(1);
@@ -83,16 +141,34 @@ abstract class AbstractSynchronization
         return $item ? $item->getData(static::ENTITY_ID) : 0;
     }
 
-    protected function getPageSize()
+    abstract protected function createCollectionWithScope($storeId, $websiteId = null);
+
+    public function getPageSize($storeId = null)
     {
-        return $this->scopeConfig->getValue(static::XML_PATH_CRON_STATUS_PAGE_SIZE);
+        return $this->scopeConfig->getValue(
+            static::XML_PATH_CRON_STATUS_PAGE_SIZE,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    public function getEnabledModels()
+    {
+        if (!isset($this->enabledModels)) {
+            $enabledModels = $this->scopeConfig->getValue(
+                static::XML_PATH_SYNCHRONIZATION_MODELS
+            );
+
+            $this->enabledModels = explode(',', $enabledModels);
+        }
+
+        return $this->enabledModels;
     }
 
     public function isEnabled()
     {
-        return $this->scopeConfig->isSetFlag(
-            static::CONFIG_XML_PATH_CRON_ENABLED
-        );
+        $enabledModels = $this->getEnabledModels();
+        return in_array(static::MODEL, $enabledModels);
     }
 
     public function getEntityIdField()
@@ -101,4 +177,16 @@ abstract class AbstractSynchronization
     }
 
     abstract public function markAllAsUnsent();
+
+    /**
+     * @return array
+     */
+    public function getEnabledStores()
+    {
+        $enabledStoresString = $this->scopeConfig->getValue(
+            self::XML_PATH_SYNCHRONIZATION_STORES
+        );
+
+        return $enabledStoresString ? explode(',', $enabledStoresString) : [];
+    }
 }

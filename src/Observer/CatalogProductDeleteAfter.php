@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 
 class CatalogProductDeleteAfter implements ObserverInterface
@@ -32,12 +33,20 @@ class CatalogProductDeleteAfter implements ObserverInterface
             return;
         }
 
+        /** @var Product $product */
         $product = $observer->getEvent()->getProduct();
-        $attributes = $this->catalogHelper->getProductAttributesToSelect();
-        $storeId = $this->catalogHelper->getDefaultStoreId();
 
         try {
-            $this->catalogHelper->deleteItemWithCatalogCheck($product, $attributes, $storeId);
+            $enabledCatalogStores = $this->catalogHelper->getStoresForCatalogs();
+            $productStores = $product->getStoreIds();
+            foreach($productStores as $storeId) {
+                if(in_array($storeId, $enabledCatalogStores)) {
+                    $this->catalogHelper->deleteItemWithCatalogCheck(
+                        $this->catalogHelper->getProductById($product->getId(), $storeId),
+                        $this->catalogHelper->getProductAttributesToSelect($product->getStoreId())
+                    );
+                }
+            }
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

@@ -7,14 +7,15 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Newsletter\Model\Subscriber;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
-use Synerise\Integration\ResourceModel\Customer\Action;
 
 class Customer extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -29,11 +30,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         2 => 1,
         3 => 0
     ];
-
-    /**
-     * @var Action
-     */
-    protected $action;
 
     /**
      * @var ScopeConfigInterface
@@ -65,20 +61,25 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected $trackingHelper;
 
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
     public function __construct(
-        Action $action,
         Context $context,
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         DateTime $dateTime,
+        StoreManagerInterface $storeManager,
         AddressRepositoryInterface $addressRepository,
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
-        $this->action = $action;
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
         $this->dateTime = $dateTime;
+        $this->storeManager = $storeManager;
         $this->addressRepository = $addressRepository;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
@@ -90,7 +91,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $collection
      * @throws ApiException|\Exception
      */
-    public function addCustomersBatch($collection)
+    public function addCustomersBatch($collection, $storeId)
     {
         if (!$collection->getSize()) {
             return;
@@ -106,22 +107,22 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         foreach ($collection as $customer) {
             $ids[] = $customer->getEntityId();
 
-            $params = $this->preapreAdditionalParams($customer);
+            $params = $this->preapreAdditionalParams($customer, $storeId);
             $params['email'] = $customer->getEmail();
             $params['custom_id'] = $customer->getId();
 
             $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($params);
         }
 
-        $this->sendCustomersToSynerise($createAClientInCrmRequests);
-        $this->markCustomersAsSent($ids);
+        $this->sendCustomersToSynerise($createAClientInCrmRequests, $storeId);
+        $this->markCustomersAsSent($ids, $storeId);
     }
 
     /**
      * @param Collection $collection
      * @throws ApiException
      */
-    public function addCustomerSubscriptionsBatch($collection)
+    public function addCustomerSubscriptionsBatch($collection, $storeId)
     {
         if (!$collection->count()) {
             return;
@@ -132,7 +133,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $requests[] = $this->prepareRequestFromSubscription($subscriber);
         }
 
-        $this->sendCustomersToSynerise($requests);
+        $this->sendCustomersToSynerise($requests, $storeId);
     }
 
     /**
@@ -145,7 +146,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         return new CreateaClientinCRMRequest(
             [
                 'email' => $email,
-                'uuid' => $this->trackingHelper->genrateUuidByEmail($email),
+                'uuid' => $this->trackingHelper->generateUuidByEmail($email),
                 'agreements' => [
                     'email' => $subscriber->getSubscriberStatus() == Subscriber::STATUS_SUBSCRIBED ? 1 : 0
                 ]
@@ -159,7 +160,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addOrUpdateClient($customer, $prevUuid = null)
     {
-        $emailUuid = $this->trackingHelper->genrateUuidByEmail($customer->getEmail());
+        $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
 
         if ($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
             $this->trackingHelper->setClientUuidAndResetCookie((string) $emailUuid);
@@ -173,7 +174,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         $params['last_name'] = $customer->getLastname();
 
         try {
-            list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
+            list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($customer->getStoreId())
                 ->batchAddOrUpdateClientsWithHttpInfo(
                     'application/json',
                     '4.4',
@@ -185,7 +186,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             if ($statusCode != 202) {
                 $this->_logger->error('Client update failed');
             } else {
-                $this->markCustomersAsSent([$customer->getId()]);
+                $this->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
             }
         } catch (\Exception $e) {
             $this->_logger->error('Client update failed', ['exception' => $e]);
@@ -193,12 +194,14 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * @param CreateaClientinCRMRequest[] $createAClientInCrmRequests
-     * @throws ApiException|\Magento\Framework\Exception\ValidatorException
+     * @param $createAClientInCrmRequests
+     * @param $storeId
+     * @throws ApiException
+     * @throws \Magento\Framework\Exception\ValidatorException
      */
-    public function sendCustomersToSynerise($createAClientInCrmRequests)
+    public function sendCustomersToSynerise($createAClientInCrmRequests, $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
+        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -206,18 +209,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         } elseif ($statusCode == 207) {
             $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
-    }
-
-    /**
-     * @param int[] $ids
-     * @throws \Exception
-     */
-    public function markCustomersAsSent($ids)
-    {
-        $this->action->updateAttributes(
-            $ids,
-            ['synerise_updated_at' => $this->dateTime->gmtDate()]
-        );
     }
 
     /**
@@ -258,9 +249,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      * @param \Magento\Customer\Model\Customer $customer
      * @return array
      */
-    public function preapreAdditionalParams($customer)
+    public function preapreAdditionalParams($customer, $storeId = null)
     {
-        return $this->mapAttributesToParams($customer->getData(), true);
+        return $this->mapAttributesToParams($customer->getData(), $storeId, true);
     }
 
     public function preapreParamsForEvent($customer)
@@ -281,10 +272,10 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         return $params;
     }
 
-    protected function mapAttributesToParams($data, $includeAttributesNode = false)
+    protected function mapAttributesToParams($data, $storeId = null, $includeAttributesNode = false)
     {
         $params = [];
-        $selectedAttributes = $this->getAttributes();
+        $selectedAttributes = $this->getAttributes($storeId);
         foreach ($selectedAttributes as $attribute) {
             if (!isset($data[$attribute])) {
                 continue;
@@ -336,18 +327,20 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         return $params;
     }
 
-    public function getAttributes()
+    public function getAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_CUSTOMERS_ATTRIBUTES
+            \Synerise\Integration\Helper\Config::XML_PATH_CUSTOMERS_ATTRIBUTES,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $storeId
         );
 
         return $attributes ? explode(',', $attributes) : [];
     }
 
-    public function getAttributesToSelect()
+    public function getAttributesToSelect($storeId)
     {
-        $attributes = $this->getAttributes();
+        $attributes = $this->getAttributes($storeId);
         return array_merge(
             $attributes,
             Attributes::REQUIRED
@@ -374,5 +367,37 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     protected function valOrNull($val)
     {
         return empty(trim($val)) ? null : $val;
+    }
+
+    /**
+     * @param int $storeId
+     * @return int
+     * @throws NoSuchEntityException
+     */
+    public function getWebsiteIdByStoreId(int $storeId)
+    {
+        return $this->storeManager->getStore($storeId)->getWebsiteId();
+    }
+
+    /**
+     * @param int[] $ids
+     * @return void
+     * @param int $storeId
+     */
+    public function markCustomersAsSent(array $ids, $storeId = 0)
+    {
+        $timestamp = $this->dateTime->gmtDate();
+        $data = [];
+        foreach ($ids as $id) {
+            $data[] = [
+                'synerise_updated_at' => $timestamp,
+                'customer_id' => $id,
+                'store_id' => $storeId
+            ];
+        }
+        $this->connection->insertOnDuplicate(
+            $this->connection->getTableName('synerise_sync_customer'),
+            $data
+        );
     }
 }

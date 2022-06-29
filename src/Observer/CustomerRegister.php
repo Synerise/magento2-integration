@@ -52,6 +52,10 @@ class CustomerRegister implements ObserverInterface
             return;
         }
 
+        if ($this->trackingHelper->isAdminStore()) {
+            return;
+        }
+
         try {
             /** @var \Magento\Customer\Model\Data\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
@@ -75,7 +79,7 @@ class CustomerRegister implements ObserverInterface
                 ->clientRegistered('4.4', $eventClientAction);
 
             if ($customer->getId()) {
-                $this->customerHelper->markCustomersAsSent([$customer->getId()]);
+                $this->customerHelper->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
             }
 
         } catch (\Exception $e) {

@@ -7,15 +7,14 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Order as OrderHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Order extends AbstractSynchronization
 {
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';
-    const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/order/cron_enabled';
 
     /**
      * @var DateTime
@@ -31,6 +30,7 @@ class Order extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         ResourceConnection $resource,
+        QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
         OrderHelper $orderHelper,
         DateTime $dateTime
@@ -42,16 +42,30 @@ class Order extends AbstractSynchronization
             $scopeConfig,
             $logger,
             $resource,
+            $queueResourceModel,
             $collectionFactory
         );
     }
 
-    public function sendItems($collection, $status)
+    /**
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return mixed
+     */
+    protected function createCollectionWithScope($storeId, $websiteId = null)
     {
-        $attributes = $this->orderHelper->getAttributesToSelect();
-        $collection->addAttributeToSelect($attributes);
+        $collection = $this->collectionFactory->create();
+        $collection->getSelect()
+            ->where('main_table.store_id=?', $storeId);
 
-        $this->orderHelper->addOrdersBatch($collection);
+        return $collection;
+    }
+
+    public function sendItems($collection, $storeId, $websiteId = null)
+    {
+        $collection->addAttributeToSelect($this->orderHelper->getAttributesToSelect());
+
+        $this->orderHelper->addOrdersBatch($collection, $storeId);
         $this->orderHelper->markItemsAsSent($collection->getAllIds());
     }
 

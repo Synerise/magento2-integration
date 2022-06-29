@@ -2,7 +2,7 @@
 
 namespace Synerise\Integration\Model\Config\Source\EventTracking;
 
-class Events implements \Magento\Framework\Option\ArrayInterface
+class Events implements \Magento\Framework\Data\OptionSourceInterface
 {
     const OPTIONS = [
         'customer_register_success'                 => 'Customer registration',
@@ -17,6 +17,8 @@ class Events implements \Magento\Framework\Option\ArrayInterface
         'catalog_product_save_after'                => 'Product updated',
         'catalog_product_delete_after'              => 'Product deleted',
         'catalog_product_import_bunch_save_after'   => 'Product import',
+        'product_is_salable_change'                 => 'Product "is salable" value changed',
+        'stock_status_change'                       => 'Product stock status changed',
         'newsletter_subscriber_save_after'          => 'Subscription updated'
     ];
 

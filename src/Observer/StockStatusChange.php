@@ -2,46 +2,46 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\CatalogInventory\Model\Stock\StockItemRepository;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class StockStatusChange implements ObserverInterface
 {
-    const EVENT = 'sales_order_save_commit_after';
+    const EVENT = 'stock_status_change';
 
     /**
-     * @var \Synerise\Integration\Cron\Synchronization
-     */
-    protected $synchronization;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
     /**
-     * @var \Magento\CatalogInventory\Model\Stock\StockItemRepository
+     * @var StockItemRepository
      */
     private $stockItemRepository;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Cron\Synchronization $synchronization,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Magento\CatalogInventory\Model\Stock\StockItemRepository $stockItemRepository
+        LoggerInterface $logger,
+        SyncProduct $syncProduct,
+        Tracking $trackingHelper,
+        StockItemRepository $stockItemRepository
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
+        $this->syncProduct = $syncProduct;
         $this->trackingHelper = $trackingHelper;
         $this->stockItemRepository = $stockItemRepository;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(CatalogProductSaveAfter::EVENT)) {
+        if(!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -56,11 +56,10 @@ class StockStatusChange implements ObserverInterface
                 $stockItem = $this->stockItemRepository->get($item->getProductId());
                 if($stockItem->getManageStock() && $stockItem->getIsInStock() === false){
                     try {
-                        $this->synchronization->addItemToQueueByWebsiteIds(
-                            'product',
-                            [$stockItem->getWebsiteId()],
-                            $stockItem->getProductId()
-                        );
+
+                        $this->syncProduct->addItemsToQueue([
+                            $item->getProduct()
+                        ]);
                         $this->logger->info('Product '.$stockItem->getProductId().' added to cron queue');
                     } catch (\Exception $e) {
                         $this->logger->error('Failed to add product to cron queue', ['exception' => $e]);

@@ -21,6 +21,8 @@ class Status extends \Magento\Backend\Block\Template
 
     protected $table;
 
+    protected $column;
+
     protected $connection;
 
     /**
@@ -58,13 +60,14 @@ class Status extends \Magento\Backend\Block\Template
         return $this->header;
     }
 
-    public function setStatusData($header, $subHeader, $resendUrlPath, $resetStopIdUrlPath, $table = null)
+    public function setStatusData($header, $subHeader, $resendUrlPath, $resetStopIdUrlPath, $table = null, $column= 'COUNT(*)')
     {
         $this->header = $header;
         $this->subHeader = $subHeader;
         $this->resendUrlPath = $resendUrlPath;
         $this->resetStopIdUrlPath = $resetStopIdUrlPath;
         $this->table = $table;
+        $this->column = $column;
     }
 
     public function getSubHeader()
@@ -81,7 +84,7 @@ class Status extends \Magento\Backend\Block\Template
     {
         if ($this->table) {
             $connection = $this->connection;
-            $select = $connection->select()->from($connection->getTableName($this->table), 'COUNT(*)');
+            $select = $connection->select()->from($connection->getTableName($this->table), $this->column);
             return (int)$connection->fetchOne($select);
         } else {
             if (!$this->collectionFactory) {

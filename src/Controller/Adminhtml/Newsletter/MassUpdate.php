@@ -8,10 +8,15 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization;
+use Synerise\Integration\Model\Synchronization\Subscriber as SyncSubscriber;
 
 class MassUpdate extends Action
 {
+    /**
+     * Authorization level
+     */
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_subscriber';
+
     /**
      * @var LoggerInterface
      */
@@ -28,21 +33,21 @@ class MassUpdate extends Action
     protected $collectionFactory;
 
     /**
-     * @var Synchronization
+     * @var SyncSubscriber
      */
-    protected $synchronization;
+    protected $syncSubscriber;
 
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
         LoggerInterface $logger,
-        Synchronization $synchronization
+        SyncSubscriber $syncSubscriber
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->synchronization = $synchronization;
+        $this->syncSubscriber = $syncSubscriber;
 
         parent::__construct($context);
     }
@@ -58,8 +63,7 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            $this->synchronization->addItemsToQueue(
-                'subscriber',
+            $this->syncSubscriber->addItemsToQueue(
                 $collection
             );
 

@@ -9,6 +9,77 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
         $installer = $setup;
         $installer->startSetup();
 
+        if (!$installer->tableExists('synerise_workspace')) {
+            $table = $installer->getConnection()->newTable(
+                $installer->getTable('synerise_workspace')
+            )
+                ->addColumn(
+                    'id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    [
+                        'identity' => true,
+                        'nullable' => false,
+                        'primary'  => true,
+                        'unsigned' => true,
+                    ],
+                    'Workspace ID'
+                )
+                ->addColumn(
+                    'name',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    100,
+                    ['nullable => false'],
+                    'Workspace Name'
+                )
+                ->addColumn(
+                    'api_key',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    100,
+                    ['nullable => false'],
+                    'Workspace Api Key'
+                )
+                ->addColumn(
+                    'uuid',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    36,
+                    ['nullable => false'],
+                    'Workspace Unique Identifier'
+                )
+                ->addColumn(
+                    'missing_permissions',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    255,
+                    [],
+                    'Missing Required Permissions'
+                )
+                ->addColumn(
+                    'created_at',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+                    null,
+                    ['nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT],
+                    'Created At'
+                )->addColumn(
+                    'updated_at',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+                    null,
+                    ['nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT_UPDATE],
+                    'Updated At')
+                ->setComment('Workspace Table');
+            $installer->getConnection()->createTable($table);
+
+            $installer->getConnection()->addIndex(
+                $installer->getTable('synerise_workspace'),
+                $setup->getIdxName(
+                    $installer->getTable('synerise_workspace'),
+                    ['uuid'],
+                    \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE
+                ),
+                ['uuid'],
+                \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE
+            );
+        }
+
         if (!$installer->tableExists('synerise_cron_status')) {
             $table = $installer->getConnection()->newTable(
                 $installer->getTable('synerise_cron_status')
@@ -187,6 +258,66 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                     'Synerise Updated At'
                 )
                 ->setComment('Subscriber synchronisation status');
+
+            $installer->getConnection()->createTable($table);
+        }
+
+        if (!$installer->tableExists('synerise_sync_customer')) {
+            $table = $installer->getConnection()->newTable(
+                $installer->getTable('synerise_sync_customer')
+            )
+                ->addColumn(
+                    'customer_id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
+                    'Order ID'
+                )
+                ->addColumn(
+                    'store_id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
+                    'Store ID'
+                )
+                ->addColumn(
+                    'synerise_updated_at',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+                    null,
+                    ['nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT],
+                    'Synerise Updated At'
+                )
+                ->setComment('Customer synchronisation status');
+
+            $installer->getConnection()->createTable($table);
+        }
+
+        if (!$installer->tableExists('synerise_sync_product')) {
+            $table = $installer->getConnection()->newTable(
+                $installer->getTable('synerise_sync_product')
+            )
+                ->addColumn(
+                    'product_id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
+                    'Order ID'
+                )
+                ->addColumn(
+                    'store_id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    ['nullable' => false, 'primary' => true, 'unsigned' => true],
+                    'Store ID'
+                )
+                ->addColumn(
+                    'synerise_updated_at',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+                    null,
+                    ['nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT],
+                    'Synerise Updated At'
+                )
+                ->setComment('Customer synchronisation status');
 
             $installer->getConnection()->createTable($table);
         }

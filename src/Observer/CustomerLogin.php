@@ -52,6 +52,10 @@ class CustomerLogin implements ObserverInterface
             return;
         }
 
+        if ($this->trackingHelper->isAdminStore()) {
+            return;
+        }
+
         try {
             /** @var \Magento\Customer\Model\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();

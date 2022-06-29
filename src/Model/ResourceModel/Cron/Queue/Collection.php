@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\ResourceModel\Cron\Queue;
+namespace Synerise\Integration\Model\ResourceModel\Cron\Queue;
 
 class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection
 {
@@ -16,7 +16,7 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
     {
         $this->_init(
             'Synerise\Integration\Model\Cron\Queue',
-            'Synerise\Integration\ResourceModel\Cron\Queue'
+            'Synerise\Integration\Model\ResourceModel\Cron\Queue'
         );
     }
 }

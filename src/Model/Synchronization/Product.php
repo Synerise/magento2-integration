@@ -6,15 +6,19 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Config;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Product extends AbstractSynchronization
 {
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
-    const CONFIG_XML_PATH_CRON_ENABLED = 'synerise/product/cron_enabled';
+
+    /**
+     * @var CollectionFactory
+     */
+    protected $collectionFactory;
 
     /**
      * @var catalogHelper
@@ -25,6 +29,8 @@ class Product extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         ResourceConnection $resource,
+        QueueResourceModel $queueResourceModel,
+
         CollectionFactory $collectionFactory,
         CatalogHelper $catalogHelper
     ) {
@@ -34,56 +40,62 @@ class Product extends AbstractSynchronization
             $scopeConfig,
             $logger,
             $resource,
+            $queueResourceModel,
             $collectionFactory
         );
     }
 
-    public function getSyneriseUpdatedAtAttribute()
+    /**
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return mixed
+     */
+    protected function createCollectionWithScope($storeId, $websiteId = null)
     {
-        return $this->catalogHelper->getSyneriseUpdatedAtAttribute();
+        return $this->collectionFactory->create()->addStoreFilter($storeId);
     }
 
-    public function getCollectionFilteredByIdRange($storeId, $startId, $stopId)
+    public function sendItems($collection, $storeId, $websiteId = null)
     {
-        $collection = parent::getCollectionFilteredByIdRange($storeId, $startId, $stopId);
-        $collection
-            ->setStoreId($storeId);
-
-        return $collection;
-    }
-
-    public function getCollectionFilteredByEntityIds($storeId, $startId)
-    {
-        $collection = parent::getCollectionFilteredByEntityIds($storeId, $startId);
-        $collection
-            ->setStoreId($storeId);
-
-        return $collection;
-    }
-
-    public function sendItems($collection, $status)
-    {
-        $attributes = $this->catalogHelper->getProductAttributesToSelect();
+        $attributes = $this->catalogHelper->getProductAttributesToSelect($storeId);
         $collection
             ->addAttributeToSelect($attributes);
 
         $this->catalogHelper->addItemsBatchWithCatalogCheck(
             $collection,
             $attributes,
-            $status->getWebsiteId(),
-            $status->getStoreId()
+            $websiteId,
+            $storeId
         );
     }
 
     public function markAllAsUnsent()
     {
-        $attribute = $this->getSyneriseUpdatedAtAttribute();
-        if ($attribute->getId()) {
-            $this->connection->update(
-                'catalog_product_entity_datetime',
-                ['value' => null],
-                ['attribute_id', $attribute->getId()]
-            );
+        $this->connection->truncateTable($this->connection->getTableName('synerise_sync_product'));
+    }
+
+    /**
+     * @param \Magento\Framework\Data\Collection\AbstractDb|array $collection
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function addItemsToQueue($collection)
+    {
+        $enabledStores = $this->getEnabledStores();
+        foreach ($collection as $item) {
+            $storeIds = $item->getStoreIds();
+            foreach ($storeIds as $storeId) {
+                if (in_array($storeId, $enabledStores)) {
+                    $data[] = [
+                        'model' => static::MODEL,
+                        'store_id' => $storeId,
+                        'entity_id' => $item->getData(static::ENTITY_ID),
+                    ];
+                }
+            }
+        }
+
+        if (!empty($data)) {
+            $this->queueResourceModel->addItems($data);
         }
     }
 }

@@ -6,44 +6,64 @@ use \GuzzleHttp\HandlerStack;
 use \GuzzleHttp\Middleware;
 use \GuzzleHttp\MessageFormatter;
 use Loguzz\Middleware\LogMiddleware;
+use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    protected $authApi;
-    protected $bagsApi;
-    protected $itemsApi;
-    protected $defaultApi;
-    protected $apiToken;
+    protected $authApi = [];
+    protected $bagsApi = [];
+    protected $itemsApi = [];
+    protected $defaultApi = [];
+    protected $trackerApi = [];
+    protected $apiToken = [];
 
     /**
      * Api host
      *
      * @return string
      */
-    public function getApiHost()
+    public function getApiHost($scope = ScopeInterface::SCOPE_STORE, $scopeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_HOST
+            \Synerise\Integration\Helper\Config::XML_PATH_API_HOST,
+            $scope,
+            $scopeId
         );
     }
 
     /**
      * Api key
      *
+     * @param string $scope
+     * @param int $scopeId
      * @return string
      */
-    public function getApiKey()
+    public function getApiKey($scope, $scopeId)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY
+            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY, $scope, $scopeId
         );
     }
 
-    public function isLoggerEnabled()
+    /**
+     * Checks if Api Key is set for a given scope
+     *
+     * @param string $scope
+     * @param int $scopeId
+     * @return bool
+     */
+    public function isApiKeySet($scope, $scopeId)
+    {
+        return (boolean) $this->getApiKey($scope, $scopeId);
+    }
+
+    public function isLoggerEnabled($storeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_LOGGER_ENABLED
+            \Synerise\Integration\Helper\Config::XML_PATH_API_LOGGER_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
         );
     }
 
@@ -66,20 +86,25 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return new \GuzzleHttp\Client($options);
     }
 
-    public function getAuthApiInstance()
+    public function getAuthApiInstance($scope = ScopeInterface::SCOPE_STORE, $scopeId = null, $token = null)
     {
-        if (!$this->authApi) {
+        $key = md5(serialize(func_get_args()));
+        if (!isset($this->authApi[$key])) {
             $client = new \GuzzleHttp\Client();
-            $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost()));
+            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
 
-            $this->authApi = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
+            if ($token) {
+                $config->setAccessToken($token);
+            }
+
+            $this->authApi[$key] = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
                 $client,
                 $config
             );
         }
 
-        return $this->authApi;
+        return $this->authApi[$key];
     }
 
     /**
@@ -87,21 +112,21 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws \Magento\Framework\Exception\ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function getDefaultApiInstance()
+    public function getDefaultApiInstance($storeId = null)
     {
-        if (!$this->defaultApi) {
+        if (!isset($this->defaultApi[(int) $storeId])) {
             $client = $this->getGuzzleClient();
-            $config = \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken());
+            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
 
-            $this->defaultApi = new \Synerise\ApiClient\Api\DefaultApi(
+            $this->defaultApi[(int) $storeId] = new \Synerise\ApiClient\Api\DefaultApi(
                 $client,
                 $config
             );
         }
 
-        return $this->defaultApi;
+        return $this->defaultApi[(int) $storeId];
     }
 
     /**
@@ -109,58 +134,98 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws \Magento\Framework\Exception\ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function getBagsApiInstance()
+    public function getBagsApiInstance($storeId)
     {
-        if (!$this->bagsApi) {
+        if (!isset($this->bagsApi[$storeId])) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken());
+                ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
 
-            $this->bagsApi = new \Synerise\CatalogsApiClient\Api\BagsApi(
+            $this->bagsApi[$storeId] = new \Synerise\CatalogsApiClient\Api\BagsApi(
                 $client,
                 $config
             );
         }
 
-        return $this->bagsApi;
+        return $this->bagsApi[$storeId];
     }
 
-    public function getItemsApiInstance()
+    public function getItemsApiInstance($storeId)
     {
-        if (!$this->itemsApi) {
+        if (!isset($this->itemsApi[$storeId])) {
             $client = $this->getGuzzleClient();
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/catalogs', $this->getApiHost()))
-                ->setAccessToken($this->getApiToken());
+                ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
 
-            $this->itemsApi = new \Synerise\CatalogsApiClient\Api\ItemsApi(
+            $this->itemsApi[$storeId] = new \Synerise\CatalogsApiClient\Api\ItemsApi(
                 $client,
                 $config
             );
         }
 
-        return $this->itemsApi;
+        return $this->itemsApi[$storeId];
     }
 
-    protected function getApiToken()
+    public function getTrackerApiInstance($scope, $scopeId, $token = null)
     {
-        if (!$this->apiToken) {
-            $authApiInstance = $this->getAuthApiInstance();
+        $key = md5(serialize(func_get_args()));
+        if (!isset($this->trackerApi[$key])) {
+            if (!$token) {
+                $token = $this->getApiToken($scope, $scopeId);
+            }
+            $client = $this->getGuzzleClient();
+            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/business-profile-service', $this->getApiHost($scope, $scopeId)))
+                ->setAccessToken($token);
 
-            $this->getApiKey();
+            $this->trackerApi[$key] = new \Synerise\ApiClient\Api\TrackerControllerApi(
+                $client,
+                $config
+            );
+        }
 
+        return $this->trackerApi[$key];
+    }
+
+    public function getApiKeyApiInstance($scope, $scopeId, $token = null)
+    {
+        $key = md5(serialize(func_get_args()));
+        if (!isset($this->apiKeyApi[$key])) {
+            if (!$token) {
+                $token = $this->getApiToken($scope, $scopeId);
+            }
+            $client = $this->getGuzzleClient();
+            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setHost(sprintf('%s/uauth', $this->getApiHost($scope, $scopeId)))
+                ->setAccessToken($token);
+
+            $this->apiKeyApi[$key] = new \Synerise\ApiClient\Api\ApiKeyControllerApi(
+                $client,
+                $config
+            );
+        }
+
+        return $this->apiKeyApi[$key];
+    }
+
+    public function getApiToken($scope, $scopeId, $key = null)
+    {
+        $key = $key ?: $this->getApiKey($scope, $scopeId);
+        if (!isset($this->apiToken[$key])) {
             $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
-                'api_key' => $this->getApiKey()
+                'api_key' => $key
             ]);
 
             try {
-                $tokenResponse = $authApiInstance->profileLoginUsingPOST($business_profile_authentication_request);
-                $this->apiToken = $tokenResponse->getToken();
+                $tokenResponse = $this->getAuthApiInstance($scope, $scopeId)
+                    ->profileLoginUsingPOST($business_profile_authentication_request);
+                $this->apiToken[$key] = $tokenResponse->getToken();
             } catch (\Synerise\ApiClient\ApiException $e) {
                 if ($e->getCode() === 401) {
                     throw new \Magento\Framework\Exception\ValidatorException(
-                        __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
+                        __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
                     );
                 } else {
                     $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
@@ -169,6 +234,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return $this->apiToken;
+        return $this->apiToken[$key];
     }
 }

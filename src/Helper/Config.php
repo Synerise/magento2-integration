@@ -15,13 +15,6 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
 
     /**
-     * PAGE TRACKING SECTION.
-     */
-    const XML_PATH_PAGE_TRACKING_ENABLED = 'synerise/page_tracking/enabled';
-    const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/script';
-    const XML_PATH_PAGE_TRACKING_OPENGRAPH = 'synerise/page_tracking/opengraph';
-
-    /**
      * EVENT TRACKING SECTION.
      */
     const XML_PATH_EVENT_TRACKING_ENABLED = 'synerise/event_tracking/enabled';
@@ -31,6 +24,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
      * PRODUCTS SECTION
      */
     const XML_PATH_PRODUCTS_ATTRIBUTES = 'synerise/product/attributes';
+    const XML_PATH_PRODUCTS_STORES = 'synerise/product/stores';
     const XML_PATH_PRODUCTS_CRON_ENABLED = 'synerise/product/cron_enabled';
 
     /**

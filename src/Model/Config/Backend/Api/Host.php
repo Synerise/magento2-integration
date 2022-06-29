@@ -5,7 +5,7 @@ namespace Synerise\Integration\Model\Config\Backend\Api;
 class Host extends \Magento\Framework\App\Config\Value
 {
     /**
-     * @var UrlValidator
+     * @var \Magento\Framework\Validator\Url
      */
     private $urlValidator;
 

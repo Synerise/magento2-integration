@@ -2,58 +2,62 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization;
 use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var Synchronization
+     * @var LoggerInterface
      */
-    protected $synchronization;
+    protected $logger;
+
+    /**
+     * @var QueueResourceModel
+     */
+    protected $queueResourceModel;
 
     /**
      * @var Customer
      */
-    private $customerHelper;
+    protected $customerHelper;
 
     /**
      * @var Tracking
      */
     protected $trackingHelper;
 
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
     public function __construct(
         LoggerInterface $logger,
-        Synchronization $synchronization,
         Customer $customerHelper,
-        Tracking $trackingHelper
+        Tracking $trackingHelper,
+        QueueResourceModel $queueResourceModel
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
         $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->queueResourceModel = $queueResourceModel;
     }
 
     /**
-     * @param \Magento\Framework\Event\Observer $observer
+     * @param Observer $observer
      */
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
         if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
         $event = $observer->getEvent();
+        /** @var Subscriber $subscriber */
         $subscriber = $event->getDataObject();
 
         try {
@@ -61,22 +65,34 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
                 $this->trackingHelper->manageClientUuid($subscriber->getEmail());
             }
 
-            $this->customerHelper->sendCustomersToSynerise([
-                $this->customerHelper->prepareRequestFromSubscription($subscriber)
-            ]);
+            $this->customerHelper->sendCustomersToSynerise(
+                [$this->customerHelper->prepareRequestFromSubscription($subscriber)],
+                $subscriber->getStoreId()
+            );
 
             $this->customerHelper->markSubscribersAsSent([
                 $subscriber->getId()
             ]);
 
         } catch (\Exception $e) {
-            $this->synchronization->addItemToQueueByStoreId(
+            $this->logger->error('Subscription update request failed', ['exception' => $e]);
+            $this->addItemToQueue($subscriber);
+        }
+    }
+
+    /**
+     * @param $subscriber
+     */
+    protected function addItemToQueue($subscriber)
+    {
+        try {
+            $this->queueResourceModel->addItem(
                 'subscriber',
                 $subscriber->getStoreId(),
                 $subscriber->getId()
             );
-
-            $this->logger->error('Subscription update request failed', ['exception' => $e]);
+        } catch (LocalizedException $e) {
+            $this->logger->error('Adding subscription item to queue failed', ['exception' => $e]);
         }
     }
 }

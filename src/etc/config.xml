@@ -10,7 +10,7 @@
                 <opengraph>1</opengraph>
             </page_tracking>
             <event_tracking>
-                <events>customer_save_after,customer_login,customer_logout,customer_register_success,sales_order_place_after,checkout_cart_add_product_complete,sales_quote_save_after,checkout_cart_update_items_after,sales_quote_remove_item,catalog_product_save_after,catalog_product_delete_after,catalog_product_import_bunch_save_after,newsletter_subscriber_save_after</events>
+                <events>customer_save_after,customer_login,customer_logout,customer_register_success,sales_order_place_after,checkout_cart_add_product_complete,sales_quote_save_after,checkout_cart_update_items_after,sales_quote_remove_item,catalog_product_save_after,catalog_product_delete_after,catalog_product_import_bunch_save_after,newsletter_subscriber_save_after,product_is_salable_change,stock_status_change</events>
             </event_tracking>
             <cron_status>
                 <expr>*/5 * * * *</expr>
@@ -20,20 +20,9 @@
                 <expr>* * * * *</expr>
                 <page_size>500</page_size>
             </cron_queue>
-            <product>
-                <cron_enabled>1</cron_enabled>
-                <attributes>name</attributes>
-            </product>
-            <customer>
-                <cron_enabled>1</cron_enabled>
-                <attributes>dob,gender</attributes>
-            </customer>
-            <order>
-                <cron_enabled>1</cron_enabled>
-            </order>
-            <subscriber>
-                <cron_enabled>1</cron_enabled>
-            </subscriber>
+            <synchronization>
+                <models>customer,order,product,subscriber</models>
+            </synchronization>
         </synerise>
     </default>
 </config>

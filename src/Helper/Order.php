@@ -79,13 +79,13 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $collection
      * @throws ApiException
      */
-    public function addOrdersBatch($collection)
+    public function addOrdersBatch($collection, $storeId)
     {
         if (!$collection->getSize()) {
             return;
         }
 
-        $ids = [];
+//        $ids = [];
         $createatransaction_request = [];
 
         if (!$collection->count()) {
@@ -93,10 +93,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         foreach ($collection as $order) {
-            $ids[] = $order->getEntityId();
+//            $ids[] = $order->getEntityId();
 
             $email = $order->getCustomerEmail();
-            $uuid = $email ? $this->trackingHelper->genrateUuidByEmail($email): null;
+            $uuid = $email ? $this->trackingHelper->generateUuidByEmail($email): null;
 
             $params = $this->preapreOrderParams($order, $uuid);
             if ($params) {
@@ -105,7 +105,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if (!empty($createatransaction_request)) {
-            $this->sendOrdersToSynerise($createatransaction_request, $ids);
+            $this->sendOrdersToSynerise($createatransaction_request, $storeId);
         }
     }
 
@@ -114,9 +114,9 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $ids
      * @throws ApiException
      */
-    public function sendOrdersToSynerise($createatransaction_request, $entityIds)
+    public function sendOrdersToSynerise($createatransaction_request, $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
+        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
             ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createatransaction_request);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -246,15 +246,6 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $params;
-    }
-
-    public function getAttributes()
-    {
-        $attributes = $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_CUSTOMERS_ATTRIBUTES
-        );
-
-        return $attributes ? explode(',', $attributes) : [];
     }
 
     public function getAttributesToSelect()

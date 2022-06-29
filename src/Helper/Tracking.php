@@ -4,6 +4,7 @@ namespace Synerise\Integration\Helper;
 
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Magento\Quote\Model\Quote;
+use Magento\Store\Model\ScopeInterface;
 use Mobile_Detect;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\ApiException;
@@ -21,6 +22,18 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     const FORMAT_ISO_8601 = 'Y-m-d\TH:i:s.v\Z';
 
     const APPLICATION_NAME = 'magento2';
+
+    const XML_PATH_PAGE_TRACKING_ENABLED = 'synerise/page_tracking/enabled';
+
+    const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/key';
+
+    const XML_PATH_PAGE_TRACKING_DOMAIN = 'synerise/page_tracking/domain';
+
+    const XML_PATH_PAGE_TRACKING_OPENGRAPH = 'synerise/page_tracking/opengraph';
+
+    const XML_PATH_PAGE_TRACKING_CUSTOM_ENABLED = 'synerise/page_tracking/custom_enabled';
+
+    const XML_PATH_PAGE_TRACKING_SCRIPT = 'synerise/page_tracking/script';
 
     /**
      * @var \Magento\Framework\Stdlib\CookieManagerInterface
@@ -65,7 +78,17 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @var \Magento\Backend\Model\Auth\Session
      */
-    private $backendSession;
+    protected $backendSession;
+
+    /**
+     * @var string|null
+     */
+    protected $cookieDomain;
+
+    /**
+     * @var string|null
+     */
+    protected $trackerKey;
 
     public function __construct(
         \Magento\Backend\Model\Auth\Session $backendSession,
@@ -101,7 +124,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     public function isPageTrackingEnabled()
     {
         return $this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_ENABLED
+            self::XML_PATH_PAGE_TRACKING_ENABLED,
+            ScopeInterface::SCOPE_STORE
         );
     }
 
@@ -110,10 +134,16 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return bool
      */
-    public function isEventTrackingEnabled($event = null)
+    public function isEventTrackingEnabled($event = null, $storeId = null)
     {
+        if (!$this->apiHelper->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
+            return false;
+        }
+
         if (!$this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED
+            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
         )) {
             return false;
         }
@@ -123,7 +153,9 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $events = explode(',', $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_EVENTS
+            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_EVENTS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
         ));
 
         return in_array($event, $events);
@@ -137,7 +169,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     public function isOpengraphEnabled()
     {
         return $this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_OPENGRAPH
+            self::XML_PATH_PAGE_TRACKING_OPENGRAPH
         );
     }
 
@@ -146,10 +178,31 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return string
      */
-    public function getTrackingKey()
+    public function getTrackerKey()
+    {
+        if (!isset($this->trackerKey)) {
+            $this->trackerKey = $this->scopeConfig->getValue(
+                self::XML_PATH_PAGE_TRACKING_KEY,
+                ScopeInterface::SCOPE_STORE
+            );
+        }
+
+        return $this->trackerKey;
+    }
+
+    public function isCustomScriptEnabled()
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_PAGE_TRACKING_CUSTOM_ENABLED,
+            ScopeInterface::SCOPE_STORE
+        );
+    }
+
+    public function getCustomTrackingScript()
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_PAGE_TRACKING_KEY
+            self::XML_PATH_PAGE_TRACKING_SCRIPT,
+            ScopeInterface::SCOPE_STORE
         );
     }
 
@@ -172,8 +225,19 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getCookieDomain()
     {
-        $parsedUrl = parse_url($this->storeManager->getStore()->getBaseUrl());
-        return '.'.$parsedUrl['host'];
+        if (!$this->cookieDomain) {
+            $this->cookieDomain = $this->scopeConfig->getValue(
+                self::XML_PATH_PAGE_TRACKING_DOMAIN,
+                ScopeInterface::SCOPE_STORE
+            );
+
+            if (!$this->cookieDomain) {
+                $parsedBasedUrl = parse_url($this->storeManager->getStore()->getBaseUrl());
+                $this->cookieDomain = isset($parsedBasedUrl['host']) ? '.'.$parsedBasedUrl['host'] : null;
+            }
+        }
+
+        return $this->cookieDomain;
     }
 
     public function setClientUuidAndResetCookie($uuid)
@@ -270,7 +334,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
             if ($quote->getCustomerEmail()) {
                 $data['email'] = $quote->getCustomerEmail();
                 if (!isset($data['uuid'])) {
-                    $data['uuid'] = $this->genrateUuidByEmail($data['email']);
+                    $data['uuid'] = $this->generateUuidByEmail($data['email']);
                 }
             }
 
@@ -293,7 +357,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $uuid = $this->getClientUuidFromCookie();
-        $emailUuid = $this->genrateUuidByEmail($email);
+        if(!$uuid) {
+            return;
+        }
+
+        $emailUuid = $this->generateUuidByEmail($email);
 
         if ($uuid == $emailUuid) {
             // email uuid already set
@@ -389,7 +457,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return $h;
     }
 
-    public function genrateUuidByEmail($email)
+    public function generateUuidByEmail($email)
     {
         $namespace = 'ea1c3a9d-64a6-45d0-a70c-d2a055f350d3';
         return (string) Uuid::uuid5($namespace, $email);
