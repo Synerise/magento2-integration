@@ -5,6 +5,7 @@ namespace Synerise\Integration\Helper;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Magento\Quote\Model\Quote;
 use Magento\Store\Model\ScopeInterface;
+use Mobile_Detect;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\Client;
@@ -50,7 +51,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     protected $httpHeader;
 
     /**
-     * @var \Magento\Framework\App\ScopeResolverInterfaceScopeResolverInterface
+     * @var \Magento\Framework\App\ScopeResolverInterface
      */
     protected $scopeResolver;
 
@@ -292,8 +293,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getSource()
     {
-        $userAgent = $this->httpHeader->getHttpUserAgent();
-        return \Zend_Http_UserAgent_Mobile::match($userAgent, $_SERVER) ? "WEB_MOBILE" : "WEB_DESKTOP";
+        $mobileDetect = new Mobile_Detect();
+        return $mobileDetect->isMobile() ? "WEB_MOBILE" : "WEB_DESKTOP";
     }
 
     public function getApplicationName()
