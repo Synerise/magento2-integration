@@ -2,16 +2,14 @@
 
 namespace Synerise\Integration\Helper;
 
-use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\InventorySalesApi\Api\AreProductsSalableInterface;
+use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
 
@@ -55,9 +53,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     private $assetContext;
 
     /**
-     * @var AreProductsSalableInterface
+     * @var IsProductSalableInterface
      */
-    private $areProductsSalable;
+    private $isProductSalable;
 
     public function __construct(
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
@@ -71,7 +69,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Framework\View\Asset\ContextInterface $assetContext,
         \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository,
-        AreProductsSalableInterface $areProductsSalable,
+        IsProductSalableInterface $isProductSalable,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
         Api $apiHelper
@@ -89,7 +87,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->assetContext = $assetContext;
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
-        $this->areProductsSalable = $areProductsSalable;
+        $this->isProductSalable = $isProductSalable;
 
         parent::__construct($context);
     }
@@ -231,8 +229,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
-        $productsAreSalableArray = $this->areProductsSalable->execute([$product->getSku()], $stockStatus->getStockId());
-        $value['is_salable'] = (int) ($productsAreSalableArray[0]->isSalable() && $product->getStatus() == 1 && (int) $value['stock_status']);
+
+        $isSalable = $this->isProductSalable->execute($product->getSku(), $stockStatus->getStockId());
+        $value['is_salable'] = (int) ($isSalable && $product->getStatus() == 1 && (int) $value['stock_status']);
 
         return new AddItem([
             'item_key' => $value['itemId'],
