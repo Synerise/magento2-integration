@@ -6,6 +6,7 @@ use Ramsey\Uuid\Uuid;
 class Workspace extends \Magento\Framework\Model\AbstractModel
 {
     const REQUIRED_PERMISSIONS = [
+        "API_CLIENT_CREATE",
         "API_BATCH_CLIENT_CREATE",
         "API_BATCH_TRANSACTION_CREATE",
         "API_TRANSACTION_CREATE",

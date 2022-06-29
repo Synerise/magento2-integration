@@ -546,7 +546,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * Get Website code by store id
+     * Get Website id by store id
      *
      * @param int $storeId
      * @return string|null

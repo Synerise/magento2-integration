@@ -18,12 +18,12 @@ After installing the module make sure to also update the database schema:
 
 For more information regarding module management please refer with [Magento 2 documentation](https://devdocs.magento.com/cloud/howtos/install-components.html).
 
-## Upgrading to version 1.2.x
+## Upgrading to version 2.x
 Latest module upgrade includes a general overhaul of its config. One important change is an introduction of Workspace management as a convenient way to setup multistore integration. 
 
 Upon upgrading please refer to our documentation page to configure your Workspaces. 
 
 ## Setup
-Setup guide is available at [Synerise help page](https://help.synerise.com/docs/settings/tool/magento-integration/). 
+Setup guide is available at [Synerise help page](https://help.synerise.com/docs/settings/tool/magento-integration-multistore-support/). 
 
 Please make sure to follow it carefully through all the steps to integrate your application properly.
