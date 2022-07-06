@@ -11,6 +11,7 @@ class Events implements \Magento\Framework\Data\OptionSourceInterface
         'customer_save_after'                       => 'Customer updated',
         'checkout_cart_add_product_complete'        => 'Customer added product to cart',
         'sales_quote_remove_item'                   => 'Customer removed product from cart',
+        'product_review_save_after'                 => 'Customer reviewed product',
         'sales_quote_save_after'                    => 'Cart updated',
         'checkout_cart_update_items_after'          => 'Cart quantities updated',
         'sales_order_place_after'                   => 'Order updated',
