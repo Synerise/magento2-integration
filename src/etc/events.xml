@@ -63,4 +63,10 @@
     <event name="sales_order_item_save_after">
         <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
     </event>
+    <event name="review_save_after">
+        <observer name = "synerise_review_save_after" instance = "Synerise\Integration\Observer\ProductReview" />
+    </event>
+    <event name="controller_action_postdispatch_review_product_post">
+        <observer name = "synerise_controller_action_postdispatch_review_product_post" instance = "Synerise\Integration\Observer\ProductReview" />
+    </event>
 </config>
