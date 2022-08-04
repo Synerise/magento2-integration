@@ -2,69 +2,80 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
+use Magento\Sales\Model\Order;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class StockStatusChange implements ObserverInterface
 {
-    const EVENT = 'sales_order_save_commit_after';
+    public const EVENT = 'stock_status_change';
 
     /**
-     * @var \Synerise\Integration\Cron\Synchronization
-     */
-    protected $synchronization;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
+
     /**
-     * @var \Magento\CatalogInventory\Model\Stock\StockItemRepository
+     * @var GetLegacyStockItem
      */
-    private $stockItemRepository;
+    protected $getLegacyStockItem;
+
+    /**
+     * @var SyncProduct
+     */
+    protected $syncProduct;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Cron\Synchronization $synchronization,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Magento\CatalogInventory\Model\Stock\StockItemRepository $stockItemRepository
+        LoggerInterface $logger,
+        SyncProduct $syncProduct,
+        Tracking $trackingHelper,
+        GetLegacyStockItem $getLegacyStockItem
     ) {
         $this->logger = $logger;
-        $this->synchronization = $synchronization;
+        $this->syncProduct = $syncProduct;
         $this->trackingHelper = $trackingHelper;
-        $this->stockItemRepository = $stockItemRepository;
+        $this->getLegacyStockItem = $getLegacyStockItem;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+
+    public function execute(Observer $observer)
     {
-        if(!$this->trackingHelper->isEventTrackingEnabled(CatalogProductSaveAfter::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        /** @var \Magento\Sales\Model\Order $order */
+        /** @var Order $order */
         $order = $observer->getEvent()->getOrder();
-        if($order->getState() === \Magento\Sales\Model\Order::STATE_COMPLETE) {
-            $items = $order->getItemsCollection();
 
-            /** @var \Magento\Sales\Model\Order\Item $item */
-            foreach($items as $item){
-                /** @var \Magento\CatalogInventory\Model\Stock\Item $stockItem */
-                $stockItem = $this->stockItemRepository->get($item->getProductId());
-                if($stockItem->getManageStock() && $stockItem->getIsInStock() === false){
-                    try {
-                        $this->synchronization->addItemToQueueByWebsiteIds(
-                            'product',
-                            [$stockItem->getWebsiteId()],
-                            $stockItem->getProductId()
-                        );
-                        $this->logger->info('Product '.$stockItem->getProductId().' added to cron queue');
-                    } catch (\Exception $e) {
-                        $this->logger->error('Failed to add product to cron queue', ['exception' => $e]);
+        if ($order->getState() === Order::STATE_COMPLETE) {
+            $items = $order->getItemsCollection();
+            foreach ($items as $item) {
+                try {
+                    $product = $item->getProduct();
+                    $stockItem = $this->getLegacyStockItem->execute($item->getSku());
+                    if(!$stockItem->getManageStock() || $stockItem->getBackorders()){
+                        continue;
                     }
+
+                    if($product->getQuantityAndStockStatus()['qty'] - $item->getQtyShipped() > 0){
+                        continue;
+                    }
+
+                    $this->syncProduct->addItemsToQueue([
+                        $item->getProduct()
+                    ]);
+                    $this->logger->info('Product ' . $item->getProductId() . ' added to cron queue');
+                } catch (\Exception $e) {
+                    $this->logger->error('Failed to add product to cron queue', ['exception' => $e]);
                 }
             }
         }
