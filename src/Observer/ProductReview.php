@@ -46,7 +46,7 @@ class ProductReview implements ObserverInterface
     /**
      * @var Api
      */
-    protected Api $apiHelper;
+    protected $apiHelper;
 
     /**
      * @var Customer

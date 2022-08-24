@@ -3,8 +3,13 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Catalog\Helper\Image;
+use Magento\Framework\Api\Search\SearchCriteriaInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\SalesRule\Api\RuleRepositoryInterface;
+use Magento\SalesRule\Model\RuleRepository;
 use Magento\Store\Model\StoreManagerInterface;
+use PHPUnit\Framework\Exception;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 
@@ -44,6 +49,13 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $resource;
 
+    /**
+     * @var RuleRepositoryInterface
+     */
+    protected $ruleRepository;
+
+    protected $searchCriteriaBuilder;
+
     public function __construct(
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Framework\App\ResourceConnection $resource,
@@ -54,6 +66,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
         \Magento\Newsletter\Model\Subscriber $subscriber,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        RuleRepositoryInterface $ruleRepository,
         StoreManagerInterface $storeManager,
         Api $apiHelper,
         Catalog $catalogHelper,
@@ -71,6 +85,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->ruleRepository = $ruleRepository;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
 
         parent::__construct($context);
     }
@@ -128,8 +144,17 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function preapreOrderParams(\Magento\Sales\Model\Order $order, $uuid = null)
     {
+        $shippingAddress = $order->getShippingAddress();
+        $phone = null;
+        if($shippingAddress){
+            $phone = $shippingAddress->getTelephone();
+        }
+
+        $orderRules = $this->prepareRulesList($order->getAppliedRuleIds());
+
         $customerData = [
-            'email' => $order->getCustomerEmail()
+            'email' => $order->getCustomerEmail(),
+            'phone' => $phone
         ];
 
         if ($uuid) {
@@ -159,16 +184,21 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
         $params = [
             'client' => $customerData,
-            "discountAmount" => [
+            "discount_amount" => [
                 "amount" => $order->getDiscountAmount(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'metadata' => [
                 "orderStatus" => $order->getStatus(),
-                "discountCode" => $order->getCouponCode()
+                "discountCode" => $order->getCouponCode(),
+                'promotionRules' => $orderRules,
+                "shipping" => [
+                    'method' => $order->getShippingMethod(),
+                    'amount' => $order->getShippingAmount()
+                ]
             ],
             'order_id' => $order->getRealOrderId(),
-            "paymentInfo" => [
+            "payment_info" => [
                 "method" => $order->getPayment()->getMethod()
             ],
             "products" => $products,
@@ -191,6 +221,35 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         return $params;
     }
 
+
+    public function prepareRulesList($rules): array
+    {
+        $rules_ids = explode(',', $rules);
+
+        $searchCriteria = $this->searchCriteriaBuilder->addFilter(
+            'rule_id',
+            $rules_ids,
+            'in'
+        )->create();
+
+        $rules = [];
+
+        try {
+            /**
+             * @var \Magento\SalesRule\Api\Data\RuleInterface[] $rulesList
+             */
+            $rulesList = $this->ruleRepository->getList($searchCriteria)->getItems();
+            foreach($rulesList as $rule){
+                $rules[] = $rule->getName();
+            }
+
+        } catch (\Exception $e){
+            $this->_logger->error($e->getMessage(), [$e]);
+        }
+
+        return $rules;
+    }
+
     /**
      * @param \Magento\Sales\Api\Data\OrderItemInterface $item
      * @param string $currency
@@ -199,6 +258,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     public function prepareProductParamsFromOrderItem($item, $currency)
     {
         $product = $item->getProduct();
+
+        $itemRules = $this->prepareRulesList($item->getAppliedRuleIds());
 
         $regularPrice = [
             "amount" => $item->getOriginalPrice(),
@@ -224,6 +285,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "finalUnitPrice" => $finalUnitPrice,
             "quantity" => $item->getQtyOrdered()
         ];
+
+        if(!empty($itemRules)){
+            $params["promotionRules"] = $itemRules;
+        }
 
         if ($product) {
             $params['url'] = $product->setStoreId($item->getStoreId())->getUrlInStore();
