@@ -2,14 +2,10 @@
 
 namespace Synerise\Integration\Helper;
 
-use Magento\Catalog\Helper\Image;
-use Magento\Framework\Api\Search\SearchCriteriaInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
-use Magento\SalesRule\Model\RuleRepository;
 use Magento\Store\Model\StoreManagerInterface;
-use PHPUnit\Framework\Exception;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 
