@@ -68,10 +68,18 @@ class OrderPlace implements ObserverInterface
             $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
 
             if ($order->getCustomerIsGuest()) {
+                $shippingAddress = $order->getShippingAddress();
+
+                $phone = null;
+                if($shippingAddress){
+                    $phone = $shippingAddress->getTelephone();
+                }
+
                 $createAClientInCrmRequest = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
                     [
                         'email' => $order->getCustomerEmail(),
                         'uuid' => $this->trackingHelper->getClientUuid(),
+                        'phone' => $phone,
                         'first_name' => $order->getCustomerFirstname(),
                         'last_name' => $order->getCustomerLastname(),
                     ]
