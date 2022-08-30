@@ -366,6 +366,10 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected function valOrNull($val)
     {
+        if(empty($val)){
+            return null;
+        }
+
         return empty(trim($val)) ? null : $val;
     }
 
