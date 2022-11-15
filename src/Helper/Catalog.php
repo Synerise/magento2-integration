@@ -17,6 +17,14 @@ use Synerise\CatalogsApiClient\Model\AddItem;
 
 class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 {
+    const XML_PATH_CATALOG_ID = 'synerise/catalog/id';
+
+    const XML_PATH_PRODUCTS_ATTRIBUTES = 'synerise/product/attributes';
+
+    const XML_PATH_PRODUCTS_STORES = 'synerise/product/stores';
+
+    const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
+
     protected $configWriter;
     protected $cacheManager;
     protected $action;
@@ -105,7 +113,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function getConfigCatalogId(string $storeId)
     {
         return $this->scopeConfig->getValue(
-            Config::XML_PATH_CATALOG_ID,
+            self::XML_PATH_CATALOG_ID,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
@@ -114,7 +122,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function saveConfigCatalogId($catalogId, $store_id)
     {
         $this->configWriter->save(
-            Config::XML_PATH_CATALOG_ID,
+            self::XML_PATH_CATALOG_ID,
             $catalogId,
             ScopeInterface::SCOPE_STORE,
             $store_id
@@ -239,7 +247,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $value['deleted'] = 0;
 
         foreach ($attributes as $attribute) {
-            $productValue = $product->getData($attribute);
+            $productValue = $this->isAttributeLabelEnabled() ? $product->getAttributeText($attribute) :
+                $product->getData($attribute);
             if ($productValue) {
                 $value[$attribute] = $productValue;
             }
@@ -473,6 +482,13 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    public function isAttributeLabelEnabled()
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_PRODUCTS_LABELS_ENABLED
+        );
+    }
+
     public function getFormattedCategoryPath($categoryId)
     {
         if (!isset($this->formattedCategoryPaths[$categoryId])) {
@@ -488,15 +504,14 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return $this->formattedCategoryPaths[$categoryId] ?
-            $this->formattedCategoryPaths[$categoryId] : null;
+        return $this->formattedCategoryPaths[$categoryId] ?: null;
     }
 
     public function getProductAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_ATTRIBUTES,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            self::XML_PATH_PRODUCTS_ATTRIBUTES,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         );
 
@@ -515,7 +530,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function getStoresForCatalogs()
     {
         $attributes = $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_PRODUCTS_STORES
+            self::XML_PATH_PRODUCTS_STORES
         );
 
         return $attributes ? explode(',', $attributes) : [];

@@ -23,6 +23,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     const APPLICATION_NAME = 'magento2';
 
+    const XML_PATH_EVENT_TRACKING_ENABLED = 'synerise/event_tracking/enabled';
+
+    const XML_PATH_EVENT_TRACKING_EVENTS = 'synerise/event_tracking/events';
+
     const XML_PATH_PAGE_TRACKING_ENABLED = 'synerise/page_tracking/enabled';
 
     const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/key';
@@ -141,7 +145,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if (!$this->scopeConfig->isSetFlag(
-            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_ENABLED,
+            self::XML_PATH_EVENT_TRACKING_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
         )) {
@@ -153,7 +157,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $events = explode(',', $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_EVENT_TRACKING_EVENTS,
+            self::XML_PATH_EVENT_TRACKING_EVENTS,
             ScopeInterface::SCOPE_STORE,
             $storeId
         ));

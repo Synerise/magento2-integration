@@ -3,14 +3,18 @@
 namespace Synerise\Integration\Helper;
 
 use \GuzzleHttp\HandlerStack;
-use \GuzzleHttp\Middleware;
-use \GuzzleHttp\MessageFormatter;
 use Loguzz\Middleware\LogMiddleware;
 use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
 {
+    const XML_PATH_API_HOST = 'synerise/api/host';
+    
+    const XML_PATH_API_KEY = 'synerise/api/key';
+    
+    const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
+    
     protected $authApi = [];
     protected $bagsApi = [];
     protected $itemsApi = [];
@@ -26,7 +30,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     public function getApiHost($scope = ScopeInterface::SCOPE_STORE, $scopeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_HOST,
+            self::XML_PATH_API_HOST,
             $scope,
             $scopeId
         );
@@ -42,7 +46,9 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     public function getApiKey($scope, $scopeId)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_KEY, $scope, $scopeId
+            self::XML_PATH_API_KEY,
+            $scope,
+            $scopeId
         );
     }
 
@@ -61,7 +67,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     public function isLoggerEnabled($storeId = null)
     {
         return $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_API_LOGGER_ENABLED,
+            self::XML_PATH_API_LOGGER_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
