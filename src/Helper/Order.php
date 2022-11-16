@@ -211,7 +211,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'event_salt' => $order->getRealOrderId()
         ];
 
-        $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
+        $orderRules = $this->prepareRulesList($order->getAppliedRuleIds() ?? '');
         if ($orderRules) {
             $params['metadata']['promotionRules'] = $orderRules;
         }
@@ -219,20 +219,23 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         return $params;
     }
 
-
-    public function prepareRulesList($appliedRuleIds): array
+    /**
+     * @param string $appliedRuleIds
+     * @return array
+     */
+    public function prepareRulesList(string $appliedRuleIds): array
     {
         $rules = [];
-        $rules_ids = explode(',', $appliedRuleIds);
 
-        if ($rules_ids) {
-            $searchCriteria = $this->searchCriteriaBuilder->addFilter(
-                'rule_id',
-                $rules_ids,
-                'in'
-            )->create();
+        try {
+            $rules_ids = explode(',', $appliedRuleIds);
+            if ($rules_ids) {
+                $searchCriteria = $this->searchCriteriaBuilder->addFilter(
+                    'rule_id',
+                    $rules_ids,
+                    'in'
+                )->create();
 
-            try {
                 /**
                  * @var \Magento\SalesRule\Api\Data\RuleInterface[] $rulesList
                  */
@@ -240,10 +243,9 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 foreach($rulesList as $rule){
                     $rules[] = $rule->getName();
                 }
-
-            } catch (\Exception $e){
-                $this->_logger->error($e->getMessage(), [$e]);
             }
+        } catch (\Exception $e){
+            $this->_logger->error($e->getMessage(), [$e]);
         }
 
         return $rules;
@@ -258,7 +260,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $product = $item->getProduct();
 
-        $itemRules = $this->prepareRulesList((string) $item->getAppliedRuleIds());
+        $itemRules = $this->prepareRulesList($item->getAppliedRuleIds() ?? '');
 
         $regularPrice = [
             "amount" => $item->getOriginalPrice(),
