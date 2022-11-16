@@ -146,8 +146,6 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $phone = $shippingAddress->getTelephone();
         }
 
-        $orderRules = $this->prepareRulesList($order->getAppliedRuleIds());
-
         $customerData = [
             'email' => $order->getCustomerEmail(),
             'phone' => $phone
@@ -187,7 +185,6 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'metadata' => [
                 "orderStatus" => $order->getStatus(),
                 "discountCode" => $order->getCouponCode(),
-                'promotionRules' => $orderRules,
                 "shipping" => [
                     'method' => $order->getShippingMethod(),
                     'amount' => $order->getShippingAmount()
@@ -214,33 +211,39 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'event_salt' => $order->getRealOrderId()
         ];
 
+        $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
+        if ($orderRules) {
+            $params['metadata']['promotionRules'] = $orderRules;
+        }
+
         return $params;
     }
 
 
-    public function prepareRulesList($rules): array
+    public function prepareRulesList($appliedRuleIds): array
     {
-        $rules_ids = explode(',', $rules);
-
-        $searchCriteria = $this->searchCriteriaBuilder->addFilter(
-            'rule_id',
-            $rules_ids,
-            'in'
-        )->create();
-
         $rules = [];
+        $rules_ids = explode(',', $appliedRuleIds);
 
-        try {
-            /**
-             * @var \Magento\SalesRule\Api\Data\RuleInterface[] $rulesList
-             */
-            $rulesList = $this->ruleRepository->getList($searchCriteria)->getItems();
-            foreach($rulesList as $rule){
-                $rules[] = $rule->getName();
+        if ($rules_ids) {
+            $searchCriteria = $this->searchCriteriaBuilder->addFilter(
+                'rule_id',
+                $rules_ids,
+                'in'
+            )->create();
+
+            try {
+                /**
+                 * @var \Magento\SalesRule\Api\Data\RuleInterface[] $rulesList
+                 */
+                $rulesList = $this->ruleRepository->getList($searchCriteria)->getItems();
+                foreach($rulesList as $rule){
+                    $rules[] = $rule->getName();
+                }
+
+            } catch (\Exception $e){
+                $this->_logger->error($e->getMessage(), [$e]);
             }
-
-        } catch (\Exception $e){
-            $this->_logger->error($e->getMessage(), [$e]);
         }
 
         return $rules;
@@ -255,7 +258,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $product = $item->getProduct();
 
-        $itemRules = $this->prepareRulesList($item->getAppliedRuleIds());
+        $itemRules = $this->prepareRulesList((string) $item->getAppliedRuleIds());
 
         $regularPrice = [
             "amount" => $item->getOriginalPrice(),
