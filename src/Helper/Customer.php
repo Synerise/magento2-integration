@@ -11,6 +11,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Newsletter\Model\Subscriber;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
@@ -30,6 +31,8 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         2 => 1,
         3 => 0
     ];
+
+    const XML_PATH_CUSTOMERS_ATTRIBUTES = 'synerise/customer/attributes';
 
     /**
      * @var ScopeConfigInterface
@@ -330,8 +333,8 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     public function getAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            \Synerise\Integration\Helper\Config::XML_PATH_CUSTOMERS_ATTRIBUTES,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            self::XML_PATH_CUSTOMERS_ATTRIBUTES,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         );
 
