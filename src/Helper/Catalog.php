@@ -239,18 +239,23 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
-    public function prepareItemRequest($product, $attributes, $websiteId = null)
+    public function prepareItemRequest(Product $product, $attributes, $websiteId = null)
     {
         $value = $this->getTypeSpecificData($product);
         $value['itemId'] = $product->getSku();
         $value['price'] = $product->getPrice();
         $value['deleted'] = 0;
 
-        foreach ($attributes as $attribute) {
-            $productValue = $this->isAttributeLabelEnabled() ? $product->getAttributeText($attribute) :
-                $product->getData($attribute);
-            if ($productValue) {
-                $value[$attribute] = $productValue;
+        foreach ($attributes as $attributeCode) {
+            if ($this->isAttributeLabelEnabled()) {
+                $attributeText = $product->getAttributeText($attributeCode);
+                $productValue = $attributeText !== false ? $attributeText : $product->getData($attributeCode);
+            } else {
+                $productValue = $product->getData($attributeCode);
+            }
+
+            if ($productValue !== null && $productValue !== false) {
+                $value[$attributeCode] = $productValue;
             }
         }
 
