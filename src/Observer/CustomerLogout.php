@@ -48,7 +48,7 @@ class CustomerLogout implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 

@@ -24,7 +24,7 @@ class CartQtyUpdate implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
