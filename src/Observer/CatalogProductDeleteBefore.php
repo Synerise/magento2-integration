@@ -5,11 +5,10 @@ namespace Synerise\Integration\Observer;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 
-class CatalogProductDeleteAfter implements ObserverInterface
+class CatalogProductDeleteBefore implements ObserverInterface
 {
     const EVENT = 'catalog_product_delete_after';
 
-    protected $defaultApi;
     protected $apiHelper;
     protected $catalogHelper;
     protected $trackingHelper;

@@ -21,7 +21,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_PRODUCTS_ATTRIBUTES = 'synerise/product/attributes';
 
-    const XML_PATH_PRODUCTS_STORES = 'synerise/product/stores';
+    const XML_PATH_PRODUCTS_STORES = 'synerise/synchronization/stores';
 
     const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
 
@@ -213,7 +213,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function deleteItemWithCatalogCheck($product, $attributes)
     {
         $addItemRequest = $this->prepareItemRequest($product, $attributes);
-        $addItemRequest->setValue(array_merge(['deleted' => 1], $addItemRequest->getValue()));
+        $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
         $this->sendItemsToSyneriseWithCatalogCheck([$addItemRequest], $product->getStoreId());
     }
 

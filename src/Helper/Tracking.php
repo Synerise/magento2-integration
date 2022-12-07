@@ -134,16 +134,26 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * Is the live event tracking enabled.
+     *
+     * @return bool
+     */
+    public function isLiveEventTrackingEnabled($event = null, $storeId = null)
+    {
+        if (!$this->apiHelper->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
+            return false;
+        }
+
+        return $this->isEventTrackingEnabled($event, $storeId);
+    }
+
+    /**
      * Is the page tracking enabled.
      *
      * @return bool
      */
     public function isEventTrackingEnabled($event = null, $storeId = null)
     {
-        if (!$this->apiHelper->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
-            return false;
-        }
-
         if (!$this->scopeConfig->isSetFlag(
             self::XML_PATH_EVENT_TRACKING_ENABLED,
             ScopeInterface::SCOPE_STORE,
