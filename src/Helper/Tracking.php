@@ -237,6 +237,12 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->cookieManager->getCookie(self::COOKIE_CLIENT_UUID);
     }
 
+    public function getStoreBaseUrl($storeId = null)
+    {
+        $store = $this->storeManager->getStore($storeId);
+        return $store ? $store->getBaseUrl() : null;
+    }
+
     public function getCookieDomain()
     {
         if (!$this->cookieDomain) {
@@ -252,6 +258,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $this->cookieDomain;
+    }
+
+    public function getStoreId()
+    {
+        return $this->storeManager->getStore()->getId();
     }
 
     public function setClientUuidAndResetCookie($uuid)
@@ -429,6 +440,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
                 'label' => 'CartStatus',
                 'client' => $this->prepareClientDataFromQuote($quote),
                 'params' => [
+                    'source' => $this->getSource(),
+                    'applicationName' => $this->getApplicationName(),
+                    'storeId' => $this->getStoreId(),
+                    'storeUrl' => $this->getStoreBaseUrl(),
                     'products' => $products,
                     'totalAmount' => $totalAmount,
                     'totalQuantity' => $totalQuantity

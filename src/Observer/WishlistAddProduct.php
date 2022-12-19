@@ -69,6 +69,8 @@ class WishlistAddProduct implements ObserverInterface
                 $params["source"] = $source;
             }
             $params["applicationName"] = $this->trackingHelper->getApplicationName();
+            $params["storeId"] = $this->trackingHelper->getStoreId();
+            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl();
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),

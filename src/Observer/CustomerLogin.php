@@ -61,6 +61,7 @@ class CustomerLogin implements ObserverInterface
             $customer = $observer->getEvent()->getCustomer();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
+            $this->customerHelper->addOrUpdateClient($customer);
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
@@ -69,7 +70,12 @@ class CustomerLogin implements ObserverInterface
                     $customer,
                     $this->trackingHelper->getClientUuid()
                 ),
-                'params' => $this->customerHelper->preapreParamsForEvent($customer)
+                'params' => [
+                    'source' => $this->trackingHelper->getSource(),
+                    'applicationName' => $this->trackingHelper->getApplicationName(),
+                    'storeId' => $this->trackingHelper->getStoreId(),
+                    'storeUrl' => $this->trackingHelper->getStoreBaseUrl()
+                ]
             ]);
 
             $this->apiHelper->getDefaultApiInstance()

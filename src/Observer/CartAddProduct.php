@@ -50,6 +50,8 @@ class CartAddProduct implements ObserverInterface
 
             $params["source"] = $this->trackingHelper->getSource();
             $params["applicationName"] = $this->trackingHelper->getApplicationName();
+            $params["storeId"] = $this->trackingHelper->getStoreId();
+            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl();
 
             $eventClientAction = new ClientaddedproducttocartRequest([
                 'time' => $this->trackingHelper->getCurrentTime(),

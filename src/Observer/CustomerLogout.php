@@ -65,7 +65,13 @@ class CustomerLogout implements ObserverInterface
                 'client' => $this->customerHelper->prepareIdentityParams(
                     $customer,
                     $this->trackingHelper->getClientUuid()
-                )
+                ),
+                'params' => [
+                    'source' => $this->trackingHelper->getSource(),
+                    'applicationName' => $this->trackingHelper->getApplicationName(),
+                    'storeId' => $this->trackingHelper->getStoreId(),
+                    'storeUrl' => $this->trackingHelper->getStoreBaseUrl()
+                ]
             ]);
 
             $this->apiHelper->getDefaultApiInstance()

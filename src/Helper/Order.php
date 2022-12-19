@@ -188,7 +188,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "shipping" => [
                     'method' => $order->getShippingMethod(),
                     'amount' => $order->getShippingAmount()
-                ]
+                ],
+                'applicationName' => $this->trackingHelper->getApplicationName(),
+                'storeId' => $order->getStoreId(),
+                'storeUrl' => $this->trackingHelper->getStoreBaseUrl($order->getStoreId())
             ],
             'order_id' => $order->getRealOrderId(),
             "payment_info" => [
