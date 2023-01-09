@@ -173,7 +173,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 return [];
             }
 
-            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
+            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode(), $order->getStoreId());
         }
 
         $params = [
@@ -259,7 +259,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param string $currency
      * @return array
      */
-    public function prepareProductParamsFromOrderItem($item, $currency)
+    public function prepareProductParamsFromOrderItem($item, $currency, $storeId = null)
     {
         $product = $item->getProduct();
 
@@ -287,6 +287,11 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "finalUnitPrice" => $finalUnitPrice,
             "quantity" => $item->getQtyOrdered()
         ];
+
+        if ($storeId) {
+            $params["storeId"] = $storeId;
+            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl($storeId);
+        }
 
         $itemRules = $this->prepareRulesList((string) $item->getAppliedRuleIds());
         if(!empty($itemRules)){
