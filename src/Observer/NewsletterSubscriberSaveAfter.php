@@ -2,49 +2,47 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Update\ClientAgreement;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
-class NewsletterSubscriberSaveAfter implements ObserverInterface
+class NewsletterSubscriberSaveAfter  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var LoggerInterface
+     * @var ClientAgreement
      */
-    protected $logger;
+    protected $clientAgreementHelper;
+
+    /**
+     * @var Identity
+     */
+    protected $identityHelper;
 
     /**
      * @var QueueResourceModel
      */
     protected $queueResourceModel;
 
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
-
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Customer $customerHelper,
-        Tracking $trackingHelper,
+        ClientAgreement $clientAgreementHelper,
+        Identity $identityHelper,
         QueueResourceModel $queueResourceModel
     ) {
-        $this->logger = $logger;
-        $this->customerHelper = $customerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->clientAgreementHelper = $clientAgreementHelper;
+        $this->identityHelper = $identityHelper;
         $this->queueResourceModel = $queueResourceModel;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     /**
@@ -52,7 +50,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -61,16 +59,23 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         $subscriber = $event->getDataObject();
 
         try {
-            if (!$this->trackingHelper->isLoggedIn()) {
-                $this->trackingHelper->manageClientUuid($subscriber->getEmail());
+            if (!$this->identityHelper->isCustomerLoggedIn()) {
+                $uuid = $this->identityHelper->getClientUuid();
+                if ($this->identityHelper->manageClientUuid($uuid, $subscriber->getEmail())) {
+                    $this->identityHelper->mergeClients(
+                        $subscriber->getEmail(),
+                        $uuid,
+                        $this->identityHelper->getClientUuid()
+                    );
+                }
             }
 
-            $this->customerHelper->sendCustomersToSynerise(
-                [$this->customerHelper->prepareRequestFromSubscription($subscriber)],
+            $this->identityHelper->sendCreateClient(
+                $this->clientAgreementHelper->prepareCreateClientRequest($subscriber),
                 $subscriber->getStoreId()
             );
 
-            $this->customerHelper->markSubscribersAsSent([
+            $this->clientAgreementHelper->markAsSent([
                 $subscriber->getId()
             ]);
 

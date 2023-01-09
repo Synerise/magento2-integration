@@ -2,57 +2,55 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Model\EventClientAction;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Event\Client as ClientAction;
+use Synerise\Integration\Helper\Update\Client as ClientUpdate;
 
-class CustomerRegister implements ObserverInterface
+class CustomerRegister extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'customer_register_success';
 
     /**
-     * @var Api
+     * @var ClientAction
      */
-    protected $apiHelper;
+    protected $clientAction;
 
     /**
-     * @var Customer
+     * @var ClientUpdate
      */
-    protected $customerHelper;
+    protected $clientUpdate;
 
     /**
-     * @var Tracking
+     * @var Identity
      */
-    protected $trackingHelper;
+    protected $identityHelper;
 
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        Tracking $trackingHelper,
-        Customer $customerHelper
+        ClientAction $clientAction,
+        ClientUpdate $clientUpdate,
+        Identity $identityHelper
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
+        $this->clientAction = $clientAction;
+        $this->clientUpdate = $clientUpdate;
+        $this->identityHelper = $identityHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->identityHelper->isAdminStore()) {
             return;
         }
 
@@ -60,28 +58,24 @@ class CustomerRegister implements ObserverInterface
             /** @var \Magento\Customer\Model\Data\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
 
-            $this->trackingHelper->manageClientUuid($customer->getEmail());
-
-            $params = $this->customerHelper->preapreParamsForEvent($customer);
-            $params['applicationName'] = $this->trackingHelper->getApplicationName();
-
-            $eventClientAction = new EventClientAction([
-                'time' => $this->trackingHelper->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->customerHelper->prepareIdentityParams(
-                    $customer,
-                    $this->trackingHelper->getClientUuid()
-                ),
-                'params' => $params
-            ]);
-
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientRegistered('4.4', $eventClientAction);
-
-            if ($customer->getId()) {
-                $this->customerHelper->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
+            $uuid = $this->identityHelper->getClientUuid();
+            if ($this->identityHelper->manageClientUuid($uuid, $customer->getEmail())) {
+                $this->identityHelper->mergeClients(
+                    $customer->getEmail(),
+                    $uuid,
+                    $this->identityHelper->getClientUuid()
+                );
             }
 
+            $this->clientUpdate->sendCreateClientAndMarkAsSent($customer);
+
+            $this->clientAction->sendClientRegisteredEvent(
+                $this->clientAction->prepareEventClientActionRequest(
+                    self::EVENT,
+                    $customer,
+                    $this->identityHelper->getClientUuid()
+                )
+            );
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

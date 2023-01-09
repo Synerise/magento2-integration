@@ -7,7 +7,8 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Order as OrderHelper;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Update\Order as OrderHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -63,9 +64,26 @@ class Order extends AbstractSynchronization
 
     public function sendItems($collection, $storeId, $websiteId = null)
     {
-        $collection->addAttributeToSelect($this->orderHelper->getAttributesToSelect());
+        $collection->addAttributeToSelect('*');
 
-        $this->orderHelper->addOrdersBatch($collection, $storeId);
+        if (!$collection->getSize()) {
+            return;
+        }
+
+        $createTransactionRequest = [];
+        foreach ($collection as $order) {
+            $email = $order->getCustomerEmail();
+            $uuid = $email ? Identity::generateUuidByEmail($email): null;
+            $request = $this->orderHelper->prepareCreateTransactionRequest($order, $uuid);
+            if ($request) {
+                $createTransactionRequest[] = $request;
+            }
+        }
+
+        if (!empty($createTransactionRequest)) {
+            $this->orderHelper->sendBatchAddOrUpdateTransactions($createTransactionRequest, $storeId);
+        }
+
         $this->orderHelper->markItemsAsSent($collection->getAllIds());
     }
 

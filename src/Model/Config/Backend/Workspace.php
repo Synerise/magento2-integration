@@ -8,7 +8,11 @@ use Synerise\ApiClient\ApiException;
 class Workspace extends \Magento\Framework\App\Config\Value
 {
     const XML_PATH_API_KEY = 'synerise/api/key';
-    const XML_PATH_WORKSPACE_ID = 'synerise/workspace/id';
+
+    const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/key';
+
+    const XML_PATH_PAGE_TRACKING_DOMAIN = 'synerise/page_tracking/domain';
+
     const ERROR_MSG_403 = 'Please make sure this api key has all required roles.';
 
     public function __construct(
@@ -57,7 +61,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
             );
 
             $this->configWriter->save(
-                \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_KEY,
+                self::XML_PATH_PAGE_TRACKING_KEY,
                 $response->getCode(),
                 $this->getScope(),
                 $this->getScopeId()
@@ -70,7 +74,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
             );
 
             $this->configWriter->delete(
-                \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_KEY,
+                self::XML_PATH_PAGE_TRACKING_KEY,
                 $this->getScope(),
                 $this->getScopeId()
             );
@@ -87,7 +91,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
     private function getConfigDomain()
     {
         $domain = $this->_config->getValue(
-            \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_DOMAIN,
+            self::XML_PATH_PAGE_TRACKING_DOMAIN,
             $this->getScope(),
             $this->getScopeId()
         );

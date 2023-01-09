@@ -2,15 +2,14 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Update\Client as ClientUpdate;
 
-class CustomerSaveAfter implements ObserverInterface
+class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'customer_save_after';
 
@@ -19,48 +18,34 @@ class CustomerSaveAfter implements ObserverInterface
         '/newsletter/manage/save/'
     ];
 
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var Http
      */
-    private $request;
+    protected $request;
+
+    /**
+     * @var ClientUpdate
+     */
+    protected $clientUpdate;
+
 
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        Tracking $trackingHelper,
-        Customer $customerHelper,
-        Http $request
+        Http $request,
+        ClientUpdate $clientUpdate,
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
         $this->request = $request;
+
+        $this->clientUpdate = $clientUpdate;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -69,7 +54,7 @@ class CustomerSaveAfter implements ObserverInterface
         }
 
         try {
-            $this->customerHelper->addOrUpdateClient($observer->getCustomer());
+            $this->clientUpdate->sendCreateClientAndMarkAsSent($observer->getCustomer());
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

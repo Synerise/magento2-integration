@@ -2,53 +2,42 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Order;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Update\Order;
 
-class OrderPlace implements ObserverInterface
+class OrderPlace  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'sales_order_place_after';
 
     /**
-     * @var Api
+     * @var Identity
      */
-    protected $apiHelper;
+    protected $identityHelper;
 
     /**
      * @var Order
      */
     protected $orderHelper;
 
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        Tracking $trackingHelper,
+        Identity $identityHelper,
         Order $orderHelper
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->identityHelper = $identityHelper;
         $this->orderHelper = $orderHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -56,37 +45,32 @@ class OrderPlace implements ObserverInterface
             /** @var \Magento\Sales\Model\Order $order */
             $order = $observer->getEvent()->getOrder();
 
-            $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
-
-            $createatransactionRequest = new CreateatransactionRequest(
-                $this->orderHelper->preapreOrderParams($order, $this->trackingHelper->getClientUuid())
+            $uuid = $this->identityHelper->getClientUuid();
+            if ($this->identityHelper->manageClientUuid($uuid, $order->getCustomerEmail())) {
+                $this->identityHelper->mergeClients(
+                    $order->getCustomerEmail(),
+                    $uuid,
+                    $this->identityHelper->getClientUuid()
+                );
+            }
+            $this->orderHelper->sendCreateTransaction(
+                $this->orderHelper->prepareCreateTransactionRequest(
+                    $order,
+                    $this->identityHelper->getClientUuid()
+                ),
+                $order->getStoreId()
             );
-
-            $this->apiHelper->getDefaultApiInstance($order->getStoreId())
-                ->createATransaction('4.4', $createatransactionRequest);
 
             $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
 
-            if ($order->getCustomerIsGuest()) {
-                $shippingAddress = $order->getShippingAddress();
-
-                $phone = null;
-                if($shippingAddress){
-                    $phone = $shippingAddress->getTelephone();
-                }
-
-                $createAClientInCrmRequest = new \Synerise\ApiClient\Model\CreateaClientinCRMRequest(
-                    [
-                        'email' => $order->getCustomerEmail(),
-                        'uuid' => $this->trackingHelper->getClientUuid(),
-                        'phone' => $phone,
-                        'first_name' => $order->getCustomerFirstname(),
-                        'last_name' => $order->getCustomerLastname(),
-                    ]
+            if (!$this->identityHelper->isAdminStore() && $order->getCustomerIsGuest()) {
+                $this->orderHelper->sendCreateClient(
+                    $this->orderHelper->prepareCreateClientRequest(
+                        $order,
+                        $this->identityHelper->getClientUuid()
+                    ),
+                    $order->getStoreId()
                 );
-
-                $this->apiHelper->getDefaultApiInstance()
-                    ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
             }
 
         } catch (\Exception $e) {

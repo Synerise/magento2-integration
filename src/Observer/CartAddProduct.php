@@ -2,66 +2,67 @@
 
 namespace Synerise\Integration\Observer;
 
+use Exception;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Quote\Model\Quote;
-use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
+use Magento\Quote\Model\Quote\Item;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Event\Cart;
 
-class CartAddProduct implements ObserverInterface
+class CartAddProduct extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'checkout_cart_add_product_complete';
 
-    protected $apiHelper;
-    protected $trackingHelper;
-    protected $logger;
+    /**
+     * @var Cart
+     */
+    protected $cartHelper;
+
+    /**
+     * @var Identity
+     */
+    protected $identityHelper;
+
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        ScopeConfigInterface $scopeConfig,
+        LoggerInterface $logger,
+        Cart $cartHelper,
+        Identity $identityHelper
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->cartHelper = $cartHelper;
+        $this->identityHelper = $identityHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->identityHelper->isAdminStore()) {
             return;
         }
 
         try {
-            /** @var Quote\Item $quoteItem */
+            /** @var Item $quoteItem */
             $quoteItem = $observer->getQuoteItem();
-
-            $product = $quoteItem->getProduct();
-            if ($product->getParentProductId()) {
+            if ($quoteItem->getProduct()->getParentProductId()) {
                 return;
             }
 
-            $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
-            $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
-
-            $params["source"] = $this->trackingHelper->getSource();
-            $params["applicationName"] = $this->trackingHelper->getApplicationName();
-
-            $eventClientAction = new ClientaddedproducttocartRequest([
-                'time' => $this->trackingHelper->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $client,
-                'params' => $params
-            ]);
-
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientAddedProductToCart('4.4', $eventClientAction);
-
-        } catch (\Exception $e) {
+            $this->cartHelper->sendAddToCartEvent(
+                $this->cartHelper->prepareAddToCartRequest(
+                    $quoteItem,
+                    self::EVENT,
+                    $this->identityHelper->getClientUuid()
+                )
+            );
+        } catch (Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }
     }

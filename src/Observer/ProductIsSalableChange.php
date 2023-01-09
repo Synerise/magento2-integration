@@ -3,13 +3,13 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
-class ProductIsSalableChange implements ObserverInterface
+class ProductIsSalableChange  extends AbstractObserver implements ObserverInterface
 {
     public const EVENT = 'product_is_salable_change';
 
@@ -19,42 +19,35 @@ class ProductIsSalableChange implements ObserverInterface
     private $productRepository;
 
     /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var DataStorage
      */
     protected $data;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var SyncProduct
      */
     protected $syncProduct;
 
+
     public function __construct(
-        ProductRepositoryInterface $productRepository,
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
+        ProductRepositoryInterface $productRepository,
         DataStorage $data,
-        Tracking $trackingHelper,
         SyncProduct $syncProduct
     ) {
         $this->productRepository = $productRepository;
-        $this->logger = $logger;
+
         $this->data = $data;
-        $this->trackingHelper = $trackingHelper;
         $this->syncProduct = $syncProduct;
+
+        parent::__construct($scopeConfig, $logger);
     }
+
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 

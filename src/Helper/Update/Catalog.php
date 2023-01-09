@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Helper;
+namespace Synerise\Integration\Helper\Update;
 
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
@@ -14,6 +14,7 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
+use Synerise\Integration\Helper\Api;
 
 class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -21,7 +22,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_PRODUCTS_ATTRIBUTES = 'synerise/product/attributes';
 
-    const XML_PATH_PRODUCTS_STORES = 'synerise/product/stores';
+    const XML_PATH_PRODUCTS_STORES = 'synerise/synchronization/stores';
 
     const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
 
@@ -57,6 +58,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     protected $formattedCategoryPaths = [];
 
     protected $parentData = [];
+
+    private $storeUrls = [];
 
     /**
      * @var \Magento\Framework\View\Asset\ContextInterface
@@ -182,6 +185,14 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         return 'store-'.$storeId;
     }
 
+    public function getStoreBaseUrl($storeId) {
+        if(!isset($this->storeUrls[$storeId])) {
+            $store = $this->storeManager->getStore($storeId);
+            $this->storeUrls[ $storeId] = $store ? $store->getBaseUrl() : null;
+        }
+        return $this->storeUrls[$storeId];
+    }
+
     public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId)
     {
         if (!$collection->getSize()) {
@@ -213,7 +224,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function deleteItemWithCatalogCheck($product, $attributes)
     {
         $addItemRequest = $this->prepareItemRequest($product, $attributes);
-        $addItemRequest->setValue(array_merge(['deleted' => 1], $addItemRequest->getValue()));
+        $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
         $this->sendItemsToSyneriseWithCatalogCheck([$addItemRequest], $product->getStoreId());
     }
 
@@ -259,6 +270,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
+        $value['storeId'] = $product->getStoreId();
+        $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
+
         $categoryIds = $product->getCategoryIds();
         if ($categoryIds) {
             $value['category'] = $this->getFormattedCategoryPath(array_shift($categoryIds));
@@ -291,109 +305,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array
      * @throws \Exception
      */
-    public function prepareParamsFromQuoteProduct($product)
-    {
-        $sku = $product->getData('sku');
-        $skuVariant = $product->getSku();
-
-        $params = [
-            "sku" => $sku,
-            "name" => $product->getName(),
-            "regularUnitPrice" => [
-                "amount" => (float) $product->getPrice(),
-                "currency" => $this->getCurrencyCode()
-            ],
-            "finalUnitPrice" => [
-                "amount" => (float) $product->getFinalPrice(),
-                "currency" => $this->getCurrencyCode()
-            ],
-            "productUrl" => $product->getUrlInStore(),
-            "quantity" => $product->getQty()
-        ];
-
-        if ($sku!= $skuVariant) {
-            $params['skuVariant'] = $skuVariant;
-        }
-
-        if ($product->getSpecialPrice()) {
-            $params['discountedUnitPrice'] = [
-                "amount" => (float) $product->getSpecialPrice(),
-                "currency" => $this->getCurrencyCode()
-            ];
-        }
-
-        $categoryIds = $product->getCategoryIds();
-        if ($categoryIds) {
-            $params['categories'] = [];
-            foreach ($categoryIds as $categoryId) {
-                $params['categories'][] = $this->getFormattedCategoryPath($categoryId);
-            }
-
-            if ($product->getCategoryId()) {
-                $category = $this->getFormattedCategoryPath($product->getCategoryId());
-                if ($category) {
-                    $params['category'] = $category;
-                }
-            }
-        }
-
-        if ($product->getImage()) {
-            $params['image'] = $this->getOriginalImageUrl($product->getImage());
-        }
-
-        return $params;
-    }
-
-    public function prepareProductsFromQuote($quote)
-    {
-        $products = [];
-        $items = $quote->getAllVisibleItems();
-        if (is_array($items)) {
-            foreach ($items as $item) {
-                $products[] = $this->prepareProductFromQuoteItem($item);
-            }
-        }
-
-        return $products;
-    }
-
-    /**
-     * @param \Magento\Catalog\Model\Product $product
-     * @return array
-     * @throws \Exception
-     */
-    private function prepareProductFromQuoteItem($item)
-    {
-        $product = $item->getProduct();
-
-        $sku = $product->getData('sku');
-        $skuVariant = $item->getSku();
-
-        $params = [
-            "sku" => $sku,
-            "quantity" => $item->getQty()
-        ];
-
-        if ($sku!= $skuVariant) {
-            $params['skuVariant'] = $skuVariant;
-        }
-
-        $categoryIds = $product->getCategoryIds();
-        if ($categoryIds) {
-            $params['categories'] = [];
-            foreach ($categoryIds as $categoryId) {
-                $params['categories'][] = $this->getFormattedCategoryPath($categoryId);
-            }
-        }
-
-        return $params;
-    }
-
-    public function getCurrencyCode()
-    {
-        return $this->storeManager->getStore()->getCurrentCurrency()->getCode();
-    }
-
     public function getTypeSpecificData(\Magento\Catalog\Model\Product $product)
     {
         if ($product->getVisibility() == Visibility::VISIBILITY_NOT_VISIBLE) {

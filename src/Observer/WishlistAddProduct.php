@@ -2,86 +2,58 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Synerise\ApiClient\Model\EventClientAction;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Event\Favorites;
 
-class WishlistAddProduct implements ObserverInterface
+class WishlistAddProduct extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'wishlist_add_product';
 
-    protected $apiHelper;
-    protected $trackingHelper;
-    protected $logger;
+    /**
+     * @var Identity
+     */
+    protected $identityHelper;
+
+    /**
+     * @var Favorites
+     */
+    private $favoritesHelper;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        ScopeConfigInterface $scopeConfig,
+        LoggerInterface $logger,
+        Favorites $favoritesHelper,
+        Identity $identityHelper
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
-        $this->trackingHelper = $trackingHelper;
+
+        $this->identityHelper = $identityHelper;
+        $this->favoritesHelper = $favoritesHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->identityHelper->isAdminStore()) {
             return;
         }
 
         try {
-
-            $product = $observer->getEvent()->getProduct();
-
-            $params = [
-                "sku" => $product->getSku(),
-                "name" => $product->getName(),
-                "productUrl" => $product->getUrlInStore(),
-            ];
-
-            $categoryIds = $product->getCategoryIds();
-            if ($categoryIds) {
-                $params['categories'] = [];
-                foreach ($categoryIds as $categoryId) {
-                    $params['categories'][] = $this->catalogHelper->getFormattedCategoryPath($categoryId);
-                }
-
-                if ($product->getCategoryId()) {
-                    $category = $this->catalogHelper->getFormattedCategoryPath($product->getCategoryId());
-                    if ($category) {
-                        $params['category'] = $category;
-                    }
-                }
-            }
-
-            if ($product->getImage()) {
-                $params['image'] = $this->catalogHelper->getOriginalImageUrl($product->getImage());
-            }
-
-            $source = $this->trackingHelper->getSource();
-            if($source) {
-                $params["source"] = $source;
-            }
-            $params["applicationName"] = $this->trackingHelper->getApplicationName();
-
-            $eventClientAction = new EventClientAction([
-                'time' => $this->trackingHelper->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => [
-                    'uuid' => $this->trackingHelper->getClientUuid()
-                ],
-                'params' => $params
-            ]);
-
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientAddedProductToFavorites('4.4', $eventClientAction);
-
+            $this->favoritesHelper->sendClientAddedProductToFavoritesEvent(
+                $this->favoritesHelper->prepareClientAddedProductToFavoritesRequest(
+                    self::EVENT,
+                    $observer->getEvent()->getProduct(),
+                    $this->identityHelper->getClientUuid()
+                )
+            );
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

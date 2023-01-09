@@ -2,48 +2,67 @@
 
 namespace Synerise\Integration\Observer;
 
+use Exception;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Quote\Model\Quote;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Event\Cart;
 
-class CartStatus implements ObserverInterface
+class CartStatus  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'sales_quote_save_after';
 
-    protected $catalogHelper;
-    protected $trackingHelper;
-    protected $logger;
+    /**
+     * @var Cart
+     */
+    protected $cartHelper;
+
+    /**
+     * @var Identity
+     */
+    protected $identityHelper;
+
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        ScopeConfigInterface $scopeConfig,
+        LoggerInterface $logger,
+        Cart $cartHelper,
+        Identity $identityHelper
     ) {
-        $this->logger = $logger;
-        $this->catalogHelper = $catalogHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->cartHelper = $cartHelper;
+        $this->identityHelper = $identityHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->identityHelper->isAdminStore()) {
             return;
         }
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $observer->getQuote();
+        try {
+            /** @var Quote $quote */
+            $quote = $observer->getQuote();
+            $quote->collectTotals();
 
-        if ($this->trackingHelper->hasItemDataChanges($quote)) {
-            $this->trackingHelper->sendCartStatusEvent(
-                $this->catalogHelper->prepareProductsFromQuote($quote),
-                (float) $quote->getSubtotal(),
-                (int) $quote->getItemsQty(),
-                $quote
-            );
-        } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
-            $this->trackingHelper->sendCartStatusEvent([], 0, 0, $quote);
+            if ($this->cartHelper->hasItemDataChanges($quote)) {
+                $this->cartHelper->sendCartStatusEvent(
+                    $this->cartHelper->prepareCartStatusRequest(
+                        $quote,
+                        $this->identityHelper->getClientUuid()
+                    )
+                );
+            }
+        } catch (Exception $e) {
+            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }
     }
 }

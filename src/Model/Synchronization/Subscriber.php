@@ -6,7 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Customer as CustomerHelper;
+use Synerise\Integration\Helper\Update\ClientAgreement;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -16,9 +16,9 @@ class Subscriber extends AbstractSynchronization
     const ENTITY_ID = 'subscriber_id';
 
     /**
-     * @var CustomerHelper
+     * @var ClientAgreement
      */
-    protected $customerHelper;
+    protected $clientAgreementHelper;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
@@ -26,9 +26,9 @@ class Subscriber extends AbstractSynchronization
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
-        CustomerHelper $customerHelper
+        ClientAgreement $clientAgreementHelper
     ) {
-        $this->customerHelper = $customerHelper;
+        $this->clientAgreementHelper = $clientAgreementHelper;
 
         parent::__construct(
             $scopeConfig,
@@ -69,8 +69,17 @@ class Subscriber extends AbstractSynchronization
      */
     public function sendItems($collection, $storeId, $websiteId = null)
     {
-        $this->customerHelper->addCustomerSubscriptionsBatch($collection, $storeId);
-        $this->customerHelper->markSubscribersAsSent($collection->getAllIds());
+        if (!$collection->count()) {
+            return;
+        }
+
+        $requests = [];
+        foreach ($collection as $subscriber) {
+            $requests[] = $this->clientAgreementHelper->prepareCreateClientRequest($subscriber);
+        }
+
+        $this->clientAgreementHelper->sendBatchAddOrUpdateClients($requests, $storeId);
+        $this->clientAgreementHelper->markAsSent($collection->getAllIds());
     }
 
     public function markAllAsUnsent()

@@ -2,22 +2,17 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
-class StockStatusChange implements ObserverInterface
+class StockStatusChange  extends AbstractObserver implements ObserverInterface
 {
     public const EVENT = 'stock_status_change';
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var LoggerInterface
@@ -35,21 +30,23 @@ class StockStatusChange implements ObserverInterface
     protected $syncProduct;
 
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        SyncProduct $syncProduct,
-        Tracking $trackingHelper,
-        GetLegacyStockItem $getLegacyStockItem
+        GetLegacyStockItem $getLegacyStockItem,
+        SyncProduct $syncProduct
     ) {
         $this->logger = $logger;
-        $this->syncProduct = $syncProduct;
-        $this->trackingHelper = $trackingHelper;
         $this->getLegacyStockItem = $getLegacyStockItem;
+
+        $this->syncProduct = $syncProduct;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 

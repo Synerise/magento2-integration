@@ -6,7 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Catalog as CatalogHelper;
+use \Synerise\Integration\Helper\Update\Catalog as CatalogHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 

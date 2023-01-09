@@ -3,33 +3,34 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Model\Product;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
+use \Synerise\Integration\Helper\Update\Catalog;
 
-class CatalogProductDeleteAfter implements ObserverInterface
+class CatalogProductDeleteBefore  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'catalog_product_delete_after';
 
-    protected $defaultApi;
-    protected $apiHelper;
+    /**
+     * @var Catalog
+     */
     protected $catalogHelper;
-    protected $trackingHelper;
-    protected $logger;
+
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        ScopeConfigInterface $scopeConfig,
+        LoggerInterface $logger,
+        Catalog $catalogHelper,
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
-        $this->trackingHelper = $trackingHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 

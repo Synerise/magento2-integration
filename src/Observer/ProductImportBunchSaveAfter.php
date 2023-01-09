@@ -2,40 +2,36 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\Search\FilterGroup;
+use Magento\Framework\Api\SearchCriteriaInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
-class ProductImportBunchSaveAfter implements ObserverInterface
+class ProductImportBunchSaveAfter  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'catalog_product_import_bunch_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Magento\Framework\Api\FilterBuilder
+     * @var FilterBuilder
      */
     private $filterBuilder;
 
     /**
-     * @var \Magento\Framework\Api\Search\FilterGroup
+     * @var FilterGroup
      */
     private $filterGroup;
 
     /**
-     * @var \Magento\Framework\Api\SearchCriteriaInterface
+     * @var SearchCriteriaInterface
      */
     private $searchCriteria;
 
@@ -44,27 +40,29 @@ class ProductImportBunchSaveAfter implements ObserverInterface
      */
     private $syncProduct;
 
+
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        SyncProduct $syncProduct,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Framework\Api\FilterBuilder $filterBuilder,
-        \Magento\Framework\Api\Search\FilterGroup $filterGroup,
-        \Magento\Framework\Api\SearchCriteriaInterface $criteria
+        ScopeConfigInterface $scopeConfig,
+        LoggerInterface $logger,
+        ProductRepositoryInterface $productRepository,
+        FilterBuilder $filterBuilder,
+        FilterGroup $filterGroup,
+        SearchCriteriaInterface $criteria,
+        SyncProduct $syncProduct
     ) {
-        $this->logger = $logger;
-        $this->syncProduct = $syncProduct;
-        $this->trackingHelper = $trackingHelper;
         $this->productRepository = $productRepository;
         $this->filterBuilder = $filterBuilder;
         $this->filterGroup = $filterGroup;
         $this->searchCriteria = $criteria;
+
+        $this->syncProduct = $syncProduct;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 

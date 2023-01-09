@@ -2,88 +2,56 @@
 
 namespace Synerise\Integration\Observer;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Review\Model\Rating\Option\VoteFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Event\Review;
 
-class ProductReview implements ObserverInterface
+class ProductReview  extends AbstractObserver implements ObserverInterface
 {
     public const EVENT = 'product_review_save_after';
 
     /**
-     * @var ProductRepositoryInterface
-     */
-    private $productRepository;
-
-    /**
-     * @var VoteFactory
-     */
-    protected  $voteFactory;
-
-    /**
      * @var StoreManagerInterface
      */
-    protected $storeManager;
+    private $storeManager;
 
     /**
-     * @var LoggerInterface
+     * @var Identity
      */
-    protected $logger;
+    protected $identityHelper;
 
     /**
-     * @var DataStorage
+     * @var Review
      */
-    protected $data;
-
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
+    protected $reviewHelper;
 
     /**
      * @var \Magento\Review\Model\Review
      */
     private $review;
 
+
     public function __construct(
-        ProductRepositoryInterface $productRepository,
-        VoteFactory $voteFactory,
-        StoreManagerInterface $storeManager,
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        Customer $customerHelper,
-        Tracking $trackingHelper
+        StoreManagerInterface $storeManager,
+        Review $reviewHelper,
+        Identity $identityHelper
     ) {
-        $this->productRepository = $productRepository;
-        $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->customerHelper = $customerHelper;
-        $this->trackingHelper = $trackingHelper;
+
+        $this->identityHelper = $identityHelper;
+        $this->reviewHelper = $reviewHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -97,66 +65,19 @@ class ProductReview implements ObserverInterface
                 return;
             }
 
-            $product = $this->productRepository->getById($this->review->getEntityPkValue());
-            if (!$product) {
-                return;
-            }
+            $this->reviewHelper->sendCustomEvent(
+                $this->reviewHelper->prepareProductReviewRequest(
+                    self::EVENT,
+                    $this->review,
+                    $this->storeManager->getStore()->getId(),
+                    $this->identityHelper->getClientUuid()
+                )
+            );
 
-            $client = [
-                'uuid' => $this->trackingHelper->getClientUuid()
-            ];
-            $customerId = $this->review->getCustomerId();
-            if ($customerId) {
-                $client['custom_id'] = $customerId;
-            }
-
-            $params = [
-                'sku' => $product->getSku(),
-                'nickname' => $this->review->getNickname(),
-                'title' => $this->review->getTitle(),
-                'detail' => $this->review->getDetail(),
-                'source' => $this->trackingHelper->getSource(),
-                'applicationName' => $this->trackingHelper->getApplicationName()
-            ];
-
-            $votesCollection = $this->voteFactory->create()->getResourceCollection()
-                ->setReviewFilter($this->review->getReviewId())
-                ->setStoreFilter($this->storeManager->getStore()->getId())
-                ->addRatingInfo($this->storeManager->getStore()->getId())
-                ->load();
-
-            if (count($votesCollection)) {
-                $params['ratings'] = [];
-                foreach ($votesCollection as $vote) {
-                    $params['ratings'][] = [
-                        'rating_code' => $vote->getRatingCode(),
-                        'percent' => $vote->getPercent(),
-                        'value' => $vote->getValue()
-                    ];
-                }
-            }
-
-            $customEventRequest = new CustomeventRequest([
-                'time' => $this->trackingHelper->getCurrentTime(),
-                'action' => 'product.addReview',
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $client,
-                'params' => $params
-            ]);
-
-            $this->apiHelper->getDefaultApiInstance()
-                ->customEvent('4.4', $customEventRequest);
-
-            $createAClientInCrmRequests = [
-                new CreateaClientinCRMRequest([
-                    'uuid' => $this->trackingHelper->getClientUuid(),
-                    'display_name' => $this->review->getNickname()
-                ])
-            ];
-
-            $this->customerHelper->sendCustomersToSynerise(
-                $createAClientInCrmRequests,
-                $this->storeManager->getStore()->getId()
+            $this->identityHelper->sendCreateClient(
+                $this->reviewHelper->prepareCreateClientRequest(
+                    $this->review, $this->identityHelper->getClientUuid()
+                )
             );
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);

@@ -2,75 +2,58 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Model\EventClientAction;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Event\Client;
 
-class CustomerLogout implements ObserverInterface
+class CustomerLogout  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'customer_logout';
 
     /**
-     * @var Api
+     * @var Client
      */
-    protected $apiHelper;
+    protected $clientHelper;
 
     /**
-     * @var Customer
+     * @var Identity
      */
-    protected $customerHelper;
+    protected $identityHelper;
 
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        Tracking $trackingHelper,
-        Customer $customerHelper
+        Client $clientHelper,
+        Identity $identityHelper
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
-        $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
+        $this->clientHelper = $clientHelper;
+        $this->identityHelper = $identityHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->identityHelper->isAdminStore()) {
             return;
         }
 
         try {
-            $customer = $observer->getEvent()->getCustomer();
-
-            $eventClientAction = new EventClientAction([
-                'time' => $this->trackingHelper->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->customerHelper->prepareIdentityParams(
-                    $customer,
-                    $this->trackingHelper->getClientUuid()
+            $this->clientHelper->sendClientLoggedOutEvent(
+                $this->clientHelper->prepareEventClientActionRequest(
+                    self::EVENT,
+                    $observer->getEvent()->getCustomer(),
+                    $this->identityHelper->getClientUuid()
                 )
-            ]);
-
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientLoggedOut('4.4', $eventClientAction);
-
+            );
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

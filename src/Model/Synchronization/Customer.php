@@ -7,8 +7,9 @@ use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Customer as CustomerHelper;
+use Synerise\Integration\Helper\Update\Client;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -23,14 +24,19 @@ class Customer extends AbstractSynchronization
     protected $collectionFactory;
 
     /**
-     * @var CustomerHelper
+     * @var Client
      */
-    protected $customerHelper;
+    protected $clientHelper;
 
     /**
      * @var Attribute
      */
     protected $eavAttribute;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
 
     /**
      * @var WebsiteCollectionFactory
@@ -43,13 +49,15 @@ class Customer extends AbstractSynchronization
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         WebsiteCollectionFactory $websiteCollectionFactory,
+        StoreManagerInterface $storeManager,
         CollectionFactory $collectionFactory,
-        CustomerHelper $customerHelper,
+        Client $clientHelper,
         Attribute $eavAttribute
     ) {
         $this->eavAttribute = $eavAttribute;
-        $this->customerHelper = $customerHelper;
+        $this->clientHelper = $clientHelper;
         $this->websiteCollectionFactory = $websiteCollectionFactory;
+        $this->storeManager = $storeManager;
 
         parent::__construct(
             $scopeConfig,
@@ -69,7 +77,7 @@ class Customer extends AbstractSynchronization
     protected function createCollectionWithScope($storeId, $websiteId = null)
     {
         if (!$websiteId) {
-            $websiteId = $this->customerHelper->getWebsiteIdByStoreId($storeId);
+            $websiteId = $this->storeManager->getStore($storeId)->getWebsiteId();
         }
 
         $collection = $this->collectionFactory->create();
@@ -80,10 +88,34 @@ class Customer extends AbstractSynchronization
     public function sendItems($collection, $storeId, $websiteId = null)
     {
         $collection->addAttributeToSelect(
-            $this->customerHelper->getAttributesToSelect($storeId)
+            $this->clientHelper->getAttributesToSelect($storeId)
         );
 
-        $this->customerHelper->addCustomersBatch($collection, $storeId);
+        if (!$collection->getSize()) {
+            return;
+        }
+
+        $ids = [];
+        $createAClientInCrmRequests = [];
+
+        if (!$collection->count()) {
+            return;
+        }
+
+        foreach ($collection as $customer) {
+            $ids[] = $customer->getEntityId();
+            $createAClientInCrmRequests[] =
+                $this->clientHelper->prepareCreateClientRequest(
+                    $customer,
+                    null,
+                    $storeId
+                );
+        }
+
+        if ($ids) {
+            $this->clientHelper->sendBatchAddOrUpdateClients($createAClientInCrmRequests, $storeId);
+            $this->clientHelper->markAsSent($ids, $storeId);
+        }
     }
 
     public function markAllAsUnsent()

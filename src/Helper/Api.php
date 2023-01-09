@@ -52,18 +52,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
-    /**
-     * Checks if Api Key is set for a given scope
-     *
-     * @param string $scope
-     * @param int $scopeId
-     * @return bool
-     */
-    public function isApiKeySet($scope, $scopeId)
-    {
-        return (boolean) $this->getApiKey($scope, $scopeId);
-    }
-
     public function isLoggerEnabled($storeId = null)
     {
         return $this->scopeConfig->getValue(

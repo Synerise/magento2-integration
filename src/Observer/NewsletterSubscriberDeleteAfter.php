@@ -2,43 +2,35 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
+use Synerise\Integration\Helper\Identity;
 
-class NewsletterSubscriberDeleteAfter implements ObserverInterface
+class NewsletterSubscriberDeleteAfter  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Customer
+     * @var Identity
      */
-    private $customerHelper;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
+    private $identityHelper;
 
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        \Synerise\Integration\Helper\Customer $customerHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        Identity $clientAgreementHelper
     ) {
-        $this->logger = $logger;
-        $this->customerHelper = $customerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->identityHelper = $clientAgreementHelper;
+
+        parent::__construct($scopeConfig, $logger);
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
@@ -48,14 +40,13 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
         $subscriber = $event->getDataObject();
 
         try {
-            $createAClientInCrmRequests = [
+            $this->identityHelper->sendCreateClient(
                 new CreateaClientinCRMRequest([
                     'email' => $subscriber->getSubscriberEmail(),
                     'agreements' => ['email' =>  0]
-                ])
-            ];
-
-            $this->customerHelper->sendCustomersToSynerise($createAClientInCrmRequests, $subscriber->getStoreId());
+                ]),
+                $subscriber->getStoreId()
+            );
         } catch (\Exception $e) {
             $this->logger->error('Failed to unsubscribe user', ['exception' => $e]);
         }
