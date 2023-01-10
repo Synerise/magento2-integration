@@ -7,17 +7,18 @@ use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Update\Client as ClientUpdate;
+use Synerise\Integration\Helper\Identity;
+use Synerise\Integration\Helper\Update\Client;
 
 class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'customer_save_after';
 
     const EXCLUDED_PATHS = [
-        '/customer/account/createpost/',
         '/newsletter/manage/save/'
     ];
 
+    protected $isSent = false;
 
     /**
      * @var Http
@@ -25,7 +26,7 @@ class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
     protected $request;
 
     /**
-     * @var ClientUpdate
+     * @var Client
      */
     protected $clientUpdate;
 
@@ -34,7 +35,7 @@ class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         Http $request,
-        ClientUpdate $clientUpdate,
+        Client $clientUpdate
     ) {
         $this->request = $request;
 
@@ -45,18 +46,45 @@ class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
-        if (in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
+        if ($this->isSent || in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
             return;
         }
 
         try {
-            $this->clientUpdate->sendCreateClientAndMarkAsSent($observer->getCustomer());
+            $customer = $observer->getCustomer();
+
+            list ($body, $statusCode, $headers) = $this->clientUpdate->sendCreateClient(
+                $this->clientUpdate->prepareCreateClientRequest(
+                    $observer->getCustomer(),
+                    Identity::generateUuidByEmail($customer->getEmail()),
+                    $customer->getStoreId()
+                ),
+                $customer->getStoreId()
+            );
+
+            if ($statusCode == 202) {
+                $this->markAsSent($customer);
+            } else {
+                $this->logger->error(
+                    'Client update - invalid status',
+                    [
+                        'status' => $statusCode,
+                        'body' => $body
+                    ]
+                );
+            }
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Client update failed', ['exception' => $e]);
         }
+    }
+
+    protected function markAsSent($customer)
+    {
+        $this->isSent = true;
+        $this->clientUpdate->markAsSent([$customer->getId()], $customer->getStoreId());
     }
 }

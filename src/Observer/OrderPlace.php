@@ -46,13 +46,14 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
             $order = $observer->getEvent()->getOrder();
 
             $uuid = $this->identityHelper->getClientUuid();
-            if ($this->identityHelper->manageClientUuid($uuid, $order->getCustomerEmail())) {
+            if ($uuid && $this->identityHelper->manageClientUuid($uuid, $order->getCustomerEmail())) {
                 $this->identityHelper->mergeClients(
                     $order->getCustomerEmail(),
                     $uuid,
                     $this->identityHelper->getClientUuid()
                 );
             }
+
             $this->orderHelper->sendCreateTransaction(
                 $this->orderHelper->prepareCreateTransactionRequest(
                     $order,

@@ -4,15 +4,20 @@ namespace Synerise\Integration\Test\Integration\Observer;
 
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\Event\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
+use Synerise\Integration\Helper\Event\Client;
 use Synerise\Integration\Observer\CustomerRegister;
 
 class CustomerRegisterObserverTest extends \PHPUnit\Framework\TestCase
 {
     const FIXTURE_CUSTOMER_ID = 1;
+
+    const EVENT_LABEL = 'Customer registration';
+
     /**
-     * @var \Magento\Framework\Event\Config $frameworkEvent
+     * @var Config $frameworkEvent
      */
     private $eventConfig;
 
@@ -21,33 +26,20 @@ class CustomerRegisterObserverTest extends \PHPUnit\Framework\TestCase
      */
     protected $customerRepository;
 
-    const EVENT_LABEL = 'Customer registration';
-
     /**
-     * @var \Synerise\Integration\Helper\Event\Client
+     * @var Client
      */
     private $clientAction;
-
-    /**
-     * @var \Synerise\Integration\Helper\Update\Client
-     */
-    private $clientUpdate;
 
     protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
-        $this->eventConfig = $this->objectManager->create(\Magento\Framework\Event\Config::class);
-        $this->customerRepository = $this->objectManager->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
+        $this->eventConfig = $this->objectManager->create(Config::class);
+        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
 
-        $this->clientAction = $this->objectManager->get(\Synerise\Integration\Helper\Event\Client::class);
-        $this->clientUpdate = $this->objectManager->get(\Synerise\Integration\Helper\Update\Client::class);
+        $this->clientAction = $this->objectManager->get(Client::class);
     }
 
-    /**
-     * @return void
-     */
     public function testObserverRegistration()
     {
         $observers = $this->eventConfig->getObservers('customer_register_success');

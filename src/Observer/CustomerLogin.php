@@ -7,22 +7,16 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Identity;
-use Synerise\Integration\Helper\Event\Client as ClientAction;
-use Synerise\Integration\Helper\Update\Client as ClientUpdate;
+use Synerise\Integration\Helper\Event\Client;
 
 class CustomerLogin extends AbstractObserver implements ObserverInterface
 {
     const EVENT = 'customer_login';
 
     /**
-     * @var ClientAction
+     * @var Client
      */
     protected $clientAction;
-
-    /**
-     * @var ClientUpdate
-     */
-    protected $clientUpdate;
 
     /**
      * @var Identity
@@ -33,12 +27,10 @@ class CustomerLogin extends AbstractObserver implements ObserverInterface
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        ClientAction $clientAction,
-        ClientUpdate $clientUpdate,
+        Client $clientAction,
         Identity $identityHelper
     ) {
         $this->clientAction = $clientAction;
-        $this->clientUpdate = $clientUpdate;
         $this->identityHelper = $identityHelper;
 
         parent::__construct($scopeConfig, $logger);
@@ -59,16 +51,14 @@ class CustomerLogin extends AbstractObserver implements ObserverInterface
             $customer = $observer->getEvent()->getCustomer();
 
             $uuid = $this->identityHelper->getClientUuid();
-            if ($this->identityHelper->manageClientUuid($uuid, $customer->getEmail())) {
+            if ($uuid && $this->identityHelper->manageClientUuid($uuid, $customer->getEmail())) {
                 $this->identityHelper->mergeClients(
                     $customer->getEmail(),
                     $uuid,
                     $this->identityHelper->getClientUuid()
                 );
             }
-
-            $this->clientUpdate->sendCreateClientAndMarkAsSent($customer);
-
+            
             $this->clientAction->sendClientLoginEvent(
                 $this->clientAction->prepareEventClientActionRequest(
                     self::EVENT,

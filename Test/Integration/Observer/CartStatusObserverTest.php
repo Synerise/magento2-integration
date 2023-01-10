@@ -45,9 +45,6 @@ class CartStatusObserverTest extends \PHPUnit\Framework\TestCase
         $this->cartHelper = $this->objectManager->get(CartHelper::class);
     }
 
-    /**
-     * @return void
-     */
     public function testObserverRegistration()
     {
         $observers = $this->eventConfig->getObservers('sales_quote_save_after');

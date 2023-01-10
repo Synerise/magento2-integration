@@ -26,9 +26,6 @@ class CartRemoveProductObserverTest extends \PHPUnit\Framework\TestCase
         $this->eventConfig = $this->objectManager->create(\Magento\Framework\Event\Config::class);
     }
 
-    /**
-     * @return void
-     */
     public function testObserverRegistration()
     {
         $observers = $this->eventConfig->getObservers('sales_quote_remove_item');

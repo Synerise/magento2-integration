@@ -77,7 +77,7 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->cookieDomain;
     }
 
-    public function setClientUuidAndResetCookie($uuid)
+    public function setResetUuidCookie($uuid)
     {
         $cookieMeta = $this->cookieMetadataFactory
             ->createPublicCookieMetadata()
@@ -87,7 +87,6 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
             ->setHttpOnly(false);
 
         $this->cookieManager->setPublicCookie(self::COOKIE_CLIENT_UUID_RESET, $uuid, $cookieMeta);
-        $this->clientUuid = $uuid;
     }
 
     public function getCookieParamsString()

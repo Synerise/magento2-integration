@@ -9,8 +9,13 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Sales\Model\Order as OrderModel;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
+use Synerise\ApiClient\Model\CreateatransactionRequestDiscountAmount;
+use Synerise\ApiClient\Model\CreateatransactionRequestRevenue;
+use Synerise\ApiClient\Model\CreateatransactionRequestValue;
+use Synerise\ApiClient\Model\PaymentInfo;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Data\Product;
 use Synerise\Integration\Helper\Data\Context as ContextHelper;
@@ -131,17 +136,11 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     public function prepareCreateClientRequest($order, $uuid)
     {
         $shippingAddress = $order->getShippingAddress();
-
-        $phone = null;
-        if($shippingAddress){
-            $phone = $shippingAddress->getTelephone();
-        }
-
         return new CreateaClientinCRMRequest(
             [
                 'email' => $order->getCustomerEmail(),
                 'uuid' => $uuid,
-                'phone' => $phone,
+                'phone' => $shippingAddress ? $shippingAddress->getTelephone() : null,
                 'first_name' => $order->getCustomerFirstname(),
                 'last_name' => $order->getCustomerLastname(),
             ]
@@ -156,25 +155,6 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function prepareCreateTransactionRequest(OrderModel $order, $uuid = null): ?CreateatransactionRequest
     {
-        $shippingAddress = $order->getShippingAddress();
-        $phone = null;
-        if($shippingAddress){
-            $phone = $shippingAddress->getTelephone();
-        }
-
-        $customerData = [
-            'email' => $order->getCustomerEmail(),
-            'phone' => $phone
-        ];
-
-        if ($uuid) {
-            $customerData["uuid"] = $uuid;
-        }
-
-        if (!$order->getCustomerIsGuest()) {
-            $customerData['customId'] = $order->getCustomerId();
-        }
-
         $products = [];
         foreach ($order->getAllItems() as $item) {
             if ($item->getParentItem()) {
@@ -193,11 +173,15 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $params = [
-            'client' => $customerData,
-            'discount_amount' => [
+            'client' => new Client([
+                'email' => $order->getCustomerEmail(),
+                'custom_id' => $order->getCustomerId(),
+                'uuid' => $uuid
+            ]),
+            'discount_amount' => new CreateatransactionRequestDiscountAmount([
                 "amount" => $order->getDiscountAmount(),
                 "currency" => $order->getOrderCurrencyCode()
-            ],
+            ]),
             'metadata' => [
                 "orderStatus" => $order->getStatus(),
                 "discountCode" => $order->getCouponCode(),
@@ -210,22 +194,22 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 'storeUrl' => $this->contextHelper->getStoreBaseUrl($order->getStoreId())
             ],
             'order_id' => $order->getRealOrderId(),
-            'payment_info' => [
+            'payment_info' => new PaymentInfo([
                 'method' => $order->getPayment()->getMethod()
-            ],
+            ]),
             'products' => $products,
             'recorded_at' =>
                 $order->getCreatedAt() ?
                     $this->contextHelper->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                     $this->contextHelper->getCurrentTime(),
-            'revenue' => [
+            'revenue' => new CreateatransactionRequestRevenue([
                 "amount" => $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
-            ],
-            'value' => [
+            ]),
+            'value' => new CreateatransactionRequestValue([
                 "amount" => $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
-            ],
+            ]),
             'source' => $this->contextHelper->getSource(),
             'event_salt' => $order->getRealOrderId()
         ];

@@ -61,7 +61,7 @@ class NewsletterSubscriberSaveAfter  extends AbstractObserver implements Observe
         try {
             if (!$this->identityHelper->isCustomerLoggedIn()) {
                 $uuid = $this->identityHelper->getClientUuid();
-                if ($this->identityHelper->manageClientUuid($uuid, $subscriber->getEmail())) {
+                if ($uuid && $this->identityHelper->manageClientUuid($uuid, $subscriber->getEmail())) {
                     $this->identityHelper->mergeClients(
                         $subscriber->getEmail(),
                         $uuid,

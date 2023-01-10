@@ -28,11 +28,6 @@ class CustomerLogoutObserverTest extends \PHPUnit\Framework\TestCase
      */
     private $clientAction;
 
-    /**
-     * @var \Synerise\Integration\Helper\Update\Client
-     */
-    private $clientUpdate;
-
     protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
@@ -42,12 +37,8 @@ class CustomerLogoutObserverTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->clientAction = $this->objectManager->get(\Synerise\Integration\Helper\Event\Client::class);
-        $this->clientUpdate = $this->objectManager->get(\Synerise\Integration\Helper\Update\Client::class);
     }
 
-    /**
-     * @return void
-     */
     public function testObserverRegistration()
     {
         $observers = $this->eventConfig->getObservers('customer_logout');

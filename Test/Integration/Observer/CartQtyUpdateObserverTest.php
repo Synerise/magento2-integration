@@ -20,9 +20,6 @@ class CartQtyUpdateObserverTest extends \PHPUnit\Framework\TestCase
         $this->eventConfig = $this->objectManager->create(\Magento\Framework\Event\Config::class);
     }
 
-    /**
-     * @return void
-     */
     public function testObserverRegistration()
     {
         $observers = $this->eventConfig->getObservers('checkout_cart_update_items_after');

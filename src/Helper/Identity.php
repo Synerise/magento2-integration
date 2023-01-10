@@ -79,10 +79,6 @@ class Identity
 
     public function manageClientUuid(string $uuid, string $email)
     {
-        if ($uuid) {
-            return false;
-        }
-
         $emailUuid = self::generateUuidByEmail($email);
 
         if ($uuid == $emailUuid) {
@@ -91,7 +87,8 @@ class Identity
         }
 
         // reset uuid via cookie
-        $this->cookieHelper->setClientUuidAndResetCookie($emailUuid);
+        $this->cookieHelper->setResetUuidCookie($emailUuid);
+        $this->clientUuid = $emailUuid;
 
         $identityHash = $this->cookieHelper->getCookieParams('identityHash');
         if ($identityHash && $identityHash != Identity::hashString($email)) {

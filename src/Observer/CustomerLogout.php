@@ -16,7 +16,7 @@ class CustomerLogout  extends AbstractObserver implements ObserverInterface
     /**
      * @var Client
      */
-    protected $clientHelper;
+    protected $clientAction;
 
     /**
      * @var Identity
@@ -27,10 +27,10 @@ class CustomerLogout  extends AbstractObserver implements ObserverInterface
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Client $clientHelper,
+        Client $clientAction,
         Identity $identityHelper
     ) {
-        $this->clientHelper = $clientHelper;
+        $this->clientAction = $clientAction;
         $this->identityHelper = $identityHelper;
 
         parent::__construct($scopeConfig, $logger);
@@ -47,8 +47,8 @@ class CustomerLogout  extends AbstractObserver implements ObserverInterface
         }
 
         try {
-            $this->clientHelper->sendClientLoggedOutEvent(
-                $this->clientHelper->prepareEventClientActionRequest(
+            $this->clientAction->sendClientLoggedOutEvent(
+                $this->clientAction->prepareEventClientActionRequest(
                     self::EVENT,
                     $observer->getEvent()->getCustomer(),
                     $this->identityHelper->getClientUuid()

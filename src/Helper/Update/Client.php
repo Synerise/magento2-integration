@@ -228,24 +228,4 @@ class Client extends AbstractEvent
             $data
         );
     }
-
-    /**
-     * @param \Magento\Customer\Model\Customer|\Magento\Customer\Model\Data\Customer $customer
-     * @param string|null $uuid
-     */
-    public function sendCreateClientAndMarkAsSent($customer, ?string $uuid = null)
-    {
-        try {
-            list ($body, $statusCode, $headers) = $this->sendCreateClient(
-                $this->prepareCreateClientRequest($customer, $uuid),
-                $customer->getStoreId()
-            );
-
-            if ($statusCode == 202) {
-                $this->markAsSent([$customer->getId()], $customer->getStoreId());
-            }
-        } catch (\Exception $e) {
-            $this->logger->error('Client update failed', ['exception' => $e]);
-        }
-    }
 }

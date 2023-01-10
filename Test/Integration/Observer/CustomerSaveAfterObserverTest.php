@@ -3,7 +3,9 @@
 namespace Synerise\Integration\Test\Integration\Observer;
 
 
+use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\Event\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Update\Client;
@@ -12,49 +14,37 @@ use Synerise\Integration\Observer\CustomerSaveAfter;
 class CustomerSaveAfterObserverTest extends \PHPUnit\Framework\TestCase
 {
     const FIXTURE_CUSTOMER_ID = 1;
+
     /**
-     * @var \Magento\Framework\Event\Config $frameworkEvent
+     * @var Config $frameworkEvent
      */
     private $eventConfig;
 
     /**
-     * @var \Magento\Customer\Api\AddressRepositoryInterface
+     * @var AddressRepositoryInterface
      */
     private $addressRepository;
 
     /**
      * @var CustomerRepositoryInterface
      */
-    protected $customerRepository;
+    private $customerRepository;
 
     /**
-     * @var \Synerise\Integration\Helper\Event\Client
-     */
-    private $clientAction;
-
-    /**
-     * @var \Synerise\Integration\Helper\Update\Client
+     * @var Client
      */
     private $clientUpdate;
 
     protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
-        $this->eventConfig = $this->objectManager->create(\Magento\Framework\Event\Config::class);
-        $this->addressRepository = $this->objectManager->create(
-            \Magento\Customer\Api\AddressRepositoryInterface::class
-        );
-        $this->customerRepository = $this->objectManager->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
+        $this->eventConfig = $this->objectManager->create(Config::class);
+        $this->addressRepository = $this->objectManager->create(AddressRepositoryInterface::class);
+        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
 
-        $this->clientAction = $this->objectManager->get(\Synerise\Integration\Helper\Event\Client::class);
-        $this->clientUpdate = $this->objectManager->get(\Synerise\Integration\Helper\Update\Client::class);
+        $this->clientUpdate = $this->objectManager->get(Client::class);
     }
 
-    /**
-     * @return void
-     */
     public function testObserverRegistration()
     {
         $observers = $this->eventConfig->getObservers('customer_save_after');
@@ -95,7 +85,6 @@ class CustomerSaveAfterObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($defaultAddress->getTelephone(), $request->getPhone());
         $this->assertEquals($defaultAddress->getCity(), $request->getCity());
         $this->assertEquals(implode(" ", $defaultAddress->getStreet()), $request->getAddress());
-        $this->assertEquals($defaultAddress->getCity(), $request->getCity());
         $this->assertEquals($defaultAddress->getPostcode(), $request->getZipCode());
         $this->assertEquals($defaultAddress->getRegion()->getRegion(), $request->getProvince());
         $this->assertEquals($defaultAddress->getCountryId(), $request->getCountryCode());
