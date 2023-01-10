@@ -41,6 +41,10 @@ class CartRemoveProduct implements ObserverInterface
             /** @var Quote\Item $quoteItem */
             $quoteItem = $observer->getQuoteItem();
 
+            if (!$this->trackingHelper->getClientUuid() && !$quoteItem->getQuote()->getCustomerEmail()) {
+                return;
+            }
+
             $product = $quoteItem->getProduct();
             if ($product->getParentProductId()) {
                 return;

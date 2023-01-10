@@ -45,6 +45,10 @@ class CartAddProduct implements ObserverInterface
                 return;
             }
 
+            if (!$this->trackingHelper->getClientUuid() && !$quoteItem->getQuote()->getCustomerEmail()) {
+                return;
+            }
+
             $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
             $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
 

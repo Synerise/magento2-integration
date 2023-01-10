@@ -59,7 +59,10 @@ class OrderPlace implements ObserverInterface
             $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
 
             $createatransactionRequest = new CreateatransactionRequest(
-                $this->orderHelper->preapreOrderParams($order, $this->trackingHelper->getClientUuid())
+                $this->orderHelper->preapreOrderParams(
+                    $order,
+                    $this->trackingHelper->generateUuidByEmail($order->getCustomerEmail())
+                )
             );
 
             $this->apiHelper->getDefaultApiInstance($order->getStoreId())

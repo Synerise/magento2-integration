@@ -34,6 +34,10 @@ class CartQtyUpdate implements ObserverInterface
 
         /** @var \Magento\Quote\Model\Quote $quote */
         $quote = $observer->getCart()->getQuote();
+        if (!$this->trackingHelper->getClientUuid() && !$quote->getCustomerEmail()) {
+            return;
+        }
+
         $quote->collectTotals();
 
         if (!$this->trackingHelper->hasItemDataChanges($quote)) {

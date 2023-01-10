@@ -68,7 +68,7 @@ class CustomerLogin implements ObserverInterface
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $this->customerHelper->prepareIdentityParams(
                     $customer,
-                    $this->trackingHelper->getClientUuid()
+                    $this->trackingHelper->generateUuidByEmail($customer->getEmail())
                 ),
                 'params' => [
                     'source' => $this->trackingHelper->getSource(),
