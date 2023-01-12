@@ -237,6 +237,12 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->cookieManager->getCookie(self::COOKIE_CLIENT_UUID);
     }
 
+    public function getStoreBaseUrl($storeId = null)
+    {
+        $store = $this->storeManager->getStore($storeId);
+        return $store ? $store->getBaseUrl() : null;
+    }
+
     public function getCookieDomain()
     {
         if (!$this->cookieDomain) {
@@ -252,6 +258,11 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $this->cookieDomain;
+    }
+
+    public function getStoreId()
+    {
+        return $this->storeManager->getStore()->getId();
     }
 
     public function setClientUuidAndResetCookie($uuid)
@@ -337,28 +348,15 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function prepareClientDataFromQuote($quote)
     {
-        $data = [];
+        $data['uuid'] = $this->getClientUuid();
 
-        $uuid = $this->getClientUuid();
-        if ($uuid) {
-            $data['uuid'] = $uuid;
-        }
-
-        if ($quote && !$quote->getCustomerIsGuest()) {
-            if ($quote->getCustomerEmail()) {
-                $data['email'] = $quote->getCustomerEmail();
-                if (!isset($data['uuid'])) {
-                    $data['uuid'] = $this->generateUuidByEmail($data['email']);
-                }
-            }
+        if ($quote && $quote->getCustomerEmail()) {
+            $data['email'] = $quote->getCustomerEmail();
+            $data['uuid'] = $this->generateUuidByEmail($data['email']);
 
             if ($quote->getCustomerId()) {
                 $data['custom_id'] = $quote->getCustomerId();
             }
-        }
-
-        if (!$data) {
-            throw new ApiException('Missing client identity data');
         }
 
         return new Client($data);
@@ -429,6 +427,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
                 'label' => 'CartStatus',
                 'client' => $this->prepareClientDataFromQuote($quote),
                 'params' => [
+                    'source' => $this->getSource(),
+                    'applicationName' => $this->getApplicationName(),
+                    'storeId' => $this->getStoreId(),
+                    'storeUrl' => $this->getStoreBaseUrl(),
                     'products' => $products,
                     'totalAmount' => $totalAmount,
                     'totalQuantity' => $totalQuantity

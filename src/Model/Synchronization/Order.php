@@ -65,8 +65,11 @@ class Order extends AbstractSynchronization
     {
         $collection->addAttributeToSelect($this->orderHelper->getAttributesToSelect());
 
-        $this->orderHelper->addOrdersBatch($collection, $storeId);
-        $this->orderHelper->markItemsAsSent($collection->getAllIds());
+        $ids = $this->orderHelper->addOrdersBatch($collection, $storeId);
+        if($ids) {
+            $this->orderHelper->markItemsAsSent($ids);
+        }
+
     }
 
     public function markAllAsUnsent()

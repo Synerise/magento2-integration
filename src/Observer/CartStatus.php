@@ -35,6 +35,10 @@ class CartStatus implements ObserverInterface
         /** @var \Magento\Quote\Model\Quote $quote */
         $quote = $observer->getQuote();
 
+        if (!$this->trackingHelper->getClientUuid() && !$quote->getCustomerEmail()) {
+            return;
+        }
+
         if ($this->trackingHelper->hasItemDataChanges($quote)) {
             $this->trackingHelper->sendCartStatusEvent(
                 $this->catalogHelper->prepareProductsFromQuote($quote),

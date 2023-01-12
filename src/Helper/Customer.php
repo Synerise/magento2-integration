@@ -111,8 +111,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $ids[] = $customer->getEntityId();
 
             $params = $this->preapreAdditionalParams($customer, $storeId);
-            $params['email'] = $customer->getEmail();
-            $params['custom_id'] = $customer->getId();
 
             $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($params);
         }
@@ -163,20 +161,12 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addOrUpdateClient($customer, $prevUuid = null)
     {
-        $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
-
-        if ($prevUuid && !$this->trackingHelper->isAdminStore() && $prevUuid != $emailUuid) {
-            $this->trackingHelper->setClientUuidAndResetCookie((string) $emailUuid);
-        }
-        $params = $this->preapreAdditionalParams($customer);
-
-        $params['email'] = $customer->getEmail();
-        $params['custom_id'] = $customer->getId();
-        $params['uuid'] = $emailUuid;
-        $params['first_name'] = $customer->getFirstname();
-        $params['last_name'] = $customer->getLastname();
-
         try {
+            $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
+
+            $params = $this->preapreAdditionalParams($customer);
+            $params['uuid'] = $emailUuid;
+
             list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($customer->getStoreId())
                 ->batchAddOrUpdateClientsWithHttpInfo(
                     'application/json',
@@ -254,30 +244,22 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function preapreAdditionalParams($customer, $storeId = null)
     {
-        return $this->mapAttributesToParams($customer->getData(), $storeId, true);
-    }
+        $params = [
+            'custom_id' => $customer->getId(),
+            'email' => $customer->getEmail(),
+            'first_name' => $customer->getFirstname(),
+            'last_name' => $customer->getLastname()
+        ];
 
-    public function preapreParamsForEvent($customer)
-    {
         if (is_a($customer, 'Magento\Customer\Model\Data\Customer')) {
             /** @var \Magento\Customer\Model\Data\Customer $customer */
             $data = $customer->__toArray();
         } else {
             /** @var \Magento\Customer\Model\Customer\Interceptor $customer */
             $data = (array) $customer->getData();
+
         }
 
-        $params = $this->mapAttributesToParams($data);
-        $params['applicationName'] = $this->trackingHelper->getApplicationName();
-        $params['firstname'] = $customer->getFirstname();
-        $params['lastname'] = $customer->getLastname();
-
-        return $params;
-    }
-
-    protected function mapAttributesToParams($data, $storeId = null, $includeAttributesNode = false)
-    {
-        $params = [];
         $selectedAttributes = $this->getAttributes($storeId);
         foreach ($selectedAttributes as $attribute) {
             if (!isset($data[$attribute])) {
@@ -299,18 +281,10 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     }
                     break;
                 case 'dob':
-                    if ($includeAttributesNode) {
                         $params['birth_date'] = !empty($data['dob']) ? substr($data['dob'], 0, 10) : null;
-                    } else {
-                        $params['birthdate'] = !empty($data['dob']) ? substr($data['dob'], 0, 10) : null;
-                    }
                     break;
                 case 'gender':
-                    if ($includeAttributesNode) {
                         $params['sex'] = self::UPDATE_GENDER[$data['gender']] ?? null;
-                    } else {
-                        $params['sex'] = self::EVENT_GENDER[$data['gender']] ?? null;
-                    }
                     break;
                 case 'display_name':
                 case 'avatar_url':
@@ -318,11 +292,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
                     break;
                 default:
                     if (!empty($data[$attribute])) {
-                        if ($includeAttributesNode) {
-                            $params['attributes'][$attribute] = $data[$attribute];
-                        } else {
-                            $params[$attribute] = $data[$attribute];
-                        }
+                        $params['attributes'][$attribute] = $data[$attribute];
                     }
             }
         }

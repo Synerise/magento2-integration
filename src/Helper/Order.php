@@ -89,23 +89,25 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * @param $collection
+     * @param $storeId
+     * @return array
      * @throws ApiException
      */
     public function addOrdersBatch($collection, $storeId)
     {
         if (!$collection->getSize()) {
-            return;
+            return[];
         }
 
-//        $ids = [];
+        $ids = [];
         $createatransaction_request = [];
 
         if (!$collection->count()) {
-            return;
+            return[];
         }
 
         foreach ($collection as $order) {
-//            $ids[] = $order->getEntityId();
+            $ids[] = $order->getEntityId();
 
             $email = $order->getCustomerEmail();
             $uuid = $email ? $this->trackingHelper->generateUuidByEmail($email): null;
@@ -119,6 +121,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         if (!empty($createatransaction_request)) {
             $this->sendOrdersToSynerise($createatransaction_request, $storeId);
         }
+        return $ids;
     }
 
     /**
@@ -173,7 +176,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 return [];
             }
 
-            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode());
+            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode(), $order->getStoreId());
         }
 
         $params = [
@@ -188,7 +191,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "shipping" => [
                     'method' => $order->getShippingMethod(),
                     'amount' => $order->getShippingAmount()
-                ]
+                ],
+                'applicationName' => $this->trackingHelper->getApplicationName(),
+                'storeId' => $order->getStoreId(),
+                'storeUrl' => $this->trackingHelper->getStoreBaseUrl($order->getStoreId())
             ],
             'order_id' => $order->getRealOrderId(),
             "payment_info" => [
@@ -256,7 +262,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param string $currency
      * @return array
      */
-    public function prepareProductParamsFromOrderItem($item, $currency)
+    public function prepareProductParamsFromOrderItem($item, $currency, $storeId = null)
     {
         $product = $item->getProduct();
 
@@ -284,6 +290,11 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "finalUnitPrice" => $finalUnitPrice,
             "quantity" => $item->getQtyOrdered()
         ];
+
+        if ($storeId) {
+            $params["storeId"] = $storeId;
+            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl($storeId);
+        }
 
         $itemRules = $this->prepareRulesList((string) $item->getAppliedRuleIds());
         if(!empty($itemRules)){

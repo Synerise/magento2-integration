@@ -58,6 +58,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $parentData = [];
 
+    private $storeUrls = [];
+
     /**
      * @var \Magento\Framework\View\Asset\ContextInterface
      */
@@ -182,6 +184,14 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         return 'store-'.$storeId;
     }
 
+    public function getStoreBaseUrl($storeId) {
+        if(!isset($this->storeUrls[$storeId])) {
+            $store = $this->storeManager->getStore($storeId);
+            $this->storeUrls[ $storeId] = $store ? $store->getBaseUrl() : null;
+        }
+        return $this->storeUrls[$storeId];
+    }
+
     public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId)
     {
         if (!$collection->getSize()) {
@@ -258,6 +268,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
                 $value[$attributeCode] = $productValue;
             }
         }
+
+        $value['storeId'] = $product->getStoreId();
+        $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 
         $categoryIds = $product->getCategoryIds();
         if ($categoryIds) {

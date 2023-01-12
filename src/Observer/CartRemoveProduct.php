@@ -41,6 +41,10 @@ class CartRemoveProduct implements ObserverInterface
             /** @var Quote\Item $quoteItem */
             $quoteItem = $observer->getQuoteItem();
 
+            if (!$this->trackingHelper->getClientUuid() && !$quoteItem->getQuote()->getCustomerEmail()) {
+                return;
+            }
+
             $product = $quoteItem->getProduct();
             if ($product->getParentProductId()) {
                 return;
@@ -51,6 +55,8 @@ class CartRemoveProduct implements ObserverInterface
 
             $params["source"] = $this->trackingHelper->getSource();
             $params["applicationName"] = $this->trackingHelper->getApplicationName();
+            $params["storeId"] = $this->trackingHelper->getStoreId();
+            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl();
 
             $eventClientAction = new ClientaddedproducttocartRequest([
                 'time' => $this->trackingHelper->getCurrentTime(),

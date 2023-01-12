@@ -61,15 +61,21 @@ class CustomerLogin implements ObserverInterface
             $customer = $observer->getEvent()->getCustomer();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
+            $this->customerHelper->addOrUpdateClient($customer);
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $this->customerHelper->prepareIdentityParams(
                     $customer,
-                    $this->trackingHelper->getClientUuid()
+                    $this->trackingHelper->generateUuidByEmail($customer->getEmail())
                 ),
-                'params' => $this->customerHelper->preapreParamsForEvent($customer)
+                'params' => [
+                    'source' => $this->trackingHelper->getSource(),
+                    'applicationName' => $this->trackingHelper->getApplicationName(),
+                    'storeId' => $this->trackingHelper->getStoreId(),
+                    'storeUrl' => $this->trackingHelper->getStoreBaseUrl()
+                ]
             ]);
 
             $this->apiHelper->getDefaultApiInstance()
