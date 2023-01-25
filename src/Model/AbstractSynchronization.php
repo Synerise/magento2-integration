@@ -6,6 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Data\Collection;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Model\Cron\Status;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
@@ -39,7 +40,7 @@ abstract class AbstractSynchronization
     /**
      * @var string[]
      */
-    protected $enabledModels;
+    protected $enabledModels = [];
 
     /**
      * @var QueueResourceModel
@@ -62,9 +63,12 @@ abstract class AbstractSynchronization
     }
 
     /**
-     * @throws \Synerise\ApiClient\ApiException
+     * @param $collection
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @throws ApiException
      */
-    abstract public function sendItems($collection, $storeId, $websiteId = null);
+    abstract public function sendItems($collection, int $storeId, ?int $websiteId = null): ?array;
 
     /**
      * @param \Magento\Framework\Data\Collection\AbstractDb $collection
@@ -118,7 +122,12 @@ abstract class AbstractSynchronization
             ->setPageSize($this->getPageSize());
     }
 
-    public function getCollectionFilteredByEntityIds($storeId, $entityIds)
+    /**
+     * @param int $storeId
+     * @param string[] $entityIds
+     * @return mixed
+     */
+    public function getCollectionFilteredByEntityIds(int $storeId, array $entityIds)
     {
         return $this->createCollectionWithScope($storeId)
             ->addFieldToFilter(
@@ -152,9 +161,14 @@ abstract class AbstractSynchronization
         );
     }
 
-    public function getEnabledModels()
+    /**
+     * Get an array of models enabled for synchronization
+     *
+     * @return string[]
+     */
+    public function getEnabledModels(): array
     {
-        if (!isset($this->enabledModels)) {
+        if (empty($this->enabledModels)) {
             $enabledModels = $this->scopeConfig->getValue(
                 static::XML_PATH_SYNCHRONIZATION_MODELS
             );
@@ -165,10 +179,14 @@ abstract class AbstractSynchronization
         return $this->enabledModels;
     }
 
-    public function isEnabled()
+    /**
+     * Check if model is enabled for synchronization.
+     *
+     * @return bool
+     */
+    public function isEnabled(): bool
     {
-        $enabledModels = $this->getEnabledModels();
-        return in_array(static::MODEL, $enabledModels);
+        return in_array(static::MODEL, $this->getEnabledModels());
     }
 
     public function getEntityIdField()

@@ -4,8 +4,11 @@ namespace Synerise\Integration\Model\Synchronization;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\ValidatorException;
+use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Update\ClientAgreement;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
@@ -62,15 +65,17 @@ class Subscriber extends AbstractSynchronization
     }
 
     /**
-     * @param \Magento\Newsletter\Model\ResourceModel\Subscriber\Collection $collection
+     * @param Collection $collection
      * @param int $storeId
      * @param int|null $websiteId
-     * @throws \Synerise\ApiClient\ApiException
+     * @return array|null
+     * @throws ValidatorException
+     * @throws ApiException
      */
-    public function sendItems($collection, $storeId, $websiteId = null)
+    public function sendItems($collection, int $storeId, ?int $websiteId = null): ?array
     {
         if (!$collection->count()) {
-            return;
+            return null;
         }
 
         $requests = [];
@@ -78,8 +83,10 @@ class Subscriber extends AbstractSynchronization
             $requests[] = $this->clientAgreementHelper->prepareCreateClientRequest($subscriber);
         }
 
-        $this->clientAgreementHelper->sendBatchAddOrUpdateClients($requests, $storeId);
+        $response = $this->clientAgreementHelper->sendBatchAddOrUpdateClients($requests, $storeId);
         $this->clientAgreementHelper->markAsSent($collection->getAllIds());
+
+        return $response;
     }
 
     public function markAllAsUnsent()

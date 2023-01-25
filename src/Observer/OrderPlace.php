@@ -7,7 +7,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Identity;
-use Synerise\Integration\Helper\Update\Order;
+use Synerise\Integration\Helper\Update\Transaction;
 
 class OrderPlace  extends AbstractObserver implements ObserverInterface
 {
@@ -19,18 +19,18 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
     protected $identityHelper;
 
     /**
-     * @var Order
+     * @var Transaction
      */
-    protected $orderHelper;
+    protected $transactionHelper;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         Identity $identityHelper,
-        Order $orderHelper
+        Transaction $transactionHelper
     ) {
         $this->identityHelper = $identityHelper;
-        $this->orderHelper = $orderHelper;
+        $this->transactionHelper = $transactionHelper;
 
         parent::__construct($scopeConfig, $logger);
     }
@@ -54,19 +54,19 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
                 );
             }
 
-            $this->orderHelper->sendCreateTransaction(
-                $this->orderHelper->prepareCreateTransactionRequest(
+            $this->transactionHelper->sendCreateTransaction(
+                $this->transactionHelper->prepareCreateTransactionRequest(
                     $order,
                     $this->identityHelper->getClientUuid()
                 ),
                 $order->getStoreId()
             );
 
-            $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
+            $this->transactionHelper->markAsSent([$order->getEntityId()]);
 
             if (!$this->identityHelper->isAdminStore() && $order->getCustomerIsGuest()) {
-                $this->orderHelper->sendCreateClient(
-                    $this->orderHelper->prepareCreateClientRequest(
+                $this->transactionHelper->sendCreateClient(
+                    $this->transactionHelper->prepareCreateClientRequest(
                         $order,
                         $this->identityHelper->getClientUuid()
                     ),

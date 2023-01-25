@@ -85,21 +85,29 @@ class Customer extends AbstractSynchronization
         return $collection;
     }
 
-    public function sendItems($collection, $storeId, $websiteId = null)
+    /**
+     * @param $collection
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return array|null
+     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
+     */
+    public function sendItems($collection, int $storeId, ?int $websiteId = null): ?array
     {
         $collection->addAttributeToSelect(
             $this->clientHelper->getAttributesToSelect($storeId)
         );
 
         if (!$collection->getSize()) {
-            return;
+            return null;
         }
 
         $ids = [];
         $createAClientInCrmRequests = [];
 
         if (!$collection->count()) {
-            return;
+            return null;
         }
 
         foreach ($collection as $customer) {
@@ -113,9 +121,12 @@ class Customer extends AbstractSynchronization
         }
 
         if ($ids) {
-            $this->clientHelper->sendBatchAddOrUpdateClients($createAClientInCrmRequests, $storeId);
+            $response = $this->clientHelper->sendBatchAddOrUpdateClients($createAClientInCrmRequests, $storeId);
             $this->clientHelper->markAsSent($ids, $storeId);
+            return $response;
         }
+
+        return null;
     }
 
     public function markAllAsUnsent()

@@ -8,6 +8,7 @@ use Magento\Review\Model\Rating\Option\VoteFactory;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\DefaultApiFactory;
 use Synerise\Integration\Helper\Data\Context as ContextHelper;
 use Synerise\Integration\Helper\Data\Product;
 
@@ -27,12 +28,13 @@ class Review extends AbstractEvent
         ProductRepositoryInterface $productRepository,
         VoteFactory $voteFactory,
         Api $apiHelper,
-        ContextHelper $contextHelper
+        ContextHelper $contextHelper,
+        DefaultApiFactory $defaultApiFactory
     ) {
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
 
-        parent::__construct($apiHelper, $contextHelper);
+        parent::__construct($apiHelper, $contextHelper, $defaultApiFactory);
     }
 
     public function prepareProductReviewRequest($event, \Magento\Review\Model\Review $review, $storeId, $uuid): CustomeventRequest {

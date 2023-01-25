@@ -10,16 +10,19 @@ use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
+use Synerise\Integration\Helper\AbstractDefaultApiAction;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\DefaultApiFactory;
 use Synerise\Integration\Helper\Data\Context as ContextHelper;
 use Synerise\Integration\Helper\Identity;
 use Synerise\Integration\Helper\Event\AbstractEvent;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 
-class Client extends AbstractEvent
+class Client extends AbstractDefaultApiAction
 {
     const UPDATE_GENDER = [
         1 => InBodyClientSex::MALE,
@@ -54,11 +57,6 @@ class Client extends AbstractEvent
      */
     protected $addressRepository;
 
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
@@ -66,16 +64,15 @@ class Client extends AbstractEvent
         DateTime $dateTime,
         AddressRepositoryInterface $addressRepository,
         Api $apiHelper,
-        ContextHelper $contextHelper
+        DefaultApiFactory $defaultApiFactory
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
         $this->logger = $logger;
         $this->dateTime = $dateTime;
         $this->addressRepository = $addressRepository;
-        $this->apiHelper = $apiHelper;
 
-        parent::__construct($apiHelper, $contextHelper);
+        parent::__construct($apiHelper, $defaultApiFactory);
     }
 
     /**
@@ -87,7 +84,7 @@ class Client extends AbstractEvent
      */
     public function sendBatchAddOrUpdateClients(array $createAClientInCrmRequests, int $storeId = null)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -97,6 +94,18 @@ class Client extends AbstractEvent
         }
 
         return [$body, $statusCode, $headers];
+    }
+
+    /**
+     * @param CreateaClientinCRMRequest $createAClientInCrmRequest
+     * @param int|null $storeId
+     * @return array
+     * @throws ApiException
+     */
+    public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, ?int $storeId = null): array
+    {
+        return $this->getDefaultApiInstance($storeId)
+            ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
     }
 
     /**

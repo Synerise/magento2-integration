@@ -2,12 +2,13 @@
 
 namespace Synerise\Integration\Helper\Update;
 
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Sales\Model\Order as OrderModel;
+use Magento\Sales\Model\Order;
+use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
@@ -16,11 +17,12 @@ use Synerise\ApiClient\Model\CreateatransactionRequestDiscountAmount;
 use Synerise\ApiClient\Model\CreateatransactionRequestRevenue;
 use Synerise\ApiClient\Model\CreateatransactionRequestValue;
 use Synerise\ApiClient\Model\PaymentInfo;
+use Synerise\Integration\Helper\AbstractDefaultApiAction;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Data\Product;
 use Synerise\Integration\Helper\Data\Context as ContextHelper;
 
-class Order extends \Magento\Framework\App\Helper\AbstractHelper
+class Transaction extends AbstractDefaultApiAction
 {
     /**
      * @var ResourceConnection
@@ -43,10 +45,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     protected $searchCriteriaBuilder;
 
     /**
-     * @var Api
+     * @var LoggerInterface
      */
-    protected $apiHelper;
-
+    protected $logger;
+    
     /**
      * @var ContextHelper
      */
@@ -59,40 +61,46 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function __construct(
         ResourceConnection $resource,
-        Context $context,
         DateTime $dateTime,
         RuleRepositoryInterface $ruleRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
-        Api $apiHelper,
+        LoggerInterface $logger,
         ContextHelper $contextHelper,
-        Product $productHelper
+        Product $productHelper,
+        Api $apiHelper,
+        Api\DefaultApiFactory $defaultApiFactory
     ) {
         $this->resource = $resource;
         $this->dateTime = $dateTime;
         $this->ruleRepository = $ruleRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->contextHelper = $contextHelper;
         $this->productHelper = $productHelper;
 
-        parent::__construct($context);
+        parent::__construct($apiHelper, $defaultApiFactory);
     }
 
     /**
-     * @param $createTransactionRequest
-     * @param $ids
+     * @param array $createTransactionRequest
+     * @param int $storeId
+     * @return array
      * @throws ApiException
+     * @throws ValidatorException
      */
-    public function sendBatchAddOrUpdateTransactions($createTransactionRequest, $storeId)
+    public function sendBatchAddOrUpdateTransactions(array $createTransactionRequest, int $storeId): array
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
             ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createTransactionRequest);
 
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
+            $this->logger->debug('Request accepted with errors', ['response' => $body]);
         }
+
+        return [$body, $statusCode, $headers];
     }
 
     /**
@@ -103,13 +111,13 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function sendCreateTransaction($createTransactionRequest, $storeId = null)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
             ->createATransactionWithHttpInfo('4.4', $createTransactionRequest);
 
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
+            $this->logger->debug('Request accepted with errors', ['response' => $body]);
         }
 
         return [$body, $statusCode, $headers];
@@ -124,7 +132,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, $storeId = null): array
     {
-        return $this->apiHelper->getDefaultApiInstance($storeId)
+        return $this->getDefaultApiInstance($storeId)
             ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
     }
 
@@ -148,12 +156,12 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * @param OrderModel $order
+     * @param Order $order
      * @param $uuid
      * @return CreateatransactionRequest|null
      * @throws \Exception
      */
-    public function prepareCreateTransactionRequest(OrderModel $order, $uuid = null): ?CreateatransactionRequest
+    public function prepareCreateTransactionRequest(Order $order, $uuid = null): ?CreateatransactionRequest
     {
         $products = [];
         foreach ($order->getAllItems() as $item) {
@@ -162,7 +170,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             }
 
             if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
-                $this->_logger->debug(
+                $this->logger->debug(
                     sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
                 );
 
@@ -242,7 +250,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $ids
      * @return void
      */
-    public function markItemsAsSent($ids)
+    public function markAsSent($ids)
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
@@ -346,7 +354,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 $rules[] = $rule->getName();
             }
         } catch (\Exception $e){
-            $this->_logger->error($e->getMessage(), [$e]);
+            $this->logger->error($e->getMessage(), [$e]);
         }
 
         return $rules;

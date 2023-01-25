@@ -3,22 +3,17 @@
 namespace Synerise\Integration\Helper\Event;
 
 use Exception;
-use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\Client;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
+use Synerise\Integration\Helper\AbstractDefaultApiAction;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\DefaultApiFactory;
 use Synerise\Integration\Helper\Data\Context as ContextHelper;
 use Synerise\Integration\Model\Config\Source\EventTracking\Events;
 
-class AbstractEvent
+abstract class AbstractEvent extends AbstractDefaultApiAction
 {
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
     /**
      * @var ContextHelper
      */
@@ -26,10 +21,12 @@ class AbstractEvent
 
     public function __construct(
         Api $apiHelper,
-        ContextHelper $contextHelper
+        ContextHelper $contextHelper,
+        DefaultApiFactory $defaultApiFactory
     ) {
-        $this->apiHelper = $apiHelper;
         $this->contextHelper = $contextHelper;
+
+        parent::__construct($apiHelper, $defaultApiFactory);
     }
 
     /**
@@ -71,26 +68,13 @@ class AbstractEvent
 
     /**
      * @param CustomeventRequest $request
+     * @param int|null $storeId
      * @return array of null, HTTP status code, HTTP response headers (array of strings)
      * @throws ApiException
-     * @throws ValidatorException
      */
-    public function sendCustomEvent(CustomeventRequest $request): array
+    public function sendCustomEvent(CustomeventRequest $request, ?int $storeId = null): array
     {
-        return $this->apiHelper->getDefaultApiInstance()
+        return $this->getDefaultApiInstance($storeId)
             ->customEventWithHttpInfo('4.4', $request);
-    }
-
-    /**
-     * @param CreateaClientinCRMRequest $createAClientInCrmRequest
-     * @param $storeId
-     * @return array
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, $storeId = null): array
-    {
-        return $this->apiHelper->getDefaultApiInstance($storeId)
-            ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
     }
 }

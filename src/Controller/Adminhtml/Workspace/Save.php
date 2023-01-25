@@ -3,8 +3,13 @@
 namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
+use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\ApiKeyFactory;
 use Synerise\Integration\Model\Workspace;
 
 class Save extends \Magento\Backend\App\Action
@@ -15,14 +20,28 @@ class Save extends \Magento\Backend\App\Action
     const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
-     * @param Action\Context $context
+     * @var Api
+     */
+    protected $apiHelper;
+
+    /**
+     * @var Api\ApiKeyFactory
+     */
+    protected $apiKeyFactory;
+
+    /**
+     * @param Context $context
+     * @param Api $apiHelper
+     * @param ApiKeyFactory $apiKeyFactory
      */
     public function __construct
     (
         Action\Context $context,
-        \Synerise\Integration\Helper\Api $apiHelper
+        Api $apiHelper,
+        Api\ApiKeyFactory $apiKeyFactory
     ) {
         $this->apiHelper = $apiHelper;
+        $this->apiKeyFactory = $apiKeyFactory;
 
         parent::__construct($context);
     }
@@ -95,17 +114,13 @@ class Save extends \Magento\Backend\App\Action
     }
 
     /**
-     * @param $apiKey
-     * @param string $scope
-     * @param null $scopeId
-     * @return \Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
+     * @param string $apiKey
+     * @return ApiKeyPermissionCheckResponse
+     * @throws ApiException
      */
-    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);
-
-        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+    protected function checkPermissions(string $apiKey): ApiKeyPermissionCheckResponse
+    {
+        return $this->apiKeyFactory->create($this->apiHelper->getApiConfigByApiKey($apiKey))
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 }

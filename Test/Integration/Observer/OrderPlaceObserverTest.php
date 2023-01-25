@@ -9,7 +9,7 @@ use Magento\Quote\Model\QuoteFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Data\Context;
-use Synerise\Integration\Helper\Update\Order as OrderHelper;
+use Synerise\Integration\Helper\Update\Transaction as OrderHelper;
 use Synerise\Integration\Helper\Identity;
 use Synerise\Integration\Observer\CartAddProduct;
 use Synerise\Integration\Observer\OrderPlace;

@@ -41,6 +41,11 @@ class MassUpdate extends Action implements HttpPostActionInterface
     protected $apiHelper;
 
     /**
+     * @var Api\ApiKeyFactory
+     */
+    protected $apiKeyFactory;
+
+    /**
      * Constructor
      *
      * @param Context $context
@@ -52,11 +57,13 @@ class MassUpdate extends Action implements HttpPostActionInterface
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        Api $apiHelper
+        Api $apiHelper,
+        Api\ApiKeyFactory $apiKeyFactory
     ) {
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
         $this->apiHelper = $apiHelper;
+        $this->apiKeyFactory = $apiKeyFactory;
 
         parent::__construct($context);
     }
@@ -118,16 +125,12 @@ class MassUpdate extends Action implements HttpPostActionInterface
 
     /**
      * @param string $apiKey
-     * @param string $scope
-     * @param null $scopeId
      * @return ApiKeyPermissionCheckResponse
-     * @throws ValidatorException
-     * @throws ApiException
+     * @throws ApiException|ValidatorException
      */
-    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);
-
-        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+    protected function checkPermissions(string $apiKey): ApiKeyPermissionCheckResponse
+    {
+        return $this->apiKeyFactory->create($this->apiHelper->getApiConfigByApiKey($apiKey))
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 }

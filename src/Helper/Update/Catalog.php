@@ -15,6 +15,8 @@ use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\BagsApiFactory;
+use Synerise\Integration\Helper\Api\ItemsApiFactory;
 
 class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -30,7 +32,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     protected $cacheManager;
     protected $action;
     protected $dateTime;
-    protected $storeToWebsite = [];
 
     /**
      * @var StoreManagerInterface
@@ -76,6 +77,16 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private $connection;
 
+    /**
+     * @var BagsApiFactory
+     */
+    protected $bagsApiFactory;
+
+    /**
+     * @var ItemsApiFactory
+     */
+    protected $itemsApiFactory;
+
     public function __construct(
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Catalog\Model\ResourceModel\Product\Action $action,
@@ -92,7 +103,9 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         ResourceConnection $resource,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
-        Api $apiHelper
+        Api $apiHelper,
+        BagsApiFactory $bagsApiFactory,
+        ItemsApiFactory $itemsApiFactory
     ) {
         $this->stockRegistry = $stockRegistry;
         $this->storeManager = $storeManager;
@@ -107,6 +120,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->assetContext = $assetContext;
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
+        $this->bagsApiFactory = $bagsApiFactory;
+        $this->itemsApiFactory = $itemsApiFactory;
         $this->connection = $resource->getConnection();
         $this->isProductSalable = $isProductSalable;
 
@@ -139,7 +154,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             'name' => $this->getCatalogNameByStoreId($storeId)
         ]);
 
-        $response = $this->apiHelper->getBagsApiInstance($storeId)
+        $response = $this->bagsApiFactory->create($this->apiHelper->getApiConfigByScope($storeId))
             ->addBagWithHttpInfo($addBagRequest);
         $catalogId = $response[0]->getData()->getId();
 
@@ -167,7 +182,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function findExistingCatalogByStoreId($storeId)
     {
         $catalogName = $this->getCatalogNameByStoreId($storeId);
-        $getBagsResponse = $this->apiHelper->getBagsApiInstance($storeId)
+        $getBagsResponse = $this->bagsApiFactory->create($this->apiHelper->getApiConfigByScope($storeId))
             ->getBags($catalogName);
 
         $existingBags = $getBagsResponse->getData();
@@ -193,10 +208,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->storeUrls[$storeId];
     }
 
-    public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId)
+    public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId): ?array
     {
         if (!$collection->getSize()) {
-            return;
+            return null;
         }
 
         if(!$websiteId) {
@@ -212,8 +227,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $addItemRequest[] = $this->prepareItemRequest($product, $attributes, $websiteId);
         }
 
-        $this->sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId);
-        $this->markItemsAsSent($ids, $storeId);
+        $response = $this->sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId);
+        $this->markAsSent($ids, $storeId);
+
+        return $response;
     }
 
     /**
@@ -233,7 +250,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
      * @return void
      * @param int $storeId
      */
-    protected function markItemsAsSent(array $ids, $storeId = 0)
+    protected function markAsSent(array $ids, $storeId = 0)
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
@@ -375,20 +392,23 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $catalogId = $this->getOrAddCatalog($storeId);
 
         try {
-            $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
+            $response = $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
         } catch (\Exception $e) {
             if ($e->getCode() === 404) {
                 $catalogId = $this->addCatalog($storeId);
-                $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
+                $response = $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
             } else {
                 throw $e;
             }
         }
+
+        return $response;
     }
 
-    public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId)
+    public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId): array
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId)
+        $itemsApi = $this->itemsApiFactory->create($this->apiHelper->getApiConfigByScope($storeId));
+        list ($body, $statusCode, $headers) = $itemsApi
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -396,6 +416,8 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         } elseif ($statusCode == 207) {
             $this->_logger->debug('Request accepted with errors', ['response' => $body]);
         }
+
+        return [$body, $statusCode, $headers];
     }
 
     public function isAttributeLabelEnabled()

@@ -2,18 +2,18 @@
 
 namespace Synerise\Integration\Helper\Update;
 
-use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Newsletter\Model\Subscriber;
+use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
+use Synerise\Integration\Helper\AbstractDefaultApiAction;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Identity;
 
 
-class ClientAgreement extends \Magento\Framework\App\Helper\AbstractHelper
+class ClientAgreement extends AbstractDefaultApiAction
 {
 
     /**
@@ -27,21 +27,22 @@ class ClientAgreement extends \Magento\Framework\App\Helper\AbstractHelper
     protected $dateTime;
 
     /**
-     * @var Api
+     * @var LoggerInterface
      */
-    protected $apiHelper;
+    protected $logger;
 
     public function __construct(
-        Context $context,
         ResourceConnection $resource,
         DateTime $dateTime,
-        Api $apiHelper
+        LoggerInterface $logger,
+        Api $apiHelper,
+        Api\DefaultApiFactory $defaultApiFactory
     ) {
         $this->connection = $resource->getConnection();
         $this->dateTime = $dateTime;
-        $this->apiHelper = $apiHelper;
+        $this->logger = $logger;
 
-        parent::__construct($context);
+        parent::__construct($apiHelper, $defaultApiFactory);
     }
 
     /**
@@ -49,17 +50,16 @@ class ClientAgreement extends \Magento\Framework\App\Helper\AbstractHelper
      * @param int|null $storeId
      * @return array
      * @throws ApiException
-     * @throws ValidatorException
      */
     public function sendBatchAddOrUpdateClients(array $createAClientInCrmRequests, int $storeId = null)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Client agreements - Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->_logger->debug('Client agreements - Request accepted with errors', ['response' => $body]);
+            $this->logger->debug('Client agreements - Request accepted with errors', ['response' => $body]);
         }
 
         return [$body, $statusCode, $headers];

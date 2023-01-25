@@ -10,8 +10,9 @@ use Magento\Store\Model\Store;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
+use Synerise\Integration\Helper\Api\DefaultApiFactory;
 
-class Identity
+class Identity extends AbstractDefaultApiAction
 {
     /**
      * @var AdminSession
@@ -34,11 +35,6 @@ class Identity
     private $logger;
 
     /**
-     * @var Api
-     */
-    private $apiHelper;
-
-    /**
      * @var Cookie
      */
     private $cookieHelper;
@@ -54,15 +50,16 @@ class Identity
         ScopeResolverInterface $scopeResolver,
         LoggerInterface $logger,
         Api $apiHelper,
+        DefaultApiFactory $defaultApiFactory,
         Cookie $cookieHelper
     ) {
         $this->adminSession = $adminSession;
         $this->customerSession = $customerSession;
         $this->scopeResolver = $scopeResolver;
         $this->logger = $logger;
-
-        $this->apiHelper = $apiHelper;
         $this->cookieHelper = $cookieHelper;
+
+        parent::__construct($apiHelper, $defaultApiFactory);
     }
 
     public function getClientUuid()
@@ -108,7 +105,7 @@ class Identity
      */
     public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, int $storeId = null): array
     {
-        return $this->apiHelper->getDefaultApiInstance($storeId)
+        return $this->getDefaultApiInstance($storeId)
             ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
     }
 
@@ -125,7 +122,7 @@ class Identity
         ];
 
         try {
-            list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
+            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance()
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
             if ($statusCode != 202) {

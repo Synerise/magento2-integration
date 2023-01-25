@@ -4,11 +4,13 @@ namespace Synerise\Integration\Model\Synchronization;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Identity;
-use Synerise\Integration\Helper\Update\Order as OrderHelper;
+use Synerise\Integration\Helper\Update\Transaction;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -23,7 +25,7 @@ class Order extends AbstractSynchronization
     protected $dateTime;
 
     /**
-     * @var OrderHelper
+     * @var Transaction
      */
     protected $orderHelper;
 
@@ -33,7 +35,7 @@ class Order extends AbstractSynchronization
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
-        OrderHelper $orderHelper,
+        Transaction $orderHelper,
         DateTime $dateTime
     ) {
         $this->orderHelper = $orderHelper;
@@ -62,16 +64,27 @@ class Order extends AbstractSynchronization
         return $collection;
     }
 
-    public function sendItems($collection, $storeId, $websiteId = null)
+    /**
+     * @param $collection
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return void
+     * @throws ValidatorException
+     * @throws ApiException
+     * @throws \Exception
+     */
+    public function sendItems($collection, int $storeId, ?int $websiteId = null): ?array
     {
         $collection->addAttributeToSelect('*');
 
         if (!$collection->getSize()) {
-            return;
+            return null;
         }
 
+        $ids = [];
         $createTransactionRequest = [];
         foreach ($collection as $order) {
+            $ids[] = $order->getId();
             $email = $order->getCustomerEmail();
             $uuid = $email ? Identity::generateUuidByEmail($email): null;
             $request = $this->orderHelper->prepareCreateTransactionRequest($order, $uuid);
@@ -81,10 +94,12 @@ class Order extends AbstractSynchronization
         }
 
         if (!empty($createTransactionRequest)) {
-            $this->orderHelper->sendBatchAddOrUpdateTransactions($createTransactionRequest, $storeId);
+            $response = $this->orderHelper->sendBatchAddOrUpdateTransactions($createTransactionRequest, $storeId);
+            $this->orderHelper->markAsSent($ids);
+            return $response;
         }
 
-        $this->orderHelper->markItemsAsSent($collection->getAllIds());
+        return null;
     }
 
     public function markAllAsUnsent()

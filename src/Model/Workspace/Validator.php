@@ -3,14 +3,28 @@
 namespace Synerise\Integration\Model\Workspace;
 
 use Ramsey\Uuid\Uuid;
-use Zend_Validate_Exception;
+use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\AuthApiFactory;
+use Synerise\Integration\Model\ApiConfig;
 
 class Validator extends \Magento\Framework\Validator\AbstractValidator
 {
+    /**
+     * @var Api
+     */
+    protected $apiHelper;
+
+    /**
+     * @var AuthApiFactory
+     */
+    protected $authApiFactory;
+
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper
+        AuthApiFactory $authApiFactory,
+        Api $apiHelper
     ) {
         $this->apiHelper = $apiHelper;
+        $this->authApiFactory = $authApiFactory;
     }
 
     public function isValid($workspace)
@@ -27,7 +41,7 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
         ]);
 
         try {
-            $this->apiHelper->getAuthApiInstance()
+            $this->authApiFactory->create(new ApiConfig($this->apiHelper->getApiHost()))
                 ->profileLoginUsingPOST($business_profile_authentication_request);
         } catch (\Synerise\ApiClient\ApiException $e) {
             if ($e->getCode() === 401) {

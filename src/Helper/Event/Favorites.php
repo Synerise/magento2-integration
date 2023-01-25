@@ -6,6 +6,7 @@ use Magento\Catalog\Model\Product;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\DefaultApiFactory;
 use Synerise\Integration\Helper\Data\Context as ContextHelper;
 use Synerise\Integration\Helper\Data\Product as ProductHelper;
 
@@ -19,15 +20,16 @@ class Favorites extends AbstractEvent
     public function __construct(
         Api $apiHelper,
         ContextHelper $contextHelper,
+        DefaultApiFactory $defaultApiFactory,
         ProductHelper $productHelper
     ) {
         $this->productHelper = $productHelper;
 
-        parent::__construct($apiHelper, $contextHelper);
+        parent::__construct($apiHelper, $contextHelper, $defaultApiFactory);
     }
 
     public function sendClientAddedProductToFavoritesEvent(EventClientAction $request) {
-        return $this->apiHelper->getDefaultApiInstance()
+        return $this->getDefaultApiInstance()
             ->clientAddedProductToFavoritesWithHttpInfo('4.4', $request);
     }
 

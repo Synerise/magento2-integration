@@ -8,17 +8,17 @@ class Client extends AbstractEvent
 {
 
     public function sendClientLoginEvent(EventClientAction $request) {
-        return $this->apiHelper->getDefaultApiInstance()
+        return $this->getDefaultApiInstance()
             ->clientLoggedInWithHttpInfo('4.4', $request);
     }
 
     public function sendClientLoggedOutEvent(EventClientAction $request) {
-        return $this->apiHelper->getDefaultApiInstance()
+        return $this->getDefaultApiInstance()
             ->clientLoggedOutWithHttpInfo('4.4', $request);
     }
 
     public function sendClientRegisteredEvent(EventClientAction $request) {
-        return $this->apiHelper->getDefaultApiInstance()
+        return $this->getDefaultApiInstance()
             ->clientRegisteredWithHttpInfo('4.4', $request);
     }
 

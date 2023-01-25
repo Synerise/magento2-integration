@@ -48,20 +48,20 @@ class Product extends AbstractSynchronization
     /**
      * @param int $storeId
      * @param int|null $websiteId
-     * @return mixed
+     * @return \Magento\Catalog\Model\ResourceModel\Product\Collection
      */
     protected function createCollectionWithScope($storeId, $websiteId = null)
     {
         return $this->collectionFactory->create()->addStoreFilter($storeId);
     }
 
-    public function sendItems($collection, $storeId, $websiteId = null)
+    public function sendItems($collection, int $storeId, ?int $websiteId = null): ?array
     {
         $attributes = $this->catalogHelper->getProductAttributesToSelect($storeId);
         $collection
             ->addAttributeToSelect($attributes);
 
-        $this->catalogHelper->addItemsBatchWithCatalogCheck(
+        return $this->catalogHelper->addItemsBatchWithCatalogCheck(
             $collection,
             $attributes,
             $websiteId,
@@ -80,6 +80,7 @@ class Product extends AbstractSynchronization
      */
     public function addItemsToQueue($collection)
     {
+        $data = [];
         $enabledStores = $this->getEnabledStores();
         foreach ($collection as $item) {
             $storeIds = $item->getStoreIds();
