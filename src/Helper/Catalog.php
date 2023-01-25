@@ -335,21 +335,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             ];
         }
 
-        $categoryIds = $product->getCategoryIds();
-        if ($categoryIds) {
-            $params['categories'] = [];
-            foreach ($categoryIds as $categoryId) {
-                $params['categories'][] = $this->getFormattedCategoryPath($categoryId);
-            }
-
-            if ($product->getCategoryId()) {
-                $category = $this->getFormattedCategoryPath($product->getCategoryId());
-                if ($category) {
-                    $params['category'] = $category;
-                }
-            }
-        }
-
         if ($product->getImage()) {
             $params['image'] = $this->getOriginalImageUrl($product->getImage());
         }
@@ -389,14 +374,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
         if ($sku!= $skuVariant) {
             $params['skuVariant'] = $skuVariant;
-        }
-
-        $categoryIds = $product->getCategoryIds();
-        if ($categoryIds) {
-            $params['categories'] = [];
-            foreach ($categoryIds as $categoryId) {
-                $params['categories'][] = $this->getFormattedCategoryPath($categoryId);
-            }
         }
 
         return $params;

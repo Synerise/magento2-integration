@@ -50,7 +50,7 @@ class CartAddProduct implements ObserverInterface
             }
 
             $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
-            $params = $this->catalogHelper->prepareParamsfromQuoteProduct($product);
+            $params = $this->catalogHelper->prepareParamsFromQuoteProduct($product);
 
             $params["source"] = $this->trackingHelper->getSource();
             $params["applicationName"] = $this->trackingHelper->getApplicationName();
