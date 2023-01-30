@@ -144,8 +144,13 @@ class ProductReview implements ObserverInterface
                 'params' => $params
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->customEvent('4.4', $customEventRequest);
+            if ($this->apiHelper->isLiveRequestAsync()) {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->customEventAsync('4.4', $customEventRequest);
+            } else {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->customEvent('4.4', $customEventRequest);
+            }
 
             $createAClientInCrmRequests = [
                 new CreateaClientinCRMRequest([

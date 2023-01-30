@@ -78,8 +78,14 @@ class CustomerRegister implements ObserverInterface
                 ]
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientRegistered('4.4', $eventClientAction);
+            if ($this->apiHelper->isLiveRequestAsync()) {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->clientRegisteredAsync('4.4', $eventClientAction);
+            } else {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->clientRegistered('4.4', $eventClientAction);
+            }
+
 
             if ($customer->getId()) {
                 $this->customerHelper->markCustomersAsSent([$customer->getId()], $customer->getStoreId());

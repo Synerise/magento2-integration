@@ -115,7 +115,11 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($params);
         }
 
-        $this->sendCustomersToSynerise($createAClientInCrmRequests, $storeId);
+        $this->sendCustomersToSynerise(
+            $createAClientInCrmRequests,
+            $storeId,
+            $this->apiHelper->getScheduledRequestTimeout($storeId)
+        );
         $this->markCustomersAsSent($ids, $storeId);
     }
 
@@ -134,7 +138,11 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $requests[] = $this->prepareRequestFromSubscription($subscriber);
         }
 
-        $this->sendCustomersToSynerise($requests, $storeId);
+        $this->sendCustomersToSynerise(
+            $requests,
+            $storeId,
+            $this->apiHelper->getScheduledRequestTimeout($storeId)
+        );
     }
 
     /**
@@ -192,9 +200,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws ApiException
      * @throws \Magento\Framework\Exception\ValidatorException
      */
-    public function sendCustomersToSynerise($createAClientInCrmRequests, $storeId)
+    public function sendCustomersToSynerise($createAClientInCrmRequests, $storeId, $timeout = null)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
         if (substr($statusCode, 0, 1) != 2) {

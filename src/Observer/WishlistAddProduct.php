@@ -81,8 +81,13 @@ class WishlistAddProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientAddedProductToFavorites('4.4', $eventClientAction);
+            if ($this->apiHelper->isLiveRequestAsync()) {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->clientAddedProductToFavoritesAsync('4.4', $eventClientAction);
+            } else {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->clientAddedProductToFavorites('4.4', $eventClientAction);
+            }
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);

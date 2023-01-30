@@ -65,8 +65,14 @@ class OrderPlace implements ObserverInterface
                 )
             );
 
-            $this->apiHelper->getDefaultApiInstance($order->getStoreId())
-                ->createATransaction('4.4', $createatransactionRequest);
+            if ($this->apiHelper->isLiveRequestAsync()) {
+                $this->apiHelper->getDefaultApiInstance($order->getStoreId())
+                    ->createATransactionAsync('4.4', $createatransactionRequest);
+
+            } else {
+                $this->apiHelper->getDefaultApiInstance($order->getStoreId())
+                    ->createATransaction('4.4', $createatransactionRequest);
+            }
 
             $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
 

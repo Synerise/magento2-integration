@@ -74,8 +74,13 @@ class CustomerLogout implements ObserverInterface
                 ]
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientLoggedOut('4.4', $eventClientAction);
+            if ($this->apiHelper->isLiveRequestAsync()) {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->clientLoggedOutAsync('4.4', $eventClientAction);
+            } else {
+                $this->apiHelper->getDefaultApiInstance()
+                    ->clientLoggedOut('4.4', $eventClientAction);
+            }
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);

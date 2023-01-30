@@ -14,7 +14,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     const XML_PATH_API_KEY = 'synerise/api/key';
     
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
-    
+
+    const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
+
+    const XML_PATH_API_LIVE_REQUEST_ASYNC = 'synerise/api/live_request_async';
+
+    const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
+
     protected $authApi = [];
     protected $bagsApi = [];
     protected $itemsApi = [];
@@ -66,16 +72,46 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function isLoggerEnabled($storeId = null)
     {
-        return $this->scopeConfig->getValue(
+        return $this->scopeConfig->isSetFlag(
             self::XML_PATH_API_LOGGER_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
     }
 
-    private function getGuzzleClient()
+    public function isLiveRequestAsync($storeId = null)
     {
-        $options = [];
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_API_LIVE_REQUEST_ASYNC,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    public function getLiveRequestTimeout($scopeId = null, $scope = ScopeInterface::SCOPE_STORE)
+    {
+        return (float) $this->scopeConfig->getValue(
+            self::XML_PATH_API_LIVE_REQUEST_TIMEOUT,
+            $scope,
+            $scopeId
+        );
+    }
+
+    public function getScheduledRequestTimeout($scopeId = null, $scope = ScopeInterface::SCOPE_STORE)
+    {
+        return (float) $this->scopeConfig->getValue(
+            self::XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT,
+            $scope,
+            $scopeId
+        );
+    }
+
+    private function getGuzzleClient($timeout)
+    {
+        $options = [
+            'connect_timeout' => $timeout,
+            'timeout' => $timeout
+        ];
         if ($this->isLoggerEnabled()) {
             $LogMiddleware = new LogMiddleware(
                 $this->_logger,
@@ -84,19 +120,23 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
             $handlerStack = HandlerStack::create();
             $handlerStack->push($LogMiddleware, 'logger');
-            $options = [
-                'handler' => $handlerStack
-            ];
+            $options['handler'] =  $handlerStack;
         }
 
         return new \GuzzleHttp\Client($options);
     }
 
-    public function getAuthApiInstance($scope = ScopeInterface::SCOPE_STORE, $scopeId = null, $token = null)
+    public function getAuthApiInstance($scope = ScopeInterface::SCOPE_STORE, $scopeId = null, $token = null, $timeout = null)
     {
         $key = md5(serialize(func_get_args()));
         if (!isset($this->authApi[$key])) {
-            $client = new \GuzzleHttp\Client();
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($scopeId);
+            }
+            $client = new \GuzzleHttp\Client([
+                'timeout' => $timeout,
+                'connect_timeout' => $timeout
+            ]);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
 
@@ -118,10 +158,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws \Magento\Framework\Exception\ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function getDefaultApiInstance($storeId = null)
+    public function getDefaultApiInstance($storeId = null, $timeout = null)
     {
         if (!isset($this->defaultApi[(int) $storeId])) {
-            $client = $this->getGuzzleClient();
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($storeId);
+            }
+            $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
@@ -140,10 +183,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws \Magento\Framework\Exception\ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    public function getBagsApiInstance($storeId)
+    public function getBagsApiInstance($storeId, $timeout = null)
     {
         if (!isset($this->bagsApi[$storeId])) {
-            $client = $this->getGuzzleClient();
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($storeId);
+            }
+            $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
@@ -157,10 +203,13 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->bagsApi[$storeId];
     }
 
-    public function getItemsApiInstance($storeId)
+    public function getItemsApiInstance($storeId, $timeout = null)
     {
         if (!isset($this->itemsApi[$storeId])) {
-            $client = $this->getGuzzleClient();
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($storeId);
+            }
+            $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
@@ -174,14 +223,17 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->itemsApi[$storeId];
     }
 
-    public function getTrackerApiInstance($scope, $scopeId, $token = null)
+    public function getTrackerApiInstance($scope, $scopeId, $token = null, $timeout = null)
     {
         $key = md5(serialize(func_get_args()));
         if (!isset($this->trackerApi[$key])) {
             if (!$token) {
                 $token = $this->getApiToken($scope, $scopeId);
             }
-            $client = $this->getGuzzleClient();
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
+            }
+            $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/business-profile-service', $this->getApiHost($scope, $scopeId)))
                 ->setAccessToken($token);
@@ -195,14 +247,17 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->trackerApi[$key];
     }
 
-    public function getApiKeyApiInstance($scope, $scopeId, $token = null)
+    public function getApiKeyApiInstance($scope, $scopeId, $token = null, $timeout = null)
     {
         $key = md5(serialize(func_get_args()));
         if (!isset($this->apiKeyApi[$key])) {
             if (!$token) {
                 $token = $this->getApiToken($scope, $scopeId);
             }
-            $client = $this->getGuzzleClient();
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
+            }
+            $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/uauth', $this->getApiHost($scope, $scopeId)))
                 ->setAccessToken($token);
