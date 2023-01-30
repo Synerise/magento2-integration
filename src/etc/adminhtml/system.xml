@@ -229,6 +229,7 @@
                     <label>Timeout</label>
                     <config_path>synerise/api/live_request_timeout</config_path>
                     <comment>Specify timeout in seconds for live requests.</comment>
+                    <validate>float validate-greater-than-zero</validate>
                 </field>
                 <field id="async" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
                     <label>Async</label>
@@ -242,6 +243,7 @@
                     <label>Timeout</label>
                     <config_path>synerise/api/scheduled_request_timeout</config_path>
                     <comment>Specify timeout in seconds for scheduled requests.</comment>
+                    <validate>float validate-greater-than-zero</validate>
                 </field>
             </group>
         </section>
