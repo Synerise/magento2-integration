@@ -61,7 +61,6 @@ class CustomerRegister implements ObserverInterface
             $customer = $observer->getEvent()->getCustomer();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
-            $this->customerHelper->addOrUpdateClient($customer);
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
@@ -84,11 +83,6 @@ class CustomerRegister implements ObserverInterface
             } else {
                 $this->apiHelper->getDefaultApiInstance()
                     ->clientRegistered('4.4', $eventClientAction);
-            }
-
-
-            if ($customer->getId()) {
-                $this->customerHelper->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
             }
 
         } catch (\Exception $e) {

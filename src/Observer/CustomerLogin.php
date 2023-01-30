@@ -61,7 +61,6 @@ class CustomerLogin implements ObserverInterface
             $customer = $observer->getEvent()->getCustomer();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
-            $this->customerHelper->addOrUpdateClient($customer);
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),

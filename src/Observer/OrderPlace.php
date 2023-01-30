@@ -4,11 +4,13 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Order;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class OrderPlace implements ObserverInterface
 {
@@ -34,16 +36,23 @@ class OrderPlace implements ObserverInterface
      */
     protected $logger;
 
+    /**
+     * @var QueueResourceModel
+     */
+    protected $queueResourceModel;
+
     public function __construct(
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper,
-        Order $orderHelper
+        Order $orderHelper,
+        QueueResourceModel $queueResourceModel
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->orderHelper = $orderHelper;
+        $this->queueResourceModel = $queueResourceModel;
     }
 
     public function execute(Observer $observer)
@@ -65,14 +74,9 @@ class OrderPlace implements ObserverInterface
                 )
             );
 
-            if ($this->apiHelper->isLiveRequestAsync()) {
-                $this->apiHelper->getDefaultApiInstance($order->getStoreId())
-                    ->createATransactionAsync('4.4', $createatransactionRequest);
+            $this->apiHelper->getDefaultApiInstance($order->getStoreId())
+                ->createATransaction('4.4', $createatransactionRequest);
 
-            } else {
-                $this->apiHelper->getDefaultApiInstance($order->getStoreId())
-                    ->createATransaction('4.4', $createatransactionRequest);
-            }
 
             $this->orderHelper->markItemsAsSent([$order->getEntityId()]);
 
@@ -99,7 +103,22 @@ class OrderPlace implements ObserverInterface
             }
 
         } catch (\Exception $e) {
+            $this->addItemToQueue($order);
+
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+        }
+    }
+
+    protected function addItemToQueue(\Magento\Sales\Model\Order $order)
+    {
+        try {
+            $this->queueResourceModel->addItem(
+                'order',
+                $order->getStoreId(),
+                $order->getId()
+            );
+        } catch (LocalizedException $e) {
+            $this->logger->error('Adding order item to queue failed', ['exception' => $e]);
         }
     }
 }
