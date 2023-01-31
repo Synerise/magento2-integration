@@ -115,7 +115,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return new \GuzzleHttp\Client($options);
     }
 
-    public function getAuthApiInstance($scope = ScopeInterface::SCOPE_STORE, $scopeId = null, $token = null, $timeout = null)
+    public function getAuthApiInstance($scope = ScopeInterface::SCOPE_STORE, $scopeId = null, $timeout = null)
     {
         $key = md5(serialize(func_get_args()));
         if (!isset($this->authApi[$key])) {
@@ -128,10 +128,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             ]);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
-
-            if ($token) {
-                $config->setAccessToken($token);
-            }
 
             $this->authApi[$key] = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
                 $client,
@@ -156,7 +152,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
+                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId, $timeout));
 
             $this->defaultApi[(int) $storeId] = new \Synerise\ApiClient\Api\DefaultApi(
                 $client,
@@ -260,7 +256,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->apiKeyApi[$key];
     }
 
-    public function getApiToken($scope, $scopeId, $key = null)
+    public function getApiToken($scope, $scopeId, $timeout = null, $key = null)
     {
         $key = $key ?: $this->getApiKey($scope, $scopeId);
         if (!isset($this->apiToken[$key])) {
@@ -269,7 +265,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             ]);
 
             try {
-                $tokenResponse = $this->getAuthApiInstance($scope, $scopeId)
+                $tokenResponse = $this->getAuthApiInstance($scope, $scopeId, $timeout)
                     ->profileLoginUsingPOST($business_profile_authentication_request);
                 $this->apiToken[$key] = $tokenResponse->getToken();
             } catch (\Synerise\ApiClient\ApiException $e) {

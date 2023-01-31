@@ -437,13 +437,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
                 ]
             ]);
 
-            if ($this->apiHelper->isLiveRequestAsync()) {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->customEventAsync('4.4', $customEventRequest);
-            } else {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->customEvent('4.4', $customEventRequest);
-            }
+            $this->apiHelper->getDefaultApiInstance()
+                ->customEvent('4.4', $customEventRequest);
 
         } catch (\Exception $e) {
             $this->_logger->error('Synerise Api request failed', ['exception' => $e]);

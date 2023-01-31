@@ -81,7 +81,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
 
     protected function getApiToken($apiKey)
     {
-        return $this->apiHelper->getApiToken($this->getScope(), $this->getScopeId(), $apiKey);
+        return $this->apiHelper->getApiToken($this->getScope(), $this->getScopeId(), null, $apiKey);
     }
 
     private function getConfigDomain()
