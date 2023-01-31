@@ -5,8 +5,7 @@
             <api>
                 <key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
                 <host>https://api.synerise.com</host>
-                <live_request_timeout>0.5</live_request_timeout>
-                <live_request_async>1</live_request_async>
+                <live_request_timeout>1.5</live_request_timeout>
                 <scheduled_request_timeout>5</scheduled_request_timeout>
             </api>
             <page_tracking>

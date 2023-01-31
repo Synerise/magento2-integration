@@ -64,13 +64,9 @@ class CartAddProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->apiHelper->isLiveRequestAsync()) {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->clientAddedProductToCartAsync('4.4', $eventClientAction);
-            } else {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->clientAddedProductToCart('4.4', $eventClientAction);
-            }
+            $this->apiHelper->getDefaultApiInstance()
+                ->clientAddedProductToCart('4.4', $eventClientAction);
+
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

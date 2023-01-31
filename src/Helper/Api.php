@@ -17,8 +17,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
 
-    const XML_PATH_API_LIVE_REQUEST_ASYNC = 'synerise/api/live_request_async';
-
     const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
 
     protected $authApi = [];
@@ -74,15 +72,6 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     {
         return $this->scopeConfig->isSetFlag(
             self::XML_PATH_API_LOGGER_ENABLED,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
-    }
-
-    public function isLiveRequestAsync($storeId = null)
-    {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_API_LIVE_REQUEST_ASYNC,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

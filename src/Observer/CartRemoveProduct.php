@@ -65,13 +65,8 @@ class CartRemoveProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->apiHelper->isLiveRequestAsync()) {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->clientRemovedProductFromCartAsync('4.4', $eventClientAction);
-            } else {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->clientRemovedProductFromCart('4.4', $eventClientAction);
-            }
+            $this->apiHelper->getDefaultApiInstance()
+                ->clientRemovedProductFromCart('4.4', $eventClientAction);
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);

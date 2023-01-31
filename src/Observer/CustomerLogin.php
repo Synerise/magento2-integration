@@ -77,13 +77,8 @@ class CustomerLogin implements ObserverInterface
                 ]
             ]);
 
-            if ($this->apiHelper->isLiveRequestAsync()) {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->clientLoggedInAsync('4.4', $eventClientAction);
-            } else {
-                $this->apiHelper->getDefaultApiInstance()
-                    ->clientLoggedIn('4.4', $eventClientAction);
-            }
+            $this->apiHelper->getDefaultApiInstance()
+                ->clientLoggedIn('4.4', $eventClientAction);
 
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);

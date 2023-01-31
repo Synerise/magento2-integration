@@ -231,11 +231,6 @@
                     <comment>Specify timeout in seconds for live requests.</comment>
                     <validate>float validate-greater-than-zero</validate>
                 </field>
-                <field id="async" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
-                    <label>Async</label>
-                    <config_path>synerise/api/live_request_async</config_path>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
             </group>
             <group id="scheduled_request" translate="label" sortOrder="10" showInDefault="1">
                 <label>Scheduled requests</label>
