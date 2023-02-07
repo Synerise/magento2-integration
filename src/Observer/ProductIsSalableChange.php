@@ -7,7 +7,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Cron\Synchronization\Sender\Product as SyncProduct;
 
 class ProductIsSalableChange  extends AbstractObserver implements ObserverInterface
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model;
+namespace Synerise\Integration\Cron\Synchronization\Sender;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
@@ -11,7 +11,7 @@ use Synerise\Integration\Model\Cron\Status;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
-abstract class AbstractSynchronization
+abstract class AbstractSender
 {
     const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
     const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';

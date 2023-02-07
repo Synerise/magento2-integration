@@ -5,21 +5,14 @@ namespace Synerise\Integration\Cron;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\Cron\Synchronization\SenderFactory;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
 use Synerise\Integration\Model\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
-use Synerise\Integration\Model\Synchronization\Customer;
-use Synerise\Integration\Model\Synchronization\Order;
-use Synerise\Integration\Model\Synchronization\Product;
-use Synerise\Integration\Model\Synchronization\Subscriber;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class Synchronization
 {
-    const XML_PATH_CRON_QUEUE_PAGE_SIZE = 'synerise/cron_queue/page_size';
-    const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
-
     /**
      * @var ScopeConfigInterface
      */
@@ -51,14 +44,9 @@ class Synchronization
     protected $queueResourceModel;
 
     /**
-     * @var array
+     * @var SenderFactory
      */
-    protected $executors;
-
-    /**
-     * @var array
-     */
-    protected $enabledStores = [];
+    protected $senderFactory;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
@@ -67,10 +55,7 @@ class Synchronization
         QueueCollectionFactory $queueCollectionFactory,
         StatusCollectionFactory $statusCollectionFactory,
         QueueResourceModel $queueResourceModel,
-        Customer $customer,
-        Order $order,
-        Product $product,
-        Subscriber $subscriber
+        SenderFactory $senderFactory
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
@@ -78,13 +63,7 @@ class Synchronization
         $this->queueCollectionFactory = $queueCollectionFactory;
         $this->statusCollectionFactory = $statusCollectionFactory;
         $this->queueResourceModel = $queueResourceModel;
-
-        $this->executors = [
-            'customer' => $customer,
-            'subscriber' => $subscriber,
-            'product' => $product,
-            'order' => $order
-        ];
+        $this->senderFactory = $senderFactory;
     }
 
     /**
@@ -103,8 +82,8 @@ class Synchronization
             }
 
             foreach ($statusCollection as $statusItem) {
-                $executor = $this->getExecutorByName($statusItem->getModel());
-                if (!$executor || !$executor->isEnabled() || !in_array($statusItem->getStoreId(), $executor->getEnabledStores())) {
+                $sender = $this->senderFactory->create($statusItem->getModel());
+                if (!$sender->isEnabled() || !in_array($statusItem->getStoreId(), $sender->getEnabledStores())) {
                     $statusItem
                         ->setState(StatusResourceModel::STATE_DISABLED)
                         ->save();
@@ -113,7 +92,7 @@ class Synchronization
 
                 $stopId = $statusItem->getStopId();
                 if (!$stopId) {
-                    $stopId = $executor->getCurrentLastId($statusItem);
+                    $stopId = $sender->getCurrentLastId($statusItem);
                     $statusItem->setStopId($stopId);
                 }
 
@@ -125,7 +104,7 @@ class Synchronization
                     continue;
                 }
 
-                $collection = $executor->getCollectionFilteredByIdRange($statusItem);
+                $collection = $sender->getCollectionFilteredByIdRange($statusItem);
 
                 if (!$collection->getSize()) {
                     $statusItem
@@ -134,10 +113,10 @@ class Synchronization
                     continue;
                 }
 
-                $executor->sendItems($collection, $statusItem->getStoreId(), $statusItem->getWebsiteId());
+                $sender->sendItems($collection, $statusItem->getStoreId(), $statusItem->getWebsiteId());
 
                 $lastItem = $collection->getLastItem();
-                $statusItem->setStartId($lastItem->getData($executor->getEntityIdField()));
+                $statusItem->setStartId($lastItem->getData($sender->getEntityIdField()));
                 if ($startId == $stopId) {
                     $statusItem
                         ->setState(StatusResourceModel::STATE_COMPLETE);
@@ -163,8 +142,8 @@ class Synchronization
         try {
             $groupedItems = $this->queueResourceModel->getGroupedQueueItems();
             foreach ($groupedItems as $groupedItem) {
-                $executor = $this->getExecutorByName($groupedItem['model']);
-                if (!$executor || !$executor->isEnabled()) {
+                $sender = $this->senderFactory->create($groupedItem['model']);
+                if (!$sender->isEnabled()) {
                     continue;
                 }
 
@@ -172,7 +151,7 @@ class Synchronization
                     ->addFieldToSelect('entity_id')
                     ->addFieldToFilter('model', $groupedItem['model'])
                     ->addFieldToFilter('store_id', $groupedItem['store_id'])
-                    ->setPageSize($executor->getPageSize($groupedItem['store_id']));
+                    ->setPageSize($sender->getPageSize($groupedItem['store_id']));
 
                 if (!$queueCollection->getSize()) {
                     continue;
@@ -180,7 +159,7 @@ class Synchronization
 
                 $entityIds = $queueCollection->getColumnValues('entity_id');
 
-                $items = $executor->getCollectionFilteredByEntityIds(
+                $items = $sender->getCollectionFilteredByEntityIds(
                     $groupedItem['store_id'],
                     $entityIds
                 );
@@ -189,21 +168,12 @@ class Synchronization
                     continue;
                 }
 
-                $executor->sendItems($items, $groupedItem['store_id']);
-                $executor->deleteItemsFromQueue($groupedItem['store_id'], $entityIds);
+                $sender->sendItems($items, $groupedItem['store_id']);
+                $sender->deleteItemsFromQueue($groupedItem['store_id'], $entityIds);
             }
         } catch (\Exception $e) {
             $this->logger->error('Failed to process cron queue', ['exception' => $e]);
             throw $e;
         }
-    }
-
-    /**
-     * @param String $name
-     * @return AbstractSynchronization|null
-     */
-    protected function getExecutorByName(String $name)
-    {
-        return $this->executors[$name] ?? null;
     }
 }

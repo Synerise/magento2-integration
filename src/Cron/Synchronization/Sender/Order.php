@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\Synchronization;
+namespace Synerise\Integration\Cron\Synchronization\Sender;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
@@ -11,10 +11,9 @@ use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Identity;
 use Synerise\Integration\Helper\Update\Transaction;
-use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
-class Order extends AbstractSynchronization
+class Order extends AbstractSender
 {
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';

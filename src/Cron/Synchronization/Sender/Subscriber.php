@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\Synchronization;
+namespace Synerise\Integration\Cron\Synchronization\Sender;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
@@ -10,10 +10,9 @@ use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Update\ClientAgreement;
-use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
-class Subscriber extends AbstractSynchronization
+class Subscriber extends AbstractSender
 {
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';

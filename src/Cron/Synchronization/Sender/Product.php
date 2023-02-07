@@ -1,16 +1,15 @@
 <?php
 
-namespace Synerise\Integration\Model\Synchronization;
+namespace Synerise\Integration\Cron\Synchronization\Sender;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
 use \Synerise\Integration\Helper\Update\Catalog as CatalogHelper;
-use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
-class Product extends AbstractSynchronization
+class Product extends AbstractSender
 {
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
@@ -30,7 +29,6 @@ class Product extends AbstractSynchronization
         LoggerInterface $logger,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
-
         CollectionFactory $collectionFactory,
         CatalogHelper $catalogHelper
     ) {
@@ -61,12 +59,23 @@ class Product extends AbstractSynchronization
         $collection
             ->addAttributeToSelect($attributes);
 
-        return $this->catalogHelper->addItemsBatchWithCatalogCheck(
-            $collection,
-            $attributes,
-            $websiteId,
-            $storeId
-        );
+        if(!$websiteId) {
+            $websiteId = $this->catalogHelper->getWebsiteIdByStoreId($storeId);
+        }
+
+        $addItemRequest = [];
+        $ids = [];
+
+        /** @var $product \Magento\Catalog\Model\Product */
+        foreach ($collection as $product) {
+            $ids[] = $product->getEntityId();
+            $addItemRequest[] = $this->catalogHelper->prepareItemRequest($product, $attributes, $websiteId);
+        }
+
+        $response = $this->catalogHelper->sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId);
+        $this->catalogHelper->markAsSent($ids, $storeId);
+
+        return $response;
     }
 
     public function markAllAsUnsent()

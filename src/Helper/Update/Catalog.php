@@ -208,31 +208,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->storeUrls[$storeId];
     }
 
-    public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId): ?array
-    {
-        if (!$collection->getSize()) {
-            return null;
-        }
-
-        if(!$websiteId) {
-            $websiteId = $this->getWebsiteIdByStoreId($storeId);
-        }
-
-        $addItemRequest = [];
-        $ids = [];
-
-        /** @var $product \Magento\Catalog\Model\Product */
-        foreach ($collection as $product) {
-            $ids[] = $product->getEntityId();
-            $addItemRequest[] = $this->prepareItemRequest($product, $attributes, $websiteId);
-        }
-
-        $response = $this->sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId);
-        $this->markAsSent($ids, $storeId);
-
-        return $response;
-    }
-
     /**
      * @param Product $product
      * @param string[] $attributes
@@ -247,10 +222,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * @param int[] $ids
-     * @return void
      * @param int $storeId
+     *@return void
      */
-    protected function markAsSent(array $ids, $storeId = 0)
+    public function markAsSent(array $ids, $storeId = 0)
     {
         $timestamp = $this->dateTime->gmtDate();
         $data = [];
@@ -391,6 +366,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $catalogId = $this->getOrAddCatalog($storeId);
 
+
         try {
             $response = $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
         } catch (\Exception $e) {
@@ -485,30 +461,16 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * @return int|null
-     */
-    public function getDefaultStoreId()
-    {
-        try {
-            $website = $this->storeManager->getDefaultStoreView()->getId();
-        } catch (LocalizedException $localizedException) {
-            $website = null;
-            $this->_logger->error($localizedException->getMessage());
-        }
-        return $website;
-    }
-
-    /**
      * Get Website id by store id
      *
      * @param int $storeId
      * @return string|null
      */
-    public function getWebsiteIdByStoreId(int $storeId): ?string
+    public function getWebsiteIdByStoreId(int $storeId)
     {
         try {
             if(!isset($storeToWebsite[$storeId])) {
-                $storeToWebsite[$storeId] = (int) $this->storeManager->getStore($storeId)->getWebsiteId();
+                $storeToWebsite[$storeId] = $this->storeManager->getStore($storeId)->getWebsiteId();
             }
             return $storeToWebsite[$storeId];
         } catch (NoSuchEntityException $entityException) {

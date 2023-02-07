@@ -141,7 +141,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $request = new BusinessProfileAuthenticationRequest([
                 'api_key' => $apiKey
             ]);
-            $this->apiTokens[$apiKey] = $this->profileLogin($apiConfig, $request);
+            $this->apiTokens[$apiKey] = $this->profileLogin($apiConfig, $request)->getToken();
         }
 
         return $this->apiTokens[$apiKey];

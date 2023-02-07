@@ -7,7 +7,7 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Cron\Synchronization\Sender\Product as SyncProduct;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 

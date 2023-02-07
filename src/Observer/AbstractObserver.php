@@ -75,7 +75,7 @@ abstract class AbstractObserver implements ObserverInterface
      */
     protected function isLiveEventTrackingEnabled($event = null, $storeId = null)
     {
-        if (!$this->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
+        if (!$this->isApiKeySet()) {
             return false;
         }
 

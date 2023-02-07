@@ -8,7 +8,7 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Cron\Synchronization\Sender\Product as SyncProduct;
 
 class StockStatusChange  extends AbstractObserver implements ObserverInterface
 {

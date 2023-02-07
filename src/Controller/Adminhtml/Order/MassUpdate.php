@@ -8,7 +8,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Synchronization\Order as SyncOrder;
+use Synerise\Integration\Cron\Synchronization\Sender\Order as SyncOrder;
 
 class MassUpdate extends Action
 {

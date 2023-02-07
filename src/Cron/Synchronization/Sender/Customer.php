@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\Synchronization;
+namespace Synerise\Integration\Cron\Synchronization\Sender;
 
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
@@ -10,10 +10,9 @@ use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollec
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Update\Client;
-use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
-class Customer extends AbstractSynchronization
+class Customer extends AbstractSender
 {
     const MODEL = 'customer';
     const ENTITY_ID = 'entity_id';

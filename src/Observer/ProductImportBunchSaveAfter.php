@@ -9,7 +9,7 @@ use Magento\Framework\Api\SearchCriteriaInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Cron\Synchronization\Sender\Product as SyncProduct;
 
 class ProductImportBunchSaveAfter  extends AbstractObserver implements ObserverInterface
 {

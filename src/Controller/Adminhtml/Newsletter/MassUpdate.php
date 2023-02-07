@@ -8,7 +8,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Synchronization\Subscriber as SyncSubscriber;
+use Synerise\Integration\Cron\Synchronization\Sender\Subscriber as SyncSubscriber;
 
 class MassUpdate extends Action
 {
