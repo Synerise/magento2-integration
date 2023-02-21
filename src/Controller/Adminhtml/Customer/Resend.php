@@ -6,9 +6,9 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization\Sender\Customer as SyncCustomer;
-use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Helper\Synchronization\Results;
+use Synerise\Integration\Helper\Synchronization\Sender\Customer;
 
 class Resend extends Action implements HttpGetActionInterface
 {
@@ -18,25 +18,22 @@ class Resend extends Action implements HttpGetActionInterface
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var Synchronization
      */
-    protected $logger;
+    private $synchronization;
 
     /**
-     * @var SyncCustomer
+     * @var Results
      */
-    protected $syncCustomer;
+    protected $results;
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
-        SyncCustomer $syncCustomer,
-        StatusResourceModel $statusResourceModel
-
+        Results $results,
+        Synchronization $synchronization
     ) {
-        $this->logger = $logger;
-        $this->syncCustomer = $syncCustomer;
-        $this->statusResourceModel = $statusResourceModel;
+        $this->results = $results;
+        $this->synchronization = $synchronization;
 
         parent::__construct($context);
     }
@@ -49,8 +46,8 @@ class Resend extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $this->statusResourceModel->resendItems('customer');
-        $this->syncCustomer->markAllAsUnsent();
+        $this->synchronization->resetState(Customer::MODEL);
+        $this->results->truncateTable(Customer::MODEL);
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

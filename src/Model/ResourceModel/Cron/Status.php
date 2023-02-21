@@ -90,7 +90,7 @@ class Status extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
      * @param string $model
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function resendItems($model)
+    public function resetState($model)
     {
         $this->getConnection()->update(
             $this->getMainTable(),

@@ -5,7 +5,7 @@ use Magento\Catalog\Helper\Data;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Helper\Data\Product;
+use Synerise\Integration\Helper\Api\Update\Item\Category;
 
 class Additional extends \Magento\Framework\View\Element\Template
 {
@@ -24,20 +24,20 @@ class Additional extends \Magento\Framework\View\Element\Template
     private $scopeConfig;
 
     /**
-     * @var Product
+     * @var Category
      */
-    private $productHelper;
+    private $categoryHelper;
 
     public function __construct(
         Context $context,
         Data $catalogHelper,
         ScopeConfigInterface $scopeConfig,
-        Product $productHelper,
+        Category $categoryHelper,
         array $data = []
     ) {
         $this->catalogHelper = $catalogHelper;
         $this->scopeConfig = $scopeConfig;
-        $this->productHelper = $productHelper;
+        $this->categoryHelper = $categoryHelper;
 
         parent::__construct($context, $data);
     }
@@ -54,9 +54,8 @@ class Additional extends \Magento\Framework\View\Element\Template
 
     public function getFormattedCategoryPath($categoryId)
     {
-        return $this->productHelper->getFormattedCategoryPath($categoryId);
+        return $this->categoryHelper->getFormattedCategoryPath($categoryId);
     }
-
 
     /**
      * Is the page tracking enabled.

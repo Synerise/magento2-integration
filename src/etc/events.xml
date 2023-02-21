@@ -1,72 +1,81 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
-    <event name="catalog_product_delete_before">
-        <observer name="synerise_catalog_product_delete_before" instance="Synerise\Integration\Observer\CatalogProductDeleteBefore" />
-    </event>
-    <event name="catalog_product_save_after">
-        <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\CatalogProductSaveAfter" />
-    </event>
-    <event name="catalog_product_import_bunch_save_after">
-        <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\ProductImportBunchSaveAfter"/>
-    </event>
-    <event name="customer_register_success">
-        <observer name="synerise_customer_register_observer" instance="Synerise\Integration\Observer\CustomerRegister" />
-    </event>
-    <event name="customer_login">
-        <observer name="synerise_customer_login_observer" instance="Synerise\Integration\Observer\CustomerLogin" />
-    </event>
-    <event name="customer_logout">
-        <observer name="synerise_customer_logout_observer" instance="Synerise\Integration\Observer\CustomerLogout" />
-    </event>
-    <event name="customer_save_after">
-        <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\CustomerSaveAfter" />
-    </event>
-    <event name="sales_order_save_after">
-        <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\OrderPlace" />
-    </event>
+    <!-- CART EVENTS -->
     <event name="sales_quote_add_item">
-        <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\CartAddProduct" />
-    </event>
-    <event name="checkout_cart_update_items_after">
-        <observer name="synerise_checkout_cart_update_items_after" instance="Synerise\Integration\Observer\CartQtyUpdate" />
-    </event>
-    <event name="sales_quote_save_after">
-        <observer name="synerise_sales_quote_save_after" instance="Synerise\Integration\Observer\CartStatus" />
+        <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\Event\Cart\AddProduct" />
     </event>
     <event name="sales_quote_remove_item">
-        <observer name="synerise_sales_quote_remove_item" instance="Synerise\Integration\Observer\CartRemoveProduct" />
+        <observer name="synerise_sales_quote_remove_item" instance="Synerise\Integration\Observer\Event\Cart\RemoveProduct" />
     </event>
-    <event name="wishlist_add_product">
-        <observer name="synerise_wishlist_add_product" instance="Synerise\Integration\Observer\WishlistAddProduct" />
+    <event name="checkout_cart_update_items_after">
+        <observer name="synerise_checkout_cart_update_items_after" instance="Synerise\Integration\Observer\Event\Cart\QtyUpdate" />
     </event>
-    <event name="wishlist_item_delete_after">
-        <observer name="synerise_wishlist_item_delete_after" instance="Synerise\Integration\Observer\WishlistRemoveProduct" />
+    <event name="sales_quote_save_after">
+        <observer name="synerise_sales_quote_save_after" instance="Synerise\Integration\Observer\Event\Cart\Status" />
     </event>
-    <event name="newsletter_subscriber_save_after">
-        <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\NewsletterSubscriberSaveAfter" />
+    <!-- CUSTOMER EVENTS -->
+    <event name="customer_login">
+        <observer name="synerise_customer_login_observer" instance="Synerise\Integration\Observer\Event\Customer\Login" />
     </event>
-    <event name="newsletter_subscriber_delete_after">
-        <observer name="synerise_newsletter_subscriber_delete_after" instance="Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter" />
+    <event name="customer_logout">
+        <observer name="synerise_customer_logout_observer" instance="Synerise\Integration\Observer\Event\Customer\Logout" />
     </event>
-    <event name="store_save_after">
-        <observer name="synerise_store_save_after" instance="Synerise\Integration\Observer\StoreSaveAfter" />
+    <event name="customer_register_success">
+        <observer name="synerise_customer_register_observer" instance="Synerise\Integration\Observer\Event\Customer\Register" />
     </event>
-    <event name="sales_order_save_commit_after">
-        <observer name="synerise_sales_order_save_commit_after" instance="Synerise\Integration\Observer\StockStatusChange" />
-    </event>
-    <event name="sales_order_place_after">
-        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
-    </event>
-    <event name="sales_order_item_save_before">
-        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
-    </event>
-    <event name="sales_order_item_save_after">
-        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\ProductIsSalableChange" />
-    </event>
+    <!-- PRODUCT REVIEW EVENTS -->
     <event name="review_save_after">
-        <observer name = "synerise_review_save_after" instance = "Synerise\Integration\Observer\ProductReview" />
+        <observer name="synerise_review_save_after" instance="Synerise\Integration\Observer\Event\ProductReview" />
     </event>
     <event name="controller_action_postdispatch_review_product_post">
-        <observer name = "synerise_controller_action_postdispatch_review_product_post" instance = "Synerise\Integration\Observer\ProductReview" />
+        <observer name="synerise_controller_action_postdispatch_review_product_post" instance="Synerise\Integration\Observer\Event\ProductReview" />
+    </event>
+    <!-- WISHLIST EVENTS -->
+    <event name="wishlist_add_product">
+        <observer name="synerise_wishlist_add_product" instance="Synerise\Integration\Observer\Event\Wishlist\AddProduct" />
+    </event>
+    <event name="wishlist_item_delete_after">
+        <observer name="synerise_wishlist_item_delete_after" instance="Synerise\Integration\Observer\Event\Wishlist\RemoveProduct" />
+    </event>
+    <!-- CUSTOMER UPDATE-->
+    <event name="customer_save_after">
+        <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\Update\CustomerSaveAfter" />
+    </event>
+    <!-- ORDER UPDATE -->
+    <event name="sales_order_save_after">
+        <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\Update\OrderPlace" />
+    </event>
+    <!-- PRODUCT UPDATE -->
+    <event name="catalog_product_delete_before">
+        <observer name="synerise_catalog_product_delete_before" instance="Synerise\Integration\Observer\Update\Product\DeleteBefore" />
+    </event>
+    <event name="catalog_product_save_after">
+        <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\Update\Product\SaveAfter" />
+    </event>
+    <event name="catalog_product_import_bunch_save_after">
+        <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\Update\Product\ImportBunchSaveAfter"/>
+    </event>
+    <event name="sales_order_save_commit_after">
+        <observer name="synerise_sales_order_save_commit_after" instance="Synerise\Integration\Observer\Update\Product\StockStatusChange" />
+    </event>
+    <event name="sales_order_place_after">
+        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\Update\Product\IsSalableChange" />
+    </event>
+    <event name="sales_order_item_save_before">
+        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\Update\Product\IsSalableChange" />
+    </event>
+    <event name="sales_order_item_save_after">
+        <observer name="synerise_product_is_salable_change" instance="Synerise\Integration\Observer\Update\Product\IsSalableChange" />
+    </event>
+    <!-- NEWSLETTER UPDATE -->
+    <event name="newsletter_subscriber_save_after">
+        <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\Update\Newsletter\SubscriberSaveAfter" />
+    </event>
+    <event name="newsletter_subscriber_delete_after">
+        <observer name="synerise_newsletter_subscriber_delete_after" instance="Synerise\Integration\Observer\Update\Newsletter\SubscriberDeleteAfter" />
+    </event>
+    <!-- BACKEND OBSERVERS -->
+    <event name="store_save_after">
+        <observer name="synerise_store_save_after" instance="Synerise\Integration\Observer\StoreSaveAfter" />
     </event>
 </config>

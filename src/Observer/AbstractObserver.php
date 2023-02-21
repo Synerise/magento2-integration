@@ -43,9 +43,11 @@ abstract class AbstractObserver implements ObserverInterface
     /**
      * Is the page tracking enabled.
      *
+     * @param string|null $event
+     * @param int|null $storeId
      * @return bool
      */
-    protected function isEventTrackingEnabled($event = null, $storeId = null)
+    protected function isEventTrackingEnabled(?string $event = null, ?int $storeId = null): bool
     {
         if (!$this->scopeConfig->isSetFlag(
             self::XML_PATH_EVENT_TRACKING_ENABLED,
@@ -71,9 +73,11 @@ abstract class AbstractObserver implements ObserverInterface
     /**
      * Is the live event tracking enabled.
      *
+     * @param string|null $event
+     * @param int|null $storeId
      * @return bool
      */
-    protected function isLiveEventTrackingEnabled($event = null, $storeId = null)
+    protected function isLiveEventTrackingEnabled(?string $event = null, ?int $storeId = null): bool
     {
         if (!$this->isApiKeySet()) {
             return false;
@@ -87,7 +91,7 @@ abstract class AbstractObserver implements ObserverInterface
      *
      * @return bool
      */
-    protected function isApiKeySet()
+    protected function isApiKeySet(): bool
     {
         return $this->scopeConfig->isSetFlag(
             Api::XML_PATH_API_KEY,

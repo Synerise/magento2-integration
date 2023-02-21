@@ -6,9 +6,9 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization\Sender\Subscriber as SyncSubscriber;
-use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Helper\Synchronization\Results;
+use Synerise\Integration\Helper\Synchronization\Sender\Subscriber;
 
 class Resend extends Action implements HttpGetActionInterface
 {
@@ -18,30 +18,22 @@ class Resend extends Action implements HttpGetActionInterface
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_subscriber';
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var Synchronization
      */
-    protected $logger;
+    private $synchronization;
 
     /**
-     * @var SyncSubscriber
+     * @var Results
      */
-    protected $syncSubscriber;
-
-    /**
-     * @var StatusResourceModel
-     */
-    protected $statusResourceModel;
+    protected $results;
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
-        SyncSubscriber $syncSubscriber,
-        StatusResourceModel $statusResourceModel
-
+        Results $results,
+        Synchronization $synchronization
     ) {
-        $this->logger = $logger;
-        $this->syncSubscriber = $syncSubscriber;
-        $this->statusResourceModel = $statusResourceModel;
+        $this->results = $results;
+        $this->synchronization = $synchronization;
 
         parent::__construct($context);
     }
@@ -54,9 +46,8 @@ class Resend extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $this->statusResourceModel->resendItems('subscriber');
-        $this->syncSubscriber->markAllAsUnsent();
-
+        $this->synchronization->resetState(Subscriber::MODEL);
+        $this->results->truncateTable(Subscriber::MODEL);
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

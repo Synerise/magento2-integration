@@ -27,7 +27,8 @@ class Queue extends AbstractDb
     }
 
     /**
-     * @param array $data
+     * @param $data
+     * @return void
      * @throws LocalizedException
      */
     public function addItems($data)

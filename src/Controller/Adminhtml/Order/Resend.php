@@ -6,10 +6,9 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization\Sender\Order as SyncOrder;
-use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
-
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Helper\Synchronization\Results;
+use Synerise\Integration\Helper\Synchronization\Sender\Order;
 
 class Resend extends Action implements HttpGetActionInterface
 {
@@ -19,29 +18,22 @@ class Resend extends Action implements HttpGetActionInterface
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var Synchronization
      */
-    protected $logger;
+    private $synchronization;
 
     /**
-     * @var SyncOrder
+     * @var Results
      */
-    protected $syncOrder;
-
-    /**
-     * @var StatusResourceModel
-     */
-    protected $statusResourceModel;
+    protected $results;
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
-        SyncOrder $syncOrder,
-        StatusResourceModel $statusResourceModel
+        Results $results,
+        Synchronization $synchronization
     ) {
-        $this->logger = $logger;
-        $this->syncOrder = $syncOrder;
-        $this->statusResourceModel = $statusResourceModel;
+        $this->results = $results;
+        $this->synchronization = $synchronization;
 
         parent::__construct($context);
     }
@@ -54,8 +46,8 @@ class Resend extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $this->statusResourceModel->resendItems('order');
-        $this->syncOrder->markAllAsUnsent();
+        $this->synchronization->resetState(Order::MODEL);
+        $this->results->truncateTable(Order::MODEL);
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

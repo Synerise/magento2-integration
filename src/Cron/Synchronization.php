@@ -2,10 +2,12 @@
 
 namespace Synerise\Integration\Cron;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization\SenderFactory;
+use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Helper\Synchronization\SenderFactory;
+use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
 use Synerise\Integration\Model\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
@@ -13,11 +15,6 @@ use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class Synchronization
 {
-    /**
-     * @var ScopeConfigInterface
-     */
-    protected $scopeConfig;
-
     /**
      * @var LoggerInterface
      */
@@ -34,14 +31,14 @@ class Synchronization
     protected $statusCollectionFactory;
 
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
-     */
-    protected $connection;
-
-    /**
      * @var QueueResourceModel
      */
     protected $queueResourceModel;
+
+    /**
+     * @var Api
+     */
+    private $apiHelper;
 
     /**
      * @var SenderFactory
@@ -49,26 +46,26 @@ class Synchronization
     protected $senderFactory;
 
     public function __construct(
-        ScopeConfigInterface $scopeConfig,
-        ResourceConnection $resource,
         LoggerInterface $logger,
         QueueCollectionFactory $queueCollectionFactory,
         StatusCollectionFactory $statusCollectionFactory,
         QueueResourceModel $queueResourceModel,
+        Api $apiHelper,
         SenderFactory $senderFactory
     ) {
-        $this->scopeConfig = $scopeConfig;
-        $this->connection = $resource->getConnection();
         $this->logger = $logger;
         $this->queueCollectionFactory = $queueCollectionFactory;
         $this->statusCollectionFactory = $statusCollectionFactory;
         $this->queueResourceModel = $queueResourceModel;
+        $this->apiHelper = $apiHelper;
         $this->senderFactory = $senderFactory;
     }
 
     /**
      * Cron method synchronizing data by ids.
-     * @throws \Synerise\ApiClient\ApiException
+     * @throws ApiException
+     * @throws LocalizedException
+     * @throws ValidatorException
      */
     public function processByIds()
     {
@@ -82,7 +79,12 @@ class Synchronization
             }
 
             foreach ($statusCollection as $statusItem) {
-                $sender = $this->senderFactory->create($statusItem->getModel());
+                $sender = $this->senderFactory->create(
+                    $statusItem->getModel(),
+                    $statusItem->getStoreId(),
+                    $this->apiHelper->getApiConfigByScope($statusItem->getStoreId()),
+                    $statusItem->getWebsiteId()
+                );
                 if (!$sender->isEnabled() || !in_array($statusItem->getStoreId(), $sender->getEnabledStores())) {
                     $statusItem
                         ->setState(StatusResourceModel::STATE_DISABLED)
@@ -92,7 +94,7 @@ class Synchronization
 
                 $stopId = $statusItem->getStopId();
                 if (!$stopId) {
-                    $stopId = $sender->getCurrentLastId($statusItem);
+                    $stopId = $sender->getCurrentLastId();
                     $statusItem->setStopId($stopId);
                 }
 
@@ -113,7 +115,7 @@ class Synchronization
                     continue;
                 }
 
-                $sender->sendItems($collection, $statusItem->getStoreId(), $statusItem->getWebsiteId());
+                $sender->sendItems($collection);
 
                 $lastItem = $collection->getLastItem();
                 $statusItem->setStartId($lastItem->getData($sender->getEntityIdField()));
@@ -134,15 +136,20 @@ class Synchronization
     /**
      * Cron method synchronizing data by queue.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Synerise\ApiClient\ApiException
+     * @throws LocalizedException
+     * @throws ApiException
      */
     public function processByQueue()
     {
         try {
             $groupedItems = $this->queueResourceModel->getGroupedQueueItems();
             foreach ($groupedItems as $groupedItem) {
-                $sender = $this->senderFactory->create($groupedItem['model']);
+                $sender = $this->senderFactory->create(
+                    $groupedItem['model'],
+                    $groupedItem['store_id'],
+                    $this->apiHelper->getApiConfigByScope($groupedItem['store_id'])
+                );
+
                 if (!$sender->isEnabled()) {
                     continue;
                 }
@@ -151,7 +158,7 @@ class Synchronization
                     ->addFieldToSelect('entity_id')
                     ->addFieldToFilter('model', $groupedItem['model'])
                     ->addFieldToFilter('store_id', $groupedItem['store_id'])
-                    ->setPageSize($sender->getPageSize($groupedItem['store_id']));
+                    ->setPageSize($sender->getPageSize());
 
                 if (!$queueCollection->getSize()) {
                     continue;
@@ -160,7 +167,6 @@ class Synchronization
                 $entityIds = $queueCollection->getColumnValues('entity_id');
 
                 $items = $sender->getCollectionFilteredByEntityIds(
-                    $groupedItem['store_id'],
                     $entityIds
                 );
 
@@ -168,8 +174,8 @@ class Synchronization
                     continue;
                 }
 
-                $sender->sendItems($items, $groupedItem['store_id']);
-                $sender->deleteItemsFromQueue($groupedItem['store_id'], $entityIds);
+                $sender->sendItems($items);
+                $sender->deleteItemsFromQueue($entityIds);
             }
         } catch (\Exception $e) {
             $this->logger->error('Failed to process cron queue', ['exception' => $e]);

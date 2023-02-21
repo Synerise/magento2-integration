@@ -6,10 +6,11 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Api\ApiKeyFactory;
+use Synerise\Integration\Helper\Api\Factory\ApiKeyFactory;
 use Synerise\Integration\Model\Workspace;
 
 class Save extends \Magento\Backend\App\Action
@@ -116,7 +117,7 @@ class Save extends \Magento\Backend\App\Action
     /**
      * @param string $apiKey
      * @return ApiKeyPermissionCheckResponse
-     * @throws ApiException
+     * @throws ApiException|ValidatorException
      */
     protected function checkPermissions(string $apiKey): ApiKeyPermissionCheckResponse
     {

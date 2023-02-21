@@ -3,7 +3,11 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Framework\App\Helper\Context;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException;
+use Magento\Framework\Stdlib\Cookie\FailureToSendException;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -55,12 +59,19 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
         parent::__construct($context);
     }
 
-    public function getClientUuid()
+    /**
+     * @return string|null
+     */
+    public function getClientUuid(): ?string
     {
         return $this->cookieManager->getCookie(self::COOKIE_CLIENT_UUID);
     }
 
-    public function getCookieDomain()
+    /**
+     * @return string|null
+     * @throws NoSuchEntityException
+     */
+    public function getCookieDomain(): ?string
     {
         if (!$this->cookieDomain) {
             $this->cookieDomain = $this->scopeConfig->getValue(
@@ -77,7 +88,15 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->cookieDomain;
     }
 
-    public function setResetUuidCookie($uuid)
+    /**
+     * @param string $uuid
+     * @return void
+     * @throws NoSuchEntityException
+     * @throws InputException
+     * @throws CookieSizeLimitReachedException
+     * @throws FailureToSendException
+     */
+    public function setResetUuidCookie(string $uuid)
     {
         $cookieMeta = $this->cookieMetadataFactory
             ->createPublicCookieMetadata()
@@ -89,12 +108,19 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
         $this->cookieManager->setPublicCookie(self::COOKIE_CLIENT_UUID_RESET, $uuid, $cookieMeta);
     }
 
-    public function getCookieParamsString()
+    /**
+     * @return string|null
+     */
+    public function getCookieParamsString(): ?string
     {
         return $this->cookieManager->getCookie(self::COOKIE_CLIENT_PARAMS);
     }
 
-    public function getCookieParams($value = null)
+    /**
+     * @param string|null $value
+     * @return array|null
+     */
+    public function getCookieParams(?string $value = null): ?array
     {
         if (!$this->cookieParams) {
             $paramsArray = [];
@@ -111,7 +137,7 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if ($value) {
-            return isset($this->cookieParams[$value]) ? $this->cookieParams[$value] : null;
+            return $this->cookieParams[$value] ?? null;
         }
 
         return $this->cookieParams;

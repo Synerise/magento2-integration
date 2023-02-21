@@ -8,7 +8,8 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization\Sender\Product as SyncProduct;
+use Synerise\Integration\Helper\Synchronization\Sender\Product as ProductSender;
+use Synerise\Integration\Helper\Synchronization;
 
 class MassUpdate extends Action
 {
@@ -33,21 +34,21 @@ class MassUpdate extends Action
     protected $collectionFactory;
 
     /**
-     * @var SyncProduct
+     * @var Synchronization
      */
-    protected $syncProduct;
+    protected $synchronization;
 
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
         LoggerInterface $logger,
-        SyncProduct $syncProduct
+        Synchronization $synchronization
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->syncProduct = $syncProduct;
+        $this->synchronization = $synchronization;
 
         parent::__construct($context);
     }
@@ -63,7 +64,11 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            $this->syncProduct->addItemsToQueue($collection);
+            $this->synchronization->addItemsToQueuePerStore(
+                $collection,
+                ProductSender::MODEL,
+                ProductSender::ENTITY_ID
+            );
             $this->messageManager->addSuccess(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
         } catch (\Exception $e) {
             $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);

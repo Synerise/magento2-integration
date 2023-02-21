@@ -2,16 +2,17 @@
 
 namespace Synerise\Integration\Helper;
 
-use Magento\Framework\App\Helper\Context;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
 use Synerise\ApiClient\Model\TokenResponse;
-use Synerise\Integration\Helper\Api\AuthApiFactory;
+use Synerise\Integration\Helper\Api\Factory\AuthApiFactory;
 use Synerise\Integration\Model\ApiConfig;
 
-class Api extends \Magento\Framework\App\Helper\AbstractHelper
+class Api
 {
     const XML_PATH_API_HOST = 'synerise/api/host';
     
@@ -30,23 +31,35 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     protected $apiTokens = [];
 
     /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    protected $scopeConfig;
+
+    /**
      * @var AuthApiFactory
      */
     private $authApiFactory;
 
-    public function __construct(Context $context, AuthApiFactory $authApiFactory)
-    {
+    public function __construct(
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig,
+        AuthApiFactory $authApiFactory
+    ) {
+        $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
         $this->authApiFactory = $authApiFactory;
-
-        parent::__construct($context);
     }
 
     /**
      * @param int|null $scopeId
      * @param string|null $scope
      * @return ApiConfig
-     * @throws ApiException
-     * @throws ValidatorException
+     * @throws ApiException|ValidatorException
      */
     public function getApiConfigByScope(?int $scopeId = null, ?string $scope = ScopeInterface::SCOPE_STORE): ApiConfig
     {
@@ -86,7 +99,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      * Api host
      *
      * @param int|null $scopeId
-     * @param string $scope
+     * @param string|null $scope
      * @return string
      */
     public function getApiHost(?int $scopeId = null, ?string $scope = ScopeInterface::SCOPE_STORE): string
@@ -101,8 +114,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Api key
      *
-     * @param int $scopeId
-     * @param string $scope
+     * @param int|null $scopeId
+     * @param string|null $scope
      * @return string
      */
     public function getApiKey(?int $scopeId = null, ?string $scope = ScopeInterface::SCOPE_STORE): string
@@ -130,11 +143,11 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @param string $apiKey
      * @param string $apiHost
-     * @return mixed|TokenResponse
+     * @return string
      * @throws ValidatorException
      * @throws ApiException
      */
-    public function getApiToken(string $apiKey, string $apiHost)
+    public function getApiToken(string $apiKey, string $apiHost): string
     {
         if (!isset($this->apiTokens[$apiKey])) {
             $apiConfig = new ApiConfig($apiHost);
@@ -157,14 +170,14 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     public function profileLogin(ApiConfig $apiConfig, BusinessProfileAuthenticationRequest $request): TokenResponse
     {
         try {
-            return $this->authApiFactory->create($apiConfig)->profileLoginUsingPOST($request);
+            return $this->authApiFactory->get($apiConfig)->profileLoginUsingPOST($request);
         } catch (ApiException $e) {
             if ($e->getCode() === 401) {
                 throw new ValidatorException(
                     __('Login failed. Please make sure this a valid, workspace scoped api key and try again.')
                 );
             } else {
-                $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
+                $this->logger->error('Synerise Api request failed', ['exception' => $e]);
                 throw $e;
             }
         }

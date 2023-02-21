@@ -8,7 +8,8 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Cron\Synchronization\Sender\Subscriber as SyncSubscriber;
+use Synerise\Integration\Helper\Synchronization\Sender\Subscriber as SubscriberSender;
+use Synerise\Integration\Helper\Synchronization;
 
 class MassUpdate extends Action
 {
@@ -33,21 +34,21 @@ class MassUpdate extends Action
     protected $collectionFactory;
 
     /**
-     * @var SyncSubscriber
+     * @var Synchronization
      */
-    protected $syncSubscriber;
+    protected $synchronization;
 
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
         LoggerInterface $logger,
-        SyncSubscriber $syncSubscriber
+        Synchronization $synchronization
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->syncSubscriber = $syncSubscriber;
+        $this->synchronization = $synchronization;
 
         parent::__construct($context);
     }
@@ -63,8 +64,10 @@ class MassUpdate extends Action
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            $this->syncSubscriber->addItemsToQueue(
-                $collection
+            $this->synchronization->addItemsToQueue(
+                $collection,
+                SubscriberSender::MODEL,
+                SubscriberSender::ENTITY_ID
             );
 
             $this->messageManager->addSuccess(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
