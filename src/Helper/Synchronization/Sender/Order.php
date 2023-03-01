@@ -104,7 +104,7 @@ class Order extends AbstractSender
 
         if (!empty($createTransactionRequest)) {
             $response = $this->sendBatchAddOrUpdateTransactions($createTransactionRequest);
-            $this->results->markAsSent(self::MODEL, $ids, $this->getStoreId());
+            $this->results->markAsSent(self::MODEL, $ids);
             return $response;
         }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Observer\Event\Newsletter;
+namespace Synerise\Integration\Observer\Update\Newsletter;
 
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Config\ScopeConfigInterface;

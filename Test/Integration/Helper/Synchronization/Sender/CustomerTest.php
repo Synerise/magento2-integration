@@ -13,7 +13,6 @@ use Synerise\Integration\Model\ResourceModel\Cron\Queue\CollectionFactory as Que
 
 class CustomerTest extends \PHPUnit\Framework\TestCase
 {
-
     const STORE_ID = 1;
 
     const WEBSITE_ID = 1;

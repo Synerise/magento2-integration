@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Observer\Event\Newsletter;
+namespace Synerise\Integration\Observer\Update\Newsletter;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\ObserverInterface;
