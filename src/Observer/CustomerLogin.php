@@ -5,14 +5,23 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Customer;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
 
 class CustomerLogin implements ObserverInterface
 {
     const EVENT = 'customer_login';
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * @var Api
@@ -30,20 +39,29 @@ class CustomerLogin implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var LoggerInterface
+     * @var Queue
      */
-    protected $logger;
+    protected $queueHelper;
+
+    /**
+     * @var Event
+     */
+    protected $eventHelper;
 
     public function __construct(
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper
+        Customer $customerHelper,
+        Queue $queueHelper,
+        Event $eventHelper
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->customerHelper = $customerHelper;
+        $this->queueHelper = $queueHelper;
+        $this->eventHelper = $eventHelper;
     }
 
     public function execute(Observer $observer)
@@ -59,9 +77,14 @@ class CustomerLogin implements ObserverInterface
         try {
             /** @var \Magento\Customer\Model\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
+            $storeId = $customer->getStoreId();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
-            $this->customerHelper->addOrUpdateClient($customer);
+            $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
+
+            $customerParams = $this->customerHelper->preapreAdditionalParams($customer);
+            $customerParams['uuid'] = $emailUuid;
+            $createClientInCRMRequest = new CreateaClientinCRMRequest($customerParams);
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
@@ -78,11 +101,16 @@ class CustomerLogin implements ObserverInterface
                 ]
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->clientLoggedIn('4.4', $eventClientAction);
-
+            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId, $customer->getId());
+                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            } else {
+                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId, $customer->getId());
+                $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+            }
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 }

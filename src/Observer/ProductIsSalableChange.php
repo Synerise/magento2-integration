@@ -86,16 +86,15 @@ class ProductIsSalableChange implements ObserverInterface
             }
 
             if (!empty($changedProducts)) {
-                try{
+                try {
                     $this->syncProduct->addItemsToQueue(
                         $changedProducts
                     );
-                } catch (\Exception $e){
+                } catch (\Exception $e) {
                     $this->logger->error('Failed to add products to cron queue', ['exception' => $e]);
                 }
             }
-
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             $this->logger->error('An error occurred in the ProductIsSalableChange observer', ['exception' => $e]);
         }
     }

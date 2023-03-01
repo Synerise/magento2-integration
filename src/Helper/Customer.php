@@ -9,8 +9,8 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
-use Magento\Newsletter\Model\Subscriber;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use Magento\Newsletter\Model\Subscriber;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
@@ -167,7 +167,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $params = $this->preapreAdditionalParams($customer);
             $params['uuid'] = $emailUuid;
 
-            list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($customer->getStoreId())
+            list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($customer->getStoreId())
                 ->batchAddOrUpdateClientsWithHttpInfo(
                     'application/json',
                     '4.4',
@@ -194,7 +194,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function sendCustomersToSynerise($createAClientInCrmRequests, $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -257,7 +257,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         } else {
             /** @var \Magento\Customer\Model\Customer\Interceptor $customer */
             $data = (array) $customer->getData();
-
         }
 
         $selectedAttributes = $this->getAttributes($storeId);
@@ -339,7 +338,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected function valOrNull($val)
     {
-        if(empty($val)){
+        if (empty($val)) {
             return null;
         }
 

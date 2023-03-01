@@ -5,6 +5,7 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
@@ -12,9 +13,9 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Customer
+     * @var LoggerInterface
      */
-    private $customerHelper;
+    protected $logger;
 
     /**
      * @var \Synerise\Integration\Helper\Tracking
@@ -22,18 +23,25 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var LoggerInterface
+     * @var \Synerise\Integration\Helper\Queue
      */
-    protected $logger;
+    protected $queueHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Event
+     */
+    protected $eventHelper;
 
     public function __construct(
         LoggerInterface $logger,
-        \Synerise\Integration\Helper\Customer $customerHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        \Synerise\Integration\Helper\Tracking $trackingHelper,
+        \Synerise\Integration\Helper\Queue $queueHelper,
+        \Synerise\Integration\Helper\Event $eventHelper
     ) {
         $this->logger = $logger;
-        $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->queueHelper = $queueHelper;
+        $this->eventHelper = $eventHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -46,16 +54,20 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
 
         /** @var Subscriber $subscriber */
         $subscriber = $event->getDataObject();
+        $storeId = $subscriber->getStoreId();
 
         try {
-            $createAClientInCrmRequests = [
-                new CreateaClientinCRMRequest([
-                    'email' => $subscriber->getSubscriberEmail(),
-                    'agreements' => ['email' =>  0]
-                ])
-            ];
+            $createAClientInCrmRequest = new CreateaClientinCRMRequest([
+                'email' => $subscriber->getSubscriberEmail(),
+                'agreements' => ['email' =>  0]
+            ]);
 
-            $this->customerHelper->sendCustomersToSynerise($createAClientInCrmRequests, $subscriber->getStoreId());
+            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->queueHelper->publishEvent(self::EVENT, $createAClientInCrmRequest, $storeId);
+            } else {
+                $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId);
+            }
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Failed to unsubscribe user', ['exception' => $e]);
         }

@@ -4,26 +4,56 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
+use Synerise\ApiClient\ApiException;
 
 class CatalogProductDeleteBefore implements ObserverInterface
 {
     const EVENT = 'catalog_product_delete_after';
 
-    protected $apiHelper;
-    protected $catalogHelper;
-    protected $trackingHelper;
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
     protected $logger;
+
+    /**
+     * @var \Synerise\Integration\Helper\Api
+     */
+    protected $apiHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Catalog
+     */
+    protected $catalogHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Tracking
+     */
+    protected $trackingHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Queue
+     */
+    protected $queueHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Event
+     */
+    protected $eventHelper;
 
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        \Synerise\Integration\Helper\Tracking $trackingHelper,
+        \Synerise\Integration\Helper\Queue $queueHelper,
+        \Synerise\Integration\Helper\Event $eventHelper
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->queueHelper = $queueHelper;
+        $this->eventHelper = $eventHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -38,16 +68,21 @@ class CatalogProductDeleteBefore implements ObserverInterface
         try {
             $enabledCatalogStores = $this->catalogHelper->getStoresForCatalogs();
             $productStores = $product->getStoreIds();
-            foreach($productStores as $storeId) {
-                if(in_array($storeId, $enabledCatalogStores)) {
-                    $this->catalogHelper->deleteItemWithCatalogCheck(
-                        $this->catalogHelper->getProductById($product->getId(), $storeId),
-                        $this->catalogHelper->getProductAttributesToSelect($product->getStoreId())
-                    );
+            foreach ($productStores as $storeId) {
+                if (in_array($storeId, $enabledCatalogStores)) {
+                    $attributes = $this->catalogHelper->getProductAttributesToSelect($product->getStoreId());
+                    $addItemRequest = $this->catalogHelper->prepareItemRequest($product, $attributes);
+                    $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
+
+                    if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                        $this->queueHelper->publishEvent(self::EVENT, $addItemRequest, $storeId);
+                    } else {
+                        $this->eventHelper->sendEvent(self::EVENT, $addItemRequest, $storeId);
+                    }
                 }
             }
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 }

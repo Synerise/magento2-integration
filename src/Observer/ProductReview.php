@@ -7,16 +7,19 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Review\Model\Rating\Option\VoteFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\DataStorage;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
 
 class ProductReview implements ObserverInterface
 {
-    public const EVENT = 'product_review_save_after';
+    const EVENT = 'product_review_save_after';
 
     /**
      * @var ProductRepositoryInterface
@@ -26,7 +29,7 @@ class ProductReview implements ObserverInterface
     /**
      * @var VoteFactory
      */
-    protected  $voteFactory;
+    protected $voteFactory;
 
     /**
      * @var StoreManagerInterface
@@ -61,7 +64,17 @@ class ProductReview implements ObserverInterface
     /**
      * @var \Magento\Review\Model\Review
      */
-    private $review;
+    protected $review;
+
+    /**
+     * @var Queue
+     */
+    protected $queueHelper;
+
+    /**
+     * @var Event
+     */
+    protected $eventHelper;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -70,7 +83,9 @@ class ProductReview implements ObserverInterface
         LoggerInterface $logger,
         Api $apiHelper,
         Customer $customerHelper,
-        Tracking $trackingHelper
+        Tracking $trackingHelper,
+        Queue $queueHelper,
+        Event $eventHelper
     ) {
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
@@ -79,6 +94,8 @@ class ProductReview implements ObserverInterface
         $this->apiHelper = $apiHelper;
         $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->queueHelper = $queueHelper;
+        $this->eventHelper = $eventHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -102,10 +119,11 @@ class ProductReview implements ObserverInterface
                 return;
             }
 
-            $client = [
-                'uuid' => $this->trackingHelper->getClientUuid()
-            ];
+            $client = ['uuid' => $this->trackingHelper->getClientUuid()];
+
             $customerId = $this->review->getCustomerId();
+            $storeId = $this->storeManager->getStore()->getId();
+
             if ($customerId) {
                 $client['custom_id'] = $customerId;
             }
@@ -144,20 +162,19 @@ class ProductReview implements ObserverInterface
                 'params' => $params
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->customEvent('4.4', $customEventRequest);
+            $createAClientInCrmRequest = new CreateaClientinCRMRequest([
+                'uuid' => $this->trackingHelper->getClientUuid(),
+                'display_name' => $this->review->getNickname()
+            ]);
 
-            $createAClientInCrmRequests = [
-                new CreateaClientinCRMRequest([
-                    'uuid' => $this->trackingHelper->getClientUuid(),
-                    'display_name' => $this->review->getNickname()
-                ])
-            ];
-
-            $this->customerHelper->sendCustomersToSynerise(
-                $createAClientInCrmRequests,
-                $this->storeManager->getStore()->getId()
-            );
+            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->queueHelper->publishEvent(self::EVENT, $customEventRequest, $storeId);
+                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+            } else {
+                $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
+                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+            }
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

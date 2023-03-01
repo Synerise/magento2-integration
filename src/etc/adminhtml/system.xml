@@ -200,6 +200,28 @@
                 </field>
             </group>
         </section>
+        <section id="synerise_queue" translate="label" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Queue</label>
+            <tab>synerise</tab>
+            <resource>Synerise_Integration::configuration_queue</resource>
+            <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Queue</label>
+                <comment>QUEUE_DESCRIPTION</comment>
+                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Send by queue</label>
+                    <config_path>synerise/queue/enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="events" type="multiselect" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Events to send by queue</label>
+                    <config_path>synerise/queue/events</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Queue\Events</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
         <section id="synerise_api" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Api</label>
             <tab>synerise</tab>
