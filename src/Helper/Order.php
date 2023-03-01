@@ -182,7 +182,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $params = [
             'client' => $customerData,
             "discount_amount" => [
-                "amount" => $order->getDiscountAmount(),
+                "amount" => $order->getDiscountAmount() ?: 0,
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'metadata' => [
