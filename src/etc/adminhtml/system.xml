@@ -200,7 +200,7 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_queue" translate="label" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_queue" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Message Queues</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_queue</resource>
@@ -222,7 +222,7 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_api" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_api" translate="label" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Api</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_api</resource>

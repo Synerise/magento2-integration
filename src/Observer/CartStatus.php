@@ -82,6 +82,7 @@ class CartStatus implements ObserverInterface
                     $this->eventHelper->sendEvent(self::EVENT, $cartStatusEvent, $storeId);
                 }
             }
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
         }
