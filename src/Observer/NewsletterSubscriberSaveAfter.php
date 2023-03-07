@@ -90,6 +90,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
                 $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             }
         } catch (ApiException $e) {
+            $this->addItemToQueue($subscriber);
         } catch (\Exception $e) {
             $this->logger->error('Subscription update request failed', ['exception' => $e]);
             $this->addItemToQueue($subscriber);

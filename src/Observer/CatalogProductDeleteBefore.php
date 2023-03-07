@@ -81,6 +81,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
                     }
                 }
             }
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
         }

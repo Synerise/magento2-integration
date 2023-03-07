@@ -200,13 +200,13 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_queue" translate="label" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>Queue</label>
+        <section id="synerise_queue" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Message Queues</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_queue</resource>
             <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Queue</label>
-                <comment>QUEUE_DESCRIPTION</comment>
+                <label>Message Queues</label>
+                <comment>Message Queues can be utilized instead of live events sending. Default configuration is db based. It is highly encouraged to use RabbitMQ if available. Queues connection can be set via env.php config.</comment>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Send by queue</label>
                     <config_path>synerise/queue/enabled</config_path>
@@ -222,7 +222,7 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_api" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_api" translate="label" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Api</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_api</resource>

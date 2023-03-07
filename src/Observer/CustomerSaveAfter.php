@@ -6,6 +6,7 @@ use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Customer;
@@ -96,7 +97,7 @@ class CustomerSaveAfter implements ObserverInterface
             } else {
                 $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
             }
-
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
         }
