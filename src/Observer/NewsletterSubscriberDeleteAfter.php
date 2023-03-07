@@ -67,7 +67,6 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
             } else {
                 $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Failed to unsubscribe user', ['exception' => $e]);
         }

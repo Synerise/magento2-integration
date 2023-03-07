@@ -89,7 +89,6 @@ class WishlistRemoveProduct implements ObserverInterface
 
             $this->apiHelper->getDefaultApiInstance()
                 ->customEvent('4.4', $customEventRequest);
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
         }

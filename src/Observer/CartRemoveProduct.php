@@ -101,7 +101,6 @@ class CartRemoveProduct implements ObserverInterface
             } else {
                 $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
         }

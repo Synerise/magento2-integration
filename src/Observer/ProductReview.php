@@ -174,7 +174,6 @@ class ProductReview implements ObserverInterface
                 $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
                 $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
         }

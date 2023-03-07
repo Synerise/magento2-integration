@@ -108,7 +108,6 @@ class CustomerLogin implements ObserverInterface
                 $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId, $customer->getId());
                 $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
         }
