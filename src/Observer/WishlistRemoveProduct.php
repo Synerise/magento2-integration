@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequest;
 
 class WishlistRemoveProduct implements ObserverInterface
@@ -39,6 +40,7 @@ class WishlistRemoveProduct implements ObserverInterface
 
             /** @var \Magento\Wishlist\Model\Item $wishlistItem */
             $wishlistItem = $observer->getEvent()->getItem();
+            $storeId = $wishlistItem->getStoreId();
 
             $product = $wishlistItem->getProduct();
 
@@ -68,7 +70,7 @@ class WishlistRemoveProduct implements ObserverInterface
             }
 
             $source = $this->trackingHelper->getSource();
-            if($source) {
+            if ($source) {
                 $params["source"] = $source;
             }
             $params["applicationName"] = $this->trackingHelper->getApplicationName();
@@ -87,9 +89,9 @@ class WishlistRemoveProduct implements ObserverInterface
 
             $this->apiHelper->getDefaultApiInstance()
                 ->customEvent('4.4', $customEventRequest);
-
+        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 }

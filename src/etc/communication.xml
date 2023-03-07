@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Communication/etc/communication.xsd">
+    <topic name="synerise.queue.events" is_synchronous="false" request="string">
+        <handler name="processSendEvent" type="Synerise\Integration\Model\Queue\Consumer" method="process" />
+    </topic>
+</config>

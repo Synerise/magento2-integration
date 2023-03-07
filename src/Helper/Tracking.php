@@ -253,7 +253,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
             if (!$this->cookieDomain) {
                 $parsedBasedUrl = parse_url($this->storeManager->getStore()->getBaseUrl());
-                $this->cookieDomain = isset($parsedBasedUrl['host']) ? '.'.$parsedBasedUrl['host'] : null;
+                $this->cookieDomain = isset($parsedBasedUrl['host']) ? '.' . $parsedBasedUrl['host'] : null;
             }
         }
 
@@ -344,9 +344,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @param Quote $quote
      * @return Client
-     * @throws ApiException
      */
-    public function prepareClientDataFromQuote($quote)
+    public function prepareClientDataFromQuote($quote): Client
     {
         $data['uuid'] = $this->getClientUuid();
 
@@ -369,7 +368,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $uuid = $this->getClientUuidFromCookie();
-        if(!$uuid) {
+        if (!$uuid) {
             return;
         }
 
@@ -401,7 +400,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         ];
 
         try {
-            list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
+            list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
             if ($statusCode != 202) {
@@ -439,7 +438,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
             $this->apiHelper->getDefaultApiInstance()
                 ->customEvent('4.4', $customEventRequest);
-
         } catch (\Exception $e) {
             $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
         }
@@ -450,7 +448,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
     }
 
-    function overflow32($v)
+    public function overflow32($v)
     {
         $v = $v % 4294967296;
         if ($v > 2147483647) {
@@ -462,7 +460,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    function hashString($s)
+    public function hashString($s)
     {
         $h = 0;
         $len = strlen($s);

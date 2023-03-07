@@ -181,11 +181,12 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     private function getCatalogNameByStoreId($storeId)
     {
-        return 'store-'.$storeId;
+        return 'store-' . $storeId;
     }
 
-    public function getStoreBaseUrl($storeId) {
-        if(!isset($this->storeUrls[$storeId])) {
+    public function getStoreBaseUrl($storeId)
+    {
+        if (!isset($this->storeUrls[$storeId])) {
             $store = $this->storeManager->getStore($storeId);
             $this->storeUrls[ $storeId] = $store ? $store->getBaseUrl() : null;
         }
@@ -198,7 +199,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             return;
         }
 
-        if(!$websiteId) {
+        if (!$websiteId) {
             $websiteId = $this->getWebsiteIdByStoreId($storeId);
         }
 
@@ -442,7 +443,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             );
 
             $stockData = $stockStatus->getStockItem();
-
         } catch (\Exception $exception) {
             $this->_logger->error($exception->getMessage());
         }
@@ -465,9 +465,13 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    /**
+     * @throws ApiException
+     * @throws \Synerise\CatalogsApiClient\ApiException
+     */
     public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId)
+        list($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId)
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
         if (substr($statusCode, 0, 1) != 2) {
@@ -564,12 +568,12 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function getWebsiteIdByStoreId(int $storeId): ?string
     {
         try {
-            if(!isset($storeToWebsite[$storeId])) {
+            if (!isset($storeToWebsite[$storeId])) {
                 $storeToWebsite[$storeId] = (int) $this->storeManager->getStore($storeId)->getWebsiteId();
             }
             return $storeToWebsite[$storeId];
         } catch (NoSuchEntityException $entityException) {
-            $this->_logger->debug('Store not found '.$storeId);
+            $this->_logger->debug('Store not found ' . $storeId);
         }
 
         return null;
