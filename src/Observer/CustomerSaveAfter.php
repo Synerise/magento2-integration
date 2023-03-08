@@ -7,8 +7,12 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Customer;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -50,13 +54,25 @@ class CustomerSaveAfter implements ObserverInterface
      */
     private $request;
 
+    /**
+     * @var Queue
+     */
+    protected $queueHelper;
+
+    /**
+     * @var Event
+     */
+    protected $eventHelper;
+
     public function __construct(
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper,
         Customer $customerHelper,
         QueueResourceModel $queueResourceModel,
-        Http $request
+        Http $request,
+        Queue $queueHelper,
+        Event $eventHelper
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
@@ -64,6 +80,8 @@ class CustomerSaveAfter implements ObserverInterface
         $this->customerHelper = $customerHelper;
         $this->queueResourceModel = $queueResourceModel;
         $this->request = $request;
+        $this->queueHelper = $queueHelper;
+        $this->eventHelper = $eventHelper;
     }
 
     public function execute(Observer $observer)
@@ -77,7 +95,18 @@ class CustomerSaveAfter implements ObserverInterface
         }
 
         try {
-            $this->customerHelper->addOrUpdateClient($observer->getCustomer());
+            $customer = $observer->getCustomer();
+            $storeId = $customer->getStoreId();
+            $customerParams = $this->customerHelper->preapreAdditionalParams($customer);
+            $createClientInCRMRequest = new CreateaClientinCRMRequest($customerParams);
+
+            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
+            } else {
+                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
+            }
+        } catch (ApiException $e) {
+            $this->addItemToQueue($observer->getCustomer());
         } catch (\Exception $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e]);
             $this->addItemToQueue($observer->getCustomer());
@@ -93,7 +122,7 @@ class CustomerSaveAfter implements ObserverInterface
                 $customer->getId()
             );
         } catch (LocalizedException $e) {
-            $this->logger->error('Adding order item to queue failed', ['exception' => $e]);
+            $this->logger->error('Adding customer item to queue failed', ['exception' => $e]);
         }
     }
 }

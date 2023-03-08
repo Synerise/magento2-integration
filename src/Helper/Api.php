@@ -10,9 +10,9 @@ use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const XML_PATH_API_HOST = 'synerise/api/host';
-    
+
     const XML_PATH_API_KEY = 'synerise/api/key';
-    
+
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
 
     const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';

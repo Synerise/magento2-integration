@@ -9,8 +9,8 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
-use Magento\Newsletter\Model\Subscriber;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use Magento\Newsletter\Model\Subscriber;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
@@ -262,7 +262,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         } else {
             /** @var \Magento\Customer\Model\Customer\Interceptor $customer */
             $data = (array) $customer->getData();
-
         }
 
         $selectedAttributes = $this->getAttributes($storeId);
@@ -344,7 +343,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected function valOrNull($val)
     {
-        if(empty($val)){
+        if (empty($val)) {
             return null;
         }
 

@@ -12,7 +12,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Synerise\ApiClient\ApiException;
+use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
 
 class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
@@ -181,11 +181,12 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     private function getCatalogNameByStoreId($storeId)
     {
-        return 'store-'.$storeId;
+        return 'store-' . $storeId;
     }
 
-    public function getStoreBaseUrl($storeId) {
-        if(!isset($this->storeUrls[$storeId])) {
+    public function getStoreBaseUrl($storeId)
+    {
+        if (!isset($this->storeUrls[$storeId])) {
             $store = $this->storeManager->getStore($storeId);
             $this->storeUrls[ $storeId] = $store ? $store->getBaseUrl() : null;
         }
@@ -198,7 +199,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             return;
         }
 
-        if(!$websiteId) {
+        if (!$websiteId) {
             $websiteId = $this->getWebsiteIdByStoreId($storeId);
         }
 
@@ -442,7 +443,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             );
 
             $stockData = $stockStatus->getStockItem();
-
         } catch (\Exception $exception) {
             $this->_logger->error($exception->getMessage());
         }
@@ -466,6 +466,14 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    /**
+     * @param $catalogId
+     * @param $addItemRequest
+     * @param $storeId
+     * @param $timeout
+     * @return void
+     * @throws ApiException
+     */
     public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout = null)
     {
         list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId, $timeout)
@@ -565,12 +573,12 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     public function getWebsiteIdByStoreId(int $storeId): ?string
     {
         try {
-            if(!isset($storeToWebsite[$storeId])) {
+            if (!isset($storeToWebsite[$storeId])) {
                 $storeToWebsite[$storeId] = (int) $this->storeManager->getStore($storeId)->getWebsiteId();
             }
             return $storeToWebsite[$storeId];
         } catch (NoSuchEntityException $entityException) {
-            $this->_logger->debug('Store not found '.$storeId);
+            $this->_logger->debug('Store not found ' . $storeId);
         }
 
         return null;

@@ -110,7 +110,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $ids[] = $order->getEntityId();
 
             $email = $order->getCustomerEmail();
-            $uuid = $email ? $this->trackingHelper->generateUuidByEmail($email): null;
+            $uuid = $email ? $this->trackingHelper->generateUuidByEmail($email) : null;
 
             $params = $this->preapreOrderParams($order, $uuid);
             if ($params) {
@@ -149,7 +149,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $shippingAddress = $order->getShippingAddress();
         $phone = null;
-        if($shippingAddress){
+        if ($shippingAddress) {
             $phone = $shippingAddress->getTelephone();
         }
 
@@ -186,7 +186,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $params = [
             'client' => $customerData,
             "discount_amount" => [
-                "amount" => $order->getDiscountAmount(),
+                "amount" => $order->getDiscountAmount() ?: 0,
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'metadata' => [
@@ -205,8 +205,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "method" => $order->getPayment()->getMethod()
             ],
             "products" => $products,
-            'recorded_at' =>
-                $order->getCreatedAt() ?
+            'recorded_at' => $order->getCreatedAt() ?
                     $this->trackingHelper->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                     $this->trackingHelper->getCurrentTime(),
             'revenue' => [
@@ -251,10 +250,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
              * @var \Magento\SalesRule\Api\Data\RuleInterface[] $rulesList
              */
             $rulesList = $this->ruleRepository->getList($searchCriteria)->getItems();
-            foreach($rulesList as $rule){
+            foreach ($rulesList as $rule) {
                 $rules[] = $rule->getName();
             }
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             $this->_logger->error($e->getMessage(), [$e]);
         }
 
@@ -301,7 +300,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $itemRules = $this->prepareRulesList((string) $item->getAppliedRuleIds());
-        if(!empty($itemRules)){
+        if (!empty($itemRules)) {
             $params["promotionRules"] = $itemRules;
         }
 
