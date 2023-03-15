@@ -251,6 +251,24 @@
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
+            <group id="live_request" translate="label" sortOrder="10" showInDefault="1">
+                <label>Live requests</label>
+                <field id="timeout" translate="label comment" type="text" sortOrder="30" showInDefault="1">
+                    <label>Timeout</label>
+                    <config_path>synerise/api/live_request_timeout</config_path>
+                    <comment>Specify timeout in seconds for live requests.</comment>
+                    <validate>float validate-greater-than-zero</validate>
+                </field>
+            </group>
+            <group id="scheduled_request" translate="label" sortOrder="10" showInDefault="1">
+                <label>Scheduled requests</label>
+                <field id="timeout" translate="label comment" type="text" sortOrder="30" showInDefault="1">
+                    <label>Timeout</label>
+                    <config_path>synerise/api/scheduled_request_timeout</config_path>
+                    <comment>Specify timeout in seconds for scheduled requests.</comment>
+                    <validate>float validate-greater-than-zero</validate>
+                </field>
+            </group>
         </section>
     </system>
 </config>

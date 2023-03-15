@@ -4,6 +4,7 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
@@ -13,6 +14,7 @@ use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Order;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class OrderPlace implements ObserverInterface
 {
@@ -39,6 +41,11 @@ class OrderPlace implements ObserverInterface
     protected $logger;
 
     /**
+     * @var QueueResourceModel
+     */
+    protected $queueResourceModel;
+
+    /**
      * @var Queue
      */
     protected $queueHelper;
@@ -53,6 +60,7 @@ class OrderPlace implements ObserverInterface
         Api $apiHelper,
         Tracking $trackingHelper,
         Order $orderHelper,
+        QueueResourceModel $queueResourceModel,
         Queue $queueHelper,
         Event $eventHelper
     ) {
@@ -60,6 +68,7 @@ class OrderPlace implements ObserverInterface
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->orderHelper = $orderHelper;
+        $this->queueResourceModel = $queueResourceModel;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -114,8 +123,23 @@ class OrderPlace implements ObserverInterface
                 }
             }
         } catch (ApiException $e) {
+            $this->addItemToQueue($order);
         } catch (\Exception $e) {
+            $this->addItemToQueue($order);
             $this->logger->error('Synerise Error', ['exception' => $e]);
+        }
+    }
+
+    protected function addItemToQueue(\Magento\Sales\Model\Order $order)
+    {
+        try {
+            $this->queueResourceModel->addItem(
+                'order',
+                $order->getStoreId(),
+                $order->getId()
+            );
+        } catch (LocalizedException $e) {
+            $this->logger->error('Adding order item to queue failed', ['exception' => $e]);
         }
     }
 }

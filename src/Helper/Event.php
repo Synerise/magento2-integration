@@ -67,10 +67,13 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function sendEvent($event_name, $payload, int $storeId, int $entityId = null)
+    public function sendEvent($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
     {
         try {
-            $apiInstance = $this->apiHelper->getDefaultApiInstance($storeId);
+            $apiInstance = $this->apiHelper->getDefaultApiInstance(
+                $storeId,
+                $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId)
+            );
 
             switch ($event_name) {
                 case CartAddProduct::EVENT:

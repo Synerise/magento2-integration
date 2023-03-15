@@ -80,11 +80,6 @@ class CustomerLogin implements ObserverInterface
             $storeId = $customer->getStoreId();
 
             $this->trackingHelper->manageClientUuid($customer->getEmail());
-            $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
-
-            $customerParams = $this->customerHelper->preapreAdditionalParams($customer);
-            $customerParams['uuid'] = $emailUuid;
-            $createClientInCRMRequest = new CreateaClientinCRMRequest($customerParams);
 
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
@@ -102,10 +97,8 @@ class CustomerLogin implements ObserverInterface
             ]);
 
             if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId, $customer->getId());
                 $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId, $customer->getId());
                 $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
             }
         } catch (ApiException $e) {

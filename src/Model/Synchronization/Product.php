@@ -30,7 +30,6 @@ class Product extends AbstractSynchronization
         LoggerInterface $logger,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
-
         CollectionFactory $collectionFactory,
         CatalogHelper $catalogHelper
     ) {

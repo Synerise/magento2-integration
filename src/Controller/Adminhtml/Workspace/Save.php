@@ -103,7 +103,7 @@ class Save extends \Magento\Backend\App\Action
      * @throws \Synerise\ApiClient\ApiException
      */
     protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getApiToken($scope, $scopeId, $apiKey);
+        $token = $this->apiHelper->getApiToken($scope, $scopeId, null, $apiKey);
 
         return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);

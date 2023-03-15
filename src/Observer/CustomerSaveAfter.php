@@ -5,6 +5,7 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
@@ -13,13 +14,13 @@ use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class CustomerSaveAfter implements ObserverInterface
 {
     const EVENT = 'customer_save_after';
 
     const EXCLUDED_PATHS = [
-        '/customer/account/createpost/',
         '/newsletter/manage/save/'
     ];
 
@@ -37,6 +38,11 @@ class CustomerSaveAfter implements ObserverInterface
      * @var Tracking
      */
     protected $trackingHelper;
+
+    /**
+     * @var QueueResourceModel
+     */
+    protected $queueResourceModel;
 
     /**
      * @var LoggerInterface
@@ -63,6 +69,7 @@ class CustomerSaveAfter implements ObserverInterface
         Api $apiHelper,
         Tracking $trackingHelper,
         Customer $customerHelper,
+        QueueResourceModel $queueResourceModel,
         Http $request,
         Queue $queueHelper,
         Event $eventHelper
@@ -71,6 +78,7 @@ class CustomerSaveAfter implements ObserverInterface
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->customerHelper = $customerHelper;
+        $this->queueResourceModel = $queueResourceModel;
         $this->request = $request;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
@@ -98,8 +106,23 @@ class CustomerSaveAfter implements ObserverInterface
                 $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
             }
         } catch (ApiException $e) {
+            $this->addItemToQueue($observer->getCustomer());
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Error', ['exception' => $e]);
+            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->addItemToQueue($observer->getCustomer());
+        }
+    }
+
+    protected function addItemToQueue(\Magento\Customer\Model\Customer $customer)
+    {
+        try {
+            $this->queueResourceModel->addItem(
+                'customer',
+                $customer->getStoreId(),
+                $customer->getId()
+            );
+        } catch (LocalizedException $e) {
+            $this->logger->error('Adding customer item to queue failed', ['exception' => $e]);
         }
     }
 }

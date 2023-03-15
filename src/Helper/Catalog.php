@@ -12,7 +12,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Synerise\ApiClient\ApiException;
+use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
 
 class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
@@ -132,13 +132,13 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->cacheManager->clean(['config']);
     }
 
-    public function addCatalog($storeId)
+    public function addCatalog($storeId, $timeout = null)
     {
         $addBagRequest = new \Synerise\CatalogsApiClient\Model\AddBag([
             'name' => $this->getCatalogNameByStoreId($storeId)
         ]);
 
-        $response = $this->apiHelper->getBagsApiInstance($storeId)
+        $response = $this->apiHelper->getBagsApiInstance($storeId, $timeout)
             ->addBagWithHttpInfo($addBagRequest);
         $catalogId = $response[0]->getData()->getId();
 
@@ -147,7 +147,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         return $catalogId;
     }
 
-    public function getOrAddCatalog($storeId)
+    public function getOrAddCatalog($storeId, $timeout = null)
     {
         $catalogId = $this->getConfigCatalogId($storeId);
         if ($catalogId) {
@@ -160,7 +160,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $this->saveConfigCatalogId($catalog->getId(), $storeId);
         }
 
-        return $catalogId ?: $this->addCatalog($storeId);
+        return $catalogId ?: $this->addCatalog($storeId, $timeout);
     }
 
     public function findExistingCatalogByStoreId($storeId)
@@ -451,14 +451,15 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId)
     {
-        $catalogId = $this->getOrAddCatalog($storeId);
+        $timeout = $this->apiHelper->getScheduledRequestTimeout($storeId);
+        $catalogId = $this->getOrAddCatalog($storeId, $timeout);
 
         try {
-            $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
+            $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout);
         } catch (\Exception $e) {
             if ($e->getCode() === 404) {
                 $catalogId = $this->addCatalog($storeId);
-                $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId);
+                $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout);
             } else {
                 throw $e;
             }
@@ -466,12 +467,16 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * @param $catalogId
+     * @param $addItemRequest
+     * @param $storeId
+     * @param $timeout
+     * @return void
      * @throws ApiException
-     * @throws \Synerise\CatalogsApiClient\ApiException
      */
-    public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId)
+    public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout = null)
     {
-        list($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId, $timeout)
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
         if (substr($statusCode, 0, 1) != 2) {

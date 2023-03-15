@@ -119,7 +119,11 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         if (!empty($createatransaction_request)) {
-            $this->sendOrdersToSynerise($createatransaction_request, $storeId);
+            $this->sendOrdersToSynerise(
+                $createatransaction_request,
+                $storeId,
+                $this->apiHelper->getScheduledRequestTimeout($storeId)
+            );
         }
         return $ids;
     }
@@ -129,9 +133,9 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $ids
      * @throws ApiException
      */
-    public function sendOrdersToSynerise($createatransaction_request, $storeId)
+    public function sendOrdersToSynerise($createatransaction_request, $storeId, $timeout = null)
     {
-        list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
             ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createatransaction_request);
 
         if (substr($statusCode, 0, 1) != 2) {

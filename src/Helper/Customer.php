@@ -115,7 +115,11 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($params);
         }
 
-        $this->sendCustomersToSynerise($createAClientInCrmRequests, $storeId);
+        $this->sendCustomersToSynerise(
+            $createAClientInCrmRequests,
+            $storeId,
+            $this->apiHelper->getScheduledRequestTimeout($storeId)
+        );
         $this->markCustomersAsSent($ids, $storeId);
     }
 
@@ -134,7 +138,11 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
             $requests[] = $this->prepareRequestFromSubscription($subscriber);
         }
 
-        $this->sendCustomersToSynerise($requests, $storeId);
+        $this->sendCustomersToSynerise(
+            $requests,
+            $storeId,
+            $this->apiHelper->getScheduledRequestTimeout($storeId)
+        );
     }
 
     /**
@@ -158,31 +166,28 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @param \Magento\Customer\Api\Data\CustomerInterface $customer
      * @param string|null $prevUuid
+     * @throws ApiException
      */
-    public function addOrUpdateClient($customer, $prevUuid = null)
+    public function addOrUpdateClient($customer)
     {
-        try {
-            $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
+        $emailUuid = $this->trackingHelper->generateUuidByEmail($customer->getEmail());
 
-            $params = $this->preapreAdditionalParams($customer);
-            $params['uuid'] = $emailUuid;
+        $params = $this->preapreAdditionalParams($customer);
+        $params['uuid'] = $emailUuid;
 
-            list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($customer->getStoreId())
-                ->batchAddOrUpdateClientsWithHttpInfo(
-                    'application/json',
-                    '4.4',
-                    [
-                        new CreateaClientinCRMRequest($params)
-                    ]
-                );
+        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($customer->getStoreId())
+            ->batchAddOrUpdateClientsWithHttpInfo(
+                'application/json',
+                '4.4',
+                [
+                    new CreateaClientinCRMRequest($params)
+                ]
+            );
 
-            if ($statusCode != 202) {
-                $this->_logger->error('Client update failed');
-            } else {
-                $this->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
-            }
-        } catch (\Exception $e) {
-            $this->_logger->error('Client update failed', ['exception' => $e]);
+        if ($statusCode != 202) {
+            throw new ApiException('Client update failed. Invalid status '. $statusCode);
+        } else {
+            $this->markCustomersAsSent([$customer->getId()], $customer->getStoreId());
         }
     }
 
@@ -192,9 +197,9 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      * @throws ApiException
      * @throws \Magento\Framework\Exception\ValidatorException
      */
-    public function sendCustomersToSynerise($createAClientInCrmRequests, $storeId)
+    public function sendCustomersToSynerise($createAClientInCrmRequests, $storeId, $timeout = null)
     {
-        list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId)
+        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
             ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
         if (substr($statusCode, 0, 1) != 2) {
