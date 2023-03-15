@@ -206,11 +206,17 @@
             <resource>Synerise_Integration::configuration_queue</resource>
             <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Message Queues</label>
-                <comment>Message Queues can be utilized instead of live events sending. Default configuration is db based. It is highly encouraged to use RabbitMQ if available. Queues connection can be set via env.php config.</comment>
+                <comment>Message Queues can be used instead of live events sending</comment>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Send by queue</label>
                     <config_path>synerise/queue/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="connection" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Connection</label>
+                    <comment>Before switching to amqp, please make sure it is defined in env.php. Refer to Magento Message Queues documentation for more details. Remember to run setup:upgrade comment afterwards.</comment>
+                    <config_path>synerise/queue/connection</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Connection</source_model>
                 </field>
                 <field id="events" type="multiselect" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Events to send by queue</label>
