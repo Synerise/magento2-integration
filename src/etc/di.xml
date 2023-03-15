@@ -1,6 +1,14 @@
 <?xml version="1.0" ?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Synerise\Integration\Api\SetupInterface" type="Synerise\Integration\Model\Setup"/>
+    <type name="Magento\Framework\MessageQueue\Consumer\Config\CompositeReader">
+        <plugin name="queueConfigPluginSynerise"
+                type="Synerise\Integration\MessageQueue\Config\Consumer\ConfigReaderPlugin" sortOrder="2" />
+    </type>
+    <type name="Magento\Framework\MessageQueue\Publisher\Config\CompositeReader">
+        <plugin name="queueConfigPluginSynerise"
+                type="Synerise\Integration\MessageQueue\Config\Publisher\ConfigReaderPlugin" sortOrder="2" />
+    </type>
     <type name="Magento\Config\Model\Config\TypePool">
         <arguments>
             <argument name="sensitive" xsi:type="array">
