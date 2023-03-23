@@ -19,7 +19,7 @@ class ApiKeyFactory extends AbstractApiFactory
      */
     public function create(ApiConfig $apiConfig): ApiKeyControllerApi
     {
-        $client = $this->getGuzzleClient();
+        $client = $this->getGuzzleClient($apiConfig);
         $config = clone Configuration::getDefaultConfiguration()
             ->setHost(sprintf('%s/uauth', $apiConfig->getHost()))
             ->setAccessToken($apiConfig->getToken());

@@ -11,10 +11,13 @@ use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
+use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Update\Transaction;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Synchronization\Results;
 use Synerise\Integration\Helper\Synchronization\Sender\Order as OrderSender;
 use Synerise\Integration\Observer\AbstractObserver;
@@ -24,14 +27,14 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
     const EVENT = 'sales_order_place_after';
 
     /**
-     * @var Api
+     * @var Event
      */
-    protected $apiHelper;
+    protected $eventsHelper;
 
     /**
-     * @var DefaultApiFactory
+     * @var Queue
      */
-    private $defaultApiFactory;
+    protected $queueHelper;
 
     /**
      * @var Identity
@@ -51,14 +54,14 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        DefaultApiFactory $defaultApiFactory,
+        Event $eventsHelper,
+        Queue $queueHelper,
         Identity $identityHelper,
         Transaction $transactionHelper,
         Results $resultsHelper
     ) {
-        $this->apiHelper = $apiHelper;
-        $this->defaultApiFactory = $defaultApiFactory;
+        $this->eventsHelper = $eventsHelper;
+        $this->queueHelper = $queueHelper;
         $this->identityHelper = $identityHelper;
         $this->transactionHelper = $transactionHelper;
         $this->resultsHelper = $resultsHelper;
@@ -75,111 +78,92 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
         try {
             /** @var \Magento\Sales\Model\Order $order */
             $order = $observer->getEvent()->getOrder();
+            $storeId = $order->getStoreId();
 
             $uuid = $this->identityHelper->getClientUuid();
             if ($uuid && $this->identityHelper->manageClientUuid($uuid, $order->getCustomerEmail())) {
-                $this->sendMergeClients(
-                    $this->identityHelper->prepareMergeClientsRequest(
-                        $order->getCustomerEmail(),
-                        $uuid,
-                        $this->identityHelper->getClientUuid()
-                    )
+                $mergeRequest = $this->identityHelper->prepareMergeClientsRequest(
+                    $order->getCustomerEmail(),
+                    $uuid,
+                    $this->identityHelper->getClientUuid()
                 );
+
+                $this->publishOrSendClientMerge($mergeRequest, $storeId);
             }
 
-            $this->sendCreateTransaction(
-                $this->transactionHelper->prepareCreateTransactionRequest(
-                    $order,
-                    $this->identityHelper->getClientUuid()
-                ),
-                $order->getStoreId()
+            $eventRequest = $this->transactionHelper->prepareCreateTransactionRequest(
+                $order,
+                $this->identityHelper->getClientUuid()
             );
 
-            $this->resultsHelper->markAsSent(OrderSender::MODEL, [$order->getEntityId()], $order->getStoreId());
+            $this->publishOrSendEvent(self::EVENT, $eventRequest, $storeId);
 
             if (!$this->identityHelper->isAdminStore() && $order->getCustomerIsGuest()) {
-                $this->sendCreateClient(
-                    $this->transactionHelper->prepareCreateClientRequest(
-                        $order,
-                        $this->identityHelper->getClientUuid()
-                    ),
-                    $order->getStoreId()
+                $updateRequest = $this->transactionHelper->prepareCreateClientRequest(
+                    $order,
+                    $this->identityHelper->getClientUuid()
                 );
+
+                $this->publishOrSendClientUpdate($updateRequest, $storeId);
             }
 
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
     /**
-     * @param CreateatransactionRequest $createTransactionRequest
-     * @param int|null $storeId
-     * @return array
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    public function sendCreateTransaction(CreateatransactionRequest $createTransactionRequest, ?int $storeId = null): array
-    {
-        list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
-            ->createATransactionWithHttpInfo('4.4', $createTransactionRequest);
-
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->debug('Request accepted with errors', ['response' => $body]);
-        }
-
-        return [$body, $statusCode, $headers];
-    }
-
-    /**
-     * @param CreateaClientinCRMRequest $createAClientInCrmRequest
-     * @param int|null $storeId
-     * @return array
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, ?int $storeId = null): array
-    {
-        return $this->getDefaultApiInstance($storeId)
-            ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
-    }
-
-    /**
-     * @param CreateaClientinCRMRequest[] $createAClientInCrmRequests
-     * @param int|null $storeId
+     * @param string $eventName
+     * @param CreateatransactionRequest $request
+     * @param int $storeId
      * @return void
+     * @throws ValidatorException
      */
-    public function sendMergeClients(array $createAClientInCrmRequests, ?int $storeId = null): array {
-
+    public function publishOrSendEvent(string $eventName, CreateatransactionRequest $request, int $storeId): void
+    {
         try {
-            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
-                ->batchAddOrUpdateClientsWithHttpInfo(
-                    'application/json',
-                    '4.4',
-                    $createAClientInCrmRequests
-                );
-
-            if ($statusCode == 202) {
-                return [$body, $statusCode, $headers];
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
             } else {
-                $this->logger->error('Client update with uuid reset failed');
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
             }
-        } catch (\Exception $e) {
-            $this->logger->error('Client update with uuid reset failed', ['exception' => $e]);
+        } catch (ApiException $e) {
         }
-        return [null, null, null];
     }
 
     /**
-     * @param int|null $storeId
-     * @return DefaultApi
+     * @param CreateaClientinCRMRequest[] $request
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
-     * @throws ApiException
      */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
+    public function publishOrSendClientMerge(array $request, int $storeId): void
     {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent(Event::BATCH_ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent(Event::BATCH_ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
+    }
+
+    /**
+     * @param CreateaClientinCRMRequest $request
+     * @param int $storeId
+     * @return void
+     * @throws ValidatorException
+     */
+    public function publishOrSendClientUpdate(CreateaClientinCRMRequest $request, int $storeId): void
+    {
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }

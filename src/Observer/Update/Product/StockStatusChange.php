@@ -14,7 +14,7 @@ use Synerise\Integration\Observer\AbstractObserver;
 
 class StockStatusChange  extends AbstractObserver implements ObserverInterface
 {
-    public const EVENT = 'stock_status_change';
+    const EVENT = 'stock_status_change';
 
     /**
      * @var LoggerInterface
@@ -45,7 +45,6 @@ class StockStatusChange  extends AbstractObserver implements ObserverInterface
         parent::__construct($scopeConfig, $logger);
     }
 
-
     public function execute(Observer $observer)
     {
         if (!$this->isEventTrackingEnabled(self::EVENT)) {
@@ -55,17 +54,17 @@ class StockStatusChange  extends AbstractObserver implements ObserverInterface
         /** @var Order $order */
         $order = $observer->getEvent()->getOrder();
 
-       if ($order->getState() === Order::STATE_COMPLETE) {
+        if ($order->getState() === Order::STATE_COMPLETE) {
             $items = $order->getItemsCollection();
             foreach ($items as $item) {
                 try {
                     $product = $item->getProduct();
                     $stockItem = $this->getLegacyStockItem->execute($item->getSku());
-                    if(!$stockItem->getManageStock() || $stockItem->getBackorders()){
+                    if (!$stockItem->getManageStock() || $stockItem->getBackorders()) {
                         continue;
                     }
 
-                    if($product->getQuantityAndStockStatus()['qty'] - $item->getQtyShipped() > 0){
+                    if ($product->getQuantityAndStockStatus()['qty'] - $item->getQtyShipped() > 0) {
                         continue;
                     }
 
@@ -79,6 +78,6 @@ class StockStatusChange  extends AbstractObserver implements ObserverInterface
                     $this->logger->error('Failed to add product to cron queue', ['exception' => $e]);
                 }
             }
-       }
+        }
     }
 }

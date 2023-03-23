@@ -24,28 +24,35 @@ class RemoveProduct  extends AbstractWishlistEvent implements ObserverInterface
         }
 
         try {
-            $this->sendCustomEvent(
-                $this->favoritesHelper->prepareClientRemovedProductFromFavoritesRequest(
-                    self::EVENT,
-                    $observer->getEvent()->getItem()->getProduct(),
-                    $this->identityHelper->getClientUuid()
-                )
+            $request = $this->favoritesHelper->prepareClientRemovedProductFromFavoritesRequest(
+                self::EVENT,
+                $observer->getEvent()->getItem()->getProduct(),
+                $this->identityHelper->getClientUuid()
             );
+            $params = $request->getParams();
+
+            $this->publishOrSendEvent(self::EVENT, $request, $params['storeId']);
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
     /**
+     * @param string $eventName
      * @param CustomeventRequest $request
-     * @param int|null $storeId
-     * @return array of null, HTTP status code, HTTP response headers (array of strings)
-     * @throws ApiException
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
      */
-    public function sendCustomEvent(CustomeventRequest $request, ?int $storeId = null): array
+    public function publishOrSendEvent(string $eventName, CustomeventRequest $request, int $storeId): void
     {
-        return $this->getDefaultApiInstance($storeId)
-            ->customEventWithHttpInfo('4.4', $request);
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }

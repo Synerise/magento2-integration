@@ -2,11 +2,9 @@
 
 namespace Synerise\Integration\Observer\Event\Customer;
 
+use Magento\Customer\Model\Data\Customer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\ValidatorException;
-use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\EventClientAction;
 
 class Register extends AbstractCustomerEvent implements ObserverInterface
 {
@@ -23,42 +21,29 @@ class Register extends AbstractCustomerEvent implements ObserverInterface
         }
 
         try {
-            /** @var \Magento\Customer\Model\Data\Customer $customer */
+            /** @var Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
 
             $uuid = $this->identityHelper->getClientUuid();
             if ($uuid && $this->identityHelper->manageClientUuid($uuid, $customer->getEmail())) {
-                $this->sendMergeClients(
-                    $this->identityHelper->prepareMergeClientsRequest(
-                        $customer->getEmail(),
-                        $uuid,
-                        $this->identityHelper->getClientUuid()
-                    )
+                $request = $this->identityHelper->prepareMergeClientsRequest(
+                    $customer->getEmail(),
+                    $uuid,
+                    $this->identityHelper->getClientUuid()
                 );
+
+                $this->publishOrSendClientMerge($request, $customer->getStoreId());
             }
 
-            $this->sendClientRegisteredEvent(
-                $this->clientHelper->prepareEventClientActionRequest(
-                    self::EVENT,
-                    $customer,
-                    $this->identityHelper->getClientUuid()
-                )
+            $request = $this->clientHelper->prepareEventClientActionRequest(
+                self::EVENT,
+                $customer,
+                $this->identityHelper->getClientUuid()
             );
-        } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
-        }
-    }
 
-    /**
-     * @param EventClientAction $request
-     * @param int|null $storeId
-     * @return array
-     * @throws ValidatorException
-     * @throws ApiException
-     */
-    public function sendClientRegisteredEvent(EventClientAction $request, ?int $storeId = null): array
-    {
-        return $this->getDefaultApiInstance($storeId)
-            ->clientRegisteredWithHttpInfo('4.4', $request);
+            $this->publishOrSendEvent(static::EVENT, $request, $customer->getStoreId());
+        } catch (\Exception $e) {
+            $this->logger->error('Synerise Error', ['exception' => $e]);
+        }
     }
 }

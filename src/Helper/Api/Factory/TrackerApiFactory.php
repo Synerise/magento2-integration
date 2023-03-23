@@ -18,7 +18,7 @@ class TrackerApiFactory extends AbstractApiFactory
      */
     public function create(ApiConfig $apiConfig): TrackerControllerApi
     {
-        $client = $this->getGuzzleClient();
+        $client = $this->getGuzzleClient($apiConfig);
         $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
             ->setHost(sprintf('%s/business-profile-service', $apiConfig->getHost()))
             ->setAccessToken($apiConfig->getToken());

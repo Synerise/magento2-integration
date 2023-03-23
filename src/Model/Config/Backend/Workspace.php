@@ -5,6 +5,7 @@ namespace Synerise\Integration\Model\Config\Backend;
 use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\Factory\TrackerApiFactory;
 
 class Workspace extends \Magento\Framework\App\Config\Value
 {
@@ -21,7 +22,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Synerise\Integration\Helper\Api $apiHelper,
-        Api\TrackerApiFactory $trackerApiFactory,
+        TrackerApiFactory $trackerApiFactory,
         \Synerise\Integration\Model\Workspace $workspace,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,

@@ -30,34 +30,34 @@ class Status  extends AbstractCartEvent implements ObserverInterface
             $quote->collectTotals();
 
             if ($this->cartHelper->hasItemDataChanges($quote)) {
-                $this->sendCartStatusEvent(
-                    $this->cartHelper->prepareCartStatusRequest(
-                        $quote,
-                        $this->identityHelper->getClientUuid()
-                    )
+                $request = $this->cartHelper->prepareCartStatusRequest(
+                    $quote,
+                    $this->identityHelper->getClientUuid()
                 );
+
+                $this->publishOrSendEvent(self::EVENT, $request, $quote->getStoreId());
             }
         } catch (Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
     /**
-     * @param CustomeventRequest $customEventRequest
-     * @param int|null $storeId
-     * @return array|null
-     * @throws ApiException
+     * @param string $eventName
+     * @param CustomeventRequest $request
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
      */
-    public function sendCartStatusEvent(CustomeventRequest $customEventRequest, ?int $storeId = null): ?array
+    public function publishOrSendEvent(string $eventName, CustomeventRequest $request, int $storeId): void
     {
-        $response = null;
-        if (!$this->cartHelper->isCartStatusSent()) {
-            $response = $this->getDefaultApiInstance($storeId)
-                ->customEventWithHttpInfo('4.4', $customEventRequest);
-            $this->cartHelper->setCartStatusSent(true);
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
+            }
+        } catch (ApiException $e) {
         }
-
-        return $response;
     }
 }

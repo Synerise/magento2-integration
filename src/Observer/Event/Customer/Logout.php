@@ -2,11 +2,9 @@
 
 namespace Synerise\Integration\Observer\Event\Customer;
 
+use Magento\Customer\Model\Customer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\ValidatorException;
-use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\EventClientAction;
 
 class Logout  extends AbstractCustomerEvent implements ObserverInterface
 {
@@ -23,28 +21,18 @@ class Logout  extends AbstractCustomerEvent implements ObserverInterface
         }
 
         try {
-            $this->sendClientLoggedOutEvent(
-                $this->clientHelper->prepareEventClientActionRequest(
-                    self::EVENT,
-                    $observer->getEvent()->getCustomer(),
-                    $this->identityHelper->getClientUuid()
-                )
-            );
-        } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
-        }
-    }
+            /** @var Customer $customer */
+            $customer = $observer->getEvent()->getCustomer();
 
-    /**
-     * @param EventClientAction $request
-     * @param int|null $storeId
-     * @return array
-     * @throws ValidatorException
-     * @throws ApiException
-     */
-    public function sendClientLoggedOutEvent(EventClientAction $request, ?int $storeId = null): array
-    {
-        return $this->getDefaultApiInstance($storeId)
-            ->clientLoggedOutWithHttpInfo('4.4', $request);
+            $request = $this->clientHelper->prepareEventClientActionRequest(
+                self::EVENT,
+                $customer,
+                $this->identityHelper->getClientUuid()
+            );
+
+            $this->publishOrSendEvent(static::EVENT, $request, $customer->getStoreId());
+        } catch (\Exception $e) {
+            $this->logger->error('Synerise Error', ['exception' => $e]);
+        }
     }
 }

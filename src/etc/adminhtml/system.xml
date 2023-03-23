@@ -200,7 +200,35 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_api" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_queue" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Message Queues</label>
+            <tab>synerise</tab>
+            <resource>Synerise_Integration::configuration_queue</resource>
+            <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Message Queues</label>
+                <comment>Message Queues can be used instead of live events sending</comment>
+                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Send by queue</label>
+                    <config_path>synerise/queue/enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="connection" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Connection</label>
+                    <comment>Before switching to amqp, please make sure it is defined in env.php. Refer to Magento Message Queues documentation for more details. Remember to run setup:upgrade comment afterwards.</comment>
+                    <config_path>synerise/queue/connection</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Connection</source_model>
+                </field>
+                <field id="events" type="multiselect" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Events to send by queue</label>
+                    <config_path>synerise/queue/events</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Queue\Events</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+        <section id="synerise_api" translate="label" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Api</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_api</resource>
@@ -221,6 +249,24 @@
                     <label>Request logging</label>
                     <config_path>synerise/api/logger_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="live_request" translate="label" sortOrder="10" showInDefault="1">
+                <label>Live requests</label>
+                <field id="timeout" translate="label comment" type="text" sortOrder="30" showInDefault="1">
+                    <label>Timeout</label>
+                    <config_path>synerise/api/live_request_timeout</config_path>
+                    <comment>Specify timeout in seconds for live requests.</comment>
+                    <validate>float validate-greater-than-zero</validate>
+                </field>
+            </group>
+            <group id="scheduled_request" translate="label" sortOrder="10" showInDefault="1">
+                <label>Scheduled requests</label>
+                <field id="timeout" translate="label comment" type="text" sortOrder="30" showInDefault="1">
+                    <label>Timeout</label>
+                    <config_path>synerise/api/scheduled_request_timeout</config_path>
+                    <comment>Specify timeout in seconds for scheduled requests.</comment>
+                    <validate>float validate-greater-than-zero</validate>
                 </field>
             </group>
         </section>

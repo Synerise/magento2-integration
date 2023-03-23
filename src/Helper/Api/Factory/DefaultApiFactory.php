@@ -19,7 +19,7 @@ class DefaultApiFactory extends AbstractApiFactory
      */
     public function create(ApiConfig $apiConfig): DefaultApi
     {
-        $client = $this->getGuzzleClient($apiConfig->isLoggerEnabled());
+        $client = $this->getGuzzleClient($apiConfig);
         $config = Configuration::getDefaultConfiguration()
             ->setHost(sprintf('%s/v4', $apiConfig->getHost()))
             ->setAccessToken($apiConfig->getToken());

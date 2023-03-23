@@ -100,7 +100,7 @@ class DeleteBefore  extends AbstractObserver implements ObserverInterface
                 }
             }
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 

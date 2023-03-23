@@ -5,27 +5,24 @@ namespace Synerise\Integration\Observer\Event\Cart;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Api\DefaultApi;
-use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Event\Cart;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 abstract class AbstractCartEvent extends AbstractObserver implements ObserverInterface
 {
     /**
-     * @var DefaultApiFactory
+     * @var Event
      */
-    protected $defaultApiFactory;
+    protected $eventsHelper;
 
     /**
-     * @var Api
+     * @var Queue
      */
-    protected $apiHelper;
+    protected $queueHelper;
 
     /**
      * @var Cart
@@ -40,13 +37,13 @@ abstract class AbstractCartEvent extends AbstractObserver implements ObserverInt
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        DefaultApiFactory $defaultApiFactory,
-        Api $apiHelper,
+        Event $eventsHelper,
+        Queue $queueHelper,
         Cart $cartHelper,
         Identity $identityHelper
     ) {
-        $this->defaultApiFactory = $defaultApiFactory;
-        $this->apiHelper = $apiHelper;
+        $this->eventsHelper = $eventsHelper;
+        $this->queueHelper = $queueHelper;
         $this->cartHelper = $cartHelper;
         $this->identityHelper = $identityHelper;
 
@@ -54,15 +51,4 @@ abstract class AbstractCartEvent extends AbstractObserver implements ObserverInt
     }
 
     abstract public function execute(Observer $observer);
-
-    /**
-     * @param int|null $storeId
-     * @return DefaultApi
-     * @throws ValidatorException
-     * @throws ApiException
-     */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
-    {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
-    }
 }

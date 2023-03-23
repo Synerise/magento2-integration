@@ -15,10 +15,14 @@ use Synerise\Integration\Model\ApiConfig;
 class Api
 {
     const XML_PATH_API_HOST = 'synerise/api/host';
-    
+
     const XML_PATH_API_KEY = 'synerise/api/key';
-    
+
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
+
+    const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
+
+    const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
 
     /**
      * @var ApiConfig[]
@@ -58,18 +62,25 @@ class Api
     /**
      * @param int|null $scopeId
      * @param string|null $scope
+     * @param float|null $timeout
      * @return ApiConfig
-     * @throws ApiException|ValidatorException
+     * @throws ApiException
+     * @throws ValidatorException
      */
-    public function getApiConfigByScope(?int $scopeId = null, ?string $scope = ScopeInterface::SCOPE_STORE): ApiConfig
-    {
+    public function getApiConfigByScope(
+        ?int $scopeId = null,
+        ?string $scope = ScopeInterface::SCOPE_STORE,
+        ?float $timeout = null
+    ): ApiConfig {
         $key = $scope.$scopeId;
         if (!isset($this->ApiConfigs[$key])) {
             $apiKey = $this->getApiKey($scopeId, $scope);
             $apiHost = $this->getApiHost($scopeId, $scope);
             $token = $this->getApiToken($apiKey, $apiHost);
-
-            $this->ApiConfigs[$key] = new ApiConfig($apiHost, $token, $this->isLoggerEnabled());
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($scopeId);
+            }
+            $this->ApiConfigs[$key] = new ApiConfig($apiHost, $timeout, $token, $this->isLoggerEnabled());
         }
 
         return $this->ApiConfigs[$key];
@@ -79,20 +90,24 @@ class Api
      * @param string $apiKey
      * @param int|null $scopeId
      * @param string|null $scope
+     * @param int|null $timeout
      * @return ApiConfig
      * @throws ValidatorException
      * @throws ApiException
      */
     public function getApiConfigByApiKey(
-        string $apiKey,
-        ?int $scopeId = null,
-        ?string $scope = ScopeInterface::SCOPE_STORE
+        string  $apiKey,
+        ?int    $scopeId = null,
+        ?string $scope = ScopeInterface::SCOPE_STORE, ?int $timeout = null
     ): ApiConfig
     {
         $apiHost = $this->getApiHost($scopeId, $scope);
         $token = $this->getApiToken($apiKey, $apiHost);
+        if (!$timeout) {
+            $timeout = $this->getLiveRequestTimeout($scopeId);
+        }
 
-        return new ApiConfig($apiHost, $token);
+        return new ApiConfig($apiHost, $timeout, $token);
     }
 
     /**
@@ -133,24 +148,47 @@ class Api
      */
     public function isLoggerEnabled($storeId = null)
     {
-        return $this->scopeConfig->getValue(
+        return $this->scopeConfig->isSetFlag(
             self::XML_PATH_API_LOGGER_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
     }
 
+    public function getLiveRequestTimeout($scopeId = null, $scope = ScopeInterface::SCOPE_STORE)
+    {
+        return (float) $this->scopeConfig->getValue(
+            self::XML_PATH_API_LIVE_REQUEST_TIMEOUT,
+            $scope,
+            $scopeId
+        );
+    }
+
+    public function getScheduledRequestTimeout($scopeId = null, $scope = ScopeInterface::SCOPE_STORE)
+    {
+        return (float) $this->scopeConfig->getValue(
+            self::XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT,
+            $scope,
+            $scopeId
+        );
+    }
+
+
     /**
      * @param string $apiKey
      * @param string $apiHost
+     * @param int|null $timeout
      * @return string
-     * @throws ValidatorException
      * @throws ApiException
+     * @throws ValidatorException
      */
-    public function getApiToken(string $apiKey, string $apiHost): string
+    public function getApiToken(string $apiKey, string $apiHost, ?int $timeout = null): string
     {
         if (!isset($this->apiTokens[$apiKey])) {
-            $apiConfig = new ApiConfig($apiHost);
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout();
+            }
+            $apiConfig = new ApiConfig($apiHost, $timeout);
             $request = new BusinessProfileAuthenticationRequest([
                 'api_key' => $apiKey
             ]);

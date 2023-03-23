@@ -7,12 +7,11 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Newsletter\Model\Subscriber;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
 use Synerise\Integration\Helper\Api\Update\ClientAgreement;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 class SubscriberDeleteAfter extends AbstractObserver implements ObserverInterface
@@ -20,30 +19,30 @@ class SubscriberDeleteAfter extends AbstractObserver implements ObserverInterfac
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var Api
+     * @var Event
      */
-    protected $apiHelper;
+    protected $eventsHelper;
+
+    /**
+     * @var Queue
+     */
+    protected $queueHelper;
 
     /**
      * @var ClientAgreement
      */
     protected $clientAgreementHelper;
 
-    /**
-     * @var DefaultApiFactory
-     */
-    protected $defaultApiFactory;
-
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
-        Api $apiHelper,
-        ClientAgreement $clientAgreementHelper,
-        DefaultApiFactory $defaultApiFactory
+        Event $eventsHelper,
+        Queue $queueHelper,
+        ClientAgreement $clientAgreementHelper
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->eventsHelper = $eventsHelper;
+        $this->queueHelper = $queueHelper;
         $this->clientAgreementHelper = $clientAgreementHelper;
-        $this->defaultApiFactory = $defaultApiFactory;
 
         parent::__construct($scopeConfig, $logger);
     }
@@ -58,36 +57,29 @@ class SubscriberDeleteAfter extends AbstractObserver implements ObserverInterfac
         $subscriber = $observer->getEvent()->getDataObject();
 
         try {
-            $this->sendCreateClient(
-                $this->clientAgreementHelper->prepareUnsubscribeRequest($subscriber),
-                $subscriber->getStoreId()
-            );
+            $request = $this->clientAgreementHelper->prepareUnsubscribeRequest($subscriber);
+            $this->publishOrSendClientUpdate($request, $subscriber->getStoreId());
+
         } catch (\Exception $e) {
             $this->logger->error('Failed to unsubscribe user', ['exception' => $e]);
         }
     }
 
     /**
-     * @param CreateaClientinCRMRequest $createAClientInCrmRequest
-     * @param int|null $storeId
-     * @return array of null, HTTP status code, HTTP response headers (array of strings)
-     * @throws ApiException
+     * @param CreateaClientinCRMRequest $request
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
      */
-    public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, int $storeId = null): array
+    public function publishOrSendClientUpdate(CreateaClientinCRMRequest $request, int $storeId): void
     {
-        return $this->getDefaultApiInstance($storeId)
-            ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
-    }
-
-    /**
-     * @param int|null $storeId
-     * @return DefaultApi
-     * @throws ValidatorException
-     * @throws ApiException
-     */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
-    {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }

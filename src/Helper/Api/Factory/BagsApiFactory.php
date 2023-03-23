@@ -19,7 +19,7 @@ class BagsApiFactory extends AbstractApiFactory
      */
     public function create(ApiConfig $apiConfig): BagsApi
     {
-        $client = $this->getGuzzleClient($apiConfig->isLoggerEnabled());
+        $client = $this->getGuzzleClient($apiConfig);
         $config = Configuration::getDefaultConfiguration()
             ->setHost(sprintf('%s/catalogs', $apiConfig->getHost()))
             ->setAccessToken($apiConfig->getToken());

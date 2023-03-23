@@ -19,7 +19,7 @@ class AuthApiFactory extends AbstractApiFactory
      */
     public function create(ApiConfig $apiConfig): AuthenticationControllerApi
     {
-        $client = $this->getGuzzleClient();
+        $client = $this->getGuzzleClient($apiConfig);
         $config = clone Configuration::getDefaultConfiguration()
             ->setHost(sprintf('%s/v4', $apiConfig->getHost()));
 

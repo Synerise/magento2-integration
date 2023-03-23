@@ -26,14 +26,16 @@ class QtyUpdate extends Status implements ObserverInterface
             $quote = $observer->getCart()->getQuote();
             $quote->collectTotals();
 
-            $this->sendCartStatusEvent(
-                $this->cartHelper->prepareCartStatusRequest(
-                    $quote,
-                    $this->identityHelper->getClientUuid()
-                )
+            $request = $this->cartHelper->prepareCartStatusRequest(
+                $quote,
+                $this->identityHelper->getClientUuid()
             );
+
+            $this->publishOrSendEvent(self::EVENT, $request, $quote->getStoreId());
+
+
         } catch (Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 }

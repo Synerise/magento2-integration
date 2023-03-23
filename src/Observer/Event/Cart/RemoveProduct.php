@@ -2,60 +2,20 @@
 
 namespace Synerise\Integration\Observer\Event\Cart;
 
-use Exception;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\ValidatorException;
-use Magento\Quote\Model\Quote;
-use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Api\DefaultApi;
+use Magento\Quote\Model\Quote\Item;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
-use Synerise\Integration\Helper\Api\Identity;
-use Synerise\Integration\Helper\Api\Event\Cart;
-use Synerise\Integration\Observer\AbstractObserver;
 
-class RemoveProduct  extends AbstractObserver implements ObserverInterface
+class RemoveProduct  extends AbstractCartEvent implements ObserverInterface
 {
     const EVENT = 'sales_quote_remove_item';
 
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var Cart
-     */
-    protected $cartHelper;
-
-    /**
-     * @var Identity
-     */
-    protected $identityHelper;
-
-    public function __construct(
-        ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        DefaultApiFactory $defaultApiFactory,
-        Api $apiHelper,
-        Cart $cartHelper,
-        Identity $identityHelper
-    ) {
-        $this->defaultApiFactory = $defaultApiFactory;
-        $this->apiHelper = $apiHelper;
-        $this->cartHelper = $cartHelper;
-        $this->identityHelper = $identityHelper;
-
-        parent::__construct($scopeConfig, $logger);
-    }
-
     public function execute(Observer $observer)
     {
-        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(static::EVENT)) {
             return;
         }
 
@@ -64,45 +24,41 @@ class RemoveProduct  extends AbstractObserver implements ObserverInterface
         }
 
         try {
-            /** @var Quote\Item $quoteItem */
+            /** @var Item $quoteItem */
             $quoteItem = $observer->getQuoteItem();
             if ($quoteItem->getProduct()->getParentProductId()) {
                 return;
             }
 
-            $this->sendRemoveFromCartEvent(
-                $this->cartHelper->prepareAddToCartRequest(
-                    $quoteItem,
-                    self::EVENT,
-                    $this->identityHelper->getClientUuid()
-                )
+            $request = $this->cartHelper->prepareAddToCartRequest(
+                $quoteItem,
+                static::EVENT,
+                $this->identityHelper->getClientUuid()
             );
-        } catch (Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+
+            $this->publishOrSendEvent(static::EVENT, $request, $quoteItem->getStoreId());
+
+        } catch (\Exception $e) {
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
     /**
+     * @param string $eventName
      * @param ClientaddedproducttocartRequest $request
-     * @param int|null $storeId
-     * @return array
-     * @throws ApiException
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
      */
-    public function sendRemoveFromCartEvent(ClientaddedproducttocartRequest $request, ?int $storeId = null): array
+    public function publishOrSendEvent(string $eventName, ClientaddedproducttocartRequest $request, int $storeId): void
     {
-        return $this->getDefaultApiInstance($storeId)
-            ->clientRemovedProductFromCartWithHttpInfo('4.4', $request);
-    }
-
-    /**
-     * @param int|null $storeId
-     * @return DefaultApi
-     * @throws ValidatorException
-     * @throws ApiException
-     */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
-    {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }

@@ -7,15 +7,13 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Api\Context as ContextHelper;
-use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Event\Review;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 class ProductReview  extends AbstractObserver implements ObserverInterface
@@ -28,14 +26,14 @@ class ProductReview  extends AbstractObserver implements ObserverInterface
     private $storeManager;
 
     /**
-     * @var Api
+     * @var Event
      */
-    protected $apiHelper;
+    protected $eventsHelper;
 
     /**
-     * @var DefaultApiFactory
+     * @var Queue
      */
-    protected $defaultApiFactory;
+    protected $queueHelper;
 
     /**
      * @var Identity
@@ -56,15 +54,15 @@ class ProductReview  extends AbstractObserver implements ObserverInterface
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         StoreManagerInterface $storeManager,
-        Api $apiHelper,
-        DefaultApiFactory $defaultApiFactory,
+        Event $eventsHelper,
+        Queue $queueHelper,
         Identity $identityHelper,
         Review $reviewHelper
     ) {
         $this->storeManager = $storeManager;
 
-        $this->apiHelper = $apiHelper;
-        $this->defaultApiFactory = $defaultApiFactory;
+        $this->eventsHelper = $eventsHelper;
+        $this->queueHelper = $queueHelper;
         $this->identityHelper = $identityHelper;
         $this->reviewHelper = $reviewHelper;
 
@@ -87,59 +85,62 @@ class ProductReview  extends AbstractObserver implements ObserverInterface
                 return;
             }
 
-            $this->sendCustomEvent(
-                $this->reviewHelper->prepareProductReviewRequest(
-                    self::EVENT,
-                    $this->review,
-                    $this->storeManager->getStore()->getId(),
-                    $this->identityHelper->getClientUuid()
-                )
+            $storeId = $this->storeManager->getStore()->getId();
+
+            $eventRequest = $this->reviewHelper->prepareProductReviewRequest(
+                self::EVENT,
+                $this->review,
+                $storeId,
+                $this->identityHelper->getClientUuid()
             );
 
-            $this->sendCreateClient(
-                $this->reviewHelper->prepareCreateClientRequest(
-                    $this->review, $this->identityHelper->getClientUuid()
-                )
+            $this->publishOrSendEvent(static::EVENT, $eventRequest, $storeId);
+
+            $updateRequest = $this->reviewHelper->prepareCreateClientRequest(
+                $this->review, $this->identityHelper->getClientUuid()
             );
+
+            $this->publishOrSendClientUpdate($updateRequest, $storeId);
+
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
     /**
-     * @param CreateaClientinCRMRequest $createAClientInCrmRequest
-     * @param int|null $storeId
-     * @return array of null, HTTP status code, HTTP response headers (array of strings)
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, int $storeId = null): array
-    {
-        return $this->getDefaultApiInstance($storeId)
-            ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
-    }
-
-    /**
+     * @param string $eventName
      * @param CustomeventRequest $request
-     * @param int|null $storeId
-     * @return array of null, HTTP status code, HTTP response headers (array of strings)
-     * @throws ApiException
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
      */
-    public function sendCustomEvent(CustomeventRequest $request, ?int $storeId = null): array
+    public function publishOrSendEvent(string $eventName, CustomeventRequest $request, int $storeId): void
     {
-        return $this->getDefaultApiInstance($storeId)
-            ->customEventWithHttpInfo('4.4', $request);
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 
     /**
-     * @param int|null $storeId
-     * @return DefaultApi
+     * @param CreateaClientinCRMRequest $request
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
-     * @throws ApiException
      */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
+    public function publishOrSendClientUpdate(CreateaClientinCRMRequest $request, int $storeId): void
     {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }

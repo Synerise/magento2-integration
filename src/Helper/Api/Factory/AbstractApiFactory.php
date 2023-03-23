@@ -40,13 +40,17 @@ abstract class AbstractApiFactory
     abstract public function get(ApiConfig $apiConfig);
 
     /**
-     * @param bool $includeLogger
+     * @param ApiConfig $apiConfig
      * @return Client
      */
-    protected function getGuzzleClient(bool $includeLogger = false): Client
+    protected function getGuzzleClient(ApiConfig $apiConfig): Client
     {
-        $options = [];
-        if ($includeLogger) {
+        $options = [
+            'connect_timeout' => $apiConfig->getTimeout(),
+            'timeout' => $apiConfig->getTimeout()
+        ];
+
+        if ($apiConfig->isLoggerEnabled()) {
             $LogMiddleware = new LogMiddleware(
                 $this->logger,
                 ['request_formatter' => new RequestCurlSanitizedFormatter()]

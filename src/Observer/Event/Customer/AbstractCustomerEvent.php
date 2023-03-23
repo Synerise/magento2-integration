@@ -7,32 +7,31 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
-use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
+use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Event\Client;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 abstract class AbstractCustomerEvent extends AbstractObserver implements ObserverInterface
 {
+    /**
+     * @var Event
+     */
+    protected $eventsHelper;
 
     /**
-     * @var Api
+     * @var Queue
      */
-    protected $apiHelper;
+    protected $queueHelper;
 
     /**
      * @var Client
      */
     protected $clientHelper;
-
-    /**
-     * @var DefaultApiFactory
-     */
-    protected $defaultApiFactory;
 
     /**
      * @var Identity
@@ -41,15 +40,15 @@ abstract class AbstractCustomerEvent extends AbstractObserver implements Observe
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface      $logger,
-        Api                  $apiHelper,
-        Client               $clientHelper,
-        DefaultApiFactory    $defaultApiFactory,
-        Identity             $identityHelper
+        LoggerInterface $logger,
+        Event $eventsHelper,
+        Queue $queueHelper,
+        Client $clientHelper,
+        Identity $identityHelper
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->eventsHelper = $eventsHelper;
+        $this->queueHelper = $queueHelper;
         $this->clientHelper = $clientHelper;
-        $this->defaultApiFactory = $defaultApiFactory;
         $this->identityHelper = $identityHelper;
 
         parent::__construct($scopeConfig, $logger);
@@ -58,39 +57,39 @@ abstract class AbstractCustomerEvent extends AbstractObserver implements Observe
     abstract public function execute(Observer $observer);
 
     /**
-     * @param CreateaClientinCRMRequest[] $createAClientInCrmRequests
-     * @param int|null $storeId
+     * @param string $eventName
+     * @param EventClientAction $request
+     * @param int $storeId
      * @return void
+     * @throws ValidatorException
      */
-    public function sendMergeClients(array $createAClientInCrmRequests, ?int $storeId = null): array {
-
+    public function publishOrSendEvent(string $eventName, EventClientAction $request, int $storeId): void
+    {
         try {
-            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
-                ->batchAddOrUpdateClientsWithHttpInfo(
-                    'application/json',
-                    '4.4',
-                    $createAClientInCrmRequests
-                );
-
-            if ($statusCode == 202) {
-                return [$body, $statusCode, $headers];
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
             } else {
-                $this->logger->error('Client update with uuid reset failed');
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
             }
-        } catch (\Exception $e) {
-            $this->logger->error('Client update with uuid reset failed', ['exception' => $e]);
+        } catch (ApiException $e) {
         }
-        return [null, null, null];
     }
 
     /**
-     * @param int|null $storeId
-     * @return DefaultApi
+     * @param CreateaClientinCRMRequest[] $request
+     * @param int $storeId
+     * @return void
      * @throws ValidatorException
-     * @throws ApiException
      */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
+    public function publishOrSendClientMerge(array $request, int $storeId): void
     {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent(Event::BATCH_ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent(Event::BATCH_ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }

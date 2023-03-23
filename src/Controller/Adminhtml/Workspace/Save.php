@@ -4,7 +4,6 @@ namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
@@ -26,7 +25,7 @@ class Save extends \Magento\Backend\App\Action
     protected $apiHelper;
 
     /**
-     * @var Api\ApiKeyFactory
+     * @var ApiKeyFactory
      */
     protected $apiKeyFactory;
 
@@ -39,7 +38,7 @@ class Save extends \Magento\Backend\App\Action
     (
         Action\Context $context,
         Api $apiHelper,
-        Api\ApiKeyFactory $apiKeyFactory
+        ApiKeyFactory $apiKeyFactory
     ) {
         $this->apiHelper = $apiHelper;
         $this->apiKeyFactory = $apiKeyFactory;

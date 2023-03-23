@@ -2,10 +2,11 @@
 
 namespace Synerise\Integration\Observer\Event\Cart;
 
-use Exception;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Quote\Model\Quote\Item;
+use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
 
 class AddProduct extends AbstractCartEvent implements ObserverInterface
@@ -14,7 +15,7 @@ class AddProduct extends AbstractCartEvent implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if (!$this->isLiveEventTrackingEnabled(self::EVENT)) {
+        if (!$this->isLiveEventTrackingEnabled(static::EVENT)) {
             return;
         }
 
@@ -29,28 +30,35 @@ class AddProduct extends AbstractCartEvent implements ObserverInterface
                 return;
             }
 
-            $this->sendAddToCartEvent(
-                $this->cartHelper->prepareAddToCartRequest(
-                    $quoteItem,
-                    self::EVENT,
-                    $this->identityHelper->getClientUuid()
-                )
+            $request = $this->cartHelper->prepareAddToCartRequest(
+                $quoteItem,
+                static::EVENT,
+                $this->identityHelper->getClientUuid()
             );
-        } catch (Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+
+            $this->publishOrSendEvent(static::EVENT, $request, $quoteItem->getStoreId());
+
+        } catch (\Exception $e) {
+            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
     /**
+     * @param string $eventName
      * @param ClientaddedproducttocartRequest $request
-     * @param int|null $storeId
-     * @return array
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
+     * @param int $storeId
+     * @return void
+     * @throws ValidatorException
      */
-    public function sendAddToCartEvent(ClientaddedproducttocartRequest $request, ?int $storeId = null): array
+    public function publishOrSendEvent(string $eventName, ClientaddedproducttocartRequest $request, int $storeId): void
     {
-        return $this->getDefaultApiInstance($storeId)
-            ->clientAddedProductToCartWithHttpInfo('4.4', $request);
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent($eventName, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent($eventName, $request, $storeId);
+            }
+        } catch (ApiException $e) {
+        }
     }
 }
