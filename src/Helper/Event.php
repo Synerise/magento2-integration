@@ -20,6 +20,7 @@ use Synerise\Integration\Observer\Event\Customer\Logout as CustomerLogout;
 use Synerise\Integration\Observer\Event\Customer\Register as CustomerRegister;
 use Synerise\Integration\Observer\Event\ProductReview;
 use Synerise\Integration\Observer\Event\Wishlist\AddProduct as WishlistAddProduct;
+use Synerise\Integration\Observer\Event\Wishlist\RemoveProduct;
 use Synerise\Integration\Observer\Update\OrderPlace;
 
 class Event extends \Magento\Framework\App\Helper\AbstractHelper
@@ -78,6 +79,7 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
                 case CartQtyUpdate::EVENT:
                 case CartStatus::EVENT:
                 case ProductReview::EVENT:
+                case RemoveProduct::EVENT:
                     return $apiInstance->customEventWithHttpInfo('4.4', $payload);
                 case CustomerRegister::EVENT:
                     return $apiInstance->clientRegisteredWithHttpInfo('4.4', $payload);

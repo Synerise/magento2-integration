@@ -16,6 +16,8 @@ use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Update\Client;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Helper\Synchronization\Results;
 use Synerise\Integration\Helper\Synchronization\Sender\Customer as CustomerSender;
 use Synerise\Integration\Observer\AbstractObserver;
@@ -36,40 +38,32 @@ class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
     protected $request;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var DefaultApiFactory
-     */
-    protected $defaultApiFactory;
-
-    /**
      * @var Client
      */
     protected $clientUpdate;
 
     /**
-     * @var Results
+     * @var Event
      */
-    protected $results;
+    protected $eventsHelper;
+
+    /**
+     * @var MessageQueue
+     */
+    protected $queueHelper;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         Http $request,
-        Api $apiHelper,
-        DefaultApiFactory $defaultApiFactory,
         Client $clientUpdate,
-        Results $results
+        Event $eventsHelper,
+        MessageQueue $queueHelper
     ) {
         $this->request = $request;
-
-        $this->apiHelper = $apiHelper;
-        $this->defaultApiFactory = $defaultApiFactory;
         $this->clientUpdate = $clientUpdate;
-        $this->results = $results;
+        $this->eventsHelper = $eventsHelper;
+        $this->queueHelper = $queueHelper;
 
         parent::__construct($scopeConfig, $logger);
     }
@@ -87,62 +81,34 @@ class CustomerSaveAfter  extends AbstractObserver implements ObserverInterface
         try {
             $customer = $observer->getCustomer();
 
-            list ($body, $statusCode, $headers) = $this->sendCreateClient(
-                $this->clientUpdate->prepareCreateClientRequest(
-                    $observer->getCustomer(),
-                    Identity::generateUuidByEmail($customer->getEmail()),
-                    $customer->getStoreId()
-                ),
+            $updateRequest = $this->clientUpdate->prepareCreateClientRequest(
+                $observer->getCustomer(),
+                Identity::generateUuidByEmail($customer->getEmail()),
                 $customer->getStoreId()
             );
 
-            if ($statusCode == 202) {
-                $this->markAsSent($customer);
-            } else {
-                $this->logger->error(
-                    'Client update - invalid status',
-                    [
-                        'status' => $statusCode,
-                        'body' => $body
-                    ]
-                );
-            }
+            $this->publishOrSendClientUpdate($updateRequest, $customer->getStoreId());
         } catch (\Exception $e) {
             $this->logger->error('Client update failed', ['exception' => $e]);
         }
     }
 
     /**
-     * @param CreateaClientinCRMRequest $createAClientInCrmRequest
-     * @param int|null $storeId
-     * @return array
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    public function sendCreateClient(CreateaClientinCRMRequest $createAClientInCrmRequest, ?int $storeId = null): array
-    {
-        return $this->getDefaultApiInstance($storeId)
-            ->createAClientInCrmWithHttpInfo('4.4', $createAClientInCrmRequest);
-    }
-
-    /**
-     * @param int|null $storeId
-     * @return DefaultApi
-     * @throws ValidatorException
-     * @throws ApiException
-     */
-    public function getDefaultApiInstance(?int $storeId = null): DefaultApi
-    {
-        return $this->defaultApiFactory->get($this->apiHelper->getApiConfigByScope($storeId));
-    }
-
-    /**
-     * @param CustomerInterface $customer
+     * @param CreateaClientinCRMRequest $request
+     * @param int $storeId
      * @return void
+     * @throws ValidatorException
      */
-    protected function markAsSent(CustomerInterface $customer)
+    public function publishOrSendClientUpdate(CreateaClientinCRMRequest $request, int $storeId): void
     {
-        $this->isSent = true;
-        $this->results->markAsSent(CustomerSender::MODEL, [$customer->getId()], $customer->getStoreId());
+        try {
+            if ($this->queueHelper->isQueueAvailable()) {
+                $this->queueHelper->publishEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            } else {
+                $this->eventsHelper->sendEvent(Event::ADD_OR_UPDATE_CLIENT, $request, $storeId);
+            }
+            $this->isSent = true;
+        } catch (ApiException $e) {
+        }
     }
 }

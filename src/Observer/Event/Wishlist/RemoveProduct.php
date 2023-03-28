@@ -7,7 +7,6 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Observer\Event\Cart\AbstractWishlistEvent;
 
 class RemoveProduct  extends AbstractWishlistEvent implements ObserverInterface
 {

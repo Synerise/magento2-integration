@@ -5,6 +5,7 @@ namespace Synerise\Integration\Test\Integration\Observer\Event\Customer;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Event\Customer\Login;
 
 class LoginObserverTest extends \PHPUnit\Framework\TestCase
@@ -28,6 +29,11 @@ class LoginObserverTest extends \PHPUnit\Framework\TestCase
      */
     private $clientAction;
 
+    /**
+     * @var Event
+     */
+    private $event;
+
     protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
@@ -36,6 +42,7 @@ class LoginObserverTest extends \PHPUnit\Framework\TestCase
             \Magento\Customer\Api\CustomerRepositoryInterface::class
         );
 
+        $this->event = $this->objectManager->create(Event::class);
         $this->clientAction = $this->objectManager->get(\Synerise\Integration\Helper\Api\Event\Client::class);
     }
 
@@ -71,5 +78,14 @@ class LoginObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($client->getUuid(), $uuid);
         $this->assertEquals($customer->getId(), $client->getCustomId());
         $this->assertEquals($customer->getEmail(), $client->getEmail());
+
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            Login::EVENT,
+            $request,
+            $customer->getStoreId(),
+            $customer->getId()
+        );
+
+        $this->assertEquals(202, $statusCode);
     }
 }

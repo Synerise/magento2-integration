@@ -118,9 +118,9 @@ class Cookie extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * @param string|null $value
-     * @return array|null
+     * @return string|array|null
      */
-    public function getCookieParams(?string $value = null): ?array
+    public function getCookieParams(?string $value = null)
     {
         if (!$this->cookieParams) {
             $paramsArray = [];

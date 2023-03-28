@@ -5,6 +5,7 @@ namespace Synerise\Integration\Test\Integration\Observer\Event\Customer;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Event\Customer\Logout;
 
 class LogoutObserverTest extends \PHPUnit\Framework\TestCase
@@ -27,6 +28,11 @@ class LogoutObserverTest extends \PHPUnit\Framework\TestCase
      */
     private $clientAction;
 
+    /**
+     * @var Event
+     */
+    private $event;
+
     protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
@@ -36,6 +42,7 @@ class LogoutObserverTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->clientAction = $this->objectManager->get(\Synerise\Integration\Helper\Api\Event\Client::class);
+        $this->event = $this->objectManager->create(Event::class);
     }
 
     public function testObserverRegistration()
@@ -70,5 +77,14 @@ class LogoutObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($uuid, $client->getUuid());
         $this->assertEquals($customer->getId(), $client->getCustomId());
         $this->assertEquals($customer->getEmail(), $client->getEmail());
+
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            Logout::EVENT,
+            $request,
+            $customer->getStoreId(),
+            $customer->getId()
+        );
+
+        $this->assertEquals(202, $statusCode);
     }
 }

@@ -8,6 +8,7 @@ use Magento\Framework\Event\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Api\Event\Client;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Event\Customer\Register;
 
 class RegisterObserverTest extends \PHPUnit\Framework\TestCase
@@ -31,6 +32,11 @@ class RegisterObserverTest extends \PHPUnit\Framework\TestCase
      */
     private $clientAction;
 
+    /**
+     * @var Event
+     */
+    private $event;
+
     protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
@@ -38,6 +44,7 @@ class RegisterObserverTest extends \PHPUnit\Framework\TestCase
         $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
 
         $this->clientAction = $this->objectManager->get(Client::class);
+        $this->event = $this->objectManager->create(Event::class);
     }
 
     public function testObserverRegistration()
@@ -72,5 +79,14 @@ class RegisterObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($uuid, $client->getUuid());
         $this->assertEquals($customer->getId(), $client->getCustomId());
         $this->assertEquals($customer->getEmail(), $client->getEmail());
+
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            Register::EVENT,
+            $request,
+            $customer->getStoreId(),
+            $customer->getId()
+        );
+
+        $this->assertEquals(202, $statusCode);
     }
 }
