@@ -13,7 +13,7 @@ use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Event\Client;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 abstract class AbstractCustomerEvent extends AbstractObserver implements ObserverInterface
@@ -24,7 +24,7 @@ abstract class AbstractCustomerEvent extends AbstractObserver implements Observe
     protected $eventsHelper;
 
     /**
-     * @var Queue
+     * @var MessageQueue
      */
     protected $queueHelper;
 
@@ -40,11 +40,11 @@ abstract class AbstractCustomerEvent extends AbstractObserver implements Observe
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        Event $eventsHelper,
-        Queue $queueHelper,
-        Client $clientHelper,
-        Identity $identityHelper
+        LoggerInterface      $logger,
+        Event                $eventsHelper,
+        MessageQueue         $queueHelper,
+        Client               $clientHelper,
+        Identity             $identityHelper
     ) {
         $this->eventsHelper = $eventsHelper;
         $this->queueHelper = $queueHelper;

@@ -7,6 +7,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Api\Context;
 use Synerise\Integration\Helper\Api\Update\Transaction as OrderHelper;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Update\OrderPlace;
 
 class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
@@ -20,7 +21,6 @@ class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
      */
     private $eventConfig;
 
-
     /**
      * @var Context
      */
@@ -32,10 +32,9 @@ class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
     private $orderHelper;
 
     /**
-     * @var OrderPlace
+     * @var Event
      */
-    protected $observer;
-
+    private $event;
 
     protected function setUp(): void
     {
@@ -45,7 +44,8 @@ class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
 
         $this->contextHelper = $this->objectManager->get(Context::class);
         $this->orderHelper = $this->objectManager->get(OrderHelper::class);
-        $this->observer = $this->objectManager->get(OrderPlace::class);
+        $this->event = $this->objectManager->create(Event::class);
+
     }
 
     public function testObserverRegistration()
@@ -85,10 +85,6 @@ class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($clientData->getCustomId());
 
         $this->assertNull($transactionRequest->getDiscountAmount());
-//
-//        $discountAmount = $transactionRequest->getDiscountAmount();
-//        $this->assertEquals($order->getDiscountAmount(), $discountAmount->getAmount());
-//        $this->assertEquals($order->getOrderCurrencyCode(), $discountAmount->getCurrency());
 
         $metadata = $transactionRequest->getMetadata();
 
@@ -109,7 +105,12 @@ class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(['amount' => 10.0, 'currency' => 'USD'], $product['finalUnitPrice']);
         $this->assertEquals(2, $product['quantity']);
 
-        list ($body, $statusCode, $headers) = $this->observer->sendCreateTransaction($transactionRequest, self::STORE_ID);
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            OrderPlace::EVENT,
+            $transactionRequest,
+            $order->getStoreId(),
+            $order->getEntityId()
+        );
         $this->assertEquals(202, $statusCode);
 
         $clientRequest = $this->orderHelper->prepareCreateClientRequest($order, $uuid);
@@ -120,7 +121,12 @@ class OrderPlaceObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($order->getCustomerLastname(), $clientRequest->getLastName());
         $this->assertEquals($address->getTelephone(), $clientRequest->getPhone());
 
-        list ($body, $statusCode, $headers) = $this->observer->sendCreateClient($clientRequest, self::STORE_ID);
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            Event::ADD_OR_UPDATE_CLIENT,
+            $clientRequest,
+            $order->getStoreId(),
+            $order->getEntityId()
+        );
         $this->assertEquals(202, $statusCode);
     }
 }

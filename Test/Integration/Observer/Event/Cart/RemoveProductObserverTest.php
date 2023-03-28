@@ -9,6 +9,7 @@ use Magento\Quote\Model\QuoteFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Api\Event\Cart as CartHelper;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Event\Cart\RemoveProduct;
 
 class RemoveProductObserverTest extends \PHPUnit\Framework\TestCase
@@ -47,6 +48,10 @@ class RemoveProductObserverTest extends \PHPUnit\Framework\TestCase
      */
     private $productHelper;
 
+    /**
+     * @var Event
+     */
+    private $event;
 
     protected function setUp(): void
     {
@@ -57,6 +62,7 @@ class RemoveProductObserverTest extends \PHPUnit\Framework\TestCase
         $this->cartHelper = $this->objectManager->get(CartHelper::class);
         $this->productHelper = $this->objectManager->get(ProductHelper::class);
         $this->observer = $this->objectManager->create(RemoveProduct::class);
+        $this->event = $this->objectManager->create(Event::class);
     }
 
     public function testObserverRegistration()
@@ -84,7 +90,8 @@ class RemoveProductObserverTest extends \PHPUnit\Framework\TestCase
 
         $uuid = (string) Uuid::Uuid4();
 
-        list ($body, $statusCode, $headers) = $this->observer->sendRemoveFromCartEvent(
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            RemoveProduct::EVENT,
             $this->cartHelper->prepareAddToCartRequest(
                 $quoteItem,
                 RemoveProduct::EVENT,

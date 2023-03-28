@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Event\Cart;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 abstract class AbstractCartEvent extends AbstractObserver implements ObserverInterface
@@ -20,7 +20,7 @@ abstract class AbstractCartEvent extends AbstractObserver implements ObserverInt
     protected $eventsHelper;
 
     /**
-     * @var Queue
+     * @var MessageQueue
      */
     protected $queueHelper;
 
@@ -36,11 +36,11 @@ abstract class AbstractCartEvent extends AbstractObserver implements ObserverInt
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        Event $eventsHelper,
-        Queue $queueHelper,
-        Cart $cartHelper,
-        Identity $identityHelper
+        LoggerInterface      $logger,
+        Event                $eventsHelper,
+        MessageQueue         $queueHelper,
+        Cart                 $cartHelper,
+        Identity             $identityHelper
     ) {
         $this->eventsHelper = $eventsHelper;
         $this->queueHelper = $queueHelper;

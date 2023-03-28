@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Helper;
 
+use Exception;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
 use Synerise\ApiClient\Api\DefaultApi;
@@ -54,44 +55,44 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * @param string $eventName
+     * @param mixed $payload
+     * @param int $storeId
+     * @param int|null $entityId
+     * @param int|null $timeout
+     * @return array
      * @throws ApiException
      * @throws ValidatorException
+     * @throws Exception
      */
-    public function sendEvent($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
+    public function sendEvent(string $eventName, $payload, int $storeId, int $entityId = null, int $timeout = null): array
     {
         try {
             $apiInstance = $this->getDefaultApiInstance($storeId, $timeout);
 
-            switch ($event_name) {
+            switch ($eventName) {
                 case CartAddProduct::EVENT:
-                    $apiInstance->clientAddedProductToCart('4.4', $payload);
-                    break;
+                    return $apiInstance->clientAddedProductToCartWithHttpInfo('4.4', $payload);
                 case CartRemoveProduct::EVENT:
-                    $apiInstance->clientRemovedProductFromCart('4.4', $payload);
-                    break;
+                    return $apiInstance->clientRemovedProductFromCartWithHttpInfo('4.4', $payload);
                 case CartQtyUpdate::EVENT:
                 case CartStatus::EVENT:
                 case ProductReview::EVENT:
-                $apiInstance->customEvent('4.4', $payload);
-                    break;
+                    return $apiInstance->customEventWithHttpInfo('4.4', $payload);
                 case CustomerRegister::EVENT:
-                    $apiInstance->clientRegistered('4.4', $payload);
-                    break;
+                    return $apiInstance->clientRegisteredWithHttpInfo('4.4', $payload);
                 case CustomerLogin::EVENT:
-                    $apiInstance->clientLoggedIn('4.4', $payload);
-                    break;
+                    return $apiInstance->clientLoggedInWithHttpInfo('4.4', $payload);
                 case CustomerLogout::EVENT:
-                    $apiInstance->clientLoggedOut('4.4', $payload);
-                    break;
+                    return $apiInstance->clientLoggedOutWithHttpInfo('4.4', $payload);
                 case OrderPlace::EVENT:
-                    $apiInstance->createATransaction('4.4', $payload);
+                    $response = $apiInstance->createATransactionWithHttpInfo('4.4', $payload);
                     if ($entityId) {
-                        $this->resultsHelper->markAsSent(OrderSender::MODEL, [$entityId], $storeId);
+                        $this->resultsHelper->markAsSent(OrderSender::MODEL, [$entityId]);
                     }
-                    break;
+                    return $response;
                 case WishlistAddProduct::EVENT:
-                    $apiInstance->clientAddedProductToFavorites('4.4', $payload);
-                    break;
+                    return $apiInstance->clientAddedProductToFavoritesWithHttpInfo('4.4', $payload);
                 case self::ADD_OR_UPDATE_CLIENT:
                     list($body, $statusCode, $headers) = $apiInstance
                         ->createAClientInCrmWithHttpInfo('4.4', $payload );
@@ -100,15 +101,13 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
                     } elseif ($entityId) {
                         $this->resultsHelper->markAsSent(CustomerSender::MODEL, [$entityId], $storeId);
                     }
-                    break;
+                    return [$body, $statusCode, $headers];
                 case self::BATCH_ADD_OR_UPDATE_CLIENT:
                     list($body, $statusCode, $headers) = $apiInstance
-                        ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $payload );
-                    if ($statusCode != 202) {
-                        $this->_logger->error('Client update failed');
-                    } elseif ($entityId) {
-                        $this->resultsHelper->markAsSent(CustomerSender::MODEL, [$entityId], $storeId);
-                    }
+                        ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $payload);
+                    return [$body, $statusCode, $headers];
+                default:
+                    throw new Exception('Failed to send event. Invalid Event Name');
             }
         } catch (ApiException $e) {
             $this->_logger->error('Synerise Error', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);

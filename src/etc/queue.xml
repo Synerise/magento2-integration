@@ -7,6 +7,6 @@
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework-message-queue:etc/queue.xsd">
     <broker topic="synerise.queue.events" exchange="magento" type="db">
-        <queue name="synerise.queue.events" consumer="synerise.queue.events" consumerInstance="Synerise\Integration\Model\Queue\Consumer" handler="Synerise\Integration\Model\Queue\Consumer::process"/>
+        <queue name="synerise.queue.events" consumer="synerise.queue.events" consumerInstance="Synerise\Integration\MessageQueue\Consumer" handler="Synerise\Integration\MessageQueue\Consumer::process"/>
     </broker>
 </config>

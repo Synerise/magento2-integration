@@ -3,7 +3,7 @@ namespace Synerise\Integration\Helper;
 
 use Magento\Store\Model\ScopeInterface;
 
-class Queue extends \Magento\Framework\App\Helper\AbstractHelper
+class MessageQueue extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
     const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';

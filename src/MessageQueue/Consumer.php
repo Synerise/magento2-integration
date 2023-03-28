@@ -1,9 +1,8 @@
 <?php
 
-namespace Synerise\Integration\Model\Queue;
+namespace Synerise\Integration\MessageQueue;
 
 use Magento\Framework\Exception\ValidatorException;
-use Magento\Framework\MessageQueue\ConsumerConfigurationInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
@@ -30,8 +29,7 @@ class Consumer
     public function __construct(
         LoggerInterface $logger,
         Json $json,
-        Event $eventHelper,
-        \Magento\Framework\MessageQueue\ConsumerConfiguration $configuration
+        Event $eventHelper
     ) {
         $this->logger = $logger;
         $this->json = $json;

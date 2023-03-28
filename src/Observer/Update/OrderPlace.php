@@ -17,7 +17,7 @@ use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Update\Transaction;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Helper\Synchronization\Results;
 use Synerise\Integration\Helper\Synchronization\Sender\Order as OrderSender;
 use Synerise\Integration\Observer\AbstractObserver;
@@ -32,7 +32,7 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
     protected $eventsHelper;
 
     /**
-     * @var Queue
+     * @var MessageQueue
      */
     protected $queueHelper;
 
@@ -53,12 +53,12 @@ class OrderPlace  extends AbstractObserver implements ObserverInterface
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        Event $eventsHelper,
-        Queue $queueHelper,
-        Identity $identityHelper,
-        Transaction $transactionHelper,
-        Results $resultsHelper
+        LoggerInterface      $logger,
+        Event                $eventsHelper,
+        MessageQueue         $queueHelper,
+        Identity             $identityHelper,
+        Transaction          $transactionHelper,
+        Results              $resultsHelper
     ) {
         $this->eventsHelper = $eventsHelper;
         $this->queueHelper = $queueHelper;

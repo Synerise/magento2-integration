@@ -12,6 +12,7 @@ use Magento\Quote\Model\QuoteFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Api\Event\Cart as CartHelper;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Event\Cart\AddProduct;
 
 class AddProductObserverTest extends \PHPUnit\Framework\TestCase
@@ -44,11 +45,6 @@ class AddProductObserverTest extends \PHPUnit\Framework\TestCase
     private $productRepository;
 
     /**
-     * @var AddProduct
-     */
-    private $observer;
-
-    /**
      * @var Collection
      */
     private $options;
@@ -57,6 +53,11 @@ class AddProductObserverTest extends \PHPUnit\Framework\TestCase
      * @var mixed
      */
     private $eavConfig;
+
+    /**
+     * @var Event
+     */
+    private $event;
 
     protected function setUp(): void
     {
@@ -67,7 +68,7 @@ class AddProductObserverTest extends \PHPUnit\Framework\TestCase
         $this->options = $this->objectManager->create(Collection::class);
         $this->eavConfig = $this->objectManager->get(EavConfig::class);
         $this->cartHelper = $this->objectManager->get(CartHelper::class);
-        $this->observer = $this->objectManager->create(AddProduct::class);
+        $this->event = $this->objectManager->create(Event::class);
     }
 
     public function testObserverRegistration()
@@ -109,7 +110,8 @@ class AddProductObserverTest extends \PHPUnit\Framework\TestCase
 
         $uuid = (string) Uuid::Uuid4();
 
-        list ($body, $statusCode, $headers) = $this->observer->sendAddToCartEvent(
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            AddProduct::EVENT,
             $this->cartHelper->prepareAddToCartRequest(
                 $quoteItem,
                 AddProduct::EVENT,

@@ -13,7 +13,7 @@ use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Event\Review;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 class ProductReview  extends AbstractObserver implements ObserverInterface
@@ -31,7 +31,7 @@ class ProductReview  extends AbstractObserver implements ObserverInterface
     protected $eventsHelper;
 
     /**
-     * @var Queue
+     * @var MessageQueue
      */
     protected $queueHelper;
 
@@ -51,13 +51,13 @@ class ProductReview  extends AbstractObserver implements ObserverInterface
     private $review;
 
     public function __construct(
-        ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
+        ScopeConfigInterface  $scopeConfig,
+        LoggerInterface       $logger,
         StoreManagerInterface $storeManager,
-        Event $eventsHelper,
-        Queue $queueHelper,
-        Identity $identityHelper,
-        Review $reviewHelper
+        Event                 $eventsHelper,
+        MessageQueue          $queueHelper,
+        Identity              $identityHelper,
+        Review                $reviewHelper
     ) {
         $this->storeManager = $storeManager;
 

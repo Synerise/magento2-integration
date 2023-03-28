@@ -14,7 +14,7 @@ use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Api\Identity;
 use Synerise\Integration\Helper\Api\Update\ClientAgreement;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Synchronization\Results;
 use Synerise\Integration\Helper\Synchronization\Sender\Subscriber as SubscriberSender;
@@ -35,7 +35,7 @@ class SubscriberSaveAfter  extends AbstractObserver implements ObserverInterface
     protected $eventsHelper;
 
     /**
-     * @var Queue
+     * @var MessageQueue
      */
     protected $queueHelper;
 
@@ -60,15 +60,15 @@ class SubscriberSaveAfter  extends AbstractObserver implements ObserverInterface
     private $synchronizationHelper;
 
     public function __construct(
-        CustomerSession $customerSession,
+        CustomerSession      $customerSession,
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        Event $eventsHelper,
-        Queue $queueHelper,
-        ClientAgreement $clientAgreementHelper,
-        Identity $identityHelper,
-        Results $results,
-        Synchronization $synchronization
+        LoggerInterface      $logger,
+        Event                $eventsHelper,
+        MessageQueue         $queueHelper,
+        ClientAgreement      $clientAgreementHelper,
+        Identity             $identityHelper,
+        Results              $results,
+        Synchronization      $synchronization
     ) {
         $this->customerSession = $customerSession;
         $this->eventsHelper = $eventsHelper;

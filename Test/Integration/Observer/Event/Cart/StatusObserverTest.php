@@ -8,6 +8,7 @@ use Magento\Quote\Model\QuoteFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Api\Event\Cart as CartHelper;
+use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Observer\Event\Cart\QtyUpdate;
 use Synerise\Integration\Observer\Event\Cart\Status;
 
@@ -44,9 +45,9 @@ class StatusObserverTest extends \PHPUnit\Framework\TestCase
     private $cartStatusObserver;
 
     /**
-     * @var QtyUpdate
+     * @var Event
      */
-    private $cartQtyUpdateObserver;
+    private $event;
 
     protected function setUp(): void
     {
@@ -57,6 +58,7 @@ class StatusObserverTest extends \PHPUnit\Framework\TestCase
         $this->cartStatusObserver = $this->objectManager->get(Status::class);
         $this->cartQtyUpdateObserver = $this->objectManager->get(QtyUpdate::class);
         $this->cartHelper = $this->objectManager->get(CartHelper::class);
+        $this->event = $this->objectManager->create(Event::class);
     }
 
     public function testObserverRegistration()
@@ -90,7 +92,8 @@ class StatusObserverTest extends \PHPUnit\Framework\TestCase
 
         $uuid = (string) Uuid::Uuid4();
 
-        list ($body, $statusCode, $headers) = $this->cartStatusObserver->sendCartStatusEvent(
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            Status::EVENT,
             $this->cartHelper->prepareCartStatusRequest(
                 $quote,
                 $uuid
@@ -99,17 +102,6 @@ class StatusObserverTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals(202, $statusCode);
-
-        $response = $this->cartQtyUpdateObserver->sendCartStatusEvent(
-            $this->cartHelper->prepareCartStatusRequest(
-                $quote,
-                $uuid
-            ),
-            self::STORE_ID
-        );
-
-        $this->assertNull($response);
-
     }
 
     /**
@@ -132,7 +124,8 @@ class StatusObserverTest extends \PHPUnit\Framework\TestCase
 
         $uuid = (string) Uuid::Uuid4();
 
-        list ($body, $statusCode, $headers) = $this->cartStatusObserver->sendCartStatusEvent(
+        list ($body, $statusCode, $headers) = $this->event->sendEvent(
+            Status::EVENT,
             $this->cartHelper->prepareCartStatusRequest(
                 $quote,
                 $uuid

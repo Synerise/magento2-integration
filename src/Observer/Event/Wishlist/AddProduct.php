@@ -5,11 +5,8 @@ namespace Synerise\Integration\Observer\Event\Wishlist;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\ValidatorException;
-use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
 use Synerise\ApiClient\Model\EventClientAction;
-use Synerise\Integration\Observer\Event\Cart\AbstractWishlistEvent;
 
 class AddProduct extends AbstractWishlistEvent implements ObserverInterface
 {

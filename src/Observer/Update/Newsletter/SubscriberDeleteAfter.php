@@ -11,7 +11,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Api\Update\ClientAgreement;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\MessageQueue;
 use Synerise\Integration\Observer\AbstractObserver;
 
 class SubscriberDeleteAfter extends AbstractObserver implements ObserverInterface
@@ -24,7 +24,7 @@ class SubscriberDeleteAfter extends AbstractObserver implements ObserverInterfac
     protected $eventsHelper;
 
     /**
-     * @var Queue
+     * @var MessageQueue
      */
     protected $queueHelper;
 
@@ -35,10 +35,10 @@ class SubscriberDeleteAfter extends AbstractObserver implements ObserverInterfac
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
-        Event $eventsHelper,
-        Queue $queueHelper,
-        ClientAgreement $clientAgreementHelper
+        LoggerInterface      $logger,
+        Event                $eventsHelper,
+        MessageQueue         $queueHelper,
+        ClientAgreement      $clientAgreementHelper
     ) {
         $this->eventsHelper = $eventsHelper;
         $this->queueHelper = $queueHelper;
