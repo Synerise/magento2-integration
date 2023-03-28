@@ -2,25 +2,30 @@
 
 namespace Synerise\Integration\Helper;
 
+use Exception;
 use Magento\Framework\Exception\ValidatorException;
+use Magento\Store\Model\ScopeInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Observer\CartAddProduct;
-use Synerise\Integration\Observer\CartQtyUpdate;
-use Synerise\Integration\Observer\CartRemoveProduct;
-use Synerise\Integration\Observer\CartStatus;
-use Synerise\Integration\Observer\CatalogProductDeleteBefore;
-use Synerise\Integration\Observer\CustomerLogin;
-use Synerise\Integration\Observer\CustomerLogout;
-use Synerise\Integration\Observer\CustomerRegister;
-use Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter;
-use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
-use Synerise\Integration\Observer\OrderPlace;
-use Synerise\Integration\Observer\ProductReview;
-use Synerise\Integration\Observer\WishlistAddProduct;
+use Synerise\Integration\Helper\Api\Factory\DefaultApiFactory;
+use Synerise\Integration\Helper\Synchronization\Results;
+use Synerise\Integration\Helper\Synchronization\Sender\Customer as CustomerSender;
+use Synerise\Integration\Helper\Synchronization\Sender\Order as OrderSender;
+use Synerise\Integration\Observer\Event\Cart\AddProduct as CartAddProduct;
+use Synerise\Integration\Observer\Event\Cart\QtyUpdate as CartQtyUpdate;
+use Synerise\Integration\Observer\Event\Cart\RemoveProduct as CartRemoveProduct;
+use Synerise\Integration\Observer\Event\Cart\Status as CartStatus;
+use Synerise\Integration\Observer\Event\Customer\Login as CustomerLogin;
+use Synerise\Integration\Observer\Event\Customer\Logout as CustomerLogout;
+use Synerise\Integration\Observer\Event\Customer\Register as CustomerRegister;
+use Synerise\Integration\Observer\Event\ProductReview;
+use Synerise\Integration\Observer\Event\Wishlist\AddProduct as WishlistAddProduct;
+use Synerise\Integration\Observer\Update\OrderPlace;
 
 class Event extends \Magento\Framework\App\Helper\AbstractHelper
 {
+    const ADD_OR_UPDATE_CLIENT = 'ADD_OR_UPDATE_CLIENT';
+    const BATCH_ADD_OR_UPDATE_CLIENT = 'BATCH_ADD_OR_UPDATE_CLIENT';
 
     /**
      * @var \Synerise\Integration\Helper\Api
@@ -28,118 +33,103 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
     private $apiHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Results
      */
-    private $trackingHelper;
+    protected $resultsHelper;
 
     /**
-     * @var Catalog
+     * @var DefaultApiFactory
      */
-    private $catalogHelper;
-
-    /**
-     * @var Customer
-     */
-    private $customerHelper;
-
-    /**
-     * @var Order
-     */
-    private $orderHelper;
+    protected $defaultApiFactory;
 
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
         \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Customer $customerHelper,
-        \Synerise\Integration\Helper\Order $orderHelper
+        Results $resultsHelper,
+        DefaultApiFactory $defaultApiFactory
     ) {
         parent::__construct($context);
         $this->apiHelper = $apiHelper;
-        $this->trackingHelper = $trackingHelper;
-        $this->catalogHelper = $catalogHelper;
-        $this->customerHelper = $customerHelper;
-        $this->orderHelper = $orderHelper;
+        $this->resultsHelper = $resultsHelper;
+        $this->defaultApiFactory = $defaultApiFactory;
     }
 
     /**
+     * @param string $eventName
+     * @param mixed $payload
+     * @param int $storeId
+     * @param int|null $entityId
+     * @param int|null $timeout
+     * @return array
      * @throws ApiException
      * @throws ValidatorException
+     * @throws Exception
      */
-    public function sendEvent($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
+    public function sendEvent(string $eventName, $payload, int $storeId, int $entityId = null, int $timeout = null): array
     {
         try {
-            $apiInstance = $this->apiHelper->getDefaultApiInstance(
-                $storeId,
-                $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId)
-            );
+            $apiInstance = $this->getDefaultApiInstance($storeId, $timeout);
 
-            switch ($event_name) {
+            switch ($eventName) {
                 case CartAddProduct::EVENT:
-                    $apiInstance->clientAddedProductToCart('4.4', $payload);
-                    break;
+                    return $apiInstance->clientAddedProductToCartWithHttpInfo('4.4', $payload);
                 case CartRemoveProduct::EVENT:
-                    $apiInstance->clientRemovedProductFromCart('4.4', $payload);
-                    break;
+                    return $apiInstance->clientRemovedProductFromCartWithHttpInfo('4.4', $payload);
                 case CartQtyUpdate::EVENT:
-                case ProductReview::EVENT:
                 case CartStatus::EVENT:
-                    $apiInstance->customEvent('4.4', $payload);
-                    break;
+                case ProductReview::EVENT:
+                    return $apiInstance->customEventWithHttpInfo('4.4', $payload);
                 case CustomerRegister::EVENT:
-                    $apiInstance->clientRegistered('4.4', $payload);
-                    break;
+                    return $apiInstance->clientRegisteredWithHttpInfo('4.4', $payload);
                 case CustomerLogin::EVENT:
-                    $apiInstance->clientLoggedIn('4.4', $payload);
-                    break;
+                    return $apiInstance->clientLoggedInWithHttpInfo('4.4', $payload);
                 case CustomerLogout::EVENT:
-                    $apiInstance->clientLoggedOut('4.4', $payload);
-                    break;
+                    return $apiInstance->clientLoggedOutWithHttpInfo('4.4', $payload);
                 case OrderPlace::EVENT:
-                    $apiInstance->createATransaction('4.4', $payload);
+                    $response = $apiInstance->createATransactionWithHttpInfo('4.4', $payload);
                     if ($entityId) {
-                        $this->orderHelper->markItemsAsSent([$entityId]);
+                        $this->resultsHelper->markAsSent(OrderSender::MODEL, [$entityId]);
                     }
-                    break;
-                case CatalogProductDeleteBefore::EVENT:
-                    $this->catalogHelper->sendItemsToSyneriseWithCatalogCheck($payload, $storeId);
-                    break;
+                    return $response;
                 case WishlistAddProduct::EVENT:
-                    $apiInstance->clientAddedProductToFavorites('4.4', $payload);
-                    break;
-                case NewsletterSubscriberDeleteAfter::EVENT:
-                case NewsletterSubscriberSaveAfter::EVENT:
-                case 'ADD_OR_UPDATE_CLIENT':
-                    list($body, $statusCode, $headers) = $apiInstance->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', [ $payload ]);
+                    return $apiInstance->clientAddedProductToFavoritesWithHttpInfo('4.4', $payload);
+                case self::ADD_OR_UPDATE_CLIENT:
+                    list($body, $statusCode, $headers) = $apiInstance
+                        ->createAClientInCrmWithHttpInfo('4.4', $payload );
                     if ($statusCode != 202) {
                         $this->_logger->error('Client update failed');
                     } elseif ($entityId) {
-                        $this->customerHelper->markCustomersAsSent([$entityId], $storeId);
+                        $this->resultsHelper->markAsSent(CustomerSender::MODEL, [$entityId], $storeId);
                     }
+                    return [$body, $statusCode, $headers];
+                case self::BATCH_ADD_OR_UPDATE_CLIENT:
+                    list($body, $statusCode, $headers) = $apiInstance
+                        ->batchAddOrUpdateClientsWithHttpInfo('application/json','4.4', $payload);
+                    return [$body, $statusCode, $headers];
+                default:
+                    throw new Exception('Failed to send event. Invalid Event Name');
             }
-        } catch (\Synerise\ApiClient\ApiException $e) {
-            $this->_logger->error('Synerise Api request failed', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
+        } catch (ApiException $e) {
+            $this->_logger->error('Synerise Error', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
             throw $e;
         }
     }
 
-    public function prepareCartStatusEvent(\Magento\Quote\Model\Quote $quote, $totalAmount, $totalQuantity): CustomeventRequest
+    /**
+     * @param int|null $storeId
+     * @param int|null $timeout
+     * @return DefaultApi
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function getDefaultApiInstance(?int $storeId = null, ?int $timeout = null): DefaultApi
     {
-        return new CustomeventRequest([
-            'time' => $this->trackingHelper->getCurrentTime(),
-            'action' => 'cart.status',
-            'label' => 'CartStatus',
-            'client' => $this->trackingHelper->prepareClientDataFromQuote($quote),
-            'params' => [
-                'source' => $this->trackingHelper->getSource(),
-                'applicationName' => $this->trackingHelper->getApplicationName(),
-                'storeId' => $this->trackingHelper->getStoreId(),
-                'storeUrl' => $this->trackingHelper->getStoreBaseUrl(),
-                'products' => $this->catalogHelper->prepareProductsFromQuote($quote),
-                'totalAmount' => $totalAmount,
-                'totalQuantity' => $totalQuantity
-            ]
-        ]);
+        return $this->defaultApiFactory->get(
+            $this->apiHelper->getApiConfigByScope(
+                $storeId,
+                ScopeInterface::SCOPE_STORE,
+                $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId)
+            )
+        );
     }
 }

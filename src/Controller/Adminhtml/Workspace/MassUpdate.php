@@ -6,7 +6,6 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
@@ -15,6 +14,7 @@ use Magento\Ui\Component\MassAction\Filter;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\Factory\ApiKeyFactory;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 
@@ -41,6 +41,11 @@ class MassUpdate extends Action implements HttpPostActionInterface
     protected $apiHelper;
 
     /**
+     * @var ApiKeyFactory
+     */
+    protected $apiKeyFactory;
+
+    /**
      * Constructor
      *
      * @param Context $context
@@ -52,11 +57,13 @@ class MassUpdate extends Action implements HttpPostActionInterface
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        Api $apiHelper
+        Api $apiHelper,
+        ApiKeyFactory $apiKeyFactory
     ) {
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
         $this->apiHelper = $apiHelper;
+        $this->apiKeyFactory = $apiKeyFactory;
 
         parent::__construct($context);
     }
@@ -118,16 +125,12 @@ class MassUpdate extends Action implements HttpPostActionInterface
 
     /**
      * @param string $apiKey
-     * @param string $scope
-     * @param null $scopeId
      * @return ApiKeyPermissionCheckResponse
-     * @throws ValidatorException
-     * @throws ApiException
+     * @throws ApiException|ValidatorException
      */
-    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getApiToken($scope, $scopeId, null, $apiKey);
-
-        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+    protected function checkPermissions(string $apiKey): ApiKeyPermissionCheckResponse
+    {
+        return $this->apiKeyFactory->create($this->apiHelper->getApiConfigByApiKey($apiKey))
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 }

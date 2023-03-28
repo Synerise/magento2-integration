@@ -2,18 +2,38 @@
 
 namespace Synerise\Integration\Model\Workspace;
 
+use Magento\Framework\Exception\ValidatorException;
 use Ramsey\Uuid\Uuid;
-use Zend_Validate_Exception;
+use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\Factory\AuthApiFactory;
+use Synerise\Integration\Model\ApiConfig;
 
 class Validator extends \Magento\Framework\Validator\AbstractValidator
 {
+    /**
+     * @var Api
+     */
+    protected $apiHelper;
+
+    /**
+     * @var AuthApiFactory
+     */
+    protected $authApiFactory;
+
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper
+        AuthApiFactory $authApiFactory,
+        Api $apiHelper
     ) {
         $this->apiHelper = $apiHelper;
+        $this->authApiFactory = $authApiFactory;
     }
 
-    public function isValid($workspace)
+    /**
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function isValid($workspace): bool
     {
         $messages = [];
 
@@ -27,12 +47,12 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
         ]);
 
         try {
-            $this->apiHelper->getAuthApiInstance()
+            $this->authApiFactory->create(new ApiConfig($this->apiHelper->getApiHost()))
                 ->profileLoginUsingPOST($business_profile_authentication_request);
         } catch (\Synerise\ApiClient\ApiException $e) {
             if ($e->getCode() === 401) {
                 throw new \Magento\Framework\Exception\ValidatorException(
-                    __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
+                    __('Test request failed. Please make sure this a valid, workspace scoped api key and try again.')
                 );
             } else {
                 throw $e;

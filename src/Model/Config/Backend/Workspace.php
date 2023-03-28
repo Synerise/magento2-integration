@@ -4,11 +4,15 @@ namespace Synerise\Integration\Model\Config\Backend;
 
 use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Api\Factory\TrackerApiFactory;
 
 class Workspace extends \Magento\Framework\App\Config\Value
 {
-    const XML_PATH_API_KEY = 'synerise/api/key';
-    const XML_PATH_WORKSPACE_ID = 'synerise/workspace/id';
+    const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/key';
+
+    const XML_PATH_PAGE_TRACKING_DOMAIN = 'synerise/page_tracking/domain';
+
     const ERROR_MSG_403 = 'Please make sure this api key has all required roles.';
 
     public function __construct(
@@ -18,6 +22,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Synerise\Integration\Helper\Api $apiHelper,
+        TrackerApiFactory $trackerApiFactory,
         \Synerise\Integration\Model\Workspace $workspace,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
@@ -25,6 +30,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
     ) {
         $this->configWriter = $configWriter;
         $this->apiHelper = $apiHelper;
+        $this->trackerApiFactory = $trackerApiFactory;
         $this->workspace = $workspace;
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
@@ -34,10 +40,10 @@ class Workspace extends \Magento\Framework\App\Config\Value
         $workspaceId = (int) $this->getValue();
         if ($workspaceId) {
             $workspace = $this->workspace->load($workspaceId);
-            $token = $this->getApiToken($workspace->getApiKey());
 
             try {
-                $response = $this->apiHelper->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
+                $apiConfig = $this->apiHelper->getApiConfigByApiKey($workspace->getApiKey(), $this->getScopeId(), $this->getScope());
+                $response = $this->trackerApiFactory->create($apiConfig)
                     ->getOrCreateByDomain(new \Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest([
                         'domain' => $this->getConfigDomain() ?? $this->getBaseUrlDomain()
                     ]));
@@ -50,27 +56,27 @@ class Workspace extends \Magento\Framework\App\Config\Value
             }
 
             $this->configWriter->save(
-                self::XML_PATH_API_KEY,
+                Api::XML_PATH_API_KEY,
                 $workspace->getData('api_key'),
                 $this->getScope(),
                 $this->getScopeId()
             );
 
             $this->configWriter->save(
-                \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_KEY,
+                self::XML_PATH_PAGE_TRACKING_KEY,
                 $response->getCode(),
                 $this->getScope(),
                 $this->getScopeId()
             );
         } else {
             $this->configWriter->delete(
-                self::XML_PATH_API_KEY,
+                Api::XML_PATH_API_KEY,
                 $this->getScope(),
                 $this->getScopeId()
             );
 
             $this->configWriter->delete(
-                \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_KEY,
+                self::XML_PATH_PAGE_TRACKING_KEY,
                 $this->getScope(),
                 $this->getScopeId()
             );
@@ -79,15 +85,10 @@ class Workspace extends \Magento\Framework\App\Config\Value
         parent::beforeSave();
     }
 
-    protected function getApiToken($apiKey)
-    {
-        return $this->apiHelper->getApiToken($this->getScope(), $this->getScopeId(), null, $apiKey);
-    }
-
     private function getConfigDomain()
     {
         $domain = $this->_config->getValue(
-            \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_DOMAIN,
+            self::XML_PATH_PAGE_TRACKING_DOMAIN,
             $this->getScope(),
             $this->getScopeId()
         );

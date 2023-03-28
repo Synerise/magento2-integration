@@ -3,23 +3,24 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
+use Synerise\Integration\Model\ResourceModel\Cron\Status;
 
 class StoreSaveAfter implements ObserverInterface
 {
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
 
     /**
-     * @var \Synerise\Integration\Model\ResourceModel\Cron\Status
+     * @var Status
      */
     protected $statusResourceModel;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
-        \Magento\Framework\App\Config\ScopeConfigInterface $config,
-        \Synerise\Integration\Model\ResourceModel\Cron\Status $statusResourceModel
+        LoggerInterface $logger,
+        Status $statusResourceModel
     ) {
         $this->logger = $logger;
         $this->statusResourceModel = $statusResourceModel;

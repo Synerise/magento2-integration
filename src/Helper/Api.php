@@ -2,12 +2,17 @@
 
 namespace Synerise\Integration\Helper;
 
-use \GuzzleHttp\HandlerStack;
-use Loguzz\Middleware\LogMiddleware;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
+use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+use Synerise\ApiClient\Model\TokenResponse;
+use Synerise\Integration\Helper\Api\Factory\AuthApiFactory;
+use Synerise\Integration\Model\ApiConfig;
 
-class Api extends \Magento\Framework\App\Helper\AbstractHelper
+class Api
 {
     const XML_PATH_API_HOST = 'synerise/api/host';
 
@@ -19,19 +24,100 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
 
-    protected $authApi = [];
-    protected $bagsApi = [];
-    protected $itemsApi = [];
-    protected $defaultApi = [];
-    protected $trackerApi = [];
-    protected $apiToken = [];
+    /**
+     * @var ApiConfig[]
+     */
+    protected $ApiConfigs;
+
+    /**
+     * @var string[]
+     */
+    protected $apiTokens = [];
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    protected $scopeConfig;
+
+    /**
+     * @var AuthApiFactory
+     */
+    private $authApiFactory;
+
+    public function __construct(
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig,
+        AuthApiFactory $authApiFactory
+    ) {
+        $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
+        $this->authApiFactory = $authApiFactory;
+    }
+
+    /**
+     * @param int|null $scopeId
+     * @param string|null $scope
+     * @param float|null $timeout
+     * @return ApiConfig
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function getApiConfigByScope(
+        ?int $scopeId = null,
+        ?string $scope = ScopeInterface::SCOPE_STORE,
+        ?float $timeout = null
+    ): ApiConfig {
+        $key = $scope.$scopeId;
+        if (!isset($this->ApiConfigs[$key])) {
+            $apiKey = $this->getApiKey($scopeId, $scope);
+            $apiHost = $this->getApiHost($scopeId, $scope);
+            $token = $this->getApiToken($apiKey, $apiHost);
+            if (!$timeout) {
+                $timeout = $this->getLiveRequestTimeout($scopeId);
+            }
+            $this->ApiConfigs[$key] = new ApiConfig($apiHost, $timeout, $token, $this->isLoggerEnabled());
+        }
+
+        return $this->ApiConfigs[$key];
+    }
+
+    /**
+     * @param string $apiKey
+     * @param int|null $scopeId
+     * @param string|null $scope
+     * @param int|null $timeout
+     * @return ApiConfig
+     * @throws ValidatorException
+     * @throws ApiException
+     */
+    public function getApiConfigByApiKey(
+        string  $apiKey,
+        ?int    $scopeId = null,
+        ?string $scope = ScopeInterface::SCOPE_STORE, ?int $timeout = null
+    ): ApiConfig
+    {
+        $apiHost = $this->getApiHost($scopeId, $scope);
+        $token = $this->getApiToken($apiKey, $apiHost);
+        if (!$timeout) {
+            $timeout = $this->getLiveRequestTimeout($scopeId);
+        }
+
+        return new ApiConfig($apiHost, $timeout, $token);
+    }
 
     /**
      * Api host
      *
+     * @param int|null $scopeId
+     * @param string|null $scope
      * @return string
      */
-    public function getApiHost($scope = ScopeInterface::SCOPE_STORE, $scopeId = null)
+    public function getApiHost(?int $scopeId = null, ?string $scope = ScopeInterface::SCOPE_STORE): string
     {
         return $this->scopeConfig->getValue(
             self::XML_PATH_API_HOST,
@@ -43,11 +129,11 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Api key
      *
-     * @param string $scope
-     * @param int $scopeId
+     * @param int|null $scopeId
+     * @param string|null $scope
      * @return string
      */
-    public function getApiKey($scope, $scopeId)
+    public function getApiKey(?int $scopeId = null, ?string $scope = ScopeInterface::SCOPE_STORE): string
     {
         return $this->scopeConfig->getValue(
             self::XML_PATH_API_KEY,
@@ -57,17 +143,9 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * Checks if Api Key is set for a given scope
-     *
-     * @param string $scope
-     * @param int $scopeId
-     * @return bool
+     * @param $storeId
+     * @return mixed
      */
-    public function isApiKeySet($scope, $scopeId)
-    {
-        return (boolean) $this->getApiKey($scope, $scopeId);
-    }
-
     public function isLoggerEnabled($storeId = null)
     {
         return $this->scopeConfig->isSetFlag(
@@ -95,191 +173,51 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
-    private function getGuzzleClient($timeout)
+
+    /**
+     * @param string $apiKey
+     * @param string $apiHost
+     * @param int|null $timeout
+     * @return string
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function getApiToken(string $apiKey, string $apiHost, ?int $timeout = null): string
     {
-        $options = [
-            'connect_timeout' => $timeout,
-            'timeout' => $timeout
-        ];
-        if ($this->isLoggerEnabled()) {
-            $LogMiddleware = new LogMiddleware(
-                $this->_logger,
-                ['request_formatter' => new RequestCurlSanitizedFormatter()]
-            );
-
-            $handlerStack = HandlerStack::create();
-            $handlerStack->push($LogMiddleware, 'logger');
-            $options['handler'] =  $handlerStack;
-        }
-
-        return new \GuzzleHttp\Client($options);
-    }
-
-    public function getAuthApiInstance($scope = ScopeInterface::SCOPE_STORE, $scopeId = null, $timeout = null)
-    {
-        $key = md5(serialize(func_get_args()));
-        if (!isset($this->authApi[$key])) {
+        if (!isset($this->apiTokens[$apiKey])) {
             if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($scopeId);
+                $timeout = $this->getLiveRequestTimeout();
             }
-            $client = new \GuzzleHttp\Client([
-                'timeout' => $timeout,
-                'connect_timeout' => $timeout
+            $apiConfig = new ApiConfig($apiHost, $timeout);
+            $request = new BusinessProfileAuthenticationRequest([
+                'api_key' => $apiKey
             ]);
-            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
-
-            $this->authApi[$key] = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
-                $client,
-                $config
-            );
+            $this->apiTokens[$apiKey] = $this->profileLogin($apiConfig, $request)->getToken();
         }
 
-        return $this->authApi[$key];
+        return $this->apiTokens[$apiKey];
     }
 
     /**
-     * @return \Synerise\ApiClient\Api\DefaultApi
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
+     * @param ApiConfig $apiConfig
+     * @param BusinessProfileAuthenticationRequest $request
+     * @return TokenResponse
+     * @throws ValidatorException
+     * @throws ApiException
      */
-    public function getDefaultApiInstance($storeId = null, $timeout = null)
+    public function profileLogin(ApiConfig $apiConfig, BusinessProfileAuthenticationRequest $request): TokenResponse
     {
-        if (!isset($this->defaultApi[(int) $storeId])) {
-            if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($storeId);
-            }
-            $client = $this->getGuzzleClient($timeout);
-            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId, $timeout));
-
-            $this->defaultApi[(int) $storeId] = new \Synerise\ApiClient\Api\DefaultApi(
-                $client,
-                $config
-            );
-        }
-
-        return $this->defaultApi[(int) $storeId];
-    }
-
-    /**
-     * @return \Synerise\CatalogsApiClient\Api\BagsApi
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
-     */
-    public function getBagsApiInstance($storeId, $timeout = null)
-    {
-        if (!isset($this->bagsApi[$storeId])) {
-            if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($storeId);
-            }
-            $client = $this->getGuzzleClient($timeout);
-            $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
-
-            $this->bagsApi[$storeId] = new \Synerise\CatalogsApiClient\Api\BagsApi(
-                $client,
-                $config
-            );
-        }
-
-        return $this->bagsApi[$storeId];
-    }
-
-    public function getItemsApiInstance($storeId, $timeout = null)
-    {
-        if (!isset($this->itemsApi[$storeId])) {
-            if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($storeId);
-            }
-            $client = $this->getGuzzleClient($timeout);
-            $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
-
-            $this->itemsApi[$storeId] = new \Synerise\CatalogsApiClient\Api\ItemsApi(
-                $client,
-                $config
-            );
-        }
-
-        return $this->itemsApi[$storeId];
-    }
-
-    public function getTrackerApiInstance($scope, $scopeId, $token = null, $timeout = null)
-    {
-        $key = md5(serialize(func_get_args()));
-        if (!isset($this->trackerApi[$key])) {
-            if (!$token) {
-                $token = $this->getApiToken($scope, $scopeId);
-            }
-            if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
-            }
-            $client = $this->getGuzzleClient($timeout);
-            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/business-profile-service', $this->getApiHost($scope, $scopeId)))
-                ->setAccessToken($token);
-
-            $this->trackerApi[$key] = new \Synerise\ApiClient\Api\TrackerControllerApi(
-                $client,
-                $config
-            );
-        }
-
-        return $this->trackerApi[$key];
-    }
-
-    public function getApiKeyApiInstance($scope, $scopeId, $token = null, $timeout = null)
-    {
-        $key = md5(serialize(func_get_args()));
-        if (!isset($this->apiKeyApi[$key])) {
-            if (!$token) {
-                $token = $this->getApiToken($scope, $scopeId);
-            }
-            if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
-            }
-            $client = $this->getGuzzleClient($timeout);
-            $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/uauth', $this->getApiHost($scope, $scopeId)))
-                ->setAccessToken($token);
-
-            $this->apiKeyApi[$key] = new \Synerise\ApiClient\Api\ApiKeyControllerApi(
-                $client,
-                $config
-            );
-        }
-
-        return $this->apiKeyApi[$key];
-    }
-
-    public function getApiToken($scope, $scopeId, $timeout = null, $key = null)
-    {
-        $key = $key ?: $this->getApiKey($scope, $scopeId);
-        if (!isset($this->apiToken[$key])) {
-            $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
-                'api_key' => $key
-            ]);
-
-            try {
-                $tokenResponse = $this->getAuthApiInstance($scope, $scopeId, $timeout)
-                    ->profileLoginUsingPOST($business_profile_authentication_request);
-                $this->apiToken[$key] = $tokenResponse->getToken();
-            } catch (\Synerise\ApiClient\ApiException $e) {
-                if ($e->getCode() === 401) {
-                    throw new \Magento\Framework\Exception\ValidatorException(
-                        __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
-                    );
-                } else {
-                    $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
-                    throw $e;
-                }
+        try {
+            return $this->authApiFactory->get($apiConfig)->profileLoginUsingPOST($request);
+        } catch (ApiException $e) {
+            if ($e->getCode() === 401) {
+                throw new ValidatorException(
+                    __('Login failed. Please make sure this a valid, workspace scoped api key and try again.')
+                );
+            } else {
+                $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+                throw $e;
             }
         }
-
-        return $this->apiToken[$key];
     }
 }

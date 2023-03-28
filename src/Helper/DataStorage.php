@@ -2,7 +2,7 @@
 
 namespace Synerise\Integration\Helper;
 
-class DataStorage extends \Magento\Framework\App\Helper\AbstractHelper
+class DataStorage
 {
 
     private $data = [];
