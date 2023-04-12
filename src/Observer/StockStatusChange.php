@@ -2,7 +2,7 @@
 
 namespace Synerise\Integration\Observer;
 
-use Magento\Framework\App\ObjectManager;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Module\Manager;
@@ -32,7 +32,7 @@ class StockStatusChange implements ObserverInterface
     protected $syncProduct;
 
     /**
-     * @var ObjectManager
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -46,7 +46,7 @@ class StockStatusChange implements ObserverInterface
         SyncProduct $syncProduct,
         Tracking $trackingHelper,
         Manager $moduleManager,
-        ObjectManager $objectManager
+        ObjectManagerInterface $objectManager
     ) {
         $this->logger = $logger;
         $this->syncProduct = $syncProduct;
