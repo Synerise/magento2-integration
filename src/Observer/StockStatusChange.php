@@ -2,8 +2,10 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Module\Manager;
 use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
 use Psr\Log\LoggerInterface;
@@ -25,25 +27,32 @@ class StockStatusChange implements ObserverInterface
     protected $logger;
 
     /**
-     * @var GetLegacyStockItem
-     */
-    protected $getLegacyStockItem;
-
-    /**
      * @var SyncProduct
      */
     protected $syncProduct;
+
+    /**
+     * @var ObjectManagerInterface
+     */
+    protected $objectManager;
+
+    /**
+     * @var Manager
+     */
+    protected $moduleManager;
 
     public function __construct(
         LoggerInterface $logger,
         SyncProduct $syncProduct,
         Tracking $trackingHelper,
-        GetLegacyStockItem $getLegacyStockItem
+        Manager $moduleManager,
+        ObjectManagerInterface $objectManager
     ) {
         $this->logger = $logger;
         $this->syncProduct = $syncProduct;
         $this->trackingHelper = $trackingHelper;
-        $this->getLegacyStockItem = $getLegacyStockItem;
+        $this->objectManager = $objectManager;
+        $this->moduleManager = $moduleManager;
     }
 
     public function execute(Observer $observer)
@@ -51,6 +60,13 @@ class StockStatusChange implements ObserverInterface
         if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
+
+        if (!$this->moduleManager->isEnabled('Magento_InventoryCatalogApi')) {
+            return;
+        }
+
+        /** @var GetLegacyStockItem $getLegacyStockItem */
+        $getLegacyStockItem = $this->objectManager->get(GetLegacyStockItem::class);
 
         /** @var Order $order */
         $order = $observer->getEvent()->getOrder();
@@ -60,7 +76,7 @@ class StockStatusChange implements ObserverInterface
             foreach ($items as $item) {
                 try {
                     $product = $item->getProduct();
-                    $stockItem = $this->getLegacyStockItem->execute($item->getSku());
+                    $stockItem = $getLegacyStockItem->execute($item->getSku());
                     if (!$stockItem->getManageStock() || $stockItem->getBackorders()) {
                         continue;
                     }

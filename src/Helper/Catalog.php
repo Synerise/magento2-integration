@@ -87,11 +87,11 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Framework\View\Asset\ContextInterface $assetContext,
         \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository,
-        IsProductSalableInterface $isProductSalable,
         ResourceConnection $resource,
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
-        Api $apiHelper
+        Api $apiHelper,
+        ?IsProductSalableInterface $isProductSalable = null
     ) {
         $this->stockRegistry = $stockRegistry;
         $this->storeManager = $storeManager;
@@ -291,8 +291,10 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
 
-        $isSalable = $this->isProductSalable->execute($product->getSku(), $stockStatus->getStockId());
-        $value['is_salable'] = (int) ($isSalable && $product->getStatus() == 1 && (int) $value['stock_status']);
+        if($this->isProductSalable) {
+            $isSalable = $this->isProductSalable->execute($product->getSku(), $stockStatus->getStockId());
+            $value['is_salable'] = (int) ($isSalable && $product->getStatus() == 1 && (int) $value['stock_status']);
+        }
 
         return new AddItem([
             'item_key' => $value['itemId'],
