@@ -80,6 +80,20 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
             );
         }
 
+        if(version_compare($context->getVersion(), '2.2.3', '<')) {
+            $installer->getConnection()->addColumn(
+                $installer->getTable( 'synerise_workspace' ),
+                'guid',
+                [
+                    'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    'nullable' => true,
+                    'length' => '100',
+                    'comment' => 'Workspace Guid',
+                    'after' => 'api_key'
+                ]
+            );
+        }
+
         if (!$installer->tableExists('synerise_cron_status')) {
             $table = $installer->getConnection()->newTable(
                 $installer->getTable('synerise_cron_status')

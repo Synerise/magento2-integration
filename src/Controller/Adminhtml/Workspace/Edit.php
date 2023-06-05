@@ -89,7 +89,7 @@ class Edit extends \Magento\Backend\App\Action
         );
         $resultPage->getConfig()->getTitle()->prepend(__('Workspaces'));
         $resultPage->getConfig()->getTitle()
-            ->prepend($model->getId() ? $model->getTitle() : __('New Workspace'));
+            ->prepend($model->getId() ? $model->getName() : __('New Workspace'));
 
         return $resultPage;
     }

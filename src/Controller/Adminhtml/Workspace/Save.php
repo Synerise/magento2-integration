@@ -50,6 +50,10 @@ class Save extends \Magento\Backend\App\Action
             if (isset($data['api_key'])) {
                 $apiKey = $data['api_key'];
                 $model->setApiKey($apiKey);
+
+                if (isset($data['guid'])) {
+                    $model->setGuid($data['guid']);
+                }
             } else {
                 $apiKey = $model->getApiKey();
             }

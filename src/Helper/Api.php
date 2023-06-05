@@ -6,6 +6,7 @@ use \GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
 use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
+use Synerise\Integration\Model\Config\Backend\Workspace;
 
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -14,6 +15,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     const XML_PATH_API_KEY = 'synerise/api/key';
 
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
+
+    const XML_PATH_API_WITHOUT_JWT_ENABLED = 'synerise/api/without_jwt_enabled';
 
     const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
 
@@ -57,6 +60,22 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * Guid & api key based token
+     *
+     * @param string $scope
+     * @param int $scopeId
+     * @return string
+     */
+    public function getPermanentToken($scope, $scopeId)
+    {
+        return $this->scopeConfig->getValue(
+            Workspace::XML_PATH_API_PERMANENT_TOKEN,
+            $scope,
+            $scopeId
+        );
+    }
+
+    /**
      * Checks if Api Key is set for a given scope
      *
      * @param string $scope
@@ -74,6 +93,14 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             self::XML_PATH_API_LOGGER_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
+        );
+    }
+    public function isWithoutJWTEnabled($scope = ScopeInterface::SCOPE_STORE, $scopeId = null)
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_API_WITHOUT_JWT_ENABLED,
+            $scope,
+            $scopeId
         );
     }
 
@@ -149,6 +176,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             if (!$timeout) {
                 $timeout = $this->getLiveRequestTimeout($storeId);
             }
+
             $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))

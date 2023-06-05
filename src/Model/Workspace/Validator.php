@@ -22,6 +22,11 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
             $messages['invalid_api_key_format'] = 'Invalid api key format';
         }
 
+        $guid = $workspace->getGuid();
+        if (!Uuid::isValid($guid)) {
+            $messages['invalid_guid_format'] = 'Invalid guid format';
+        }
+
         $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
             'api_key' => $apiKey
         ]);

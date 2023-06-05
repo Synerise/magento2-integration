@@ -8,8 +8,14 @@ use Synerise\ApiClient\ApiException;
 class Workspace extends \Magento\Framework\App\Config\Value
 {
     const XML_PATH_API_KEY = 'synerise/api/key';
+    const XML_PATH_API_PERMANENT_TOKEN = 'synerise/api/permanent_token';
     const XML_PATH_WORKSPACE_ID = 'synerise/workspace/id';
     const ERROR_MSG_403 = 'Please make sure this api key has all required roles.';
+
+    /**
+     * @var \Magento\Framework\Encryption\EncryptorInterface
+     */
+    protected $encryptor;
 
     public function __construct(
         \Magento\Framework\Model\Context $context,
@@ -17,6 +23,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Config\ScopeConfigInterface $config,
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
+        \Magento\Framework\Encryption\EncryptorInterface $encryptor,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Model\Workspace $workspace,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
@@ -24,6 +31,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
         array $data = []
     ) {
         $this->configWriter = $configWriter;
+        $this->encryptor = $encryptor;
         $this->apiHelper = $apiHelper;
         $this->workspace = $workspace;
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
@@ -52,6 +60,13 @@ class Workspace extends \Magento\Framework\App\Config\Value
             $this->configWriter->save(
                 self::XML_PATH_API_KEY,
                 $workspace->getData('api_key'),
+                $this->getScope(),
+                $this->getScopeId()
+            );
+
+            $this->configWriter->save(
+                self::XML_PATH_API_PERMANENT_TOKEN,
+                $this->encryptor->encrypt(base64_encode("{$workspace->getGuid()}:{$workspace->getApiKey()}")),
                 $this->getScope(),
                 $this->getScopeId()
             );

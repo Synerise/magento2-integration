@@ -53,7 +53,7 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
     public function setApiKey($apiKey)
     {
         // don't save value, if an obscured value was received. This indicates that data was not changed.
-        if (!preg_match('/^\*+$/', $apiKey) && !empty($apiKey)) {
+        if (!empty($value) && !preg_match('/^\*+$/', $apiKey)) {
             $this->setData('api_key', $this->encryptor->encrypt($apiKey));
             $uuid = (string) Uuid::uuid5(Uuid::NAMESPACE_OID, $apiKey);
             $this->setData('uuid', $uuid);
@@ -63,7 +63,24 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
     public function getApiKey()
     {
         $value = $this->getData('api_key');
-        if (!preg_match('/^\*+$/', $value) && !empty($value)) {
+        if (!empty($value) && !preg_match('/^\*+$/', $value)) {
+            return $this->encryptor->decrypt($value);
+        }
+        return null;
+    }
+
+    public function setGuid($guid)
+    {
+        // don't save value, if an obscured value was received. This indicates that data was not changed.
+        if (!empty($guid) && !preg_match('/^\*+$/', $guid)) {
+            $this->setData('guid', $this->encryptor->encrypt($guid));
+        }
+    }
+
+    public function getGuid()
+    {
+        $value = $this->getData('guid');
+        if (!empty($value) && !preg_match('/^\*+$/', $value)) {
             return $this->encryptor->decrypt($value);
         }
         return null;
