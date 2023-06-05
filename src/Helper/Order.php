@@ -166,6 +166,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $customerData['customId'] = $order->getCustomerId();
         }
 
+        $_snrs_p = $this->trackingHelper->getCookieParams();
+
         $products = [];
         foreach ($order->getAllItems() as $item) {
             if ($item->getParentItem()) {
@@ -180,7 +182,12 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 return [];
             }
 
-            $products[] = $this->prepareProductParamsFromOrderItem($item, $order->getOrderCurrencyCode(), $order->getStoreId());
+            $products[] = $this->prepareProductParamsFromOrderItem(
+                $item,
+                $order->getOrderCurrencyCode(),
+                $order->getStoreId(),
+                $_snrs_p
+            );
         }
 
         $params = [
@@ -219,6 +226,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'source' => $this->trackingHelper->getSource(),
             'event_salt' => $order->getRealOrderId()
         ];
+
+        if ($this->trackingHelper->shouldIncludeParams($order->getStoreId()) && $_snrs_p) {
+            $params['metadata']['_snrs_p'] = $_snrs_p;
+        }
 
         $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
         if (!empty($orderRules)) {
@@ -265,7 +276,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
      * @param string $currency
      * @return array
      */
-    public function prepareProductParamsFromOrderItem($item, $currency, $storeId = null)
+    public function prepareProductParamsFromOrderItem($item, $currency, $storeId = null, $_snrs_p = null)
     {
         $product = $item->getProduct();
 
@@ -293,6 +304,10 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             "finalUnitPrice" => $finalUnitPrice,
             "quantity" => $item->getQtyOrdered()
         ];
+        
+        if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
+            $params['_snrs_p'] = $this->trackingHelper->getCookieParams();
+        }
 
         if ($storeId) {
             $params["storeId"] = $storeId;

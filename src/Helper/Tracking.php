@@ -27,6 +27,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_EVENT_TRACKING_EVENTS = 'synerise/event_tracking/events';
 
+    const XML_PATH_EVENT_TRACKING_INCLUDE_PARAMS = 'synerise/event_tracking/include_params';
+
     const XML_PATH_PAGE_TRACKING_ENABLED = 'synerise/page_tracking/enabled';
 
     const XML_PATH_PAGE_TRACKING_KEY = 'synerise/page_tracking/key';
@@ -173,6 +175,20 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         ));
 
         return in_array($event, $events);
+    }
+
+    /**
+     * Include additional tracking params flag
+     *
+     * @return bool
+     */
+    public function shouldIncludeParams($storeId = null)
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_EVENT_TRACKING_INCLUDE_PARAMS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 
     public function isLoggedIn()
