@@ -126,20 +126,26 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function prepareCartStatusEvent(\Magento\Quote\Model\Quote $quote, $totalAmount, $totalQuantity): CustomeventRequest
     {
+        $params = [
+            'source' => $this->trackingHelper->getSource(),
+            'applicationName' => $this->trackingHelper->getApplicationName(),
+            'storeId' => $this->trackingHelper->getStoreId(),
+            'storeUrl' => $this->trackingHelper->getStoreBaseUrl(),
+            'products' => $this->catalogHelper->prepareProductsFromQuote($quote),
+            'totalAmount' => $totalAmount,
+            'totalQuantity' => $totalQuantity
+        ];
+
+        if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
+            $params['snrs_params'] = $this->trackingHelper->getCookieParams();
+        }
+
         return new CustomeventRequest([
             'time' => $this->trackingHelper->getCurrentTime(),
             'action' => 'cart.status',
             'label' => 'CartStatus',
             'client' => $this->trackingHelper->prepareClientDataFromQuote($quote),
-            'params' => [
-                'source' => $this->trackingHelper->getSource(),
-                'applicationName' => $this->trackingHelper->getApplicationName(),
-                'storeId' => $this->trackingHelper->getStoreId(),
-                'storeUrl' => $this->trackingHelper->getStoreBaseUrl(),
-                'products' => $this->catalogHelper->prepareProductsFromQuote($quote),
-                'totalAmount' => $totalAmount,
-                'totalQuantity' => $totalQuantity
-            ]
+            'params' => $params
         ]);
     }
 }

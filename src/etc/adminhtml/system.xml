@@ -198,6 +198,12 @@
                     <config_path>synerise/event_tracking/events</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\EventTracking\Events</source_model>
                 </field>
+                <field id="include_params" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Include Tracking Params</label>
+                    <config_path>synerise/event_tracking/include_params</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Additional params collected by tracker can optionally be included in cart & transaction events.]]></comment>
+                </field>
             </group>
         </section>
         <section id="synerise_queue" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
