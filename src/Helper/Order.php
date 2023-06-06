@@ -166,7 +166,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             $customerData['customId'] = $order->getCustomerId();
         }
 
-        $_snrs_p = $this->trackingHelper->getCookieParams();
+        $snrs_params = $this->trackingHelper->getCookieParams();
 
         $products = [];
         foreach ($order->getAllItems() as $item) {
@@ -186,7 +186,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 $item,
                 $order->getOrderCurrencyCode(),
                 $order->getStoreId(),
-                $_snrs_p
+                $snrs_params
             );
         }
 
@@ -227,8 +227,8 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             'event_salt' => $order->getRealOrderId()
         ];
 
-        if ($this->trackingHelper->shouldIncludeParams($order->getStoreId()) && $_snrs_p) {
-            $params['metadata']['_snrs_p'] = $_snrs_p;
+        if ($this->trackingHelper->shouldIncludeParams($order->getStoreId()) && $snrs_params) {
+            $params['metadata']['snrs_params'] = $snrs_params;
         }
 
         $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
@@ -306,7 +306,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         ];
         
         if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
-            $params['_snrs_p'] = $this->trackingHelper->getCookieParams();
+            $params['snrs_params'] = $this->trackingHelper->getCookieParams();
         }
 
         if ($storeId) {

@@ -13,7 +13,9 @@ use Synerise\ApiClient\Model\CustomeventRequest;
 
 class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    const COOKIE_CLIENT_PARAMS = '_snrs_p';
+    const COOKIE_CLIENT_P = '_snrs_p';
+
+    const COOKIE_CLIENT_PARAMS = '_snrs_params';
 
     const COOKIE_CLIENT_UUID = '_snrs_uuid';
 
@@ -78,6 +80,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     protected $subscriber;
 
     protected $clientUuid;
+
+    protected $cookieP;
 
     protected $cookieParams;
 
@@ -301,9 +305,27 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getCookieParams($value = null)
     {
-        if (!$this->cookieParams) {
+        if (!$this->cookieParams && $this->getCookieParamsString()!= null) {
+            $this->cookieParams = json_decode($this->getCookieParamsString());
+        }
+
+        if ($value) {
+            return $this->cookieParams[$value] ?? null;
+        }
+
+        return $this->cookieParams;
+    }
+
+    public function getCookiePParamsString()
+    {
+        return $this->cookieManager->getCookie(self::COOKIE_CLIENT_P);
+    }
+
+    public function getCookiePParams($value = null)
+    {
+        if (!$this->cookieP && $this->getCookiePParamsString()!= null) {
             $paramsArray = [];
-            $items = explode('&', $this->getCookieParamsString());
+            $items = explode('&', $this->getCookiePParamsString());
             if ($items) {
                 foreach ($items as $item) {
                     $values = explode(':', $item);
@@ -311,15 +333,15 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
                         $paramsArray[$values[0]] = $values[1];
                     }
                 }
-                $this->cookieParams = $paramsArray;
+                $this->cookieP = $paramsArray;
             }
         }
 
         if ($value) {
-            return isset($this->cookieParams[$value]) ? $this->cookieParams[$value] : null;
+            return isset($this->cookieP[$value]) ? $this->cookieP[$value] : null;
         }
 
-        return $this->cookieParams;
+        return $this->cookieP;
     }
 
     public function getCurrentTime()
@@ -398,7 +420,7 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         // reset uuid via cookie
         $this->setClientUuidAndResetCookie((string) $emailUuid);
 
-        $identityHash = $this->getCookieParams('identityHash');
+        $identityHash = $this->getCookiePParams('identityHash');
         if ($identityHash && $identityHash != $this->hashString($email)) {
             // Different user, skip merge.
             return;

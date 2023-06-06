@@ -137,7 +137,7 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
         ];
 
         if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
-            $params['_snrs_p'] = $this->trackingHelper->getCookieParams();
+            $params['snrs_params'] = $this->trackingHelper->getCookieParams();
         }
 
         return new CustomeventRequest([
