@@ -2,7 +2,11 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
-class NewAction extends \Magento\Backend\App\Action
+use Magento\Framework\Controller\ResultFactory;
+use Magento\Backend\App\Action;
+use Magento\Framework\View\Result\PageFactory;
+
+class NewAction extends Action
 {
     /**
      * Authorization level
@@ -10,32 +14,33 @@ class NewAction extends \Magento\Backend\App\Action
     const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
-     * @var \Magento\Backend\Model\View\Result\Forward
+     * @var PageFactory
      */
-    protected $resultForwardFactory;
+    protected $resultPageFactory;
 
     /**
-     * @param \Magento\Backend\App\Action\Context $context
-     * @param \Magento\Backend\Model\View\Result\ForwardFactory $resultForwardFactory
+     * @param Action\Context $context
+     * @param PageFactory $resultPageFactory
      */
     public function __construct(
-        \Magento\Backend\App\Action\Context               $context,
-        \Magento\Backend\Model\View\Result\ForwardFactory $resultForwardFactory
-    )
-    {
-        $this->resultForwardFactory = $resultForwardFactory;
+        Action\Context $context,
+        PageFactory $resultPageFactory
+    ) {
+        $this->resultPageFactory = $resultPageFactory;
+
         parent::__construct($context);
     }
 
     /**
-     * Forward to edit
+     * Edit Workspace
      *
-     * @return \Magento\Backend\Model\View\Result\Forward
+     * @return \Magento\Framework\Controller\ResultInterface
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function execute()
     {
-        /** @var \Magento\Backend\Model\View\Result\Forward $resultForward */
-        $resultForward = $this->resultForwardFactory->create();
-        return $resultForward->forward('edit');
+        $resultPage = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
+        $resultPage->getConfig()->getTitle()->prepend(__('Add Workspace'));
+        return $resultPage;
     }
 }

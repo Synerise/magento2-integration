@@ -53,7 +53,7 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
     public function setApiKey($apiKey)
     {
         // don't save value, if an obscured value was received. This indicates that data was not changed.
-        if (!empty($value) && !preg_match('/^\*+$/', $apiKey)) {
+        if (!empty($apiKey) && !preg_match('/^\*+$/', $apiKey)) {
             $this->setData('api_key', $this->encryptor->encrypt($apiKey));
             $uuid = (string) Uuid::uuid5(Uuid::NAMESPACE_OID, $apiKey);
             $this->setData('uuid', $uuid);

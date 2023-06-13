@@ -23,7 +23,7 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
         }
 
         $guid = $workspace->getGuid();
-        if (!Uuid::isValid($guid)) {
+        if ($guid && !Uuid::isValid($guid)) {
             $messages['invalid_guid_format'] = 'Invalid guid format';
         }
 
