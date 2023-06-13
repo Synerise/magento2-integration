@@ -80,7 +80,7 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
             );
         }
 
-        if(version_compare($context->getVersion(), '2.2.3', '<')) {
+        if(version_compare($context->getVersion(), '2.2.4', '<')) {
             $installer->getConnection()->addColumn(
                 $installer->getTable( 'synerise_workspace' ),
                 'guid',
