@@ -25,6 +25,11 @@ class UpgradeData implements UpgradeDataInterface
     private $collectionFactory;
 
     /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
      * @var WriterInterface
      */
     private $configWriter;
