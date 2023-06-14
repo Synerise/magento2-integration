@@ -193,7 +193,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $params = [
             'client' => $customerData,
             "discount_amount" => [
-                "amount" => $order->getDiscountAmount() ?: 0,
+                "amount" => (float) $order->getDiscountAmount(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'metadata' => [
@@ -201,7 +201,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 "discountCode" => $order->getCouponCode(),
                 "shipping" => [
                     'method' => $order->getShippingMethod(),
-                    'amount' => $order->getShippingAmount()
+                    'amount' => (float) $order->getShippingAmount()
                 ],
                 'applicationName' => $this->trackingHelper->getApplicationName(),
                 'storeId' => $order->getStoreId(),
@@ -216,11 +216,11 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                     $this->trackingHelper->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                     $this->trackingHelper->getCurrentTime(),
             'revenue' => [
-                "amount" => $order->getSubTotal(),
+                "amount" => (float) $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'value' => [
-                "amount" => $order->getSubTotal(),
+                "amount" => (float) $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'source' => $this->trackingHelper->getSource(),
@@ -281,12 +281,12 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $product = $item->getProduct();
 
         $regularPrice = [
-            "amount" => $item->getOriginalPrice(),
+            "amount" => (float) $item->getOriginalPrice(),
             "currency" => $currency
         ];
 
         $finalUnitPrice = [
-            "amount" => $item->getPrice() - ($item->getDiscountAmount() / $item->getQtyOrdered()),
+            "amount" => (float) $item->getPrice() - ((float) $item->getDiscountAmount() / $item->getQtyOrdered()),
             "currency" => $currency
         ];
 

@@ -50,6 +50,10 @@ class Save extends \Magento\Backend\App\Action
             if (isset($data['api_key'])) {
                 $apiKey = $data['api_key'];
                 $model->setApiKey($apiKey);
+
+                if (isset($data['guid'])) {
+                    $model->setGuid($data['guid']);
+                }
             } else {
                 $apiKey = $model->getApiKey();
             }
@@ -103,7 +107,7 @@ class Save extends \Magento\Backend\App\Action
      * @throws \Synerise\ApiClient\ApiException
      */
     protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getApiToken($scope, $scopeId, null, $apiKey);
+        $token = $this->apiHelper->getJwt($scope, $scopeId, null, $apiKey);
 
         return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);

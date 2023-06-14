@@ -125,7 +125,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @throws ApiException
      */
     protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getApiToken($scope, $scopeId, null, $apiKey);
+        $token = $this->apiHelper->getJwt($scope, $scopeId, null, $apiKey);
 
         return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);

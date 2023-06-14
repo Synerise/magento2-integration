@@ -4,7 +4,7 @@
             <item name="provider" xsi:type="string">synerise_workspace_listing.synerise_workspace_listing_data_source</item>
             <item name="deps" xsi:type="string">synerise_workspace_listing.synerise_workspace_listing_data_source</item>
         </item>
-        <item name="spinner" xsi:type="string">spinner_columns</item>
+        <item name="spinner" xsi:type="string">workspace_columns</item>
         <item name="buttons" xsi:type="array">
             <item name="add" xsi:type="array">
                 <item name="name" xsi:type="string">add</item>
@@ -62,7 +62,19 @@
             </action>
         </massaction>
     </listingToolbar>
-    <columns name="spinner_columns">
+    <columns name="workspace_columns">
+        <settings>
+            <childDefaults>
+                <param name="fieldAction" xsi:type="array">
+                    <item name="provider" xsi:type="string">synerise_workspace_listing.synerise_workspace_listing.workspace_columns.actions</item>
+                    <item name="target" xsi:type="string">applyAction</item>
+                    <item name="params" xsi:type="array">
+                        <item name="0" xsi:type="string">edit</item>
+                        <item name="1" xsi:type="string">${ $.$data.rowIndex }</item>
+                    </item>
+                </param>
+            </childDefaults>
+        </settings>
         <selectionsColumn name="ids">
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
@@ -106,5 +118,10 @@
                 <label translate="true">Updated</label>
             </settings>
         </column>
+        <actionsColumn name="actions" class="Synerise\Integration\Ui\Component\Listing\Columns\WorkspaceActions" sortOrder="200">
+            <settings>
+                <indexField>id</indexField>
+            </settings>
+        </actionsColumn>
     </columns>
 </listing>

@@ -251,6 +251,17 @@
                     <config_path>synerise/api/key</config_path>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
+                <field id="basic_token" translate="label comment" type="text">
+                    <label>Permanent Token</label>
+                    <config_path>synerise/api/basic_token</config_path>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="basic_auth_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable basic authentication</label>
+                    <config_path>synerise/api/basic_auth_enabled</config_path>
+                    <comment>Guid must be set for the selected workspace. Otherwise, this setting will be ignored.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <field id="logger_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Request logging</label>
                     <config_path>synerise/api/logger_enabled</config_path>

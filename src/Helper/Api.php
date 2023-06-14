@@ -6,6 +6,7 @@ use \GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
 use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
+use Synerise\Integration\Model\Config\Backend\Workspace;
 
 class Api extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -14,6 +15,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     const XML_PATH_API_KEY = 'synerise/api/key';
 
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
+
+    const XML_PATH_API_BASIC_AUTH_ENABLED = 'synerise/api/basic_auth_enabled';
 
     const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
 
@@ -57,6 +60,22 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * Guid & api key based token
+     *
+     * @param string $scope
+     * @param int $scopeId
+     * @return string
+     */
+    public function getBasicToken($scope, $scopeId)
+    {
+        return $this->scopeConfig->getValue(
+            Workspace::XML_PATH_API_BASIC_TOKEN,
+            $scope,
+            $scopeId
+        );
+    }
+
+    /**
      * Checks if Api Key is set for a given scope
      *
      * @param string $scope
@@ -74,6 +93,14 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             self::XML_PATH_API_LOGGER_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
+        );
+    }
+    public function isBaiscAuthEnabled($scope = ScopeInterface::SCOPE_STORE, $scopeId = null)
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_API_BASIC_AUTH_ENABLED,
+            $scope,
+            $scopeId
         );
     }
 
@@ -95,12 +122,19 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
-    private function getGuzzleClient($timeout)
+    private function getGuzzleClient($timeout, $basicToken = null)
     {
         $options = [
             'connect_timeout' => $timeout,
             'timeout' => $timeout
         ];
+
+        if ($basicToken) {
+            $options['headers'] = [
+                'Authorization'=> [ "Basic {$basicToken}" ]
+            ];
+        }
+
         if ($this->isLoggerEnabled()) {
             $LogMiddleware = new LogMiddleware(
                 $this->_logger,
@@ -149,10 +183,19 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             if (!$timeout) {
                 $timeout = $this->getLiveRequestTimeout($storeId);
             }
-            $client = $this->getGuzzleClient($timeout);
+
+            $basicToken = $this->isBaiscAuthEnabled(ScopeInterface::SCOPE_STORE, $storeId) ?
+                $this->getBasicToken(ScopeInterface::SCOPE_STORE, $storeId) : null;
+
+            $client = $this->getGuzzleClient($timeout, $basicToken);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
-                ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId, $timeout));
+                ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)));
+
+            if (!empty($basicToken)) {
+                $config->setAccessToken(null);
+            } else {
+                $config->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId, $timeout));
+            }
 
             $this->defaultApi[(int) $storeId] = new \Synerise\ApiClient\Api\DefaultApi(
                 $client,
@@ -177,7 +220,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
+                ->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId));
 
             $this->bagsApi[$storeId] = new \Synerise\CatalogsApiClient\Api\BagsApi(
                 $client,
@@ -197,7 +240,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
-                ->setAccessToken($this->getApiToken(ScopeInterface::SCOPE_STORE, $storeId));
+                ->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId));
 
             $this->itemsApi[$storeId] = new \Synerise\CatalogsApiClient\Api\ItemsApi(
                 $client,
@@ -213,7 +256,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         $key = md5(serialize(func_get_args()));
         if (!isset($this->trackerApi[$key])) {
             if (!$token) {
-                $token = $this->getApiToken($scope, $scopeId);
+                $token = $this->getJwt($scope, $scopeId);
             }
             if (!$timeout) {
                 $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
@@ -237,7 +280,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         $key = md5(serialize(func_get_args()));
         if (!isset($this->apiKeyApi[$key])) {
             if (!$token) {
-                $token = $this->getApiToken($scope, $scopeId);
+                $token = $this->getJwt($scope, $scopeId);
             }
             if (!$timeout) {
                 $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
@@ -256,7 +299,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->apiKeyApi[$key];
     }
 
-    public function getApiToken($scope, $scopeId, $timeout = null, $key = null)
+    public function getJwt($scope, $scopeId, $timeout = null, $key = null)
     {
         $key = $key ?: $this->getApiKey($scope, $scopeId);
         if (!isset($this->apiToken[$key])) {
