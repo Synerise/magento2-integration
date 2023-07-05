@@ -129,10 +129,12 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             'timeout' => $timeout
         ];
 
+        $options['headers'] = [
+            'Connection' => [ 'keep-alive' ]
+        ];
+
         if ($basicToken) {
-            $options['headers'] = [
-                'Authorization'=> [ "Basic {$basicToken}" ]
-            ];
+            $options['headers']['Authorization'] = [ "Basic {$basicToken}" ];
         }
 
         if ($this->isLoggerEnabled()) {
