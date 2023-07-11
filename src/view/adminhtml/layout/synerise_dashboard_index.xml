@@ -44,6 +44,7 @@
                         <argument name="table" xsi:type="string">synerise_sync_subscriber</argument>
                     </action>
                 </block>
+                <block class="Synerise\Integration\Block\Adminhtml\Dashboard\Version" name="module-version" template="Synerise_Integration::dashboard-version.phtml" />
             </block>
         </referenceContainer>
     </body>
