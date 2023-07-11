@@ -28,6 +28,5 @@ class Version extends \Magento\Backend\Block\Template
     public function getVersion()
     {
         return $this->moduleResource->getDbVersion('Synerise_Integration');
-        return 'x.x.x';
     }
 }
