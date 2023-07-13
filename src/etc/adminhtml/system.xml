@@ -246,6 +246,11 @@
                     <backend_model>\Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
                     <comment>Specify Api host URL.</comment>
                 </field>
+                <field id="keep_alive_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable keep-alive header</label>
+                    <config_path>synerise/api/keep_alive_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <field id="key" translate="label comment" type="text">
                     <label>Key</label>
                     <config_path>synerise/api/key</config_path>
@@ -262,7 +267,7 @@
                     <comment>Guid must be set for the selected workspace. Otherwise, this setting will be ignored.</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="logger_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="logger_enabled" type="select" translate="label" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Request logging</label>
                     <config_path>synerise/api/logger_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>

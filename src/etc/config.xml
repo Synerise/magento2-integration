@@ -6,6 +6,7 @@
                 <key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
                 <basic_token backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
                 <host>https://api.synerise.com</host>
+                <keep_alive_enabled>1</keep_alive_enabled>
                 <live_request_timeout>2.5</live_request_timeout>
                 <scheduled_request_timeout>10</scheduled_request_timeout>
             </api>
