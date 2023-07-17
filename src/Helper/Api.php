@@ -16,6 +16,8 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
     const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
 
+    const XML_PATH_API_KEEP_ALIVE_ENABLED = 'synerise/api/keep_alive_enabled';
+
     const XML_PATH_API_BASIC_AUTH_ENABLED = 'synerise/api/basic_auth_enabled';
 
     const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
@@ -95,6 +97,16 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $storeId
         );
     }
+
+    public function isKeepAliveEnabled($storeId = null)
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_API_KEEP_ALIVE_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
     public function isBaiscAuthEnabled($scope = ScopeInterface::SCOPE_STORE, $scopeId = null)
     {
         return $this->scopeConfig->isSetFlag(
@@ -129,10 +141,15 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             'timeout' => $timeout
         ];
 
-        if ($basicToken) {
+        if ($this->isKeepAliveEnabled()) {
             $options['headers'] = [
-                'Authorization'=> [ "Basic {$basicToken}" ]
+                'Connection' => [ 'keep-alive' ]
             ];
+        }
+
+
+        if ($basicToken) {
+            $options['headers']['Authorization'] = [ "Basic {$basicToken}" ];
         }
 
         if ($this->isLoggerEnabled()) {
