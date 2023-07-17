@@ -91,7 +91,7 @@ class Configuration
      *
      * @var string
      */
-    protected $userAgent = 'magneto2-integration';
+    protected $userAgent = 'magento2-integration';
 
     /**
      * Debug switch (default set to false)
