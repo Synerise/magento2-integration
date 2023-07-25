@@ -11,6 +11,7 @@ class WishlistRemoveProduct implements ObserverInterface
     const EVENT = 'wishlist_item_delete_after';
 
     protected $apiHelper;
+    protected $catalogHelper;
     protected $trackingHelper;
     protected $logger;
 
