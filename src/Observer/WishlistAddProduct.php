@@ -67,6 +67,12 @@ class WishlistAddProduct implements ObserverInterface
         }
 
         try {
+            /** @var \Magento\Wishlist\Model\Wishlist $wishlist */
+            $wishlist = $observer->getEvent()->getWishlist();
+            if (!$wishlist->getCustomerId()) {
+                return;
+            }
+
             $product = $observer->getEvent()->getProduct();
             $storeId = $this->trackingHelper->getStoreId();
             $params = [
@@ -105,9 +111,9 @@ class WishlistAddProduct implements ObserverInterface
             $eventClientAction = new EventClientAction([
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => [
-                    'uuid' => $this->trackingHelper->getClientUuid()
-                ],
+                'client' => new \Synerise\ApiClient\Model\Client([
+                    'custom_id' => $wishlist->getCustomerId()
+                ]),
                 'params' => $params
             ]);
 

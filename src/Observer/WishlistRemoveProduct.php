@@ -14,12 +14,19 @@ class WishlistRemoveProduct implements ObserverInterface
     protected $trackingHelper;
     protected $logger;
 
+    /**
+     * @var \Magento\Wishlist\Model\Wishlist
+     */
+    protected $wishlist;
+
     public function __construct(
+        \Magento\Wishlist\Model\Wishlist $wishlist,
         \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper
     ) {
+        $this->wishlist = $wishlist;
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
@@ -37,12 +44,18 @@ class WishlistRemoveProduct implements ObserverInterface
         }
 
         try {
+            /** @var \Magento\Wishlist\Model\Item $item */
+            $item = $observer->getItem();
 
-            /** @var \Magento\Wishlist\Model\Item $wishlistItem */
-            $wishlistItem = $observer->getEvent()->getItem();
-            $storeId = $wishlistItem->getStoreId();
+            /** @var \Magento\Wishlist\Model\Wishlist $wishlist */
+            $wishlist = $this->wishlist->load($item->getWishlistId());
 
-            $product = $wishlistItem->getProduct();
+            if (!$wishlist->getCustomerId()) {
+                return;
+            }
+
+            /** @var \Magento\Catalog\Model\Product $product */
+            $product = $item->getProduct();
 
             $params = [
                 "sku" => $product->getSku(),
@@ -81,9 +94,9 @@ class WishlistRemoveProduct implements ObserverInterface
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'action' => 'product.removeFromFavorites',
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => [
-                    'uuid' => $this->trackingHelper->getClientUuid()
-                ],
+                'client' => new \Synerise\ApiClient\Model\Client([
+                    'custom_id' => $wishlist->getCustomerId()
+                ]),
                 'params' => $params
             ]);
 
