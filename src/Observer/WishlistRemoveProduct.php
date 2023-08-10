@@ -10,8 +10,24 @@ class WishlistRemoveProduct implements ObserverInterface
 {
     const EVENT = 'wishlist_item_delete_after';
 
+    /**
+     * @var \Synerise\Integration\Helper\Api
+     */
     protected $apiHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Catalog
+     */
+    protected $catalogHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Tracking
+     */
     protected $trackingHelper;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
     protected $logger;
 
     /**
@@ -19,18 +35,32 @@ class WishlistRemoveProduct implements ObserverInterface
      */
     protected $wishlist;
 
+    /**
+     * @var \Synerise\Integration\Helper\Queue
+     */
+    protected $queueHelper;
+
+    /**
+     * @var \Synerise\Integration\Helper\Event
+     */
+    protected $eventHelper;
+
     public function __construct(
         \Magento\Wishlist\Model\Wishlist $wishlist,
         \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper
+        \Synerise\Integration\Helper\Tracking $trackingHelper,
+        \Synerise\Integration\Helper\Queue $queueHelper,
+        \Synerise\Integration\Helper\Event $eventHelper
     ) {
         $this->wishlist = $wishlist;
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->queueHelper = $queueHelper;
+        $this->eventHelper = $eventHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -46,6 +76,8 @@ class WishlistRemoveProduct implements ObserverInterface
         try {
             /** @var \Magento\Wishlist\Model\Item $item */
             $item = $observer->getItem();
+
+            $storeId = $item->getStoreId();
 
             /** @var \Magento\Wishlist\Model\Wishlist $wishlist */
             $wishlist = $this->wishlist->load($item->getWishlistId());
@@ -100,8 +132,11 @@ class WishlistRemoveProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            $this->apiHelper->getDefaultApiInstance()
-                ->customEvent('4.4', $customEventRequest);
+            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->queueHelper->publishEvent(self::EVENT, $customEventRequest, $storeId);
+            } else {
+                $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
+            }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('Synerise Error', ['exception' => $e]);
