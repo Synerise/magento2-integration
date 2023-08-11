@@ -18,6 +18,7 @@ use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
 use Synerise\Integration\Observer\OrderPlace;
 use Synerise\Integration\Observer\ProductReview;
 use Synerise\Integration\Observer\WishlistAddProduct;
+use Synerise\Integration\Observer\WishlistRemoveProduct;
 
 class Event extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -83,9 +84,10 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
                     $apiInstance->clientRemovedProductFromCart('4.4', $payload);
                     break;
                 case CartQtyUpdate::EVENT:
-                case ProductReview::EVENT:
                 case CartStatus::EVENT:
-                    $apiInstance->customEvent('4.4', $payload);
+                case ProductReview::EVENT:
+                case WishlistRemoveProduct::EVENT:
+                $apiInstance->customEvent('4.4', $payload);
                     break;
                 case CustomerRegister::EVENT:
                     $apiInstance->clientRegistered('4.4', $payload);
