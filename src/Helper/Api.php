@@ -4,7 +4,11 @@ namespace Synerise\Integration\Helper;
 
 use \GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
+use Magento\Framework\App\Helper\Context;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Filter\TranslitUrl;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 use Synerise\Integration\Model\Config\Backend\Workspace;
 
@@ -30,6 +34,27 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     protected $defaultApi = [];
     protected $trackerApi = [];
     protected $apiToken = [];
+
+    /**
+     * @var TranslitUrl
+     */
+    private $translitUrl;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    public function __construct(
+        Context $context,
+        TranslitUrl $translitUrl,
+        StoreManagerInterface $storeManager
+    ) {
+        $this->translitUrl = $translitUrl;
+        $this->storeManager = $storeManager;
+
+        parent::__construct($context);
+    }
 
     /**
      * Api host
@@ -59,6 +84,30 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             $scope,
             $scopeId
         );
+    }
+
+    /**
+     * User Agent
+     *
+     * @param int $storeId
+     * @return string
+     */
+    public function getUserAgent($storeId): string
+    {
+        $userAgent = 'magento2';
+
+        try {
+            $baseUrl = $this->storeManager->getStore($storeId)->getBaseUrl();
+            $domain = preg_replace('/^(http(s)?:\/\/)?((www.)?)/','', $baseUrl);
+
+            if ($domain) {
+                $userAgent .= '-' . $this->translitUrl->filter($domain);
+            }
+        } catch (NoSuchEntityException $e) {
+            $this->_logger->debug('Store not found');
+        }
+
+        return $userAgent;
     }
 
     /**
@@ -178,6 +227,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
                 'connect_timeout' => $timeout
             ]);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($scopeId))
                 ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
 
             $this->authApi[$key] = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
@@ -206,6 +256,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
             $client = $this->getGuzzleClient($timeout, $basicToken);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($storeId))
                 ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)));
 
             if (!empty($basicToken)) {
@@ -236,6 +287,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
             $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($storeId))
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId));
 
@@ -256,6 +308,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
             $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($storeId))
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId));
 
@@ -280,6 +333,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
             $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($scopeId))
                 ->setHost(sprintf('%s/business-profile-service', $this->getApiHost($scope, $scopeId)))
                 ->setAccessToken($token);
 
@@ -304,6 +358,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
             }
             $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($scopeId))
                 ->setHost(sprintf('%s/uauth', $this->getApiHost($scope, $scopeId)))
                 ->setAccessToken($token);
 
