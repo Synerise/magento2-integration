@@ -6,7 +6,6 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Synchronization\Subscriber as SyncSubscriber;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
@@ -16,11 +15,6 @@ class Resend extends Action implements HttpGetActionInterface
      * Authorization level
      */
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_subscriber';
-
-    /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var SyncSubscriber
@@ -34,12 +28,9 @@ class Resend extends Action implements HttpGetActionInterface
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
         SyncSubscriber $syncSubscriber,
         StatusResourceModel $statusResourceModel
-
     ) {
-        $this->logger = $logger;
         $this->syncSubscriber = $syncSubscriber;
         $this->statusResourceModel = $statusResourceModel;
 
@@ -56,7 +47,6 @@ class Resend extends Action implements HttpGetActionInterface
     {
         $this->statusResourceModel->resendItems('subscriber');
         $this->syncSubscriber->markAllAsUnsent();
-
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

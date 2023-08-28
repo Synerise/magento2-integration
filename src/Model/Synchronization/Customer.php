@@ -7,7 +7,6 @@ use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
@@ -39,7 +38,6 @@ class Customer extends AbstractSynchronization
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         WebsiteCollectionFactory $websiteCollectionFactory,
@@ -53,7 +51,6 @@ class Customer extends AbstractSynchronization
 
         parent::__construct(
             $scopeConfig,
-            $logger,
             $resource,
             $queueResourceModel,
             $collectionFactory

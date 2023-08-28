@@ -6,7 +6,6 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Order as OrderHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
@@ -28,7 +27,6 @@ class Order extends AbstractSynchronization
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
@@ -40,7 +38,6 @@ class Order extends AbstractSynchronization
 
         parent::__construct(
             $scopeConfig,
-            $logger,
             $resource,
             $queueResourceModel,
             $collectionFactory

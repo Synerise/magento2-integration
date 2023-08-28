@@ -6,10 +6,11 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 
-class Order extends \Magento\Framework\App\Helper\AbstractHelper
+class Order
 {
     protected $configWriter;
     protected $cacheManager;
@@ -52,12 +53,16 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $searchCriteriaBuilder;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
+        LoggerInterface $logger,
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Framework\App\ResourceConnection $resource,
-        \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\Cache\Manager $cacheManager,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
@@ -69,6 +74,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         Catalog $catalogHelper,
         Tracking $trackingHelper
     ) {
+        $this->logger = $logger;
         $this->addressRepository = $addressRepository;
         $this->subscriber= $subscriber;
         $this->storeManager = $storeManager;
@@ -76,15 +82,12 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         $this->resource = $resource;
         $this->cacheManager = $cacheManager;
         $this->configWriter = $configWriter;
-        $this->scopeConfig = $scopeConfig;
         $this->dateTime = $dateTime;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
         $this->ruleRepository = $ruleRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
-
-        parent::__construct($context);
     }
 
     /**
@@ -141,7 +144,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
+            $this->logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
 
@@ -175,7 +178,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
             }
 
             if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
-                $this->_logger->debug(
+                $this->logger->debug(
                     sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
                 );
 
@@ -265,7 +268,7 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
                 $rules[] = $rule->getName();
             }
         } catch (\Exception $e) {
-            $this->_logger->error($e->getMessage(), [$e]);
+            $this->logger->error($e);
         }
 
         return $rules;
@@ -345,17 +348,6 @@ class Order extends \Magento\Framework\App\Helper\AbstractHelper
     public function getAttributesToSelect()
     {
         return '*';
-    }
-
-    public function getDefaultWebsiteCode()
-    {
-        try {
-            $websiteCode = $this->storeManager->getWebsite()->getCode();
-        } catch (LocalizedException $localizedException) {
-            $websiteCode = null;
-            $this->_logger->error($localizedException->getMessage());
-        }
-        return $websiteCode;
     }
 
     public function isSent($orderId)

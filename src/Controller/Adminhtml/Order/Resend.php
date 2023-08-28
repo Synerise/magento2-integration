@@ -6,10 +6,8 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Synchronization\Order as SyncOrder;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
-
 
 class Resend extends Action implements HttpGetActionInterface
 {
@@ -17,11 +15,6 @@ class Resend extends Action implements HttpGetActionInterface
      * Authorization level
      */
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
-
-    /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var SyncOrder
@@ -35,11 +28,9 @@ class Resend extends Action implements HttpGetActionInterface
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
         SyncOrder $syncOrder,
         StatusResourceModel $statusResourceModel
     ) {
-        $this->logger = $logger;
         $this->syncOrder = $syncOrder;
         $this->statusResourceModel = $statusResourceModel;
 

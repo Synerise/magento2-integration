@@ -12,11 +12,6 @@ class CartAddProduct implements ObserverInterface
     const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var \Synerise\Integration\Helper\Api
      */
     protected $apiHelper;
@@ -42,14 +37,12 @@ class CartAddProduct implements ObserverInterface
     protected $eventsHelper;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
         \Synerise\Integration\Helper\Event $eventsHelper
     ) {
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
@@ -107,7 +100,7 @@ class CartAddProduct implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Error', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

@@ -11,11 +11,6 @@ class CatalogProductDeleteBefore implements ObserverInterface
     const EVENT = 'catalog_product_delete_after';
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var \Synerise\Integration\Helper\Api
      */
     protected $apiHelper;
@@ -41,14 +36,12 @@ class CatalogProductDeleteBefore implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
         \Synerise\Integration\Helper\Event $eventHelper
     ) {
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
@@ -83,7 +76,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Error', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

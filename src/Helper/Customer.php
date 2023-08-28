@@ -4,7 +4,6 @@ namespace Synerise\Integration\Helper;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -13,12 +12,13 @@ use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Magento\Newsletter\Model\Subscriber;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 
-class Customer extends \Magento\Framework\App\Helper\AbstractHelper
+class Customer
 {
     const UPDATE_GENDER = [
         1 => InBodyClientSex::MALE,
@@ -69,8 +69,13 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private $storeManager;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
-        Context $context,
+        LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         DateTime $dateTime,
@@ -79,6 +84,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
+        $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
         $this->dateTime = $dateTime;
@@ -87,7 +93,6 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
 
-        parent::__construct($context);
     }
 
     /**
@@ -205,7 +210,7 @@ class Customer extends \Magento\Framework\App\Helper\AbstractHelper
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
+            $this->logger->debug('Request accepted with errors', ['response' => $body]);
         }
     }
 

@@ -5,7 +5,6 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
@@ -36,11 +35,6 @@ class OrderPlace implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var QueueResourceModel
      */
     protected $queueResourceModel;
@@ -56,7 +50,6 @@ class OrderPlace implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper,
         Order $orderHelper,
@@ -64,7 +57,6 @@ class OrderPlace implements ObserverInterface
         Queue $queueHelper,
         Event $eventHelper
     ) {
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->orderHelper = $orderHelper;
@@ -125,8 +117,8 @@ class OrderPlace implements ObserverInterface
         } catch (ApiException $e) {
             $this->addItemToQueue($order);
         } catch (\Exception $e) {
+            $this->trackingHelper->getLogger()->error($e);
             $this->addItemToQueue($order);
-            $this->logger->error('Synerise Error', ['exception' => $e]);
         }
     }
 
@@ -139,7 +131,7 @@ class OrderPlace implements ObserverInterface
                 $order->getId()
             );
         } catch (LocalizedException $e) {
-            $this->logger->error('Adding order item to queue failed', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }
