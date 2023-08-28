@@ -1,5 +1,6 @@
 <?php /** @var $this Synerise\Integration\Block\Adminhtml\Dashboard\Version */ ?>
 <div class="col-m-12">
-    <p><b>Synerise Integration</b> ver. <?php echo $this->getVersion(); ?></p>
+    <p><b>Synerise Integration</b> ver. <?php echo $this->getVersion(); ?>
+        <?php echo $this->getEnvironmentLink(); ?> | <?php echo $this->getLogsLink(); ?></p>
 </div>
 
