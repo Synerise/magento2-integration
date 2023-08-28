@@ -53,7 +53,7 @@ class Version extends \Magento\Backend\Block\Template
 
     public function getVersion()
     {
-        $this->versionHelper->getMagentoModuleVersion('Synerise_Integration');
+        return $this->versionHelper->getMagentoModuleVersion('Synerise_Integration');
     }
 
     public function getLogsUrl()
@@ -63,7 +63,7 @@ class Version extends \Magento\Backend\Block\Template
 
     public function getLogsLink()
     {
-        if ($this->fileExists(Logs::FILEPATH)) {
+        if ($this->fileExists($this->getFilePath(Logs::FILENAME))) {
             return '<a href="' . $this->getLogsUrl() .'">logs</a>';
         }
 
@@ -82,11 +82,15 @@ class Version extends \Magento\Backend\Block\Template
 
     protected function fileExists($path)
     {
-        $root = $this->directoryList->getRoot();
         try {
-            return $this->fileDriver->isExists($root . ($root && $path ? '/' : '') . $path);
+            return $this->fileDriver->isExists($path);
         } catch (FileSystemException $e) {
             return false;
         }
+    }
+
+    protected function getFilePath($filename, $directory = \Magento\Framework\App\Filesystem\DirectoryList::LOG)
+    {
+        return $this->directoryList->getPath($directory) . DIRECTORY_SEPARATOR . $filename;
     }
 }
