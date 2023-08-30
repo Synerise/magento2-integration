@@ -29,15 +29,15 @@
             <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace</argument>
         </arguments>
     </virtualType>
-    <virtualType name="Synerise\Integration\Model\Debug" type="Magento\Framework\Logger\Handler\Base">
-        <arguments>
-            <argument name="fileName" xsi:type="string">/var/log/synerise.log</argument>
-        </arguments>
-    </virtualType>
+<!--    <virtualType name="Synerise\Integration\Model\Debug" type="Magento\Framework\Logger\Handler\Base">-->
+<!--        <arguments>-->
+<!--            <argument name="fileName" xsi:type="string">/var/log/synerise.log</argument>-->
+<!--        </arguments>-->
+<!--    </virtualType>-->
     <virtualType name="Synerise\Integration\Model\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
             <argument name="handlers" xsi:type="array">
-                <item name="debug" xsi:type="object">Synerise\Integration\Model\Debug</item>
+                <item name="debug" xsi:type="object">Synerise\Integration\Model\Logger\Handler\Debug</item>
             </argument>
         </arguments>
     </virtualType>

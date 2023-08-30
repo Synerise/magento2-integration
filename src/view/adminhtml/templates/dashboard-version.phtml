@@ -1,6 +1,6 @@
 <?php /** @var $this Synerise\Integration\Block\Adminhtml\Dashboard\Version */ ?>
 <div class="col-m-12">
     <p><b>Synerise Integration</b> ver. <?php echo $this->getVersion(); ?>
-        <?php echo $this->getEnvironmentLink(); ?> | <?php echo $this->getLogsLink(); ?></p>
+        <a href="<?php echo $this->getEnvironmentLogUrl() ?>">environment log</a></p>
 </div>
 
