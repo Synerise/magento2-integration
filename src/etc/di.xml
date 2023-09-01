@@ -29,11 +29,6 @@
             <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace</argument>
         </arguments>
     </virtualType>
-<!--    <virtualType name="Synerise\Integration\Model\Debug" type="Magento\Framework\Logger\Handler\Base">-->
-<!--        <arguments>-->
-<!--            <argument name="fileName" xsi:type="string">/var/log/synerise.log</argument>-->
-<!--        </arguments>-->
-<!--    </virtualType>-->
     <virtualType name="Synerise\Integration\Model\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
             <argument name="handlers" xsi:type="array">
@@ -52,6 +47,16 @@
         </arguments>
     </type>
     <type name="Synerise\Integration\Controller\Adminhtml\Newsletter\MassUpdate">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\Controller\Adminhtml\Log\Download">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\Controller\Adminhtml\Log\MassDelete">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

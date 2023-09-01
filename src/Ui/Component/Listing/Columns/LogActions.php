@@ -11,12 +11,12 @@ use Magento\Ui\Component\Listing\Columns\Column;
 use Magento\Framework\UrlInterface;
 
 /**
- * Class WorkspaceActions for Listing Columns
+ * Class LogActions for Listing Columns
  *
  * @api
  * @since 100.0.2
  */
-class WorkspaceActions extends Column
+class LogActions extends Column
 {
     /**
      * @var UrlInterface
@@ -50,17 +50,18 @@ class WorkspaceActions extends Column
     public function prepareDataSource(array $dataSource)
     {
         if (isset($dataSource['data']['items'])) {
-            $storeId = $this->context->getFilterParam('store_id');
 
             foreach ($dataSource['data']['items'] as &$item) {
-                $item[$this->getData('name')]['edit'] = [
-                    'href' => $this->urlBuilder->getUrl(
-                        'synerise/workspace/edit',
-                        ['id' => $item['id'], 'store' => $storeId]
-                    ),
-                    'ariaLabel' => __('Edit ') . $item['name'],
-                    'label' => __('Edit'),
-                    'hidden' => false,
+                $item[$this->getData('name')] = [
+                    'download' => [
+                        'href' => $this->urlBuilder->getUrl(
+                            'synerise/log/download',
+                            ['filename' => $item['name']]
+                        ),
+                        'ariaLabel' => __('Download ') . $item['name'],
+                        'label' => __('Download'),
+                        'hidden' => false,
+                    ]
                 ];
             }
         }

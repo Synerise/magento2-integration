@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Controller\Adminhtml\Dashboard\Download;
+namespace Synerise\Integration\Controller\Adminhtml\Log\Download;
 
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Controller\Adminhtml\System;
@@ -13,7 +13,7 @@ use Synerise\Integration\Helper\Version;
 
 class Environment extends System
 {
-    const ADMIN_RESOURCE = 'Synerise_Integration::dashboard';
+    const ADMIN_RESOURCE = 'Synerise_Integration::log_download';
 
     const FILENAME = 'environment.log';
 
