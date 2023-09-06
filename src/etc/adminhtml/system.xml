@@ -303,6 +303,11 @@
                     <config_path>synerise/api/logger_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="logger_exclude" type="multiselect" translate="label" sortOrder="20" showInDefault="1">
+                    <label>Exclude from logging</label>
+                    <config_path>synerise/debug/logger_exclude</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Debug\Exclude</source_model>
+                </field>
             </group>
         </section>
     </system>

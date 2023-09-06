@@ -11,6 +11,7 @@ use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\CustomeventRequest;
+use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 
 class Tracking
 {
@@ -454,7 +455,7 @@ class Tracking
             list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-            if ($statusCode != 202) {
+            if ($statusCode != 202 && !$this->isExcludedFromLogging(Exclude::ERROR_CLIENT_MERGE)) {
                 $this->logger->error(
                     'Client update with uuid reset failed',
                     [
@@ -464,7 +465,9 @@ class Tracking
                 );
             }
         } catch (\Exception $e) {
-            $this->logger->error($e);
+            if (!$this->isExcludedFromLogging(Exclude::ERROR_CLIENT_MERGE)) {
+                $this->logger->error($e);
+            }
         }
     }
 
@@ -520,5 +523,14 @@ class Tracking
     public function getLogger(): LoggerInterface
     {
         return $this->logger;
+    }
+
+    public function isExcludedFromLogging(string $error): bool
+    {
+        $errors = explode(',', $this->scopeConfig->getValue(
+            Exclude::XML_PATH_DEBUG_LOGGER_EXCLUDE,
+        ));
+
+        return in_array($error, $errors);
     }
 }

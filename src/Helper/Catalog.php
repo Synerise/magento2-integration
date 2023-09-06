@@ -15,6 +15,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
+use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 
 class Catalog
 {
@@ -102,6 +103,7 @@ class Catalog
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
         Api $apiHelper,
+        Tracking $trackingHelper,
         ?IsProductSalableInterface $isProductSalable = null
     ) {
         $this->logger = $logger;
@@ -118,6 +120,7 @@ class Catalog
         $this->assetContext = $assetContext;
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
+        $this->trackingHelper = $trackingHelper;
         $this->connection = $resource->getConnection();
         $this->isProductSalable = $isProductSalable;
     }
@@ -439,7 +442,9 @@ class Catalog
         try {
             return $this->productRepository->getById($productId, false, $storeId);
         } catch (NoSuchEntityException $exception) {
-            $this->logger->error("Product Id not found", [$exception]);
+            if ($this->trackingHelper->isExcludedFromLogging(Exclude::ERROR_PRODUCT_NOT_FOUND)) {
+                $this->trackingHelper->getLogger()->error($exception);
+            }
         }
 
         return null;
