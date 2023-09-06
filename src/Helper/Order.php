@@ -144,7 +144,7 @@ class Order
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->logger->debug('Request accepted with errors', ['response' => $body]);
+            $this->logger->warning('Request partially accepted', ['response' => $body]);
         }
     }
 

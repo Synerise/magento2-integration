@@ -4,6 +4,11 @@
         <css src="Synerise_Integration::css/dashboard.css"/>
     </head>
     <body>
+        <referenceBlock name="menu">
+            <action method="setActive">
+                <argument name="itemId" xsi:type="string">Magento_Backend::marketing</argument>
+            </action>
+        </referenceBlock>
         <referenceContainer name="content">
             <block class="Synerise\Integration\Block\Adminhtml\Dashboard" template="Synerise_Integration::dashboard.phtml">
                 <block class="Synerise\Integration\Block\Adminhtml\Dashboard\Status" name="catalog-status" template="Synerise_Integration::dashboard-status.phtml">
