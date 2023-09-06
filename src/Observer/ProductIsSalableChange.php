@@ -89,8 +89,8 @@ class ProductIsSalableChange implements ObserverInterface
                 }
             }
         } catch (NoSuchEntityException $e) {
-            if (!$this->trackingHelper->isExcludedFromLogging(Exclude::ERROR_PRODUCT_NOT_FOUND)) {
-                $this->trackingHelper->getLogger()->error($e);
+            if (!$this->trackingHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                $this->trackingHelper->getLogger()->warning($e);
             }
         } catch (\Exception $e) {
             $this->trackingHelper->getLogger()->error($e);

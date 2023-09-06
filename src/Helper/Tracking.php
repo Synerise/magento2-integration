@@ -455,7 +455,7 @@ class Tracking
             list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-            if ($statusCode != 202 && !$this->isExcludedFromLogging(Exclude::ERROR_CLIENT_MERGE)) {
+            if ($statusCode != 202 && !$this->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
                 $this->logger->error(
                     'Client update with uuid reset failed',
                     [
@@ -465,7 +465,7 @@ class Tracking
                 );
             }
         } catch (\Exception $e) {
-            if (!$this->isExcludedFromLogging(Exclude::ERROR_CLIENT_MERGE)) {
+            if (!$this->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
                 $this->logger->error($e);
             }
         }
@@ -525,12 +525,12 @@ class Tracking
         return $this->logger;
     }
 
-    public function isExcludedFromLogging(string $error): bool
+    public function isExcludedFromLogging(string $exception): bool
     {
-        $errors = explode(',', $this->scopeConfig->getValue(
+        $exclusions = explode(',', $this->scopeConfig->getValue(
             Exclude::XML_PATH_DEBUG_LOGGER_EXCLUDE,
         ));
 
-        return in_array($error, $errors);
+        return in_array($exception, $exclusions);
     }
 }
