@@ -6,7 +6,6 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
 use \Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class ResetStopId extends Action implements HttpGetActionInterface
@@ -17,21 +16,14 @@ class ResetStopId extends Action implements HttpGetActionInterface
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var StatusResourceModel
      */
     protected $statusResourceModel;
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
         StatusResourceModel $statusResourceModel
     ) {
-        $this->logger = $logger;
         $this->statusResourceModel = $statusResourceModel;
 
         parent::__construct($context);

@@ -5,21 +5,14 @@ namespace Synerise\Integration\Model;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Data\Collection;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Cron\Status;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
-use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 abstract class AbstractSynchronization
 {
     const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
     const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
     const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var ScopeConfigInterface
@@ -48,14 +41,12 @@ abstract class AbstractSynchronization
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface      $logger,
         ResourceConnection   $resource,
         QueueResourceModel   $queueResourceModel,
                              $collectionFactory
     )
     {
         $this->scopeConfig = $scopeConfig;
-        $this->logger = $logger;
         $this->connection = $resource->getConnection();
         $this->queueResourceModel = $queueResourceModel;
         $this->collectionFactory = $collectionFactory;

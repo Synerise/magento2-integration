@@ -4,18 +4,12 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var \Synerise\Integration\Helper\Tracking
@@ -33,12 +27,10 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        LoggerInterface $logger,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
         \Synerise\Integration\Helper\Event $eventHelper
     ) {
-        $this->logger = $logger;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
@@ -69,7 +61,7 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Failed to unsubscribe user', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

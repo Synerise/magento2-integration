@@ -2,16 +2,17 @@
 
 namespace Synerise\Integration\Helper;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Magento\Quote\Model\Quote;
 use Magento\Store\Model\ScopeInterface;
 use Mobile_Detect;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
-use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\CustomeventRequest;
 
-class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
+class Tracking
 {
     const COOKIE_CLIENT_P = '_snrs_p';
 
@@ -100,9 +101,20 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
      */
     protected $trackerKey;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
     public function __construct(
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig,
         \Magento\Backend\Model\Auth\Session $backendSession,
-        \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
         \Magento\Framework\HTTP\Header $httpHeader,
         \Magento\Framework\Stdlib\CookieManagerInterface $cookieManager,
@@ -113,6 +125,8 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Newsletter\Model\Subscriber $subscriber,
         Api $apiHelper
     ) {
+        $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
         $this->backendSession = $backendSession;
         $this->cookieManager = $cookieManager;
         $this->cookieMetadataFactory = $cookieMetadataFactory;
@@ -123,7 +137,6 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
         $this->subscriber= $subscriber;
         $this->apiHelper = $apiHelper;
         $this->scopeResolver = $scopeResolver;
-        parent::__construct($context);
     }
 
     /**
@@ -442,42 +455,16 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
             if ($statusCode != 202) {
-                $this->_logger->error('Client update with uuid reset failed');
+                $this->logger->error(
+                    'Client update with uuid reset failed',
+                    [
+                        'api_response_body' => $body,
+                        'api_response_code' => $statusCode
+                    ]
+                );
             }
         } catch (\Exception $e) {
-            $this->_logger->error('Client update with uuid reset failed', ['exception' => $e]);
-        }
-    }
-
-    /**
-     * @param array $products
-     * @param float $totalAmount
-     * @param integer $totalQuantity
-     * @param Quote $quote
-     */
-    public function sendCartStatusEvent($products, $totalAmount, $totalQuantity, $quote)
-    {
-        try {
-            $customEventRequest = new CustomeventRequest([
-                'time' => $this->getCurrentTime(),
-                'action' => 'cart.status',
-                'label' => 'CartStatus',
-                'client' => $this->prepareClientDataFromQuote($quote),
-                'params' => [
-                    'source' => $this->getSource(),
-                    'applicationName' => $this->getApplicationName(),
-                    'storeId' => $this->getStoreId(),
-                    'storeUrl' => $this->getStoreBaseUrl(),
-                    'products' => $products,
-                    'totalAmount' => $totalAmount,
-                    'totalQuantity' => $totalQuantity
-                ]
-            ]);
-
-            $this->apiHelper->getDefaultApiInstance()
-                ->customEvent('4.4', $customEventRequest);
-        } catch (\Exception $e) {
-            $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->logger->error($e);
         }
     }
 
@@ -528,5 +515,10 @@ class Tracking extends \Magento\Framework\App\Helper\AbstractHelper
     public function isAdminLoggedIn(): bool
     {
         return $this->backendSession->getUser() && $this->backendSession->getUser()->getId();
+    }
+
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
     }
 }

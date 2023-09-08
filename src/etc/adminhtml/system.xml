@@ -13,7 +13,7 @@
                 <field id="id" type="select" translate="label" sortOrder="20">
                     <label>Select</label>
                     <config_path>synerise/workspace/id</config_path>
-                    <backend_model>\Synerise\Integration\Model\Config\Backend\Workspace</backend_model>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Workspace</backend_model>
                     <source_model>Synerise\Integration\Model\Config\Source\Workspace</source_model>
                 </field>
                 <field id="map" translate="label" sortOrder="1" showInDefault="1">
@@ -161,7 +161,7 @@
                 <field id="domain" type="text" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Cookie domain</label>
                     <config_path>synerise/page_tracking/domain</config_path>
-                    <backend_model>\Synerise\Integration\Model\Config\Backend\Tracking\Domain</backend_model>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Tracking\Domain</backend_model>
                     <comment><![CDATA[Common cookie domain can be set if a single Workspace is shared across many subdomains. Otherwise it should be left blank.]]></comment>
                 </field>
                 <field id="custom_page_visit" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -243,7 +243,7 @@
                 <field id="host" translate="label comment" type="text" sortOrder="10" showInDefault="1">
                     <label>Host</label>
                     <config_path>synerise/api/host</config_path>
-                    <backend_model>\Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
+                    <backend_model>Synerise\Integration\Model\Config\Backend\Api\Host</backend_model>
                     <comment>Specify Api host URL.</comment>
                 </field>
                 <field id="keep_alive_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -267,11 +267,6 @@
                     <comment>Guid must be set for the selected workspace. Otherwise, this setting will be ignored.</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="logger_enabled" type="select" translate="label" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Request logging</label>
-                    <config_path>synerise/api/logger_enabled</config_path>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
             </group>
             <group id="live_request" translate="label" sortOrder="10" showInDefault="1">
                 <label>Live requests</label>
@@ -289,6 +284,24 @@
                     <config_path>synerise/api/scheduled_request_timeout</config_path>
                     <comment>Specify timeout in seconds for scheduled requests.</comment>
                     <validate>float validate-greater-than-zero</validate>
+                </field>
+            </group>
+        </section>
+        <section id="synerise_debug" translate="label" sortOrder="8" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Debug</label>
+            <tab>synerise</tab>
+            <resource>Synerise_Integration::configuration_debug</resource>
+            <group id="logger" translate="label" sortOrder="10" showInDefault="1"  showInWebsite="1" showInStore="1">
+                <label>Debug</label>
+                <field id="logger_enabled" type="select" translate="label" sortOrder="10" showInDefault="1">
+                    <label>Enable logging</label>
+                    <config_path>synerise/debug/logger_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="request_logger_enabled" type="select" translate="label" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>API request logging</label>
+                    <config_path>synerise/api/logger_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
         </section>

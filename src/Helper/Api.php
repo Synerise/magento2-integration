@@ -4,15 +4,16 @@ namespace Synerise\Integration\Helper;
 
 use \GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
-use Magento\Framework\App\Helper\Context;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Filter\TranslitUrl;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 use Synerise\Integration\Model\Config\Backend\Workspace;
 
-class Api extends \Magento\Framework\App\Helper\AbstractHelper
+class Api
 {
     const XML_PATH_API_HOST = 'synerise/api/host';
 
@@ -36,6 +37,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     protected $apiToken = [];
 
     /**
+
      * @var TranslitUrl
      */
     private $translitUrl;
@@ -45,15 +47,26 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private $storeManager;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
     public function __construct(
-        Context $context,
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig,
         TranslitUrl $translitUrl,
         StoreManagerInterface $storeManager
     ) {
         $this->translitUrl = $translitUrl;
         $this->storeManager = $storeManager;
-
-        parent::__construct($context);
+        $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -104,7 +117,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
                 $userAgent .= '-' . $this->translitUrl->filter($domain);
             }
         } catch (NoSuchEntityException $e) {
-            $this->_logger->debug('Store not found');
+            $this->logger->debug('Store not found');
         }
 
         return $userAgent;
@@ -203,7 +216,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
         if ($this->isLoggerEnabled()) {
             $LogMiddleware = new LogMiddleware(
-                $this->_logger,
+                $this->logger,
                 ['request_formatter' => new RequestCurlSanitizedFormatter()]
             );
 
@@ -389,7 +402,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
                         __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
                     );
                 } else {
-                    $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
+                    $this->logger->error('Synerise Api request failed', ['exception' => $e]);
                     throw $e;
                 }
             }

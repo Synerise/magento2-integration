@@ -1,0 +1,85 @@
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">synerise_log_listing.synerise_log_listing_data_source</item>
+            <item name="deps" xsi:type="string">synerise_log_listing.synerise_log_listing_data_source</item>
+        </item>
+        <item name="spinner" xsi:type="string">log_columns</item>
+    </argument>
+    <dataSource name="synerise_log_listing_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+            <argument name="class" xsi:type="string">\Synerise\Integration\Ui\DataProvider\Log\DataProvider</argument>
+            <argument name="name" xsi:type="string">synerise_log_listing_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">name</argument>
+            <argument name="requestFieldName" xsi:type="string">name</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="component" xsi:type="string">Magento_Ui/js/grid/provider</item>
+                    <item name="update_url" xsi:type="url" path="mui/index/render"/>
+                    <item name="storageConfig" xsi:type="array">
+                        <item name="indexField" xsi:type="string">name</item>
+                    </item>
+                </item>
+            </argument>
+        </argument>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <massaction name="listing_massaction">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="selectProvider" xsi:type="string">synerise_log_listing.synerise_log_listing.log_columns.names</item>
+                    <item name="indexField" xsi:type="string">name</item>
+                </item>
+            </argument>
+            <action name="delete">
+                <argument name="data" xsi:type="array">
+                    <item name="config" xsi:type="array">
+                        <item name="type" xsi:type="string">delete</item>
+                        <item name="label" xsi:type="string" translate="true">Delete</item>
+                        <item name="url" xsi:type="url" path="*/*/massDelete"/>
+                        <item name="confirm" xsi:type="array">
+                            <item name="title" xsi:type="string" translate="true">Delete Log</item>
+                            <item name="message" xsi:type="string" translate="true">Are you sure you want to delete selected items?</item>
+                        </item>
+                    </item>
+                </argument>
+            </action>
+        </massaction>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="log_columns">
+        <selectionsColumn name="names">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="resizeEnabled" xsi:type="boolean">false</item>
+                    <item name="resizeDefaultWidth" xsi:type="string">55</item>
+                    <item name="indexField" xsi:type="string">name</item>
+                </item>
+            </argument>
+        </selectionsColumn>
+        <column name="name">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="label" xsi:type="string" translate="true">File Name</item>
+                </item>
+            </argument>
+        </column>
+        <column name="updated_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <dataType>date</dataType>
+                <label translate="true">Updated</label>
+                <sortable>false</sortable>
+            </settings>
+        </column>
+        <column name="filesize">
+            <settings>
+                <label translate="true">Size</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="Synerise\Integration\Ui\Component\Listing\Columns\LogActions" sortOrder="200">
+            <settings>
+                <indexField>name</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

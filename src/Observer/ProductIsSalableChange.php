@@ -4,7 +4,6 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Event\ObserverInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\DataStorage;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
@@ -17,11 +16,6 @@ class ProductIsSalableChange implements ObserverInterface
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var DataStorage
@@ -40,13 +34,11 @@ class ProductIsSalableChange implements ObserverInterface
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
-        LoggerInterface $logger,
         DataStorage $data,
         Tracking $trackingHelper,
         SyncProduct $syncProduct
     ) {
         $this->productRepository = $productRepository;
-        $this->logger = $logger;
         $this->data = $data;
         $this->trackingHelper = $trackingHelper;
         $this->syncProduct = $syncProduct;
@@ -91,11 +83,11 @@ class ProductIsSalableChange implements ObserverInterface
                         $changedProducts
                     );
                 } catch (\Exception $e) {
-                    $this->logger->error('Failed to add products to cron queue', ['exception' => $e]);
+                    $this->trackingHelper->getLogger()->error($e);
                 }
             }
         } catch (\Exception $e) {
-            $this->logger->error('An error occurred in the ProductIsSalableChange observer', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

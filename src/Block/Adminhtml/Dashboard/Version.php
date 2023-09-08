@@ -4,29 +4,33 @@ namespace Synerise\Integration\Block\Adminhtml\Dashboard;
 use Magento\Backend\Block\Template\Context;
 use Magento\Directory\Helper\Data as DirectoryHelper;
 use Magento\Framework\Json\Helper\Data as JsonHelper;
-use Magento\Framework\Module\ResourceInterface;
+use Synerise\Integration\Helper\Version as VersionHelper;
 
 class Version extends \Magento\Backend\Block\Template
 {
+
     /**
-     * @var ResourceInterface
+     * @var VersionHelper
      */
-    private $moduleResource;
+    private $versionHelper;
 
     public function __construct(
-        ResourceInterface $moduleResource,
         Context $context,
+        VersionHelper $versionHelper,
         array $data = [], ?JsonHelper
         $jsonHelper = null,
         ?DirectoryHelper $directoryHelper = null
     ) {
-        $this->moduleResource = $moduleResource;
+        $this->versionHelper = $versionHelper;
 
         parent::__construct($context, $data, $jsonHelper, $directoryHelper);
     }
 
-    public function getVersion()
+    /**
+     * @return string
+     */
+    public function getVersion(): string
     {
-        return $this->moduleResource->getDbVersion('Synerise_Integration');
+        return $this->versionHelper->getMagentoModuleVersion('Synerise_Integration');
     }
 }
