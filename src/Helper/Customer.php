@@ -281,8 +281,8 @@ class Customer
                     if ($defaultAddress) {
                         $params['phone'] = $this->valOrNull($defaultAddress->getTelephone());
                         $params['city'] = $this->valOrNull($defaultAddress->getCity());
-                        $street = $this->valOrNull($defaultAddress->getStreet());
-                        $params['address'] = is_array($street) ? implode(" ", $street) : $street;
+                        $street = $defaultAddress->getStreet();
+                        $params['address'] = $this->valOrNull(is_array($street) ? implode(' ', $street) : $street);
                         $params['zip_code'] = $this->valOrNull($defaultAddress->getPostcode());
                         $params['province'] = $this->valOrNull($defaultAddress->getRegion()->getRegion());
                         $params['country_code'] = $this->valOrNull($defaultAddress->getCountryId());
