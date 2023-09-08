@@ -6,7 +6,6 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Review\Model\Rating\Option\VoteFactory;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
@@ -35,11 +34,6 @@ class ProductReview implements ObserverInterface
      * @var StoreManagerInterface
      */
     protected $storeManager;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var DataStorage
@@ -80,7 +74,6 @@ class ProductReview implements ObserverInterface
         ProductRepositoryInterface $productRepository,
         VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
         Api $apiHelper,
         Customer $customerHelper,
         Tracking $trackingHelper,
@@ -90,7 +83,6 @@ class ProductReview implements ObserverInterface
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
@@ -176,7 +168,7 @@ class ProductReview implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

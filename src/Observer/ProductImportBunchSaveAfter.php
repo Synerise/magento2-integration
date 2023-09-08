@@ -15,11 +15,6 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
     private $productRepository;
@@ -45,7 +40,6 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     private $syncProduct;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
         SyncProduct $syncProduct,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
@@ -53,7 +47,6 @@ class ProductImportBunchSaveAfter implements ObserverInterface
         \Magento\Framework\Api\Search\FilterGroup $filterGroup,
         \Magento\Framework\Api\SearchCriteriaInterface $criteria
     ) {
-        $this->logger = $logger;
         $this->syncProduct = $syncProduct;
         $this->trackingHelper = $trackingHelper;
         $this->productRepository = $productRepository;

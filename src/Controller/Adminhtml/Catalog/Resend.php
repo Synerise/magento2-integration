@@ -6,7 +6,6 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
@@ -17,11 +16,6 @@ class Resend extends Action implements HttpGetActionInterface
      * Authorization level
      */
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
-
-    /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var StatusResourceModel
@@ -35,11 +29,9 @@ class Resend extends Action implements HttpGetActionInterface
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
         StatusResourceModel $statusResourceModel,
         SyncProduct $syncProduct
     ) {
-        $this->logger = $logger;
         $this->statusResourceModel = $statusResourceModel;
         $this->syncProduct = $syncProduct;
 

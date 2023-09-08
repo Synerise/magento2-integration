@@ -6,7 +6,6 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Newsletter\Model\Subscriber;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
@@ -17,11 +16,6 @@ use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var QueueResourceModel
@@ -49,14 +43,12 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        LoggerInterface $logger,
         Customer $customerHelper,
         Tracking $trackingHelper,
         QueueResourceModel $queueResourceModel,
         Queue $queueHelper,
         Event $eventHelper
     ) {
-        $this->logger = $logger;
         $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueResourceModel = $queueResourceModel;
@@ -92,7 +84,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         } catch (ApiException $e) {
             $this->addItemToQueue($subscriber);
         } catch (\Exception $e) {
-            $this->logger->error('Subscription update request failed', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
             $this->addItemToQueue($subscriber);
         }
     }
@@ -109,7 +101,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
                 $subscriber->getId()
             );
         } catch (LocalizedException $e) {
-            $this->logger->error('Adding subscription item to queue failed', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

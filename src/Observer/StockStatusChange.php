@@ -8,7 +8,6 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Module\Manager;
 use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
@@ -20,11 +19,6 @@ class StockStatusChange implements ObserverInterface
      * @var Tracking
      */
     protected $trackingHelper;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var SyncProduct
@@ -42,13 +36,11 @@ class StockStatusChange implements ObserverInterface
     protected $moduleManager;
 
     public function __construct(
-        LoggerInterface $logger,
         SyncProduct $syncProduct,
         Tracking $trackingHelper,
         Manager $moduleManager,
         ObjectManagerInterface $objectManager
     ) {
-        $this->logger = $logger;
         $this->syncProduct = $syncProduct;
         $this->trackingHelper = $trackingHelper;
         $this->objectManager = $objectManager;
@@ -88,9 +80,8 @@ class StockStatusChange implements ObserverInterface
                     $this->syncProduct->addItemsToQueue([
                         $item->getProduct()
                     ]);
-                    $this->logger->info('Product ' . $item->getProductId() . ' added to cron queue');
                 } catch (\Exception $e) {
-                    $this->logger->error('Failed to add product to cron queue', ['exception' => $e]);
+                    $this->trackingHelper->getLogger()->error($e);
                 }
             }
         }

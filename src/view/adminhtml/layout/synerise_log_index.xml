@@ -1,0 +1,14 @@
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../../../lib/internal/Magento/Framework/View/Layout/etc/page_configuration.xsd">
+    <update handle="styles"/>
+    <body>
+        <referenceBlock name="menu">
+            <action method="setActive">
+                <argument name="itemId" xsi:type="string">Magento_Backend::marketing</argument>
+            </action>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <uiComponent name="synerise_log_listing"/>
+            <block class="Synerise\Integration\Block\Adminhtml\Log\Environment" name="environment_log" template="log/environment.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

@@ -26,11 +26,6 @@ class WishlistRemoveProduct implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var \Magento\Wishlist\Model\Wishlist
      */
     protected $wishlist;
@@ -47,7 +42,6 @@ class WishlistRemoveProduct implements ObserverInterface
 
     public function __construct(
         \Magento\Wishlist\Model\Wishlist $wishlist,
-        \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
@@ -55,7 +49,6 @@ class WishlistRemoveProduct implements ObserverInterface
         \Synerise\Integration\Helper\Event $eventHelper
     ) {
         $this->wishlist = $wishlist;
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
@@ -139,7 +132,7 @@ class WishlistRemoveProduct implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Error', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

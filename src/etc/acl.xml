@@ -16,6 +16,10 @@
                             <resource id="Synerise_Integration::synchronization_order" title="Order" sortOrder="3" />
                             <resource id="Synerise_Integration::synchronization_subscriber" title="Subscriber" sortOrder="4" />
                         </resource>
+                        <resource id="Synerise_Integration::log" title="Logs" sortOrder="5">
+                            <resource id="Synerise_Integration::log_download" title="Download logs" sortOrder="1" />
+                            <resource id="Synerise_Integration::log_delete" title="Delete logs" sortOrder="2" />
+                        </resource>
                     </resource>
                 </resource>
                 <resource id="Magento_Backend::stores">

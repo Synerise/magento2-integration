@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Framework\Exception\ValidatorException;
+use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Observer\CartAddProduct;
@@ -20,16 +21,16 @@ use Synerise\Integration\Observer\ProductReview;
 use Synerise\Integration\Observer\WishlistAddProduct;
 use Synerise\Integration\Observer\WishlistRemoveProduct;
 
-class Event extends \Magento\Framework\App\Helper\AbstractHelper
+class Event
 {
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var Api
      */
     private $apiHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     private $trackingHelper;
 
@@ -48,15 +49,20 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private $orderHelper;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
-        \Magento\Framework\App\Helper\Context $context,
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Customer $customerHelper,
-        \Synerise\Integration\Helper\Order $orderHelper
+        LoggerInterface $logger,
+        Api $apiHelper,
+        Tracking $trackingHelper,
+        Catalog $catalogHelper,
+        Customer $customerHelper,
+        Order $orderHelper
     ) {
-        parent::__construct($context);
+        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->catalogHelper = $catalogHelper;
@@ -115,13 +121,13 @@ class Event extends \Magento\Framework\App\Helper\AbstractHelper
                 case 'ADD_OR_UPDATE_CLIENT':
                     list($body, $statusCode, $headers) = $apiInstance->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', [ $payload ]);
                     if ($statusCode != 202) {
-                        $this->_logger->error('Client update failed');
+                        $this->logger->error('Client update failed', ['api_response_body' => $body]);
                     } elseif ($entityId) {
                         $this->customerHelper->markCustomersAsSent([$entityId], $storeId);
                     }
             }
         } catch (\Synerise\ApiClient\ApiException $e) {
-            $this->_logger->error('Synerise Api request failed', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
+            $this->logger->error('Synerise Api request failed', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
             throw $e;
         }
     }

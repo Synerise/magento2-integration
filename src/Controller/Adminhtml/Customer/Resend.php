@@ -6,7 +6,6 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Synchronization\Customer as SyncCustomer;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
@@ -18,23 +17,16 @@ class Resend extends Action implements HttpGetActionInterface
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var SyncCustomer
      */
     protected $syncCustomer;
 
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
         SyncCustomer $syncCustomer,
         StatusResourceModel $statusResourceModel
 
     ) {
-        $this->logger = $logger;
         $this->syncCustomer = $syncCustomer;
         $this->statusResourceModel = $statusResourceModel;
 

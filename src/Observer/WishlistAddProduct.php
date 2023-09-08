@@ -11,11 +11,6 @@ class WishlistAddProduct implements ObserverInterface
     const EVENT = 'wishlist_add_product';
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var \Synerise\Integration\Helper\Api
      */
     protected $apiHelper;
@@ -41,14 +36,12 @@ class WishlistAddProduct implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
         \Synerise\Integration\Helper\Event $eventHelper
     ) {
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
@@ -124,7 +117,7 @@ class WishlistAddProduct implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Error', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

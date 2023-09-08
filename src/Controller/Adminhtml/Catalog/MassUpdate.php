@@ -64,10 +64,10 @@ class MassUpdate extends Action
 
         try {
             $this->syncProduct->addItemsToQueue($collection);
-            $this->messageManager->addSuccess(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
+            $this->messageManager->addSuccessMessage(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
         } catch (\Exception $e) {
             $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
-            $this->messageManager->addError(__('Failed to add records to synchronization queue'));
+            $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
         }
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */

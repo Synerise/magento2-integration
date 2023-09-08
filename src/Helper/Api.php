@@ -5,10 +5,12 @@ namespace Synerise\Integration\Helper;
 use \GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 use Synerise\Integration\Model\Config\Backend\Workspace;
 
-class Api extends \Magento\Framework\App\Helper\AbstractHelper
+class Api
 {
     const XML_PATH_API_HOST = 'synerise/api/host';
 
@@ -30,6 +32,24 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
     protected $defaultApi = [];
     protected $trackerApi = [];
     protected $apiToken = [];
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
+    public function __construct(
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig
+    ) {
+        $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
+    }
 
     /**
      * Api host
@@ -154,7 +174,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
 
         if ($this->isLoggerEnabled()) {
             $LogMiddleware = new LogMiddleware(
-                $this->_logger,
+                $this->logger,
                 ['request_formatter' => new RequestCurlSanitizedFormatter()]
             );
 
@@ -334,7 +354,7 @@ class Api extends \Magento\Framework\App\Helper\AbstractHelper
                         __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
                     );
                 } else {
-                    $this->_logger->error('Synerise Api request failed', ['exception' => $e]);
+                    $this->logger->error('Synerise Api request failed', ['exception' => $e]);
                     throw $e;
                 }
             }

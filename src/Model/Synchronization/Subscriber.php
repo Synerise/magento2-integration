@@ -5,7 +5,6 @@ namespace Synerise\Integration\Model\Synchronization;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
@@ -22,7 +21,6 @@ class Subscriber extends AbstractSynchronization
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
@@ -32,7 +30,6 @@ class Subscriber extends AbstractSynchronization
 
         parent::__construct(
             $scopeConfig,
-            $logger,
             $resource,
             $queueResourceModel,
             $collectionFactory

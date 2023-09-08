@@ -4,9 +4,7 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Customer;
@@ -34,11 +32,6 @@ class CustomerRegister implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var Queue
      */
     protected $queueHelper;
@@ -49,14 +42,12 @@ class CustomerRegister implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper,
         Customer $customerHelper,
         Queue $queueHelper,
         Event $eventHelper
     ) {
-        $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->customerHelper = $customerHelper;
@@ -103,7 +94,7 @@ class CustomerRegister implements ObserverInterface
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->logger->error('Synerise Error', ['exception' => $e]);
+            $this->trackingHelper->getLogger()->error($e);
         }
     }
 }

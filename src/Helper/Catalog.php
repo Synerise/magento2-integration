@@ -12,10 +12,11 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Psr\Log\LoggerInterface;
 use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
 
-class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
+class Catalog
 {
     const XML_PATH_CATALOG_ID = 'synerise/catalog/id';
 
@@ -75,12 +76,22 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private $connection;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     */
+    private $scopeConfig;
+
     public function __construct(
+        LoggerInterface $logger,
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Catalog\Model\ResourceModel\Product\Action $action,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\ConfigurableProduct\Model\Product\Type\Configurable $configurable,
-        \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\Cache\Manager $cacheManager,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
@@ -93,6 +104,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         Api $apiHelper,
         ?IsProductSalableInterface $isProductSalable = null
     ) {
+        $this->logger = $logger;
         $this->stockRegistry = $stockRegistry;
         $this->storeManager = $storeManager;
         $this->categoryRepository = $categoryRepository;
@@ -108,8 +120,6 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         $this->apiHelper = $apiHelper;
         $this->connection = $resource->getConnection();
         $this->isProductSalable = $isProductSalable;
-
-        parent::__construct($context);
     }
 
     public function getConfigCatalogId(string $storeId)
@@ -429,7 +439,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         try {
             return $this->productRepository->getById($productId, false, $storeId);
         } catch (NoSuchEntityException $exception) {
-            $this->_logger->error("Product Id not found", [$exception]);
+            $this->logger->error("Product Id not found", [$exception]);
         }
 
         return null;
@@ -446,7 +456,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
 
             $stockData = $stockStatus->getStockItem();
         } catch (\Exception $exception) {
-            $this->_logger->error($exception->getMessage());
+            $this->logger->error($exception);
         }
         return $stockData;
     }
@@ -484,7 +494,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
         if (substr($statusCode, 0, 1) != 2) {
             throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
         } elseif ($statusCode == 207) {
-            $this->_logger->debug('Request accepted with errors', ['response' => $body]);
+            $this->logger->warning('Request partially accepted', ['response' => $body]);
         }
     }
 
@@ -561,7 +571,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             $website = $this->storeManager->getDefaultStoreView()->getId();
         } catch (LocalizedException $localizedException) {
             $website = null;
-            $this->_logger->error($localizedException->getMessage());
+            $this->logger->error($localizedException->getMessage());
         }
         return $website;
     }
@@ -580,7 +590,7 @@ class Catalog extends \Magento\Framework\App\Helper\AbstractHelper
             }
             return $storeToWebsite[$storeId];
         } catch (NoSuchEntityException $entityException) {
-            $this->_logger->debug('Store not found ' . $storeId);
+            $this->logger->warning('Store not found ' . $storeId);
         }
 
         return null;

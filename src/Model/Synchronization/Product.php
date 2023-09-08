@@ -5,7 +5,6 @@ namespace Synerise\Integration\Model\Synchronization;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
@@ -27,7 +26,6 @@ class Product extends AbstractSynchronization
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        LoggerInterface $logger,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
         CollectionFactory $collectionFactory,
@@ -37,7 +35,6 @@ class Product extends AbstractSynchronization
 
         parent::__construct(
             $scopeConfig,
-            $logger,
             $resource,
             $queueResourceModel,
             $collectionFactory
