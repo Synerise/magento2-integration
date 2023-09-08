@@ -4,8 +4,10 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Synerise\Integration\Helper\DataStorage;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
 
 class ProductIsSalableChange implements ObserverInterface
@@ -85,6 +87,10 @@ class ProductIsSalableChange implements ObserverInterface
                 } catch (\Exception $e) {
                     $this->trackingHelper->getLogger()->error($e);
                 }
+            }
+        } catch (NoSuchEntityException $e) {
+            if (!$this->trackingHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                $this->trackingHelper->getLogger()->warning($e->getMessage());
             }
         } catch (\Exception $e) {
             $this->trackingHelper->getLogger()->error($e);

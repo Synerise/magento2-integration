@@ -2,9 +2,11 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceBlock name="head.additional">
-            <block class="Magento\Catalog\Block\Product\View" name="synerise.opengraph" after="opengraph.general"
-                   template="Synerise_Integration::opengraph/additional.phtml">
-                <block class="Magento\Directory\Block\Currency" name="synerise.opengraph.currency" as="meta.currency" template="Synerise_Integration::opengraph/currency.phtml"/>
+            <block class="Synerise\Integration\Block\Opengraph\Additional" name="synerise.opengraph"
+                   after="opengraph.general" template="Synerise_Integration::opengraph/additional.phtml"
+                   ifconfig="synerise/page_tracking/enabled" >
+                <block class="Magento\Directory\Block\Currency"  name="synerise.opengraph.currency"
+                       as="meta.currency" template="Synerise_Integration::opengraph/currency.phtml" />
             </block>
         </referenceBlock>
     </body>

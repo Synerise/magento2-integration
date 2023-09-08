@@ -178,7 +178,7 @@ class Order
             }
 
             if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
-                $this->logger->debug(
+                $this->logger->warning(
                     sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
                 );
 

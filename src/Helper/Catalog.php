@@ -7,7 +7,6 @@ use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
@@ -15,6 +14,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
+use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 
 class Catalog
 {
@@ -43,8 +43,6 @@ class Catalog
      * @var Api
      */
     protected $apiHelper;
-
-    protected $categoryRepository;
 
     /**
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
@@ -86,9 +84,18 @@ class Catalog
      */
     private $scopeConfig;
 
+    /**
+     * @var Category
+     */
+    private $categoryHelper;
+
+    /**
+     * @var Tracking
+     */
+    private $trackingHelper;
+
     public function __construct(
         LoggerInterface $logger,
-        \Magento\Catalog\Model\CategoryRepository $categoryRepository,
         \Magento\Catalog\Model\ResourceModel\Product\Action $action,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\ConfigurableProduct\Model\Product\Type\Configurable $configurable,
@@ -102,12 +109,13 @@ class Catalog
         StoreManagerInterface $storeManager,
         StockRegistry $stockRegistry,
         Api $apiHelper,
+        Category $categoryHelper,
+        Tracking $trackingHelper,
         ?IsProductSalableInterface $isProductSalable = null
     ) {
         $this->logger = $logger;
         $this->stockRegistry = $stockRegistry;
         $this->storeManager = $storeManager;
-        $this->categoryRepository = $categoryRepository;
         $this->productRepository = $productRepository;
         $this->configurable = $configurable;
         $this->action = $action;
@@ -118,6 +126,8 @@ class Catalog
         $this->assetContext = $assetContext;
         $this->websiteRepository = $websiteRepository;
         $this->apiHelper = $apiHelper;
+        $this->categoryHelper = $categoryHelper;
+        $this->trackingHelper = $trackingHelper;
         $this->connection = $resource->getConnection();
         $this->isProductSalable = $isProductSalable;
     }
@@ -439,7 +449,9 @@ class Catalog
         try {
             return $this->productRepository->getById($productId, false, $storeId);
         } catch (NoSuchEntityException $exception) {
-            $this->logger->error("Product Id not found", [$exception]);
+            if ($this->trackingHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                $this->trackingHelper->getLogger()->warning($exception->getMessage());
+            }
         }
 
         return null;
@@ -507,20 +519,7 @@ class Catalog
 
     public function getFormattedCategoryPath($categoryId)
     {
-        if (!isset($this->formattedCategoryPaths[$categoryId])) {
-            /** @var $category \Magento\Catalog\Model\Category */
-            $category = $this->categoryRepository->get($categoryId);
-
-            if ($category->getParentId()) {
-                $parentCategoryPath = $this->getFormattedCategoryPath($category->getParentId());
-                $this->formattedCategoryPaths[$categoryId] = $parentCategoryPath ?
-                    $parentCategoryPath . ' > ' . $category->getName() : $category->getName();
-            } else {
-                $this->formattedCategoryPaths[$categoryId] = $category->getName();
-            }
-        }
-
-        return $this->formattedCategoryPaths[$categoryId] ?: null;
+        return $this->categoryHelper->getFormattedCategoryPath($categoryId);
     }
 
     public function getProductAttributes($storeId = null)
@@ -560,20 +559,6 @@ class Catalog
     public function getOriginalImageUrl($filePath)
     {
         return $filePath ? $this->assetContext->getBaseUrl() . $filePath : null;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getDefaultStoreId()
-    {
-        try {
-            $website = $this->storeManager->getDefaultStoreView()->getId();
-        } catch (LocalizedException $localizedException) {
-            $website = null;
-            $this->logger->error($localizedException->getMessage());
-        }
-        return $website;
     }
 
     /**

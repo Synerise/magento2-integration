@@ -25,17 +25,6 @@ class Events implements \Magento\Framework\Data\OptionSourceInterface
         'newsletter_subscriber_save_after'          => 'Subscription updated'
     ];
 
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
-     */
-    private $trackingHelper;
-
-    public function __construct(
-        \Synerise\Integration\Helper\Tracking $trackingHelper
-    ) {
-        $this->trackingHelper = $trackingHelper;
-    }
-
     public function toOptionArray(): array
     {
         $options = [];

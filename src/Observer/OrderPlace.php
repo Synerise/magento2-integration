@@ -78,12 +78,16 @@ class OrderPlace implements ObserverInterface
 
             $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
 
-            $transactionRequest = new CreateatransactionRequest(
-                $this->orderHelper->preapreOrderParams(
-                    $order,
-                    $this->trackingHelper->generateUuidByEmail($order->getCustomerEmail())
-                )
+            $params = $this->orderHelper->preapreOrderParams(
+                $order,
+                $this->trackingHelper->generateUuidByEmail($order->getCustomerEmail())
             );
+
+            if(empty($params)) {
+                return;
+            }
+
+            $transactionRequest = new CreateatransactionRequest($params);
 
             $createAClientInCrmRequest = null;
             if ($order->getCustomerIsGuest()) {
