@@ -4,7 +4,10 @@ namespace Synerise\Integration\Helper;
 
 use \GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Filter\TranslitUrl;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
@@ -34,6 +37,17 @@ class Api
     protected $apiToken = [];
 
     /**
+
+     * @var TranslitUrl
+     */
+    private $translitUrl;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -45,8 +59,12 @@ class Api
 
     public function __construct(
         LoggerInterface $logger,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        TranslitUrl $translitUrl,
+        StoreManagerInterface $storeManager
     ) {
+        $this->translitUrl = $translitUrl;
+        $this->storeManager = $storeManager;
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
     }
@@ -79,6 +97,30 @@ class Api
             $scope,
             $scopeId
         );
+    }
+
+    /**
+     * User Agent
+     *
+     * @param int $storeId
+     * @return string
+     */
+    public function getUserAgent($storeId): string
+    {
+        $userAgent = 'magento2';
+
+        try {
+            $baseUrl = $this->storeManager->getStore($storeId)->getBaseUrl();
+            $domain = preg_replace('/^(http(s)?:\/\/)?((www.)?)/','', $baseUrl);
+
+            if ($domain) {
+                $userAgent .= '-' . $this->translitUrl->filter($domain);
+            }
+        } catch (NoSuchEntityException $e) {
+            $this->logger->debug('Store not found');
+        }
+
+        return $userAgent;
     }
 
     /**
@@ -198,6 +240,7 @@ class Api
                 'connect_timeout' => $timeout
             ]);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($scopeId))
                 ->setHost(sprintf('%s/v4', $this->getApiHost($scope, $scopeId)));
 
             $this->authApi[$key] = new \Synerise\ApiClient\Api\AuthenticationControllerApi(
@@ -226,6 +269,7 @@ class Api
 
             $client = $this->getGuzzleClient($timeout, $basicToken);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($storeId))
                 ->setHost(sprintf('%s/v4', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)));
 
             if (!empty($basicToken)) {
@@ -256,6 +300,7 @@ class Api
             }
             $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($storeId))
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId));
 
@@ -276,6 +321,7 @@ class Api
             }
             $client = $this->getGuzzleClient($timeout);
             $config = \Synerise\CatalogsApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($storeId))
                 ->setHost(sprintf('%s/catalogs', $this->getApiHost(ScopeInterface::SCOPE_STORE, $storeId)))
                 ->setAccessToken($this->getJwt(ScopeInterface::SCOPE_STORE, $storeId));
 
@@ -300,6 +346,7 @@ class Api
             }
             $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($scopeId))
                 ->setHost(sprintf('%s/business-profile-service', $this->getApiHost($scope, $scopeId)))
                 ->setAccessToken($token);
 
@@ -324,6 +371,7 @@ class Api
             }
             $client = $this->getGuzzleClient($timeout);
             $config = clone \Synerise\ApiClient\Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->getUserAgent($scopeId))
                 ->setHost(sprintf('%s/uauth', $this->getApiHost($scope, $scopeId)))
                 ->setAccessToken($token);
 
