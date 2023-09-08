@@ -68,9 +68,9 @@ class CatalogProductDeleteBefore implements ObserverInterface
                     $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
                     if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                        $this->queueHelper->publishEvent(self::EVENT, $addItemRequest, $storeId);
+                        $this->queueHelper->publishEvent(self::EVENT, [$addItemRequest], $storeId);
                     } else {
-                        $this->eventHelper->sendEvent(self::EVENT, $addItemRequest, $storeId);
+                        $this->eventHelper->sendEvent(self::EVENT, [$addItemRequest], $storeId);
                     }
                 }
             }
