@@ -29,6 +29,11 @@ class CartStatus implements ObserverInterface
      */
     protected $eventHelper;
 
+    /**
+     * @var bool
+     */
+    protected $isSent = false;
+
     public function __construct(
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
@@ -43,6 +48,10 @@ class CartStatus implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
+        if ($this->isSent) {
+            return;
+        }
+
         if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
             return;
         }
@@ -74,6 +83,7 @@ class CartStatus implements ObserverInterface
                 } else {
                     $this->eventHelper->sendEvent(self::EVENT, $cartStatusEvent, $storeId);
                 }
+                $this->isSent = true;
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
