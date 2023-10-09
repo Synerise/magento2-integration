@@ -4,6 +4,7 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\CustomeventRequestParams;
 
 class CartStatus implements ObserverInterface
 {
@@ -28,6 +29,11 @@ class CartStatus implements ObserverInterface
      * @var \Synerise\Integration\Helper\Event
      */
     protected $eventHelper;
+
+    /**
+     * @var CustomeventRequestParams
+     */
+    protected $previousParams = null;
 
     public function __construct(
         \Synerise\Integration\Helper\Catalog $catalogHelper,
@@ -69,11 +75,16 @@ class CartStatus implements ObserverInterface
             }
 
             if ($cartStatusEvent) {
+                if ($this->previousParams && $this->previousParams === $cartStatusEvent->getParams()) {
+                    return;
+                }
+
                 if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
                     $this->queueHelper->publishEvent(self::EVENT, $cartStatusEvent, $storeId);
                 } else {
                     $this->eventHelper->sendEvent(self::EVENT, $cartStatusEvent, $storeId);
                 }
+                $this->previousParams = $cartStatusEvent->getParams();
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {
