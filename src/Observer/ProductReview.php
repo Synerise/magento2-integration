@@ -147,6 +147,7 @@ class ProductReview implements ObserverInterface
             }
 
             $customEventRequest = new CustomeventRequest([
+                'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'action' => 'product.addReview',
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),

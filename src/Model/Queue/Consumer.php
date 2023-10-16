@@ -58,6 +58,12 @@ class Consumer
         $storeId = $deserializedData['store_id'];
         $entityId = $deserializedData['entity_id'];
 
-        $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
+        try {
+            $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
+        } catch(ApiException $e) {
+            if ($e->getCode() == 502) {
+                $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
+            }
+        }
     }
 }

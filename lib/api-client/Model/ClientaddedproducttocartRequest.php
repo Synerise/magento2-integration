@@ -63,7 +63,8 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
         'time' => 'string',
         'label' => 'string',
         'client' => '\Synerise\ApiClient\Model\Client',
-        'params' => '\Synerise\ApiClient\Model\EventParamsProductAddRemove'
+        'params' => '\Synerise\ApiClient\Model\EventParamsProductAddRemove',
+        'event_salt' => 'string'
     ];
 
     /**
@@ -77,7 +78,8 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
         'time' => null,
         'label' => null,
         'client' => null,
-        'params' => null
+        'params' => null,
+        'event_salt' => null
     ];
 
     /**
@@ -110,7 +112,8 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
         'time' => 'time',
         'label' => 'label',
         'client' => 'client',
-        'params' => 'params'
+        'params' => 'params',
+        'event_salt' => 'eventSalt'
     ];
 
     /**
@@ -122,7 +125,8 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
         'time' => 'setTime',
         'label' => 'setLabel',
         'client' => 'setClient',
-        'params' => 'setParams'
+        'params' => 'setParams',
+        'event_salt' => 'setEventSalt'
     ];
 
     /**
@@ -134,7 +138,8 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
         'time' => 'getTime',
         'label' => 'getLabel',
         'client' => 'getClient',
-        'params' => 'getParams'
+        'params' => 'getParams',
+        'event_salt' => 'getEventSalt'
     ];
 
     /**
@@ -201,6 +206,7 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
         $this->container['label'] = $data['label'] ?? null;
         $this->container['client'] = $data['client'] ?? null;
         $this->container['params'] = $data['params'] ?? null;
+        $this->container['event_salt'] = $data['event_salt'] ?? null;
     }
 
     /**
@@ -334,6 +340,31 @@ class ClientaddedproducttocartRequest implements ModelInterface, ArrayAccess, \J
 
         return $this;
     }
+
+    /**
+     * Gets event_salt
+     *
+     * @return string|null
+     */
+    public function getEventSalt()
+    {
+        return $this->container['event_salt'];
+    }
+
+    /**
+     * Sets event_salt
+     *
+     * @param string|null $event_salt This parameter is used to generate an UUID for the transaction event. When a transaction has an `eventSalt`, it can be overwritten by sending another transaction with the same `eventSalt` and `recordedAt` as the original transaction.  A transaction that has no `eventSalt` cannot be overwritten. The parameter cannot be added at a later time.  **IMPORTANT:** - `eventSalt` must be unique in the whole system. - The parameter cannot be retrieved later. You must keep track of the values that you send.
+     *
+     * @return self
+     */
+    public function setEventSalt($event_salt)
+    {
+        $this->container['event_salt'] = $event_salt;
+
+        return $this;
+    }
+
     /**
      * Returns true if offset exists. False otherwise.
      *
