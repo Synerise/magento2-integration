@@ -3,10 +3,14 @@
 namespace Synerise\Integration\Model\Workspace;
 
 use Ramsey\Uuid\Uuid;
-use Zend_Validate_Exception;
 
 class Validator extends \Magento\Framework\Validator\AbstractValidator
 {
+    /**
+     * @var \Synerise\Integration\Helper\Api
+     */
+    protected $apiHelper;
+
     public function __construct(
         \Synerise\Integration\Helper\Api $apiHelper
     ) {
