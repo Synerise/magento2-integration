@@ -7,9 +7,11 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
 
 class Consumer
 {
+    const MAX_RETRIES = 3;
 
     /**
      * @var LoggerInterface
@@ -26,14 +28,21 @@ class Consumer
      */
     private $eventHelper;
 
+    /**
+     * @var Queue
+     */
+    private $queueHelper;
+
     public function __construct(
         LoggerInterface $logger,
         Json $json,
-        Event $eventHelper
+        Event $eventHelper,
+        Queue $queueHelper
     ) {
         $this->logger = $logger;
         $this->json = $json;
         $this->eventHelper = $eventHelper;
+        $this->queueHelper = $queueHelper;
     }
 
     public function process(string $event)
@@ -61,8 +70,12 @@ class Consumer
         try {
             $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
         } catch(ApiException $e) {
-            if ($e->getCode() == 502) {
-                $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
+            if ($e->getCode() > 500) {
+                $retries = $deserializedData['retries'] ?? 0;
+                if ($retries < self::MAX_RETRIES) {
+                    $retries++;
+                    $this->queueHelper->publishEvent($eventName, $eventPayload, $storeId, $entityId, $retries);
+                }
             }
         }
     }

@@ -3,7 +3,6 @@ namespace Synerise\Integration\MessageQueue\Config\Consumer;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\MessageQueue\Consumer\Config\CompositeReader as ConsumerConfigCompositeReader;
-use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Model\Config\Source\MessageQueue\Connection;
 
 class ConfigReaderPlugin

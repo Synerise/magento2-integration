@@ -61,9 +61,15 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
-    public function publishEvent(string $eventName, $data, int $storeId, int $entityId = null)
+    public function publishEvent(string $eventName, $data, int $storeId, int $entityId = null, $retries = 0)
     {
-        $serializedData = $this->json->serialize(['event_name' => $eventName, 'event_payload' => $data, 'store_id' => $storeId, 'entity_id' => $entityId]);
+        $serializedData = $this->json->serialize([
+            'event_name' => $eventName,
+            'event_payload' => $data,
+            'store_id' => $storeId,
+            'entity_id' => $entityId,
+            'retries' => $retries
+        ]);
         $this->publisher->publish('synerise.queue.events', $serializedData);
     }
 }
