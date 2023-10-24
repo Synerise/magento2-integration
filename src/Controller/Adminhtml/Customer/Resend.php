@@ -21,6 +21,11 @@ class Resend extends Action implements HttpGetActionInterface
      */
     protected $syncCustomer;
 
+    /**
+     * @var StatusResourceModel
+     */
+    protected $statusResourceModel;
+
     public function __construct(
         Context $context,
         SyncCustomer $syncCustomer,

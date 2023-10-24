@@ -15,6 +15,11 @@ class Save extends \Magento\Backend\App\Action
     const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
+     * @var \Synerise\Integration\Helper\Api
+     */
+    protected $apiHelper;
+
+    /**
      * @param Action\Context $context
      */
     public function __construct

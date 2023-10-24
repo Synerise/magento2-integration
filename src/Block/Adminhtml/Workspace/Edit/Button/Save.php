@@ -34,6 +34,7 @@ class Save extends Generic implements ButtonProviderInterface
             'options' => $this->getOptions(),
         ];
     }
+
     /**
      * Retrieve options
      *
@@ -41,19 +42,21 @@ class Save extends Generic implements ButtonProviderInterface
      */
     protected function getOptions()
     {
-        $options[] = [
-            'id_hard' => 'save_and_new',
-            'label' => __('Save & New'),
-            'data_attribute' => [
-                'mage-init' => [
-                    'buttonAdapter' => [
-                        'actions' => [
-                            [
-                                'targetName' => 'synerise_workspace_form.synerise_workspace_form',
-                                'actionName' => 'save',
-                                'params' => [
-                                    true, [
-                                        'back' => 'add',
+        return [
+            [
+                'id_hard' => 'save_and_new',
+                'label' => __('Save & New'),
+                'data_attribute' => [
+                    'mage-init' => [
+                        'buttonAdapter' => [
+                            'actions' => [
+                                [
+                                    'targetName' => 'synerise_workspace_form.synerise_workspace_form',
+                                    'actionName' => 'save',
+                                    'params' => [
+                                        true, [
+                                            'back' => 'add',
+                                        ],
                                     ],
                                 ],
                             ],
@@ -61,24 +64,23 @@ class Save extends Generic implements ButtonProviderInterface
                     ],
                 ],
             ],
-        ];
-        $options[] = [
-            'id_hard' => 'save_and_close',
-            'label' => __('Save & Close'),
-            'data_attribute' => [
-                'mage-init' => [
-                    'buttonAdapter' => [
-                        'actions' => [
-                            [
-                                'targetName' => 'synerise_workspace_form.synerise_workspace_form',
-                                'actionName' => 'save',
-                                'params' => [true],
+            [
+                'id_hard' => 'save_and_close',
+                'label' => __('Save & Close'),
+                'data_attribute' => [
+                    'mage-init' => [
+                        'buttonAdapter' => [
+                            'actions' => [
+                                [
+                                    'targetName' => 'synerise_workspace_form.synerise_workspace_form',
+                                    'actionName' => 'save',
+                                    'params' => [true],
+                                ],
                             ],
                         ],
                     ],
                 ],
-            ],
+            ]
         ];
-        return $options;
     }
 }

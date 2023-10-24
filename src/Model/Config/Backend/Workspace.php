@@ -17,6 +17,21 @@ class Workspace extends \Magento\Framework\App\Config\Value
      */
     protected $encryptor;
 
+    /**
+     * @var \Magento\Framework\App\Config\Storage\WriterInterface
+     */
+    protected $configWriter;
+
+    /**
+     * @var \Synerise\Integration\Helper\Api
+     */
+    protected $apiHelper;
+
+    /**
+     * @var \Synerise\Integration\Model\Workspace
+     */
+    protected $workspace;
+
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
