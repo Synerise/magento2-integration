@@ -70,6 +70,7 @@ class CustomerLogout implements ObserverInterface
             $storeId = $customer->getStoreId();
 
             $eventClientAction = new EventClientAction([
+                'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $this->customerHelper->prepareIdentityParams(

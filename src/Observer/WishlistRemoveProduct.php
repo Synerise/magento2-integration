@@ -116,6 +116,7 @@ class WishlistRemoveProduct implements ObserverInterface
             $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl();
 
             $customEventRequest = new CustomeventRequest([
+                'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'action' => 'product.removeFromFavorites',
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),

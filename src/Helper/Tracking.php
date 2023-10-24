@@ -533,4 +533,9 @@ class Tracking
 
         return in_array($exception, $exclusions);
     }
+
+    public function generateEventSalt()
+    {
+        return (string) Uuid::uuid4();
+    }
 }

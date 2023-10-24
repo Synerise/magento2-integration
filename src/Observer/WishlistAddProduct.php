@@ -102,6 +102,7 @@ class WishlistAddProduct implements ObserverInterface
             $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl();
 
             $eventClientAction = new EventClientAction([
+                'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => new \Synerise\ApiClient\Model\Client([

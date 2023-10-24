@@ -71,6 +71,12 @@ class Event
     }
 
     /**
+     * @param $event_name
+     * @param $payload
+     * @param int $storeId
+     * @param int|null $entityId
+     * @param int|null $timeout
+     * @return void
      * @throws ApiException
      * @throws ValidatorException
      */
@@ -93,7 +99,7 @@ class Event
                 case CartStatus::EVENT:
                 case ProductReview::EVENT:
                 case WishlistRemoveProduct::EVENT:
-                $apiInstance->customEvent('4.4', $payload);
+                    $apiInstance->customEvent('4.4', $payload);
                     break;
                 case CustomerRegister::EVENT:
                     $apiInstance->clientRegistered('4.4', $payload);
@@ -149,6 +155,7 @@ class Event
         }
 
         return new CustomeventRequest([
+            'event_salt' => $this->trackingHelper->generateEventSalt(),
             'time' => $this->trackingHelper->getCurrentTime(),
             'action' => 'cart.status',
             'label' => 'CartStatus',

@@ -64,7 +64,8 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
         'label' => 'string',
         'action' => 'string',
         'client' => '\Synerise\ApiClient\Model\Client',
-        'params' => '\Synerise\ApiClient\Model\CustomeventRequestParams'
+        'params' => '\Synerise\ApiClient\Model\CustomeventRequestParams',
+        'event_salt' => 'string'
     ];
 
     /**
@@ -79,7 +80,8 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
         'label' => null,
         'action' => null,
         'client' => null,
-        'params' => null
+        'params' => null,
+        'event_salt' => null
     ];
 
     /**
@@ -113,7 +115,8 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
         'label' => 'label',
         'action' => 'action',
         'client' => 'client',
-        'params' => 'params'
+        'params' => 'params',
+        'event_salt' => 'eventSalt'
     ];
 
     /**
@@ -126,7 +129,8 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
         'label' => 'setLabel',
         'action' => 'setAction',
         'client' => 'setClient',
-        'params' => 'setParams'
+        'params' => 'setParams',
+        'event_salt' => 'setEventSalt'
     ];
 
     /**
@@ -139,7 +143,8 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
         'label' => 'getLabel',
         'action' => 'getAction',
         'client' => 'getClient',
-        'params' => 'getParams'
+        'params' => 'getParams',
+        'event_salt' => 'getEventSalt'
     ];
 
     /**
@@ -207,6 +212,7 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
         $this->container['action'] = $data['action'] ?? null;
         $this->container['client'] = $data['client'] ?? null;
         $this->container['params'] = $data['params'] ?? null;
+        $this->container['event_salt'] = $data['event_salt'] ?? null;
     }
 
     /**
@@ -340,6 +346,30 @@ class CustomeventRequest implements ModelInterface, ArrayAccess, \JsonSerializab
     public function setClient($client)
     {
         $this->container['client'] = $client;
+
+        return $this;
+    }
+
+    /**
+     * Gets event_salt
+     *
+     * @return string|null
+     */
+    public function getEventSalt()
+    {
+        return $this->container['event_salt'];
+    }
+
+    /**
+     * Sets event_salt
+     *
+     * @param string|null $event_salt This parameter is used to generate an UUID for the transaction event. When a transaction has an `eventSalt`, it can be overwritten by sending another transaction with the same `eventSalt` and `recordedAt` as the original transaction.  A transaction that has no `eventSalt` cannot be overwritten. The parameter cannot be added at a later time.  **IMPORTANT:** - `eventSalt` must be unique in the whole system. - The parameter cannot be retrieved later. You must keep track of the values that you send.
+     *
+     * @return self
+     */
+    public function setEventSalt($event_salt)
+    {
+        $this->container['event_salt'] = $event_salt;
 
         return $this;
     }

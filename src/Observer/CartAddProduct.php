@@ -87,6 +87,7 @@ class CartAddProduct implements ObserverInterface
             }
 
             $eventClientAction = new ClientaddedproducttocartRequest([
+                'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $client,
