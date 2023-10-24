@@ -3,7 +3,6 @@
 namespace Synerise\Integration\Block\Adminhtml\Workspace\Edit\Button;
 
 use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
-use Magento\Ui\Component\Control\Container;
 
 class Back extends Generic implements ButtonProviderInterface
 {
@@ -21,6 +20,7 @@ class Back extends Generic implements ButtonProviderInterface
             'sort_order' => 10,
         ];
     }
+
     /**
      * Get URL for back (reset) button
      *

@@ -3,6 +3,11 @@ namespace Synerise\Integration\Block\Tracking;
 
 class Code extends \Magento\Framework\View\Element\Template
 {
+    /**
+     * @var \Synerise\Integration\Helper\Tracking
+     */
+    protected $helper;
+
     public function __construct(
         \Magento\Framework\View\Element\Template\Context $context,
         \Synerise\Integration\Helper\Tracking $helper,

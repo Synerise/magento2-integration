@@ -57,6 +57,11 @@ class Api
      */
     private $scopeConfig;
 
+    /**
+     * @var string[]
+     */
+    private $apiKeyApi;
+
     public function __construct(
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
