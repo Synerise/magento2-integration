@@ -8,6 +8,26 @@ use \Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory as Subs
 
 class Dashboard extends \Magento\Backend\Block\Template
 {
+    /**
+     * @var CustomerCollectionFactory
+     */
+    protected $customerCollectionFactory;
+
+    /**
+     * @var ProductCollectionFactory
+     */
+    protected $productCollectionFactory;
+
+    /**
+     * @var OrderCollectionFactory
+     */
+    protected $orderCollectionFactory;
+
+    /**
+     * @var SubscriberCollectionFactory
+     */
+    protected $subscriberCollectionFactory;
+
     public function __construct(
         \Magento\Backend\Block\Template\Context $context,
         CustomerCollectionFactory $customerCollectionFactory,

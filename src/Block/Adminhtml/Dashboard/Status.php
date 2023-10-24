@@ -85,10 +85,10 @@ class Status extends \Magento\Backend\Block\Template
         if ($this->table) {
             $connection = $this->connection;
             $select = $connection->select()->from($connection->getTableName($this->table), $this->column);
-            return (int)$connection->fetchOne($select);
+            return (int) $connection->fetchOne($select);
         } else {
             if (!$this->collectionFactory) {
-                return '';
+                return 0;
             }
 
             $collection = $this->collectionFactory->create()
@@ -108,7 +108,7 @@ class Status extends \Magento\Backend\Block\Template
     public function getTotalItemsCount()
     {
         if (!$this->collectionFactory) {
-            return '';
+            return 0;
         }
 
         $collection = $this->collectionFactory->create();
