@@ -238,7 +238,7 @@ class Api
         $key = md5(serialize(func_get_args()));
         if (!isset($this->authApi[$key])) {
             if (!$timeout) {
-                $timeout = $this->getLiveRequestTimeout($scopeId);
+                $timeout = $this->getLiveRequestTimeout($scopeId, $scope);
             }
             $client = new \GuzzleHttp\Client([
                 'timeout' => $timeout,
