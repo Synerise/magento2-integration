@@ -10,5 +10,5 @@
         z.onload=z.onreadystatechange=function(){var rdy=z.readyState;
             if(!rdy||/complete|loaded/.test(z.readyState)){s[i]();z.onload = null;
                 z.onreadystatechange=null;}};})(window,document,'script',
-        '//www.snrcdn.net/sdk/3.0/synerise-javascript-sdk.min.js','SR', 'onSyneriseLoad');
+        '//<?php echo $block->getHost() ?>/synerise-javascript-sdk.min.js','SR', 'onSyneriseLoad');
 </script>

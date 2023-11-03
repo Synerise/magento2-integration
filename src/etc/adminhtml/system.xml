@@ -132,6 +132,11 @@
                     <config_path>synerise/page_tracking/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="host" type="select" translate="label,comment,tooltip" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Host</label>
+                    <config_path>synerise/page_tracking/host</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\PageTracking\Host</source_model>
+                </field>
                 <field id="opengraph" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Open Graph</label>
                     <config_path>synerise/page_tracking/opengraph</config_path>

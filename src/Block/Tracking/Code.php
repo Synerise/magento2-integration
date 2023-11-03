@@ -61,4 +61,15 @@ class Code extends \Magento\Framework\View\Element\Template
 
         return $this->helper->getTrackerKey() ? parent::toHtml() : null;
     }
+
+    /**
+     * @return string
+     */
+    public function getHost(): string
+    {
+        return $this->_scopeConfig->getValue(
+            'synerise/page_tracking/host',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
+    }
 }
