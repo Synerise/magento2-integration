@@ -13,6 +13,13 @@ use Magento\Store\Model\ScopeInterface;
 
 Class ConfigMigration implements DataPatchInterface
 {
+    const CONFIG_PATHS_TO_DELETE = [
+        'synerise/product/cron_enabled',
+        'synerise/customer/cron_enabled',
+        'synerise/order/cron_enabled',
+        'synerise/subscriber/cron_enabled'
+    ];
+
     /**
      * @var ModuleDataSetupInterface
      */
@@ -55,7 +62,7 @@ Class ConfigMigration implements DataPatchInterface
     public function apply()
     {
         $this->removeUnusedEavAttributes();
-        $this->removeApiKeysAndsSetupEnabledModels();
+        $this->removeLegacyConfigAndSetupEnabledModels();
     }
 
     public function getAliases()
@@ -79,30 +86,25 @@ Class ConfigMigration implements DataPatchInterface
         }
     }
 
-    protected function removeApiKeysAndsSetupEnabledModels()
+    protected function removeLegacyConfigAndSetupEnabledModels()
     {
-        $legacyConfig = [];
+        $configToDelete = [];
         $enabledModels = [];
         $collection = $this->configCollectionFactory->create()
             ->addPathFilter('synerise');
 
         foreach ($collection as $config) {
-            if ($config->getScope() == ScopeConfigInterface::SCOPE_TYPE_DEFAULT) {
-                if ($config->getPath() == 'synerise/api/key') {
-                    $legacyConfig[] = $config;
-                }
+            if (in_array($config->getPath(), self::CONFIG_PATHS_TO_DELETE)) {
+                $configToDelete[] = $config;
 
-                $pathParts = explode('/', $config->getPath());
-                if (isset($pathParts[2]) && $pathParts[2] == 'cron_enabled') {
-                    $legacyConfig[] = $config;
+                if ($config->getScope() == ScopeConfigInterface::SCOPE_TYPE_DEFAULT) {
+                    $pathParts = explode('/', $config->getPath());
                     if ($config->getValue()) {
                         $enabledModels[] = $pathParts[1];
                     }
                 }
-            } elseif ($config->getScope() == ScopeInterface::SCOPE_STORE) {
-                if ($config->getPath() == 'synerise/api/key') {
-                    $legacyConfig[] = $config;
-                }
+            } elseif($config->getPath() == 'synerise/api/key' && $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
+                $configToDelete[] = $config;
             }
         }
 
@@ -113,8 +115,8 @@ Class ConfigMigration implements DataPatchInterface
             );
         }
 
-        if (!empty($legacyConfig)) {
-            foreach($legacyConfig as $config) {
+        if (!empty($configToDelete)) {
+            foreach($configToDelete as $config) {
                 $this->deleteConfig($config);
             }
         }
