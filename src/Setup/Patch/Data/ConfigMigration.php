@@ -10,6 +10,8 @@ use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Store\Model\ScopeInterface;
+use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Model\AbstractSynchronization;
 
 Class ConfigMigration implements DataPatchInterface
 {
@@ -103,14 +105,14 @@ Class ConfigMigration implements DataPatchInterface
                         $enabledModels[] = $pathParts[1];
                     }
                 }
-            } elseif($config->getPath() == 'synerise/api/key' && $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
+            } elseif($config->getPath() == Api::XML_PATH_API_KEY && $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
                 $configToDelete[] = $config;
             }
         }
 
         if (!empty($enabledModels)) {
             $this->configWriter->save(
-                'synerise/synchronization/models',
+                AbstractSynchronization::XML_PATH_SYNCHRONIZATION_MODELS,
                 implode(',', $enabledModels)
             );
         }
