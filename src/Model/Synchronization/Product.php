@@ -6,6 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -28,6 +29,7 @@ class Product extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
+        Queue $queueHelper,
         CollectionFactory $collectionFactory,
         CatalogHelper $catalogHelper
     ) {
@@ -37,6 +39,7 @@ class Product extends AbstractSynchronization
             $scopeConfig,
             $resource,
             $queueResourceModel,
+            $queueHelper,
             $collectionFactory
         );
     }

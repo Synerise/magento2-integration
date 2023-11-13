@@ -5,6 +5,7 @@ namespace Synerise\Integration\Model;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Data\Collection;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\Cron\Status;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -39,13 +40,20 @@ abstract class AbstractSynchronization
      */
     protected $queueResourceModel;
 
+    /**
+     * @var Queue
+     */
+    protected $queueHelper;
+
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ResourceConnection   $resource,
         QueueResourceModel   $queueResourceModel,
+        Queue                $queueHelper,
                              $collectionFactory
     )
     {
+        $this->queueHelper = $queueHelper;
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
         $this->queueResourceModel = $queueResourceModel;
@@ -58,8 +66,8 @@ abstract class AbstractSynchronization
     abstract public function sendItems($collection, $storeId, $websiteId = null);
 
     /**
-     * @param \Magento\Framework\Data\Collection\AbstractDb $collection
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param $collection
+     * @return void
      */
     public function addItemsToQueue($collection)
     {
@@ -67,16 +75,8 @@ abstract class AbstractSynchronization
 
         foreach ($collection as $item) {
             if (in_array($item->getStoreId(), $enabledStores)) {
-                $data[] = [
-                    'model' => static::MODEL,
-                    'store_id' => $item->getStoreId(),
-                    'entity_id' => $item->getData(static::ENTITY_ID),
-                ];
+                $this->queueHelper->publishUpdate(static::MODEL, $item->getStoreId(), $item->getData(static::ENTITY_ID));
             }
-        }
-
-        if (!empty($data)) {
-            $this->queueResourceModel->addItems($data);
         }
     }
 

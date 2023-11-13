@@ -202,7 +202,7 @@ class Synchronization
      * @param String $name
      * @return AbstractSynchronization|null
      */
-    protected function getExecutorByName(String $name)
+    public function getExecutorByName(String $name)
     {
         return $this->executors[$name] ?? null;
     }

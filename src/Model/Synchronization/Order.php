@@ -7,6 +7,7 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Synerise\Integration\Helper\Order as OrderHelper;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -29,6 +30,7 @@ class Order extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
+        Queue $queueHelper,
         CollectionFactory $collectionFactory,
         OrderHelper $orderHelper,
         DateTime $dateTime
@@ -40,6 +42,7 @@ class Order extends AbstractSynchronization
             $scopeConfig,
             $resource,
             $queueResourceModel,
+            $queueHelper,
             $collectionFactory
         );
     }

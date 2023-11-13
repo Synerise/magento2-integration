@@ -6,6 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -23,6 +24,7 @@ class Subscriber extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
+        Queue $queueHelper,
         CollectionFactory $collectionFactory,
         CustomerHelper $customerHelper
     ) {
@@ -32,6 +34,7 @@ class Subscriber extends AbstractSynchronization
             $scopeConfig,
             $resource,
             $queueResourceModel,
+            $queueHelper,
             $collectionFactory
         );
     }

@@ -36,6 +36,11 @@ class ConfigReaderPlugin
         if (isset($result['synerise.queue.events']) && isset($result['synerise.queue.events']['connection'])) {
             $result['synerise.queue.events']['connection']['name'] = $this->getConnectionFromConfig();
         }
+
+        if (isset($result['synerise.queue.updates']) && isset($result['synerise.queue.updates']['connection'])) {
+            $result['synerise.queue.updates']['connection']['name'] = $this->getConnectionFromConfig();
+        }
+
         return $result;
     }
 

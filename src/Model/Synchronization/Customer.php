@@ -8,6 +8,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
+use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\AbstractSynchronization;
 use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
@@ -40,6 +41,7 @@ class Customer extends AbstractSynchronization
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         QueueResourceModel $queueResourceModel,
+        Queue  $queueHelper,
         WebsiteCollectionFactory $websiteCollectionFactory,
         CollectionFactory $collectionFactory,
         CustomerHelper $customerHelper,
@@ -53,6 +55,7 @@ class Customer extends AbstractSynchronization
             $scopeConfig,
             $resource,
             $queueResourceModel,
+            $queueHelper,
             $collectionFactory
         );
     }
