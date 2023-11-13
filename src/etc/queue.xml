@@ -9,4 +9,7 @@
     <broker topic="synerise.queue.events" exchange="magento" type="db">
         <queue name="synerise.queue.events" consumer="synerise.queue.events" consumerInstance="Synerise\Integration\Model\Queue\Consumer" handler="Synerise\Integration\Model\Queue\Consumer::process"/>
     </broker>
+    <broker topic="synerise.queue.updates" exchange="magento" type="db">
+        <queue name="synerise.queue.updates" consumer="synerise.queue.updates" consumerInstance="Synerise\Integration\Model\Queue\Update\Consumer" handler="Synerise\Integration\Model\Queue\Update\Consumer::process"/>
+    </broker>
 </config>

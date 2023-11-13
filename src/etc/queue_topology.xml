@@ -2,8 +2,10 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework-message-queue:etc/topology.xsd">
     <exchange name="magento" connection="db" type="topic">
         <binding id="processSendEvent" topic="synerise.queue.events" destination="synerise.queue.events" destinationType="queue" />
+        <binding id="processSendUpdate" topic="synerise.queue.updates" destination="synerise.queue.updates" destinationType="queue" />
     </exchange>
     <exchange name="magento" connection="amqp" type="topic">
         <binding id="processSendEvent" topic="synerise.queue.events" destination="synerise.queue.events" destinationType="queue" />
+        <binding id="processSendUpdate" topic="synerise.queue.updates" destination="synerise.queue.updates" destinationType="queue" />
     </exchange>
 </config>

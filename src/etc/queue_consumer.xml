@@ -4,4 +4,8 @@
               queue="synerise.queue.events"
               handler="Synerise\Integration\Model\Queue\Consumer::process"
               connection="db" />
+    <consumer name="synerise.queue.updates"
+              queue="synerise.queue.updates"
+              handler="Synerise\Integration\Model\Queue\Update\Consumer::process"
+              connection="db" />
 </config>
