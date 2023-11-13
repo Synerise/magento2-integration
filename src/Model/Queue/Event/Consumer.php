@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\Queue;
+namespace Synerise\Integration\Model\Queue\Event;
 
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Serialize\Serializer\Json;

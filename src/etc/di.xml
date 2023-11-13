@@ -101,7 +101,7 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Model\Queue\Consumer">
+    <type name="Synerise\Integration\Model\Queue\Event\Consumer">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

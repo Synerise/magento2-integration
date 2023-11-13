@@ -2,7 +2,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework-message-queue:etc/consumer.xsd">
     <consumer name="synerise.queue.events"
               queue="synerise.queue.events"
-              handler="Synerise\Integration\Model\Queue\Consumer::process"
+              handler="Synerise\Integration\Model\Queue\Event\Consumer::process"
               connection="db" />
     <consumer name="synerise.queue.updates"
               queue="synerise.queue.updates"
