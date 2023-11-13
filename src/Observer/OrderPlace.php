@@ -13,7 +13,6 @@ use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Order;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class OrderPlace implements ObserverInterface
 {
@@ -35,11 +34,6 @@ class OrderPlace implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var QueueResourceModel
-     */
-    protected $queueResourceModel;
-
-    /**
      * @var Queue
      */
     protected $queueHelper;
@@ -53,14 +47,12 @@ class OrderPlace implements ObserverInterface
         Api $apiHelper,
         Tracking $trackingHelper,
         Order $orderHelper,
-        QueueResourceModel $queueResourceModel,
         Queue $queueHelper,
         Event $eventHelper
     ) {
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->orderHelper = $orderHelper;
-        $this->queueResourceModel = $queueResourceModel;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -128,14 +120,10 @@ class OrderPlace implements ObserverInterface
 
     protected function addItemToQueue(\Magento\Sales\Model\Order $order)
     {
-        try {
-            $this->queueResourceModel->addItem(
-                'order',
-                $order->getStoreId(),
-                $order->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
-        }
+        $this->queueHelper->publishUpdate(
+            'order',
+            $order->getStoreId(),
+            $order->getId()
+        );
     }
 }

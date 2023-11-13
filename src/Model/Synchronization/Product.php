@@ -8,7 +8,6 @@ use Magento\Framework\App\ResourceConnection;
 use Synerise\Integration\Helper\Catalog as CatalogHelper;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Product extends AbstractSynchronization
 {
@@ -28,7 +27,6 @@ class Product extends AbstractSynchronization
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
-        QueueResourceModel $queueResourceModel,
         Queue $queueHelper,
         CollectionFactory $collectionFactory,
         CatalogHelper $catalogHelper
@@ -38,7 +36,6 @@ class Product extends AbstractSynchronization
         parent::__construct(
             $scopeConfig,
             $resource,
-            $queueResourceModel,
             $queueHelper,
             $collectionFactory
         );
@@ -84,17 +81,10 @@ class Product extends AbstractSynchronization
             $storeIds = $item->getStoreIds();
             foreach ($storeIds as $storeId) {
                 if (in_array($storeId, $enabledStores)) {
-                    $data[] = [
-                        'model' => static::MODEL,
-                        'store_id' => $storeId,
-                        'entity_id' => $item->getData(static::ENTITY_ID),
-                    ];
+                    $this->queueHelper->publishUpdate(static::MODEL, $storeId, $item->getData(static::ENTITY_ID));
                 }
             }
         }
 
-        if (!empty($data)) {
-            $this->queueResourceModel->addItems($data);
-        }
     }
 }

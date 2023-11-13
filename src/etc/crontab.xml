@@ -4,8 +4,5 @@
         <job instance="Synerise\Integration\Cron\Synchronization" method="processByIds" name="synerise_sync_status">
             <config_path>crontab/default/jobs/synerise_sync_status/schedule/cron_expr</config_path>
         </job>
-        <job instance="Synerise\Integration\Cron\Synchronization" method="processByQueue" name="synerise_sync_queue">
-            <config_path>crontab/default/jobs/synerise_sync_queue/schedule/cron_expr</config_path>
-        </job>
     </group>
 </config>

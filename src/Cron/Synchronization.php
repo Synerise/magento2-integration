@@ -6,20 +6,15 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue\CollectionFactory as QueueCollectionFactory;
 use Synerise\Integration\Model\ResourceModel\Cron\Status\CollectionFactory as StatusCollectionFactory;
 use Synerise\Integration\Model\Synchronization\Customer;
 use Synerise\Integration\Model\Synchronization\Order;
 use Synerise\Integration\Model\Synchronization\Product;
 use Synerise\Integration\Model\Synchronization\Subscriber;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
 
 class Synchronization
 {
-    const XML_PATH_CRON_QUEUE_PAGE_SIZE = 'synerise/cron_queue/page_size';
-    const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
-
     /**
      * @var ScopeConfigInterface
      */
@@ -29,11 +24,6 @@ class Synchronization
      * @var LoggerInterface
      */
     protected $logger;
-
-    /**
-     * @var QueueCollectionFactory
-     */
-    protected $queueCollectionFactory;
 
     /**
      * @var StatusCollectionFactory
@@ -46,27 +36,15 @@ class Synchronization
     protected $connection;
 
     /**
-     * @var QueueResourceModel
-     */
-    protected $queueResourceModel;
-
-    /**
      * @var array
      */
     protected $executors;
-
-    /**
-     * @var array
-     */
-    protected $enabledStores = [];
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         LoggerInterface $logger,
-        QueueCollectionFactory $queueCollectionFactory,
         StatusCollectionFactory $statusCollectionFactory,
-        QueueResourceModel $queueResourceModel,
         Customer $customer,
         Order $order,
         Product $product,
@@ -75,9 +53,7 @@ class Synchronization
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
         $this->logger = $logger;
-        $this->queueCollectionFactory = $queueCollectionFactory;
         $this->statusCollectionFactory = $statusCollectionFactory;
-        $this->queueResourceModel = $queueResourceModel;
 
         $this->executors = [
             'customer' => $customer,
@@ -148,52 +124,6 @@ class Synchronization
             }
         } catch (\Exception $e) {
             $this->logger->error('Failed to process cron items', ['exception' => $e]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Cron method synchronizing data by queue.
-     *
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Synerise\ApiClient\ApiException
-     */
-    public function processByQueue()
-    {
-        try {
-            $groupedItems = $this->queueResourceModel->getGroupedQueueItems();
-            foreach ($groupedItems as $groupedItem) {
-                $executor = $this->getExecutorByName($groupedItem['model']);
-                if (!$executor || !$executor->isEnabled()) {
-                    continue;
-                }
-
-                $queueCollection = $this->queueCollectionFactory->create()
-                    ->addFieldToSelect('entity_id')
-                    ->addFieldToFilter('model', $groupedItem['model'])
-                    ->addFieldToFilter('store_id', $groupedItem['store_id'])
-                    ->setPageSize($executor->getPageSize($groupedItem['store_id']));
-
-                if (!$queueCollection->getSize()) {
-                    continue;
-                }
-
-                $entityIds = $queueCollection->getColumnValues('entity_id');
-
-                $items = $executor->getCollectionFilteredByEntityIds(
-                    $groupedItem['store_id'],
-                    $entityIds
-                );
-
-                if (!$items->getSize()) {
-                    continue;
-                }
-
-                $executor->sendItems($items, $groupedItem['store_id']);
-                $executor->deleteItemsFromQueue($groupedItem['store_id'], $entityIds);
-            }
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to process cron queue', ['exception' => $e]);
             throw $e;
         }
     }

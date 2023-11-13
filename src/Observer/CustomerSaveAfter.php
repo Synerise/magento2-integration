@@ -13,7 +13,6 @@ use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class CustomerSaveAfter implements ObserverInterface
 {
@@ -39,11 +38,6 @@ class CustomerSaveAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var QueueResourceModel
-     */
-    protected $queueResourceModel;
-
-    /**
      * @var Http
      */
     private $request;
@@ -62,7 +56,6 @@ class CustomerSaveAfter implements ObserverInterface
         Api $apiHelper,
         Tracking $trackingHelper,
         Customer $customerHelper,
-        QueueResourceModel $queueResourceModel,
         Http $request,
         Queue $queueHelper,
         Event $eventHelper
@@ -70,7 +63,6 @@ class CustomerSaveAfter implements ObserverInterface
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->customerHelper = $customerHelper;
-        $this->queueResourceModel = $queueResourceModel;
         $this->request = $request;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
@@ -107,14 +99,10 @@ class CustomerSaveAfter implements ObserverInterface
 
     protected function addItemToQueue(\Magento\Customer\Model\Customer $customer)
     {
-        try {
-            $this->queueResourceModel->addItem(
-                'customer',
-                $customer->getStoreId(),
-                $customer->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
-        }
+        $this->queueHelper->publishUpdate(
+            'customer',
+            $customer->getStoreId(),
+            $customer->getId()
+        );
     }
 }

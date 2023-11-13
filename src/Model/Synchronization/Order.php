@@ -9,7 +9,6 @@ use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Synerise\Integration\Helper\Order as OrderHelper;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class Order extends AbstractSynchronization
 {
@@ -29,7 +28,6 @@ class Order extends AbstractSynchronization
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
-        QueueResourceModel $queueResourceModel,
         Queue $queueHelper,
         CollectionFactory $collectionFactory,
         OrderHelper $orderHelper,
@@ -41,7 +39,6 @@ class Order extends AbstractSynchronization
         parent::__construct(
             $scopeConfig,
             $resource,
-            $queueResourceModel,
             $queueHelper,
             $collectionFactory
         );

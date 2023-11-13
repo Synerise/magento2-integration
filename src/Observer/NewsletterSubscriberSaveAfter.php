@@ -11,16 +11,10 @@ use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
-
-    /**
-     * @var QueueResourceModel
-     */
-    protected $queueResourceModel;
 
     /**
      * @var Customer
@@ -45,13 +39,11 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     public function __construct(
         Customer $customerHelper,
         Tracking $trackingHelper,
-        QueueResourceModel $queueResourceModel,
         Queue $queueHelper,
         Event $eventHelper
     ) {
         $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueResourceModel = $queueResourceModel;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -94,14 +86,10 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      */
     protected function addItemToQueue($subscriber)
     {
-        try {
-            $this->queueResourceModel->addItem(
-                'subscriber',
-                $subscriber->getStoreId(),
-                $subscriber->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
-        }
+        $this->queueHelper->publishUpdate(
+            'subscriber',
+            $subscriber->getStoreId(),
+            $subscriber->getId()
+        );
     }
 }

@@ -18,7 +18,6 @@ class Uninstall implements UninstallInterface
     const TABLES = [
         'synerise_workspace',
         'synerise_cron_status',
-        'synerise_cron_queue',
         'synerise_sync_subscriber',
         'synerise_sync_order',
         'synerise_sync_customer',

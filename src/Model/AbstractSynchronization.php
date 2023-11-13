@@ -7,7 +7,6 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Data\Collection;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Model\Cron\Status;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
 
 abstract class AbstractSynchronization
 {
@@ -36,11 +35,6 @@ abstract class AbstractSynchronization
     protected $enabledModels;
 
     /**
-     * @var QueueResourceModel
-     */
-    protected $queueResourceModel;
-
-    /**
      * @var Queue
      */
     protected $queueHelper;
@@ -48,7 +42,6 @@ abstract class AbstractSynchronization
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ResourceConnection   $resource,
-        QueueResourceModel   $queueResourceModel,
         Queue                $queueHelper,
                              $collectionFactory
     )
@@ -56,7 +49,6 @@ abstract class AbstractSynchronization
         $this->queueHelper = $queueHelper;
         $this->scopeConfig = $scopeConfig;
         $this->connection = $resource->getConnection();
-        $this->queueResourceModel = $queueResourceModel;
         $this->collectionFactory = $collectionFactory;
     }
 
@@ -78,16 +70,6 @@ abstract class AbstractSynchronization
                 $this->queueHelper->publishUpdate(static::MODEL, $item->getStoreId(), $item->getData(static::ENTITY_ID));
             }
         }
-    }
-
-    /**
-     * @param string $storeId
-     * @param array $entityIds
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    public function deleteItemsFromQueue($storeId, $entityIds)
-    {
-        $this->queueResourceModel->deleteItems(static::MODEL, $storeId, $entityIds);
     }
 
     /**
