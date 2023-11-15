@@ -2,6 +2,7 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Store\Model\ScopeInterface;
+use Synerise\Integration\Model\Queue\Update\Message;
 
 class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -75,12 +76,6 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function publishUpdate(string $model, int $storeId, int $entityId = null, $retries = 0)
     {
-        $serializedData = $this->json->serialize([
-            'model' => $model,
-            'store_id' => $storeId,
-            'entity_id' => $entityId,
-            'retries' => $retries
-        ]);
-        $this->publisher->publish('synerise.queue.updates', $serializedData);
+        $this->publisher->publish('synerise.queue.updates', new Message($model,  $storeId,  $entityId,  $retries));
     }
 }

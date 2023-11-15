@@ -52,10 +52,10 @@ class Handler
         $this->queueHelper = $queueHelper;
     }
 
-    public function process(string $event)
+    public function process(Message $update)
     {
         try {
-            $this->execute($event);
+            $this->execute($update);
         } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('An error occurred while processing the queue message', ['exception' => $e]);
@@ -63,33 +63,24 @@ class Handler
     }
 
     /**
-     * @param string $update
+     * @param Message $update
      * @return void
      */
-    private function execute(string $update)
+    private function execute(Message $update)
     {
         try {
-            $deserializedData = $this->json->unserialize($update);
+            $executor = $this->synchronization->getExecutorByName($update->getModel());
+            $items = $executor->getCollectionFilteredByEntityIds($update->getStoreId(), $update->getEntityId());
 
-            $executor = $this->synchronization->getExecutorByName($deserializedData['model']);
-            $items = $executor->getCollectionFilteredByEntityIds(
-                $deserializedData['store_id'],
-                [$deserializedData['entity_id']]
-            );
 
-            $executor->sendItems($items, $deserializedData['store_id']);
+            $executor->sendItems($items, $update->getStoreId());
         } catch(ApiException $e) {
             if ($e->getCode() > 500) {
-                $this->logger->debug('Publish for Retry: ' . $deserializedData['model'] . ' id:'. $deserializedData['entity_id'] );
+                $this->logger->debug('Publish for Retry: ' . $update->getModel() . ' id:'. $update->getEntityId() );
                 $retries = $deserializedData['retries'] ?? 0;
                 if ($retries < self::MAX_RETRIES) {
                     $retries++;
-                    $this->queueHelper->publishUpdate(
-                        $deserializedData['model'],
-                        $deserializedData['store_id'],
-                        $deserializedData['entity_id'],
-                        $retries
-                    );
+                    $this->queueHelper->publishUpdate($update->getModel(), $update->getStoreId(), $update->getEntityId(), $retries);
                 }
             }
         }

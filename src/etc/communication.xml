@@ -3,7 +3,7 @@
     <topic name="synerise.queue.events" is_synchronous="false" request="string">
         <handler name="processSendEvent" type="Synerise\Integration\Model\Queue\Event\Handler" method="process" />
     </topic>
-    <topic name="synerise.queue.updates" is_synchronous="false" request="string">
+    <topic name="synerise.queue.updates" is_synchronous="false" request="Synerise\Integration\Model\Queue\Update\Message">
         <handler name="processSendUpdate" type="Synerise\Integration\Model\Queue\Update\Handler" method="process" />
     </topic>
 </config>
