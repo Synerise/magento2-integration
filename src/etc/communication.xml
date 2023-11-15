@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Communication/etc/communication.xsd">
     <topic name="synerise.queue.events" is_synchronous="false" request="string">
-        <handler name="processSendEvent" type="Synerise\Integration\Model\Queue\Event\Handler" method="process" />
+        <handler name="processSendEvent" type="Synerise\Integration\Model\MessageQueue\Event\Handler" method="process" />
     </topic>
-    <topic name="synerise.queue.updates" is_synchronous="false" request="Synerise\Integration\Model\Queue\Update\Message">
-        <handler name="processSendUpdate" type="Synerise\Integration\Model\Queue\Update\Handler" method="process" />
+    <topic name="synerise.queue.updates" is_synchronous="false" request="Synerise\Integration\Model\MessageQueue\Data\Message">
+        <handler name="processSendUpdate" type="Synerise\Integration\Model\MessageQueue\Data\Handler" method="process" />
     </topic>
 </config>

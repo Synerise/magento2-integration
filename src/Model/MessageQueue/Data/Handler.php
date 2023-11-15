@@ -1,11 +1,11 @@
 <?php
 
-namespace Synerise\Integration\Model\Queue\Event;
+namespace Synerise\Integration\Model\MessageQueue\Update;
 
-use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Cron\Synchronization;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 
@@ -33,22 +33,29 @@ class Handler
      */
     private $queueHelper;
 
+    /**
+     * @var Synchronization
+     */
+    private $synchronization;
+
     public function __construct(
         LoggerInterface $logger,
         Json $json,
+        Synchronization $synchronization,
         Event $eventHelper,
         Queue $queueHelper
     ) {
         $this->logger = $logger;
+        $this->synchronization = $synchronization;
         $this->json = $json;
         $this->eventHelper = $eventHelper;
         $this->queueHelper = $queueHelper;
     }
 
-    public function process(string $event)
+    public function process(Message $update)
     {
         try {
-            $this->execute($event);
+            $this->execute($update);
         } catch (ApiException $e) {
         } catch (\Exception $e) {
             $this->logger->error('An error occurred while processing the queue message', ['exception' => $e]);
@@ -56,25 +63,22 @@ class Handler
     }
 
     /**
-     * @throws ApiException
-     * @throws ValidatorException
+     * @param Message $update
+     * @return void
      */
-    private function execute(string $event)
+    private function execute(Message $update)
     {
-        $deserializedData = $this->json->unserialize($event);
-        $eventName = $deserializedData['event_name'];
-        $eventPayload = $deserializedData['event_payload'];
-        $storeId = $deserializedData['store_id'];
-        $entityId = $deserializedData['entity_id'];
-
         try {
-            $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
+            $executor = $this->synchronization->getExecutorByName($update->getModel());
+            $items = $executor->getCollectionFilteredByEntityIds($update->getStoreId(), $update->getEntityId());
+            $executor->sendItems($items, $update->getStoreId());
         } catch(ApiException $e) {
             if ($e->getCode() > 500) {
+                $this->logger->debug('Publish for Retry: ' . $update->getModel() . ' id:'. $update->getEntityId() );
                 $retries = $deserializedData['retries'] ?? 0;
                 if ($retries < self::MAX_RETRIES) {
                     $retries++;
-                    $this->queueHelper->publishEvent($eventName, $eventPayload, $storeId, $entityId, $retries);
+                    $this->queueHelper->publishUpdate($update->getModel(), $update->getStoreId(), $update->getEntityId(), $retries);
                 }
             }
         }

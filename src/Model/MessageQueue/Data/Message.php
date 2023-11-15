@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Model\Queue\Update;
+namespace Synerise\Integration\Model\MessageQueue\Update;
 
 Class Message
 {
