@@ -2,7 +2,7 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Model\Queue\Update\Message;
+use Synerise\Integration\Model\MessageQueue\Update\Message;
 
 class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 {
