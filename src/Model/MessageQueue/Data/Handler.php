@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\MessageQueue\Update;
+namespace Synerise\Integration\Model\MessageQueue\Data;
 
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
