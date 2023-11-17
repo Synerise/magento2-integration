@@ -91,6 +91,12 @@ abstract class AbstractSynchronization
             ->setPageSize($this->getPageSize());
     }
 
+    /**
+     * @param $storeId
+     * @param $entityIds
+     * @return mixed
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     */
     public function getCollectionFilteredByEntityIds($storeId, $entityIds)
     {
         return $this->createCollectionWithScope($storeId)
@@ -114,6 +120,12 @@ abstract class AbstractSynchronization
         return $item ? $item->getData(static::ENTITY_ID) : 0;
     }
 
+    /**
+     * @param $storeId
+     * @param $websiteId
+     * @return mixed
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     */
     abstract protected function createCollectionWithScope($storeId, $websiteId = null);
 
     public function getPageSize($storeId = null)

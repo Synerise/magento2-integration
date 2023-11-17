@@ -6,4 +6,7 @@
     <topic name="synerise.queue.updates" is_synchronous="false" request="Synerise\Integration\Model\MessageQueue\Data\Message">
         <handler name="processSendUpdate" type="Synerise\Integration\Model\MessageQueue\Data\Handler" method="process" />
     </topic>
+    <topic name="synerise.queue.data.product.batch" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
+        <handler name="processSendProductBatch" type="Synerise\Integration\Model\MessageQueue\Data\ProductBatchHandler" method="process" />
+    </topic>
 </config>

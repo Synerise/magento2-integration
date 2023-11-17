@@ -3,9 +3,11 @@
     <exchange name="magento" connection="db" type="topic">
         <binding id="processSendEvent" topic="synerise.queue.events" destination="synerise.queue.events" destinationType="queue" />
         <binding id="processSendUpdate" topic="synerise.queue.updates" destination="synerise.queue.updates" destinationType="queue" />
+        <binding id="productBatchBinding" topic="synerise.queue.data.product.batch" destination="synerise.queue.data.product.batch" destinationType="queue" />
     </exchange>
     <exchange name="magento" connection="amqp" type="topic">
         <binding id="processSendEvent" topic="synerise.queue.events" destination="synerise.queue.events" destinationType="queue" />
         <binding id="processSendUpdate" topic="synerise.queue.updates" destination="synerise.queue.updates" destinationType="queue" />
+        <binding id="productBatchBinding" topic="synerise.queue.data.product.batch" destination="synerise.queue.data.product.batch" destinationType="queue" />
     </exchange>
 </config>

@@ -8,7 +8,7 @@
                         <message translate="true">Are you sure to perform Action for selected products?</message>
                         <title translate="true">Send to Synerise</title>
                     </confirm>
-                    <url path="synerise/catalog/massUpdate"/>
+                    <url path="synerise/catalog/massSchedule"/>
                     <type>synerise_update</type>
                     <label translate="true">Send to Synerise</label>
                 </settings>

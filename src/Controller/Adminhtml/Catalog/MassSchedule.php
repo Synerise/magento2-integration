@@ -8,9 +8,11 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Model\MessageQueue\Data\BatchPublisher;
+use Synerise\Integration\Model\Synchronization\Product;
 
-class MassUpdate extends Action
+class MassSchedule extends Action
 {
     /**
      * Authorization level
@@ -33,21 +35,28 @@ class MassUpdate extends Action
     protected $collectionFactory;
 
     /**
-     * @var SyncProduct
+     * @var BatchPublisher
      */
-    protected $syncProduct;
+    private $publisher;
+
+    /**
+     * @var Queue
+     */
+    private $queueHelper;
 
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        LoggerInterface $logger,
-        SyncProduct $syncProduct
+        BatchPublisher $publisher,
+        Queue $queueHelper,
+        LoggerInterface $logger
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->syncProduct = $syncProduct;
+        $this->publisher = $publisher;
+        $this->queueHelper = $queueHelper;
 
         parent::__construct($context);
     }
@@ -60,11 +69,16 @@ class MassUpdate extends Action
      */
     public function execute()
     {
+        $enabledStoreIds = $this->queueHelper->getEnabledStores();
         $collection = $this->filter->getCollection($this->collectionFactory->create());
 
         try {
-            $this->syncProduct->addItemsToQueue($collection);
-            $this->messageManager->addSuccessMessage(__('A total of %1 record(s) have been added to synchronization queue.', $collection->getSize()));
+            foreach ($enabledStoreIds as $enabledStoreId) {
+                $this->publisher->schedule(Product::MODEL, $enabledStoreId, $collection->getAllIds());
+                $this->messageManager->addSuccessMessage(
+                    __('A total of %1 products(s) have been added to synchronization queue for all enabled stores.', $collection->getSize())
+                );
+            }
         } catch (\Exception $e) {
             $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
             $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));

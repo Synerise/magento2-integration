@@ -8,4 +8,8 @@
               queue="synerise.queue.updates"
               handler="Synerise\Integration\Model\MessageQueue\Data\Handler::process"
               connection="db" />
+    <consumer name="synerise.queue.data.product.batch"
+              queue="synerise.queue.data.product.batch"
+              handler="Synerise\Integration\Model\MessageQueue\Data\ProductBatchHandler::process"
+              connection="db" />
 </config>

@@ -36,7 +36,7 @@
             </argument>
         </arguments>
     </virtualType>
-    <type name="Synerise\Integration\Controller\Adminhtml\Catalog\MassUpdate">
+    <type name="Synerise\Integration\Controller\Adminhtml\Catalog\MassSchedule">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
@@ -102,6 +102,11 @@
         </arguments>
     </type>
     <type name="Synerise\Integration\Model\MessageQueue\Event\Handler">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\Model\MessageQueue\Data\ProductBatchHandler">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

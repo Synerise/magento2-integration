@@ -78,4 +78,13 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $this->publisher->publish('synerise.queue.updates', new Message($model,  $storeId,  $entityId,  $retries));
     }
+
+    public function getEnabledStores()
+    {
+        $enabledStoresString = $this->scopeConfig->getValue(
+            AbstractSynchronization::XML_PATH_SYNCHRONIZATION_STORES
+        );
+
+        return $enabledStoresString ? explode(',', $enabledStoresString) : [];
+    }
 }
