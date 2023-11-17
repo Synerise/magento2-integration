@@ -36,9 +36,9 @@ class Subscriber extends AbstractSynchronization
         );
     }
 
-    public function getCollectionFilteredByIdRange($status)
+    public function getCollectionFilteredByIdRange($storeId, $websiteId, $gt, $le)
     {
-        $collection = parent::getCollectionFilteredByIdRange($status)
+        $collection = parent::getCollectionFilteredByIdRange($storeId, $websiteId, $gt, $le)
             ->addFieldToSelect(['subscriber_email', 'subscriber_status', 'change_status_at']);
 
         return $collection;

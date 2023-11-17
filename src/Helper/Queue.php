@@ -2,7 +2,8 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Model\MessageQueue\Update\Message;
+use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\Model\MessageQueue\Data\Message;
 
 class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 {

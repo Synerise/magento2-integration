@@ -9,4 +9,7 @@
     <topic name="synerise.queue.data.product.batch" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
         <handler name="processSendProductBatch" type="Synerise\Integration\Model\MessageQueue\Data\ProductBatchHandler" method="process" />
     </topic>
+    <topic name="synerise.queue.data.product.range" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
+        <handler name="processSendProductRange" type="Synerise\Integration\Model\MessageQueue\Data\ProductRangeHandler" method="process" />
+    </topic>
 </config>

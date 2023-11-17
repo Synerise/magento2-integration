@@ -6,8 +6,9 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
-use Synerise\Integration\Model\ResourceModel\Cron\Status as StatusResourceModel;
+use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Model\MessageQueue\Data\RangePublisher;
+use Synerise\Integration\Model\Synchronization\Product;
 
 
 class Resend extends Action implements HttpGetActionInterface
@@ -18,22 +19,29 @@ class Resend extends Action implements HttpGetActionInterface
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
 
     /**
-     * @var StatusResourceModel
+     * @var Product
      */
-    protected $statusResourceModel;
+    protected $product;
 
     /**
-     * @var SyncProduct
+     * @var RangePublisher
      */
-    protected $syncProduct;
+    private $publisher;
+
+    /**
+     * @var Queue
+     */
+    private $queueHelper;
 
     public function __construct(
         Context $context,
-        StatusResourceModel $statusResourceModel,
-        SyncProduct $syncProduct
+        RangePublisher $publisher,
+        Product $product,
+        Queue $queueHelper
     ) {
-        $this->statusResourceModel = $statusResourceModel;
-        $this->syncProduct = $syncProduct;
+        $this->publisher = $publisher;
+        $this->product = $product;
+        $this->queueHelper = $queueHelper;
 
         parent::__construct($context);
     }
@@ -46,8 +54,15 @@ class Resend extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $this->statusResourceModel->resendItems('product');
-        $this->syncProduct->markAllAsUnsent();
+        $enabledStoreIds = $this->queueHelper->getEnabledStores();
+        foreach($enabledStoreIds as $enabledStoreId) {
+            $this->publisher->schedule(
+                Product::MODEL,
+                0,
+                $this->product->getCurrentLastId($enabledStoreId),
+                $enabledStoreId
+            );
+        }
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);

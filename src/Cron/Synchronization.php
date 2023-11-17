@@ -89,7 +89,7 @@ class Synchronization
 
                 $stopId = $statusItem->getStopId();
                 if (!$stopId) {
-                    $stopId = $executor->getCurrentLastId($statusItem);
+                    $stopId = $executor->getCurrentLastId($statusItem->getStoreId(), $statusItem->getWebsiteId());
                     $statusItem->setStopId($stopId);
                 }
 
@@ -101,7 +101,12 @@ class Synchronization
                     continue;
                 }
 
-                $collection = $executor->getCollectionFilteredByIdRange($statusItem);
+                $collection = $executor->getCollectionFilteredByIdRange(
+                    $statusItem->getStoreId(),
+                    $statusItem->getWebsiteId(),
+                    $statusItem->getStartId(),
+                    $statusItem->getStopId()
+                );
 
                 if (!$collection->getSize()) {
                     $statusItem

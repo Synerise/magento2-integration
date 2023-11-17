@@ -12,4 +12,8 @@
               queue="synerise.queue.data.product.batch"
               handler="Synerise\Integration\Model\MessageQueue\Data\ProductBatchHandler::process"
               connection="db" />
+    <consumer name="synerise.queue.data.product.range"
+              queue="synerise.queue.data.product.range"
+              handler="Synerise\Integration\Model\MessageQueue\Data\ProductRangeHandler::process"
+              connection="db" />
 </config>

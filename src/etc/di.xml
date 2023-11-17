@@ -111,6 +111,11 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
+    <type name="Synerise\Integration\Model\MessageQueue\Data\ProductRangeHandler">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
     <type name="Synerise\Integration\Observer\StoreSaveAfter">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>

@@ -76,16 +76,16 @@ abstract class AbstractSynchronization
      * @param Status $status
      * @return Collection
      */
-    public function getCollectionFilteredByIdRange($status)
+    public function getCollectionFilteredByIdRange($storeId, $websiteId, $gt, $le)
     {
-        return $this->createCollectionWithScope($status->getStoreId(), $status->getWebsiteId())
+        return $this->createCollectionWithScope($storeId, $websiteId)
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                ['gt' => $status->getStartId()]
+                ['gt' => $gt]
             )
             ->addFieldToFilter(
                 static::ENTITY_ID,
-                ['lteq' => $status->getStopId()]
+                ['lteq' => $le]
             )
             ->setOrder(static::ENTITY_ID, 'ASC')
             ->setPageSize($this->getPageSize());
@@ -108,9 +108,9 @@ abstract class AbstractSynchronization
             ->setPageSize($this->getPageSize());
     }
 
-    public function getCurrentLastId($status)
+    public function getCurrentLastId($storeId, $websiteId = null)
     {
-        $collection = $this->createCollectionWithScope($status->getStoreId(), $status->getWebsiteId())
+        $collection = $this->createCollectionWithScope($storeId, $websiteId)
             ->addFieldToSelect(static::ENTITY_ID)
             ->setOrder(static::ENTITY_ID, 'DESC')
             ->setPageSize(1);

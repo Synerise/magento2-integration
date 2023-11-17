@@ -12,4 +12,8 @@
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
+    <publisher topic="synerise.queue.data.product.range" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
 </config>
