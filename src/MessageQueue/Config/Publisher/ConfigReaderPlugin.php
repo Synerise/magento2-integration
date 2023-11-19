@@ -33,12 +33,10 @@ class ConfigReaderPlugin
      */
     public function afterRead(PublisherConfigCompositeReader $subject, $result, $scope = null)
     {
-        if (isset($result['synerise.queue.events']) && isset($result['synerise.queue.events']['connection'])) {
-            $result['synerise.queue.events']['connection']['name'] = $this->getConnectionFromConfig();
-        }
-
-        if (isset($result['synerise.queue.updates']) && isset($result['synerise.queue.updates']['connection'])) {
-            $result['synerise.queue.updates']['connection']['name'] = $this->getConnectionFromConfig();
+        foreach (Connection::TOPICS as $topic) {
+            if (isset($result[$topic]) && isset($result[$topic]['connection'])) {
+                $result[$topic]['connection']['name'] = $this->getConnectionFromConfig();
+            }
         }
 
         return $result;

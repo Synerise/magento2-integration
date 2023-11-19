@@ -213,6 +213,14 @@ class Catalog
         return $this->storeUrls[$storeId];
     }
 
+    /**
+     * @param $collection
+     * @param $attributes
+     * @param $websiteId
+     * @param $storeId
+     * @return void
+     * @throws \Exception
+     */
     public function addItemsBatchWithCatalogCheck($collection, $attributes, $websiteId, $storeId)
     {
         if (!$collection->getSize()) {
@@ -473,6 +481,12 @@ class Catalog
         return $stockData;
     }
 
+    /**
+     * @param $addItemRequest
+     * @param $storeId
+     * @return void
+     * @throws ApiException
+     */
     public function sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId)
     {
         $timeout = $this->apiHelper->getScheduledRequestTimeout($storeId);

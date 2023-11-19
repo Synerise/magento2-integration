@@ -1,7 +1,10 @@
 <?php
 
-namespace Synerise\Integration\Model\MessageQueue\Data;
+namespace Synerise\Integration\Model\MessageQueue\Data\Batch\Consumer;
 
+
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
@@ -10,11 +13,10 @@ use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Cron\Synchronization;
-use Synerise\Integration\Helper\Queue;
-use Synerise\Integration\Model\Synchronization\Product;
+use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
-class ProductRangeHandler
+
+class Product
 {
     /**
      * @var LoggerInterface
@@ -32,27 +34,27 @@ class ProductRangeHandler
     private $entityManager;
 
     /**
-     * @var Synchronization
+     * @var CollectionFactory
      */
-    private $synchronization;
+    private $collectionFactory;
 
     /**
-     * @var Queue
+     * @var Sender
      */
-    private $queueHelper;
+    private $sender;
 
     public function __construct(
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
-        Synchronization $synchronization,
-        Queue $queueHelper
+        CollectionFactory $collectionFactory,
+        Sender $sender
     ) {
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->synchronization = $synchronization;
-        $this->queueHelper = $queueHelper;
+        $this->collectionFactory = $collectionFactory;
+        $this->sender =  $sender;
     }
 
     /**
@@ -121,12 +123,32 @@ class ProductRangeHandler
      * @return void
      * @throws ApiException
      * @throws NoSuchEntityException
+     * @throws LocalizedException
+     * @throws \Exception
      */
     private function execute(array $data)
     {
-        $model = Product::MODEL;
-        $executor = $this->synchronization->getExecutorByName($model);
-        $items = $executor->getCollectionFilteredByIdRange($data['store_id'], $data['website_id'], $data['gt'], $data['le']);
-        $executor->sendItems($items, $data['store_id']);
+        $this->sender->sendItems(
+            $this->getCollectionFilteredByEntityIds($data['store_id'], $data['entity_ids']),
+            $data['store_id'])
+        ;
+    }
+
+    /**
+     * @param $storeId
+     * @param $entityIds
+     * @return Collection
+     * @throws NoSuchEntityException
+     */
+    public function getCollectionFilteredByEntityIds($storeId, $entityIds)
+    {
+        return $this->collectionFactory->create()
+            ->addStoreFilter($storeId)
+            ->addFieldToFilter(
+                Sender::ENTITY_ID,
+                ['in' => $entityIds]
+            )
+            ->setOrder(Sender::ENTITY_ID, 'ASC')
+            ->setPageSize($this->sender->getPageSize());
     }
 }

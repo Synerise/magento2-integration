@@ -1,6 +1,7 @@
 <?php
 
-namespace Synerise\Integration\Model\MessageQueue\Data;
+namespace Synerise\Integration\Model\MessageQueue\Data\Batch;
+
 
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
@@ -10,9 +11,9 @@ use Magento\Framework\DataObject\IdentityGeneratorInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
 
-class RangePublisher
+class Publisher
 {
-    const TOPIC_FORMAT = 'synerise.queue.data.%s.range';
+    const TOPIC_FORMAT = 'synerise.queue.data.%s.batch';
 
     /**
      * @var BulkManagementInterface
@@ -54,30 +55,21 @@ class RangePublisher
     }
 
     public function schedule(
-        string $model,
-        int $startId,
-        int $stopId,
-        int $storeId,
-        int $websiteId = null,
+        $model,
+        $storeId,
+        $entityIds,
         int $bulkSize = 100
     )
     {
-        if (!$bulkSize || $startId > $stopId) {
-            return false;
-        }
-
-        $ranges = $this->prepareRanges($startId, $stopId, $bulkSize);
-
+        $entityIdsChunks = array_chunk($entityIds, $bulkSize);
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = __('Scheduled full synchronization of %1 items to Synerise', $model);
+        $bulkDescription = __('Scheduled synchronization of %1 selected %2 items to Synerise', count($entityIds), $model);
         $operations = [];
-        foreach ($ranges as $range) {
+        foreach ($entityIdsChunks as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
                 sprintf(self::TOPIC_FORMAT, $model),
                 $storeId,
-                $websiteId,
-                $range['gt'],
-                $range['le'],
+                $entityIdsChunk,
                 $bulkUuid
             );
         }
@@ -97,14 +89,13 @@ class RangePublisher
         }
     }
 
+
     /**
      * Make asynchronous operation
      *
      * @param string $topicName
      * @param int $storeId
-     * @param int $websiteId
-     * @param int $gt
-     * @param int $le
+     * @param int[] $entityIds
      * @param string $bulkUuid
      *
      * @return OperationInterface
@@ -112,16 +103,12 @@ class RangePublisher
     private function makeOperation(
         string $topicName,
         int $storeId,
-        ?int $websiteId,
-        int $gt,
-        int $le,
+        array $entityIds,
         string $bulkUuid
     ): OperationInterface {
         $dataToEncode = [
-            'gt' => $gt,
-            'le' => $le,
+            'entity_ids' => $entityIds,
             'store_id' => $storeId,
-            'website_id' => $websiteId,
         ];
 
         $operation = [
@@ -134,26 +121,5 @@ class RangePublisher
         ];
 
         return $this->operationFactory->create($operation);
-    }
-
-    /**
-     * @param int $gt
-     * @param int $le
-     * @param int $bulkSize
-     * @return array
-     */
-    protected function prepareRanges(int $gt, int $le, int $bulkSize): array
-    {
-        $steps = range($gt, $le, $bulkSize);
-        $ranges = [];
-
-        while(current($steps) !== false && current($steps) !== $le) {
-            $ranges[] = [
-                'gt' => current($steps),
-                'le' => next($steps) ?: $le
-            ];
-        }
-
-        return $ranges;
     }
 }

@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Model\MessageQueue\Data;
+namespace Synerise\Integration\Model\MessageQueue\Data\Single;
 
 Class Message
 {

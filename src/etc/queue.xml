@@ -9,7 +9,7 @@
     <broker topic="synerise.queue.events" exchange="magento" type="db">
         <queue name="synerise.queue.events" consumer="synerise.queue.events"/>
     </broker>
-    <broker topic="synerise.queue.updates" exchange="magento" type="db">
-        <queue name="synerise.queue.updates" consumer="synerise.queue.updates"/>
+    <broker topic="synerise.queue.data.mixed.single" exchange="magento" type="db">
+        <queue name="synerise.queue.data.mixed.single" consumer="synerise.queue.data.mixed.single"/>
     </broker>
 </config>

@@ -7,11 +7,11 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Synerise\Integration\Helper\Queue;
-use Synerise\Integration\Model\MessageQueue\Data\RangePublisher;
+use Synerise\Integration\Model\MessageQueue\Data\Range\Publisher;
 use Synerise\Integration\Model\Synchronization\Product;
 
 
-class Resend extends Action implements HttpGetActionInterface
+class FullSchedule extends Action implements HttpGetActionInterface
 {
     /**
      * Authorization level
@@ -24,7 +24,7 @@ class Resend extends Action implements HttpGetActionInterface
     protected $product;
 
     /**
-     * @var RangePublisher
+     * @var Publisher
      */
     private $publisher;
 
@@ -35,7 +35,7 @@ class Resend extends Action implements HttpGetActionInterface
 
     public function __construct(
         Context $context,
-        RangePublisher $publisher,
+        Publisher $publisher,
         Product $product,
         Queue $queueHelper
     ) {

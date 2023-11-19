@@ -9,7 +9,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 
-class Handler
+class Consumer
 {
     const MAX_RETRIES = 3;
 

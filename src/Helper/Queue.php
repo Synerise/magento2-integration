@@ -3,12 +3,14 @@ namespace Synerise\Integration\Helper;
 
 use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\Model\MessageQueue\Data\Message;
+use Synerise\Integration\Model\MessageQueue\Data\Single\Message;
 
 class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
     const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
+
+    const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
 
     /**
      * @var \Magento\Framework\MessageQueue\PublisherInterface
@@ -77,7 +79,7 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function publishUpdate(string $model, int $storeId, int $entityId = null, $retries = 0)
     {
-        $this->publisher->publish('synerise.queue.updates', new Message($model,  $storeId,  $entityId,  $retries));
+        $this->publisher->publish('synerise.queue.data.mixed.single', new Message($model,  $storeId,  $entityId,  $retries));
     }
 
     public function getEnabledStores()

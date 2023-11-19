@@ -18,7 +18,6 @@ class StoreSaveAfter implements ObserverInterface
 
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
-        \Magento\Framework\App\Config\ScopeConfigInterface $config,
         \Synerise\Integration\Model\ResourceModel\Cron\Status $statusResourceModel
     ) {
         $this->logger = $logger;

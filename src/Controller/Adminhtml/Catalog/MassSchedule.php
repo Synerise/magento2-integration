@@ -9,7 +9,7 @@ use Magento\Ui\Component\MassAction\Filter;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Queue;
-use Synerise\Integration\Model\MessageQueue\Data\BatchPublisher;
+use Synerise\Integration\Model\MessageQueue\Data\Batch\Publisher;
 use Synerise\Integration\Model\Synchronization\Product;
 
 class MassSchedule extends Action
@@ -35,7 +35,7 @@ class MassSchedule extends Action
     protected $collectionFactory;
 
     /**
-     * @var BatchPublisher
+     * @var Publisher
      */
     private $publisher;
 
@@ -48,7 +48,7 @@ class MassSchedule extends Action
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        BatchPublisher $publisher,
+        Publisher $publisher,
         Queue $queueHelper,
         LoggerInterface $logger
     ) {

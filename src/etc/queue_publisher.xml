@@ -4,7 +4,23 @@
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
-    <publisher topic="synerise.queue.updates" >
+    <publisher topic="synerise.queue.data.mixed.single" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
+    <publisher topic="synerise.queue.data.customer.batch" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
+    <publisher topic="synerise.queue.data.customer.range" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
+    <publisher topic="synerise.queue.data.order.batch" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
+    <publisher topic="synerise.queue.data.order.range" >
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
@@ -13,6 +29,14 @@
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
     <publisher topic="synerise.queue.data.product.range" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
+    <publisher topic="synerise.queue.data.subscriber.batch" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
+    <publisher topic="synerise.queue.data.subscriber.range" >
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
