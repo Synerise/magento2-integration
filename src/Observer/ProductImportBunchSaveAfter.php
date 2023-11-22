@@ -3,56 +3,38 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use \Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Publisher;
+use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
 {
     const EVENT = 'catalog_product_import_bunch_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
+
+    /**
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var Publisher
      */
-    private $productRepository;
-
-    /**
-     * @var \Magento\Framework\Api\FilterBuilder
-     */
-    private $filterBuilder;
-
-    /**
-     * @var \Magento\Framework\Api\Search\FilterGroup
-     */
-    private $filterGroup;
-
-    /**
-     * @var \Magento\Framework\Api\SearchCriteriaInterface
-     */
-    private $searchCriteria;
-
-    /**
-     * @var SyncProduct
-     */
-    private $syncProduct;
+    protected $publisher;
 
     public function __construct(
-        SyncProduct $syncProduct,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Framework\Api\FilterBuilder $filterBuilder,
-        \Magento\Framework\Api\Search\FilterGroup $filterGroup,
-        \Magento\Framework\Api\SearchCriteriaInterface $criteria
+        Synchronization $synchronizationHelper,
+        Tracking $trackingHelper,
+        Publisher $publisher
     ) {
-        $this->syncProduct = $syncProduct;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->productRepository = $productRepository;
-        $this->filterBuilder = $filterBuilder;
-        $this->filterGroup = $filterGroup;
-        $this->searchCriteria = $criteria;
+        $this->publisher = $publisher;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -61,33 +43,19 @@ class ProductImportBunchSaveAfter implements ObserverInterface
             return;
         }
 
-        $bunch = $observer->getBunch();
-
-        $bunchLimit = 500;
-        $chunkBunches = array_chunk($bunch, $bunchLimit);
-
-        foreach ($chunkBunches as $chunk) {
-            $products = $this->getProductsBySkuInBunch($chunk);
-            $this->syncProduct->addItemsToQueue($products);
+        $productsByStore = [];
+        $bunch = $observer->getEvent()->getData('bunch');
+        foreach ($bunch as $product) {
+            if (isset($product['entity_id']) && isset($product['store_id'])) {
+                $productsByStore[$product['store_id']][] = $product['entity_id'];
+            }
         }
-    }
 
-    /**
-     * @param array $bunch
-     * @return array
-     */
-    public function getProductsBySkuInBunch(array $bunch)
-    {
-        $this->filterGroup->setFilters([
-            $this->filterBuilder
-                ->setField('sku')
-                ->setConditionType('in')
-                ->setValue(array_unique(array_column($bunch, 'sku')))
-                ->create()
-        ]);
-
-        $this->searchCriteria->setFilterGroups([$this->filterGroup]);
-        $products = $this->productRepository->getList($this->searchCriteria);
-        return $products->getItems();
+        $enabledStoreIds = $this->synchronizationHelper->getEnabledStores();
+        foreach ($productsByStore as $storeId => $entityIds) {
+            if (in_array($storeId, $enabledStoreIds)) {
+                $this->publisher->schedule(Sender::MODEL, $storeId, $entityIds);
+            }
+        }
     }
 }

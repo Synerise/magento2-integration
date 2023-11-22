@@ -4,8 +4,10 @@ namespace Synerise\Integration\Model\Synchronization\Sender;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
+use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Helper\Customer as CustomerHelper;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Model\Synchronization\SenderInterface;
 
 class Customer implements SenderInterface
 {
@@ -53,8 +55,8 @@ class Customer implements SenderInterface
     public function getPageSize(?int $storeId = null): int
     {
         return (int) $this->scopeConfig->getValue(
-            Queue::XML_PATH_CRON_STATUS_PAGE_SIZE,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            Synchronization::XML_PATH_CRON_STATUS_PAGE_SIZE,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         );
     }

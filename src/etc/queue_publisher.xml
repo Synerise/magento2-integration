@@ -8,6 +8,10 @@
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
+    <publisher topic="synerise.queue.data.scheduler" >
+        <connection name="amqp" exchange="magento" disabled="true"/>
+        <connection name="db" exchange="magento" disabled="false"/>
+    </publisher>
     <publisher topic="synerise.queue.data.customer.batch" >
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>

@@ -2,28 +2,21 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Model\Product;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Module\Manager;
 use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
+use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
+use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
 class StockStatusChange implements ObserverInterface
 {
     const EVENT = 'stock_status_change';
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var SyncProduct
-     */
-    protected $syncProduct;
 
     /**
      * @var ObjectManagerInterface
@@ -35,16 +28,33 @@ class StockStatusChange implements ObserverInterface
      */
     protected $moduleManager;
 
+    /**
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
+
+    /**
+     * @var Tracking
+     */
+    protected $trackingHelper;
+
+    /**
+     * @var Publisher
+     */
+    protected $publisher;
+
     public function __construct(
-        SyncProduct $syncProduct,
-        Tracking $trackingHelper,
         Manager $moduleManager,
-        ObjectManagerInterface $objectManager
+        ObjectManagerInterface $objectManager,
+        Synchronization $synchronizationHelper,
+        Tracking $trackingHelper,
+        Publisher $publisher
     ) {
-        $this->syncProduct = $syncProduct;
-        $this->trackingHelper = $trackingHelper;
         $this->objectManager = $objectManager;
         $this->moduleManager = $moduleManager;
+        $this->synchronizationHelper = $synchronizationHelper;
+        $this->trackingHelper = $trackingHelper;
+        $this->publisher = $publisher;
     }
 
     public function execute(Observer $observer)
@@ -77,12 +87,26 @@ class StockStatusChange implements ObserverInterface
                         continue;
                     }
 
-                    $this->syncProduct->addItemsToQueue([
-                        $item->getProduct()
-                    ]);
+                    $this->publishForEachStore($item->getProduct());
                 } catch (\Exception $e) {
                     $this->trackingHelper->getLogger()->error($e);
                 }
+            }
+        }
+    }
+
+    protected function publishForEachStore(Product $product)
+    {
+        $enabledStores = $this->synchronizationHelper->getEnabledStores();
+        $storeIds = $product->getStoreIds();
+        foreach ($storeIds as $storeId) {
+            if (in_array($storeId, $enabledStores)) {
+                $this->publisher->publish(
+                    Sender::MODEL,
+                    $product->getEntityId(),
+                    $product->getStoreId(),
+                    $this->synchronizationHelper->getWebsiteIdByStoreId($product->getStoreId())
+                );
             }
         }
     }

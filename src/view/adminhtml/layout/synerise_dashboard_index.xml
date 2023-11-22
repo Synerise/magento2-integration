@@ -15,8 +15,7 @@
                     <action method="setStatusData">
                         <argument name="header" xsi:type="string">Catalog status</argument>
                         <argument name="subHeader" xsi:type="string">Products sent</argument>
-                        <argument name="resendUrlPath" xsi:type="string">synerise/catalog/fullSchedule</argument>
-                        <argument name="resetStopIdUrlPath" xsi:type="string">synerise/catalog/resetStopId</argument>
+                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/catalog/scheduleAll</argument>
                         <argument name="table" xsi:type="string">synerise_sync_product</argument>
                         <argument name="column" xsi:type="string">COUNT(DISTINCT product_id)</argument>
                     </action>
@@ -25,8 +24,7 @@
                     <action method="setStatusData">
                         <argument name="header" xsi:type="string">Customers status</argument>
                         <argument name="subHeader" xsi:type="string">Customers sent</argument>
-                        <argument name="resendUrlPath" xsi:type="string">synerise/customer/resend</argument>
-                        <argument name="resetStopIdUrlPath" xsi:type="string">synerise/customer/resetStopId</argument>
+                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/customer/scheduleAll</argument>
                         <argument name="table" xsi:type="string">synerise_sync_customer</argument>
                         <argument name="column" xsi:type="string">COUNT(DISTINCT customer_id)</argument>
                     </action>
@@ -35,8 +33,7 @@
                     <action method="setStatusData">
                         <argument name="header" xsi:type="string">Orders status</argument>
                         <argument name="subHeader" xsi:type="string">Orders sent</argument>
-                        <argument name="resendUrlPath" xsi:type="string">synerise/order/resend</argument>
-                        <argument name="resetStopIdUrlPath" xsi:type="string">synerise/order/resetStopId</argument>
+                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/order/scheduleAll</argument>
                         <argument name="table" xsi:type="string">synerise_sync_order</argument>
                     </action>
                 </block>
@@ -44,8 +41,7 @@
                     <action method="setStatusData">
                         <argument name="header" xsi:type="string">Newsletter status</argument>
                         <argument name="subHeader" xsi:type="string">Subscribers sent</argument>
-                        <argument name="resendUrlPath" xsi:type="string">synerise/newsletter/resend</argument>
-                        <argument name="resetStopIdUrlPath" xsi:type="string">synerise/newsletter/resetStopId</argument>
+                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/newsletter/scheduleAll</argument>
                         <argument name="table" xsi:type="string">synerise_sync_subscriber</argument>
                     </action>
                 </block>

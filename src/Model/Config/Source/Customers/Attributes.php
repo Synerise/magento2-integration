@@ -7,6 +7,7 @@ use \Magento\Framework\Data\OptionSourceInterface;
 
 class Attributes implements OptionSourceInterface
 {
+    const XML_PATH_CUSTOMERS_ATTRIBUTES = 'synerise/customer/attributes';
     const REQUIRED = [
         'email',
         'entity_id',

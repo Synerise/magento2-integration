@@ -2,8 +2,7 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Model\AbstractSynchronization;
-use Synerise\Integration\Model\MessageQueue\Data\Single\Message;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Message;
 
 class Queue extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -77,6 +76,7 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
         $this->publisher->publish('synerise.queue.events', $serializedData);
     }
 
+    /** @todo: move to publisher */
     public function publishUpdate(string $model, int $storeId, int $entityId = null, $retries = 0)
     {
         $this->publisher->publish('synerise.queue.data.mixed.single', new Message($model,  $storeId,  $entityId,  $retries));
@@ -85,7 +85,7 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
     public function getEnabledStores()
     {
         $enabledStoresString = $this->scopeConfig->getValue(
-            AbstractSynchronization::XML_PATH_SYNCHRONIZATION_STORES
+            Synchronization::XML_PATH_SYNCHRONIZATION_STORES
         );
 
         return $enabledStoresString ? explode(',', $enabledStoresString) : [];

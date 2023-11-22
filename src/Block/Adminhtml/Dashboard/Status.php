@@ -15,9 +15,7 @@ class Status extends \Magento\Backend\Block\Template
 
     protected $subHeader;
 
-    protected $resendUrlPath;
-
-    protected $resetStopIdUrlPath;
+    protected $scheduleAllUrlPath;
 
     protected $table;
 
@@ -60,12 +58,11 @@ class Status extends \Magento\Backend\Block\Template
         return $this->header;
     }
 
-    public function setStatusData($header, $subHeader, $resendUrlPath, $resetStopIdUrlPath, $table = null, $column= 'COUNT(*)')
+    public function setStatusData($header, $subHeader, $scheduleAllUrlPath, $table = null, $column= 'COUNT(*)')
     {
         $this->header = $header;
         $this->subHeader = $subHeader;
-        $this->resendUrlPath = $resendUrlPath;
-        $this->resetStopIdUrlPath = $resetStopIdUrlPath;
+        $this->scheduleAllUrlPath = $scheduleAllUrlPath;
         $this->table = $table;
         $this->column = $column;
     }
@@ -116,13 +113,8 @@ class Status extends \Magento\Backend\Block\Template
         return $collection->getSize();
     }
 
-    public function getResendUrl()
+    public function getScheduleAllUrl()
     {
-        return $this->getUrl($this->resendUrlPath);
-    }
-
-    public function getResetIdUrl()
-    {
-        return $this->getUrl($this->resetStopIdUrlPath);
+        return $this->getUrl($this->scheduleAllUrlPath);
     }
 }

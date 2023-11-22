@@ -13,6 +13,7 @@ class Attributes implements OptionSourceInterface
         'image',
         'visibility'
     ];
+    const XML_PATH_PRODUCTS_ATTRIBUTES = 'synerise/product/attributes';
 
     /** @var CollectionFactory */
     private $collectionFactory;

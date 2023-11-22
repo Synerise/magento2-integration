@@ -8,6 +8,7 @@ class Connection implements \Magento\Framework\Data\OptionSourceInterface
 
     const TOPICS = [
         'synerise.queue.events',
+        'synerise.queue.data.scheduler',
         'synerise.queue.data.mixed.single',
         'synerise.queue.data.customer.batch',
         'synerise.queue.data.customer.range',

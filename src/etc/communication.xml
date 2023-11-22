@@ -1,33 +1,36 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Communication/etc/communication.xsd">
     <topic name="synerise.queue.events" is_synchronous="false" request="string">
-        <handler name="processSendEvent" type="Synerise\Integration\Model\MessageQueue\Event\Consumer" method="process" />
+        <handler name="processSendEvent" type="Synerise\Integration\Model\Synchronization\MessageQueue\Event\Consumer" method="process" />
     </topic>
-    <topic name="synerise.queue.data.mixed.single" is_synchronous="false" request="Synerise\Integration\Model\MessageQueue\Data\Single\Message">
-        <handler name="processSendUpdate" type="Synerise\Integration\Model\MessageQueue\Data\Single\Consumer" method="process" />
+    <topic name="synerise.queue.data.mixed.single" is_synchronous="false" request="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Message">
+        <handler name="processSendUpdate" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Consumer" method="process" />
+    </topic>
+    <topic name="synerise.queue.data.scheduler" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
+        <handler name="ScheduleFullSynchronization" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler\Consumer" method="process" />
     </topic>
     <topic name="synerise.queue.data.customer.batch" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendCustomerBatch" type="Synerise\Integration\Model\MessageQueue\Data\Batch\Consumer\Customer" method="process" />
+        <handler name="processSendCustomerBatch" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer\Customer" method="process" />
     </topic>
     <topic name="synerise.queue.data.customer.range" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendCustomerRange" type="Synerise\Integration\Model\MessageQueue\Data\Range\Consumer\Customer" method="process" />
+        <handler name="processSendCustomerRange" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Consumer\Customer" method="process" />
     </topic>
     <topic name="synerise.queue.data.order.batch" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendOrderBatch" type="Synerise\Integration\Model\MessageQueue\Data\Batch\Consumer\Order" method="process" />
+        <handler name="processSendOrderBatch" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer\Order" method="process" />
     </topic>
     <topic name="synerise.queue.data.order.range" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendOrderRange" type="Synerise\Integration\Model\MessageQueue\Data\Range\Consumer\Order" method="process" />
+        <handler name="processSendOrderRange" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Consumer\Order" method="process" />
     </topic>
     <topic name="synerise.queue.data.product.batch" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendProductBatch" type="Synerise\Integration\Model\MessageQueue\Data\Batch\Consumer\Product" method="process" />
+        <handler name="processSendProductBatch" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer\Product" method="process" />
     </topic>
     <topic name="synerise.queue.data.product.range" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendProductRange" type="Synerise\Integration\Model\MessageQueue\Data\Range\Consumer\Product" method="process" />
+        <handler name="processSendProductRange" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Consumer\Product" method="process" />
     </topic>
     <topic name="synerise.queue.data.subscriber.batch" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendSubscriberBatch" type="Synerise\Integration\Model\MessageQueue\Data\Batch\Consumer\Subscriber" method="process" />
+        <handler name="processSendSubscriberBatch" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer\Subscriber" method="process" />
     </topic>
     <topic name="synerise.queue.data.subscriber.range" is_synchronous="false" request="Magento\AsynchronousOperations\Api\Data\OperationInterface">
-        <handler name="processSendSubscriberRange" type="Synerise\Integration\Model\MessageQueue\Data\Range\Consumer\Subscriber" method="process" />
+        <handler name="processSendSubscriberRange" type="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Consumer\Subscriber" method="process" />
     </topic>
 </config>

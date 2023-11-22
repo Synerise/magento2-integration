@@ -559,7 +559,7 @@ class Catalog
     public function getStoresForCatalogs()
     {
         $attributes = $this->scopeConfig->getValue(
-            self::XML_PATH_PRODUCTS_STORES
+            Synchronization::XML_PATH_SYNCHRONIZATION_STORES
         );
 
         return $attributes ? explode(',', $attributes) : [];

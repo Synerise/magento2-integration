@@ -3,6 +3,7 @@
     <exchange name="magento" connection="db" type="topic">
         <binding id="processSendEvent" topic="synerise.queue.events" destination="synerise.queue.events" destinationType="queue" />
         <binding id="processSendUpdate" topic="synerise.queue.data.mixed.single" destination="synerise.queue.data.mixed.single" destinationType="queue" />
+        <binding id="dataSchedulerBinding" topic="synerise.queue.data.scheduler" destination="synerise.queue.data.scheduler" destinationType="queue" />
         <binding id="customerBatchBinding" topic="synerise.queue.data.customer.batch" destination="synerise.queue.data.customer.batch" destinationType="queue" />
         <binding id="customerRangeBinding" topic="synerise.queue.data.customer.range" destination="synerise.queue.data.customer.range" destinationType="queue" />
         <binding id="orderBatchBinding" topic="synerise.queue.data.order.batch" destination="synerise.queue.data.order.batch" destinationType="queue" />
@@ -15,6 +16,7 @@
     <exchange name="magento" connection="amqp" type="topic">
         <binding id="processSendEvent" topic="synerise.queue.events" destination="synerise.queue.events" destinationType="queue" />
         <binding id="processSendUpdate" topic="synerise.queue.data.mixed.single" destination="synerise.queue.data.mixed.single" destinationType="queue" />
+        <binding id="dataSchedulerBinding" topic="synerise.queue.data.scheduler" destination="synerise.queue.data.scheduler" destinationType="queue" />
         <binding id="customerBatchBinding" topic="synerise.queue.data.customer.batch" destination="synerise.queue.data.customer.batch" destinationType="queue" />
         <binding id="customerRangeBinding" topic="synerise.queue.data.customer.range" destination="synerise.queue.data.customer.range" destinationType="queue" />
         <binding id="orderBatchBinding" topic="synerise.queue.data.order.batch" destination="synerise.queue.data.order.batch" destinationType="queue" />
