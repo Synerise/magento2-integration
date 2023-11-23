@@ -5,7 +5,7 @@ namespace Synerise\Integration\Model\Synchronization\Provider;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Synerise\Integration\Model\Synchronization\ProviderInterface;
-use Synerise\Integration\Model\Synchronization\Sender\Order as Sender;
+use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
 
 class Subscriber implements ProviderInterface
 {

@@ -6,7 +6,7 @@ use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
@@ -41,9 +41,9 @@ class Customer implements SenderInterface
     protected $scopeConfig;
 
     /**
-     * @var AdapterInterface
+     * @var ResourceConnection
      */
-    protected $connection;
+    protected $resource;
 
     /**
      * @var LoggerInterface
@@ -58,13 +58,13 @@ class Customer implements SenderInterface
     public function __construct(
         AddressRepositoryInterface $addressRepository,
         ScopeConfigInterface $scopeConfig,
-        AdapterInterface $connection,
+        ResourceConnection $resource,
         LoggerInterface $logger,
         Api $apiHelper
     ) {
         $this->addressRepository = $addressRepository;
         $this->scopeConfig = $scopeConfig;
-        $this->connection = $connection;
+        $this->resource = $resource;
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
     }
@@ -252,8 +252,8 @@ class Customer implements SenderInterface
                 'store_id' => $storeId
             ];
         }
-        $this->connection->insertOnDuplicate(
-            $this->connection->getTableName('synerise_sync_customer'),
+        $this->resource->getConnection()->insertOnDuplicate(
+            $this->resource->getTableName('synerise_sync_customer'),
             $data
         );
     }

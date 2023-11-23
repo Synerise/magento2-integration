@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Model\Synchronization\Sender;
 
+use InvalidArgumentException;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
@@ -155,10 +156,12 @@ class Product implements SenderInterface
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
-        $attributes = $this->getAttributesToSelect($storeId);
-
         if (!$collection->getSize()) {
             return;
+        }
+
+        if (!$websiteId) {
+            throw new InvalidArgumentException('Website id required for Product');
         }
 
         $addItemRequest = [];
@@ -167,7 +170,7 @@ class Product implements SenderInterface
         /** @var $product \Magento\Catalog\Model\Product */
         foreach ($collection as $product) {
             $ids[] = $product->getEntityId();
-            $addItemRequest[] = $this->prepareItemRequest($product, $attributes, $websiteId);
+            $addItemRequest[] = $this->prepareItemRequest($product, $websiteId);
         }
 
         $this->addItemsBatchWithCatalogCheck($addItemRequest, $storeId);
@@ -234,12 +237,11 @@ class Product implements SenderInterface
 
     /**
      * @param \Magento\Catalog\Model\Product $product
-     * @param $attributes
-     * @param $websiteId
+     * @param int $websiteId
      * @return AddItem
      * @throws NoSuchEntityException
      */
-    public function prepareItemRequest(\Magento\Catalog\Model\Product $product, $attributes, $websiteId = null)
+    public function prepareItemRequest(\Magento\Catalog\Model\Product $product, int $websiteId)
     {
         $value = $this->getTypeSpecificData($product);
         $value['itemId'] = $product->getSku();

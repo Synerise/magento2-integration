@@ -45,7 +45,7 @@ class Customer implements ProviderInterface
     public function addStoreFilter($storeId)
     {
         $this->getCollection()
-            ->addFieldToFilter('main_table.store_id', ['in' => $storeId]);
+            ->addFieldToFilter('store_id', ['in' => $storeId]);
         return $this;
     }
 
@@ -103,7 +103,7 @@ class Customer implements ProviderInterface
     public function getCurrentLastId($storeId)
     {
         $collection = $this->collectionFactory->create()
-            ->addFieldToFilter('main_table.store_id', ['in' => $storeId])
+            ->addFieldToFilter('store_id', ['in' => $storeId])
             ->addFieldToSelect(Sender::ENTITY_ID)
             ->setOrder(Sender::ENTITY_ID, 'DESC')
             ->setPageSize(1);

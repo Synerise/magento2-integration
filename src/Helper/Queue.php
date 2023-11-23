@@ -9,8 +9,6 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
     const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
     const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
 
-    const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
-
     /**
      * @var \Magento\Framework\MessageQueue\PublisherInterface
      */

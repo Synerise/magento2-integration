@@ -70,7 +70,7 @@ class Consumer
         try {
             $this->eventHelper->sendEvent($eventName, $eventPayload, $storeId, $entityId);
         } catch(ApiException $e) {
-            if ($e->getCode() > 500) {
+            if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500) {
                 $retries = $deserializedData['retries'] ?? 0;
                 if ($retries < self::MAX_RETRIES) {
                     $retries++;

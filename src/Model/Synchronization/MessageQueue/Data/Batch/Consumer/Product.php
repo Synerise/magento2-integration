@@ -68,7 +68,7 @@ class Product
             $this->execute($this->serializer->unserialize($operation->getSerializedData()));
         } catch(ApiException $e) {
             $message = $e->getMessage();
-            if ($e->getCode() == 401 || $e->getCode() > 500) {
+            if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500) {
                 $status = OperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
             } else {
                 $status = OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
@@ -129,6 +129,6 @@ class Product
             ->filterByEntityIds($data['entity_ids'])
             ->getCollection();
 
-        $this->sender->sendItems($collection, $data['store_id']);
+        $this->sender->sendItems($collection, $data['store_id'], $data['website_id']);
     }
 }

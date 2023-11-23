@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
-use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
@@ -69,7 +68,7 @@ class Customer
             $this->execute($this->serializer->unserialize($operation->getSerializedData()));
         } catch(ApiException $e) {
             $message = $e->getMessage();
-            if ($e->getCode() == 401 || $e->getCode() > 500) {
+            if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500) {
                 $status = OperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
             } else {
                 $status = OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
@@ -124,7 +123,6 @@ class Customer
      */
     private function execute(array $data)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
             ->addAttributesToSelect($this->sender->getAttributesToSelect($data['store_id']))

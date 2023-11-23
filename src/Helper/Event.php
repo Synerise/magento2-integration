@@ -5,9 +5,10 @@ namespace Synerise\Integration\Helper;
 use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Model\Synchronization\Sender\Product as ProductSender;
-use Synerise\Integration\Model\Synchronization\Sender\Order as OrderSender;
 use Synerise\Integration\Model\Synchronization\Sender\Customer as CustomerSender;
+use Synerise\Integration\Model\Synchronization\Sender\Order as OrderSender;
+use Synerise\Integration\Model\Synchronization\Sender\Product as ProductSender;
+use Synerise\Integration\Model\Synchronization\Sender\Subscriber as SubscriberSender;
 use Synerise\Integration\Observer\CartAddProduct;
 use Synerise\Integration\Observer\CartQtyUpdate;
 use Synerise\Integration\Observer\CartRemoveProduct;
@@ -50,18 +51,25 @@ class Event
      */
     private $productSender;
 
+    /**
+     * @var SubscriberSender
+     */
+    private $subscriberSender;
+
     public function __construct(
         LoggerInterface $logger,
         Api $apiHelper,
         CustomerSender $customerSender,
         OrderSender $orderSender,
-        ProductSender $productSender
+        ProductSender $productSender,
+        SubscriberSender $subscriberSender
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->customerSender = $customerSender;
         $this->orderSender = $orderSender;
         $this->productSender = $productSender;
+        $this->subscriberSender = $subscriberSender;
     }
 
     /**
@@ -120,6 +128,10 @@ class Event
                     break;
                 case NewsletterSubscriberDeleteAfter::EVENT:
                 case NewsletterSubscriberSaveAfter::EVENT:
+                $this->subscriberSender->batchAddOrUpdateClients($payload, $storeId, $timeout);
+                if ($entityId) {
+                    $this->subscriberSender->markCustomersAsSent([$entityId], $storeId);
+                }
                 case 'ADD_OR_UPDATE_CLIENT':
                     $this->customerSender->batchAddOrUpdateClients($payload, $storeId, $timeout);
                     if ($entityId) {

@@ -76,8 +76,11 @@ class CatalogProductDeleteBefore implements ObserverInterface
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
                 if (in_array($storeId, $enabledCatalogStores)) {
-                    $attributes = $this->sender->getAttributesToSelect($product->getStoreId());
-                    $addItemRequest = $this->sender->prepareItemRequest($product, $attributes);
+
+                    $addItemRequest = $this->sender->prepareItemRequest(
+                        $product,
+                        $this->synchronizationHelper->getWebsiteIdByStoreId($storeId)
+                    );
                     $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
                     if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {

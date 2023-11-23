@@ -3,7 +3,7 @@
 namespace Synerise\Integration\Model\Synchronization\Sender;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Newsletter\Model\Subscriber as SubscriberModel;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
@@ -27,9 +27,9 @@ class Subscriber implements SenderInterface
     protected $scopeConfig;
 
     /**
-     * @var AdapterInterface
+     * @var ResourceConnection
      */
-    protected $connection;
+    protected $resource;
 
     /**
      * @var LoggerInterface
@@ -48,13 +48,13 @@ class Subscriber implements SenderInterface
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        AdapterInterface $connection,
+        ResourceConnection $resource,
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
         $this->scopeConfig = $scopeConfig;
-        $this->connection = $connection;
+        $this->resource = $resource;
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
@@ -135,8 +135,8 @@ class Subscriber implements SenderInterface
             ];
         }
 
-        $this->connection->insertOnDuplicate(
-            $this->connection->getTableName('synerise_sync_subscriber'),
+        $this->resource->getConnection()->insertOnDuplicate(
+            $this->resource->getConnection()->getTableName('synerise_sync_subscriber'),
             $data
         );
     }

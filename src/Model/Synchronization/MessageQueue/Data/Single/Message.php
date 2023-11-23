@@ -14,17 +14,17 @@ Class Message
     /**
      * @var int
      */
-    private $entity_id;
+    private $entityId;
 
     /**
      * @var int
      */
-    private $store_id;
+    private $storeId;
 
     /**
      * @var int
      */
-    private $website_id;
+    private $websiteId;
 
     /**
      * @var int
@@ -34,20 +34,20 @@ Class Message
 
     /**
      * @param string $model
-     * @param int $entity_id
-     * @param int $store_id
-     * @param int|null $website_id
+     * @param int $entityId
+     * @param int $storeId
+     * @param int|null $websiteId
      * @param int $retries
      */
-    public function __construct(string $model, int $entity_id, int $store_id, ?int $website_id = null, int $retries = 0)
+    public function __construct(string $model, int $entityId, int $storeId, ?int $websiteId = null, int $retries = 0)
     {
         $this->model = $model;
-        $this->entity_id = $entity_id;
-        $this->store_id = $store_id;
-        $this->website_id = $website_id;
+        $this->entityId = $entityId;
+        $this->storeId = $storeId;
+        $this->websiteId = $websiteId;
         $this->retries = $retries;
 
-        if ($model == Product::MODEL && !$website_id) {
+        if ($model == Product::MODEL && !$websiteId) {
             throw new InvalidArgumentException('Website id required for Product');
         }
     }
@@ -74,16 +74,16 @@ Class Message
      */
     public function getEntityId(): int
     {
-        return $this->entity_id;
+        return $this->entityId;
     }
 
     /**
-     * @param int $entity_id
+     * @param int $entityId
      * @return void
      */
-    public function setEntityId(int $entity_id): void
+    public function setEntityId(int $entityId): void
     {
-        $this->entity_id = $entity_id;
+        $this->entityId = $entityId;
     }
 
     /**
@@ -91,16 +91,16 @@ Class Message
      */
     public function getStoreId(): int
     {
-        return $this->store_id;
+        return $this->storeId;
     }
 
     /**
-     * @param int $store_id
+     * @param int $storeId
      * @return void
      */
-    public function setStoreId(int $store_id): void
+    public function setStoreId(int $storeId): void
     {
-        $this->store_id = $store_id;
+        $this->storeId = $storeId;
     }
 
     /**
@@ -108,16 +108,16 @@ Class Message
      */
     public function getWebsiteId(): ?int
     {
-        return $this->website_id;
+        return $this->websiteId;
     }
 
     /**
-     * @param int $website_id
+     * @param int $websiteId
      * @return void
      */
-    public function setWebsiteId(int $website_id): void
+    public function setWebsiteId(int $websiteId): void
     {
-        $this->website_id = $website_id;
+        $this->websiteId = $websiteId;
     }
 
     /**

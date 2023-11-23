@@ -63,27 +63,6 @@ class Synchronization
     }
 
     /**
-     * Filters enabled stores to return only default ones. Utilized by customer sender.
-     *
-     * @return array
-     */
-    public function getDefaultEnabledStores()
-    {
-        $allEnabledStoreIds = $this->getEnabledStores();
-        $storeIds = [];
-
-        $websites = $this->websiteCollectionFactory->create();
-        foreach($websites as $website) {
-            $storeId = $website->getDefaultStore()->getId();
-            if (in_array($storeId, $allEnabledStoreIds)) {
-                $storeIds[] = $storeId;
-            }
-        }
-
-        return $storeIds;
-    }
-
-    /**
      * @param int|null $storeId
      * @return int
      */
