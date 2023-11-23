@@ -22,11 +22,6 @@ class CustomerLogin implements ObserverInterface
     protected $apiHelper;
 
     /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -44,13 +39,11 @@ class CustomerLogin implements ObserverInterface
     public function __construct(
         Api $apiHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper,
         Queue $queueHelper,
         Event $eventHelper
     ) {
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -76,7 +69,7 @@ class CustomerLogin implements ObserverInterface
                 'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->customerHelper->prepareIdentityParams(
+                'client' => $this->trackingHelper->prepareClientDataFromCustomer(
                     $customer,
                     $this->trackingHelper->generateUuidByEmail($customer->getEmail())
                 ),

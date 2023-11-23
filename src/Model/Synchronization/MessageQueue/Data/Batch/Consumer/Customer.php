@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
-
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
@@ -128,7 +127,7 @@ class Customer
         /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
-            ->addAttributesToSelect($data['store_id'])
+            ->addAttributesToSelect($this->sender->getAttributesToSelect($data['store_id']))
             ->filterByEntityIds($data['entity_ids'])
             ->getCollection();
 

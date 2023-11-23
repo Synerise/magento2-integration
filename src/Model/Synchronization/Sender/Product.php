@@ -11,8 +11,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\Stdlib\DateTime\DateTime;
-use Magento\Framework\View\Asset\ContextInterface;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -22,9 +21,11 @@ use Synerise\CatalogsApiClient\Model\AddItem;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Catalog;
 use Synerise\Integration\Helper\Category;
+use Synerise\Integration\Helper\Image;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
+use Synerise\Integration\Model\Config\Source\Products\Attributes;
 use Synerise\Integration\Model\Synchronization\SenderInterface;
 
 class Product implements SenderInterface
@@ -34,8 +35,19 @@ class Product implements SenderInterface
 
     const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
 
+    /**
+     * @var string|string[]
+     */
+    protected $attributes = [];
+
+    /**
+     * @var array
+     */
     protected $parentData = [];
 
+    /**
+     * @var string[]
+     */
     protected $storeUrls = [];
 
     /**
@@ -64,16 +76,6 @@ class Product implements SenderInterface
     protected $configurable;
 
     /**
-     * @var ContextInterface
-     */
-    protected $assetContext;
-
-    /**
-     * @var DateTime
-     */
-    protected $dateTime;
-
-    /**
      * @var AdapterInterface
      */
     protected $connection;
@@ -99,6 +101,11 @@ class Product implements SenderInterface
     protected $categoryHelper;
 
     /**
+     * @var Image
+     */
+    protected $imageHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -108,20 +115,18 @@ class Product implements SenderInterface
      */
     protected $isProductSalable;
 
-
     public function __construct(
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
         ProductRepositoryInterface $productRepository,
         Configurable $configurable,
-        ContextInterface $assetContext,
-        DateTime $dateTime,
         ResourceConnection $resource,
         StockRegistry $stockRegistry,
         Api $apiHelper,
         Catalog $catalogHelper,
         Category $categoryHelper,
+        Image $imageHelper,
         Tracking $trackingHelper,
         ?IsProductSalableInterface $isProductSalable = null
 
@@ -131,13 +136,12 @@ class Product implements SenderInterface
         $this->storeManager = $storeManager;
         $this->productRepository = $productRepository;
         $this->configurable = $configurable;
-        $this->assetContext = $assetContext;
-        $this->dateTime = $dateTime;
         $this->connection = $resource->getConnection();
         $this->stockRegistry = $stockRegistry;
         $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->categoryHelper = $categoryHelper;
+        $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
         $this->isProductSalable = $isProductSalable;
     }
@@ -151,8 +155,7 @@ class Product implements SenderInterface
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
-        /* @todo: move to collection creation */
-        $attributes = $this->catalogHelper->getProductAttributesToSelect($storeId);
+        $attributes = $this->getAttributesToSelect($storeId);
 
         if (!$collection->getSize()) {
             return;
@@ -167,7 +170,7 @@ class Product implements SenderInterface
             $addItemRequest[] = $this->prepareItemRequest($product, $attributes, $websiteId);
         }
 
-        $this->sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId);
+        $this->addItemsBatchWithCatalogCheck($addItemRequest, $storeId);
         $this->markItemsAsSent($ids, $storeId);
     }
 
@@ -189,24 +192,25 @@ class Product implements SenderInterface
      * @param $storeId
      * @return void
      * @throws ApiException
+     * @throws ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
      */
-    public function sendItemsToSyneriseWithCatalogCheck($addItemRequest, $storeId)
+    public function addItemsBatchWithCatalogCheck($addItemRequest, $storeId)
     {
         $timeout = $this->apiHelper->getScheduledRequestTimeout($storeId);
         $catalogId = $this->catalogHelper->getOrAddCatalog($storeId, $timeout);
 
         try {
-            $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout);
+            $this->addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout);
         } catch (\Exception $e) {
             if ($e->getCode() === 404) {
                 $catalogId = $this->catalogHelper->addCatalog($storeId);
-                $this->sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout);
+                $this->addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout);
             } else {
                 throw $e;
             }
         }
     }
-
 
     /**
      * @param $catalogId
@@ -216,7 +220,7 @@ class Product implements SenderInterface
      * @return void
      * @throws ApiException
      */
-    public function sendItemsToSynerise($catalogId, $addItemRequest, $storeId, $timeout = null)
+    public function addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout = null)
     {
         list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId, $timeout)
             ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
@@ -228,14 +232,20 @@ class Product implements SenderInterface
         }
     }
 
+    /**
+     * @param \Magento\Catalog\Model\Product $product
+     * @param $attributes
+     * @param $websiteId
+     * @return AddItem
+     * @throws NoSuchEntityException
+     */
     public function prepareItemRequest(\Magento\Catalog\Model\Product $product, $attributes, $websiteId = null)
     {
         $value = $this->getTypeSpecificData($product);
         $value['itemId'] = $product->getSku();
-        $value['price'] = $product->getPrice();
         $value['deleted'] = 0;
 
-        foreach ($attributes as $attributeCode) {
+        foreach ($this->getAttributesToSelect($product->getStoreId()) as $attributeCode) {
             if ($this->isAttributeLabelEnabled()) {
                 $attributeText = $product->getAttributeText($attributeCode);
                 $productValue = $attributeText !== false ? $attributeText : $product->getData($attributeCode);
@@ -248,6 +258,7 @@ class Product implements SenderInterface
             }
         }
 
+        $value['price'] = $product->getPrice();
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 
@@ -263,7 +274,7 @@ class Product implements SenderInterface
         }
 
         if ($product->getImage()) {
-            $value['image'] = $this->getOriginalImageUrl($product->getImage());
+            $value['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
         }
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
@@ -280,6 +291,9 @@ class Product implements SenderInterface
         ]);
     }
 
+    /**
+     * @return bool
+     */
     public function isAttributeLabelEnabled()
     {
         return $this->scopeConfig->isSetFlag(
@@ -287,6 +301,37 @@ class Product implements SenderInterface
         );
     }
 
+    /**
+     * @param $storeId
+     * @return string[]
+     */
+    public function getAttributesToSelect($storeId)
+    {
+        if (!isset($this->attributes[$storeId])) {
+            $this->attributes[$storeId] = array_merge($this->getEnabledAttributes($storeId),Attributes::REQUIRED);
+        }
+        return $this->attributes[$storeId];
+    }
+
+    /**
+     * @param $storeId
+     * @return string[]
+     */
+    public function getEnabledAttributes($storeId = null)
+    {
+        $attributes = $this->scopeConfig->getValue(
+            Attributes::XML_PATH_PRODUCTS_ATTRIBUTES,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+
+        return $attributes ? explode(',', $attributes) : [];
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\Product $product
+     * @return array|mixed
+     */
     public function getTypeSpecificData(\Magento\Catalog\Model\Product $product)
     {
         if ($product->getVisibility() == Visibility::VISIBILITY_NOT_VISIBLE) {
@@ -324,6 +369,11 @@ class Product implements SenderInterface
         }
     }
 
+    /**
+     * @param $sku
+     * @param $websiteId
+     * @return \Magento\CatalogInventory\Api\Data\StockItemInterface|null
+     */
     public function getStockStatus($sku, $websiteId)
     {
         $stockData = null;
@@ -340,6 +390,11 @@ class Product implements SenderInterface
         return $stockData;
     }
 
+    /**
+     * @param $productId
+     * @param $storeId
+     * @return \Magento\Catalog\Api\Data\ProductInterface|null
+     */
     public function getProductById($productId, $storeId)
     {
         try {
@@ -354,15 +409,10 @@ class Product implements SenderInterface
     }
 
     /**
-     * Get URL to the original version of the product image.
-     *
+     * @param $storeId
      * @return string|null
+     * @throws NoSuchEntityException
      */
-    public function getOriginalImageUrl($filePath)
-    {
-        return $filePath ? $this->assetContext->getBaseUrl() . $filePath : null;
-    }
-
     public function getStoreBaseUrl($storeId)
     {
         if (!isset($this->storeUrls[$storeId])) {
@@ -376,15 +426,12 @@ class Product implements SenderInterface
      * @param int[] $ids
      * @return void
      * @param int $storeId
-     * @todo: Move to ResourceModel
      */
     protected function markItemsAsSent(array $ids, $storeId = 0)
     {
-        $timestamp = $this->dateTime->gmtDate();
         $data = [];
         foreach ($ids as $id) {
             $data[] = [
-                'synerise_updated_at' => $timestamp,
                 'product_id' => $id,
                 'store_id' => $storeId
             ];

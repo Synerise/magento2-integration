@@ -4,9 +4,6 @@ namespace Synerise\Integration\Model\Synchronization\Provider;
 
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 use Synerise\Integration\Model\Synchronization\ProviderInterface;
 use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
 
@@ -22,17 +19,10 @@ class Customer implements ProviderInterface
      */
     protected $collection;
 
-    /**
-     * @var ScopeConfigInterface
-     */
-    private $scopeConfig;
-
     public function __construct(
-        CollectionFactory $collectionFactory,
-        ScopeConfigInterface $scopeConfig
+        CollectionFactory $collectionFactory
     ) {
         $this->collectionFactory = $collectionFactory;
-        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -59,9 +49,9 @@ class Customer implements ProviderInterface
         return $this;
     }
 
-    public function addAttributesToSelect($storeId)
+    public function addAttributesToSelect($attributes)
     {
-        $this->getCollection()->addAttributeToSelect($this->getAttributesToSelect($storeId));
+        $this->getCollection()->addAttributeToSelect($attributes);
         return $this;
     }
 
@@ -108,26 +98,6 @@ class Customer implements ProviderInterface
             ->setOrder(Sender::ENTITY_ID, 'ASC')
             ->setPageSize($pageSize ?: $this->getLimit());
         return $this;
-    }
-
-    public function getAttributesToSelect($storeId = null)
-    {
-        $attributes = $this->getEnabledAttributes($storeId);
-        return array_merge(
-            $attributes,
-            Attributes::REQUIRED
-        );
-    }
-
-    public function getEnabledAttributes($storeId = null)
-    {
-        $attributes = $this->scopeConfig->getValue(
-            Attributes::XML_PATH_CUSTOMERS_ATTRIBUTES,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
-
-        return $attributes ? explode(',', $attributes) : [];
     }
 
     public function getCurrentLastId($storeId)

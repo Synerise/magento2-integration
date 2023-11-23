@@ -54,7 +54,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
         $enabledStoreIds = $this->synchronizationHelper->getEnabledStores();
         foreach ($productsByStore as $storeId => $entityIds) {
             if (in_array($storeId, $enabledStoreIds)) {
-                $this->publisher->schedule(Sender::MODEL, $storeId, $entityIds);
+                $this->publisher->schedule(Sender::MODEL, $entityIds, $storeId);
             }
         }
     }

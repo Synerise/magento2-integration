@@ -17,9 +17,9 @@ class CartAddProduct implements ObserverInterface
     protected $apiHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Catalog
+     * @var \Synerise\Integration\Helper\Cart
      */
-    protected $catalogHelper;
+    protected $cartHelper;
 
     /**
      * @var \Synerise\Integration\Helper\Tracking
@@ -38,13 +38,13 @@ class CartAddProduct implements ObserverInterface
 
     public function __construct(
         \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
+        \Synerise\Integration\Helper\Cart $cartHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
         \Synerise\Integration\Helper\Event $eventsHelper
     ) {
         $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
+        $this->cartHelper = $cartHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventsHelper = $eventsHelper;
@@ -75,7 +75,7 @@ class CartAddProduct implements ObserverInterface
             }
 
             $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
-            $params = $this->catalogHelper->prepareParamsFromQuoteProduct($product);
+            $params = $this->cartHelper->prepareParamsFromQuoteProduct($product);
 
             $params["source"] = $this->trackingHelper->getSource();
             $params["applicationName"] = $this->trackingHelper->getApplicationName();

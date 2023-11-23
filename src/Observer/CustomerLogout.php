@@ -7,7 +7,6 @@ use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
@@ -20,11 +19,6 @@ class CustomerLogout implements ObserverInterface
      * @var Api
      */
     protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
 
     /**
      * @var Tracking
@@ -44,13 +38,11 @@ class CustomerLogout implements ObserverInterface
     public function __construct(
         Api $apiHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper,
         Queue $queueHelper,
         Event $eventHelper
     ) {
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -73,7 +65,7 @@ class CustomerLogout implements ObserverInterface
                 'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->customerHelper->prepareIdentityParams(
+                'client' => $this->trackingHelper->prepareClientDataFromCustomer(
                     $customer,
                     $this->trackingHelper->generateUuidByEmail($customer->getEmail())
                 ),

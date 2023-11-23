@@ -30,16 +30,23 @@ class CartQtyUpdate implements ObserverInterface
      */
     protected $eventHelper;
 
+    /**
+     * @var \Synerise\Integration\Helper\Cart
+     */
+    protected $cartHelper;
+
     public function __construct(
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        \Synerise\Integration\Helper\Event $eventHelper,
+        \Synerise\Integration\Helper\Cart $cartHelper
     ) {
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
+        $this->cartHelper = $cartHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -65,7 +72,7 @@ class CartQtyUpdate implements ObserverInterface
 
             if (!$this->trackingHelper->hasItemDataChanges($quote)) {
                 // quote save won't be triggered, send event.
-                $cartStatusEvent = $this->eventHelper->prepareCartStatusEvent(
+                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
                     $quote,
                     (float) $quote->getSubtotal(),
                     (int) $quote->getItemsQty()

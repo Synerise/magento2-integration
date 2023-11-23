@@ -5,46 +5,59 @@ namespace Synerise\Integration\Observer;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Helper\Api;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
 class CatalogProductDeleteBefore implements ObserverInterface
 {
     const EVENT = 'catalog_product_delete_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var Sender
+     */
+    protected $sender;
+
+    /**
+     * @var Api
      */
     protected $apiHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Catalog
+     * @var Synchronization
      */
-    protected $catalogHelper;
+    protected $synchronizationHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var Queue
      */
     protected $queueHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var Event
      */
     protected $eventHelper;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        Sender $sender,
+        Api $apiHelper,
+        Tracking $trackingHelper,
+        Synchronization $synchronizationHelper,
+        Queue $queueHelper,
+        Event $eventHelper
     ) {
+        $this->sender = $sender;
         $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -59,12 +72,12 @@ class CatalogProductDeleteBefore implements ObserverInterface
         $product = $observer->getEvent()->getProduct();
 
         try {
-            $enabledCatalogStores = $this->catalogHelper->getStoresForCatalogs();
+            $enabledCatalogStores = $this->synchronizationHelper->getEnabledStores();
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
                 if (in_array($storeId, $enabledCatalogStores)) {
-                    $attributes = $this->catalogHelper->getProductAttributesToSelect($product->getStoreId());
-                    $addItemRequest = $this->catalogHelper->prepareItemRequest($product, $attributes);
+                    $attributes = $this->sender->getAttributesToSelect($product->getStoreId());
+                    $addItemRequest = $this->sender->prepareItemRequest($product, $attributes);
                     $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
                     if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {

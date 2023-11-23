@@ -124,10 +124,9 @@ class Customer
      */
     private function execute(array $data)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
-            ->addAttributesToSelect($data['store_id'])
+            ->addAttributesToSelect($this->sender->getAttributesToSelect($data['store_id']))
             ->filterByEntityRange($data['gt'], $data['le'])
             ->getCollection();
 

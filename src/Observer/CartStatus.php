@@ -31,6 +31,11 @@ class CartStatus implements ObserverInterface
     protected $eventHelper;
 
     /**
+     * @var \Synerise\Integration\Helper\Cart
+     */
+    protected $cartHelper;
+
+    /**
      * @var CustomeventRequestParams
      */
     protected $previousParams = null;
@@ -39,12 +44,14 @@ class CartStatus implements ObserverInterface
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        \Synerise\Integration\Helper\Event $eventHelper,
+        \Synerise\Integration\Helper\Cart $cartHelper
     ) {
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
+        $this->cartHelper = $cartHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -69,9 +76,9 @@ class CartStatus implements ObserverInterface
             $cartStatusEvent = null;
 
             if ($this->trackingHelper->hasItemDataChanges($quote)) {
-                $cartStatusEvent = $this->eventHelper->prepareCartStatusEvent($quote, (float) $quote->getSubtotal(), (int) $quote->getItemsQty());
+                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, (float) $quote->getSubtotal(), (int) $quote->getItemsQty());
             } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
-                $cartStatusEvent = $this->eventHelper->prepareCartStatusEvent($quote, 0, 0);
+                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, 0, 0);
             }
 
             if ($cartStatusEvent) {

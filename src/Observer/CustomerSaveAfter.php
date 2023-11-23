@@ -5,14 +5,13 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
+use Synerise\Integration\Model\Synchronization\Sender\Customer;
 
 class CustomerSaveAfter implements ObserverInterface
 {
@@ -23,14 +22,9 @@ class CustomerSaveAfter implements ObserverInterface
     ];
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Customer
      */
-    protected $customerHelper;
+    protected $sender;
 
     /**
      * @var Tracking
@@ -43,7 +37,7 @@ class CustomerSaveAfter implements ObserverInterface
     private $request;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
     protected $queueHelper;
 
@@ -52,18 +46,23 @@ class CustomerSaveAfter implements ObserverInterface
      */
     protected $eventHelper;
 
+    /**
+     * @var Publisher
+     */
+    protected $publisher;
+
     public function __construct(
-        Api $apiHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper,
+        Customer $sender,
         Http $request,
+        Publisher $publisher,
         Queue $queueHelper,
         Event $eventHelper
     ) {
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
+        $this->sender = $sender;
         $this->request = $request;
+        $this->publisher = $publisher;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -81,8 +80,7 @@ class CustomerSaveAfter implements ObserverInterface
         try {
             $customer = $observer->getCustomer();
             $storeId = $customer->getStoreId();
-            $customerParams = $this->customerHelper->preapreAdditionalParams($customer);
-            $createClientInCRMRequest = new CreateaClientinCRMRequest($customerParams);
+            $createClientInCRMRequest = new CreateaClientinCRMRequest($this->sender->preapreParams($customer));
 
             if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
                 $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
@@ -99,10 +97,10 @@ class CustomerSaveAfter implements ObserverInterface
 
     protected function addItemToQueue(\Magento\Customer\Model\Customer $customer)
     {
-        $this->queueHelper->publishUpdate(
+        $this->publisher->publish(
             'customer',
-            $customer->getStoreId(),
-            $customer->getId()
+            (int) $customer->getId(),
+            $customer->getStoreId()
         );
     }
 }

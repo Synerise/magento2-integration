@@ -13,7 +13,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Publisher;
 use Synerise\Integration\Model\Synchronization\ProviderFactory;
-
+use Synerise\Integration\Model\Synchronization\Sender\Product;
 
 class Consumer
 {
@@ -167,7 +167,7 @@ class Consumer
             $data['model'],
             $ranges,
             $data['store_id'],
-            $this->synchronization->getWebsiteIdByStoreId($data['store_id'])
+            Product::MODEL ? $this->synchronization->getWebsiteIdByStoreId($data['store_id']): null
         );
     }
 }

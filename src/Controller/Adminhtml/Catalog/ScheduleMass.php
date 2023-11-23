@@ -81,7 +81,12 @@ class ScheduleMass extends Action
                 $collection->addStoreFilter($enabledStoreId);
                 $ids = $collection->getAllIds();
                 if (!empty($ids)) {
-                    $this->publisher->schedule(Sender::MODEL, $enabledStoreId, $collection->getAllIds());
+                    $this->publisher->schedule(
+                        Sender::MODEL,
+                        $collection->getAllIds(),
+                        $enabledStoreId,
+                        $this->synchronizationHelper->getWebsiteIdByStoreId($enabledStoreId)
+                    );
                     $storeIds[] = $enabledStoreId;
                     $itemsCount += $collection->getSize();
                 }
@@ -90,8 +95,9 @@ class ScheduleMass extends Action
             if (!empty($storeIds)) {
                 $this->messageManager->addSuccessMessage(
                     __(
-                        'A total of %1 product(s) have been added to synchronization queue for stores: %2',
+                        'A total of %1 %2(s) have been added to synchronization queue for stores: %3',
                         $itemsCount,
+                        Sender::MODEL,
                         implode(',',$storeIds)
                     )
                 );

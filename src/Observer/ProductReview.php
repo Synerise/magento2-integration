@@ -10,7 +10,6 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\DataStorage;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
@@ -46,11 +45,6 @@ class ProductReview implements ObserverInterface
     protected $apiHelper;
 
     /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -75,7 +69,6 @@ class ProductReview implements ObserverInterface
         VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
         Api $apiHelper,
-        Customer $customerHelper,
         Tracking $trackingHelper,
         Queue $queueHelper,
         Event $eventHelper
@@ -84,7 +77,6 @@ class ProductReview implements ObserverInterface
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
         $this->apiHelper = $apiHelper;
-        $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;

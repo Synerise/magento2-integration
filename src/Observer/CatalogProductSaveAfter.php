@@ -58,11 +58,12 @@ class CatalogProductSaveAfter implements ObserverInterface
         $storeIds = $product->getStoreIds();
         foreach ($storeIds as $storeId) {
             if (in_array($storeId, $enabledStores)) {
+
                 $this->publisher->publish(
                     Sender::MODEL,
-                    $product->getEntityId(),
-                    $product->getStoreId(),
-                    $this->synchronizationHelper->getWebsiteIdByStoreId($product->getStoreId())
+                    (int) $product->getEntityId(),
+                    (int) $storeId,
+                    $this->synchronizationHelper->getWebsiteIdByStoreId($storeId)
                 );
             }
         }

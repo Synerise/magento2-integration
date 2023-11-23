@@ -1,6 +1,9 @@
 <?php
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single;
 
+use InvalidArgumentException;
+use Synerise\Integration\Model\Synchronization\Sender\Product;
+
 Class Message
 {
     /**
@@ -43,6 +46,10 @@ Class Message
         $this->store_id = $store_id;
         $this->website_id = $website_id;
         $this->retries = $retries;
+
+        if ($model == Product::MODEL && !$website_id) {
+            throw new InvalidArgumentException('Website id required for Product');
+        }
     }
 
     /**

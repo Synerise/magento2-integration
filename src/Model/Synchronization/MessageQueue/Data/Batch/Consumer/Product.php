@@ -2,8 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
-
-use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
@@ -125,10 +123,9 @@ class Product
      */
     private function execute(array $data)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
-            ->addAttributesToSelect($data['store_id'])
+            ->addAttributesToSelect($this->sender->getAttributesToSelect($data['store_id']))
             ->filterByEntityIds($data['entity_ids'])
             ->getCollection();
 

@@ -18,8 +18,8 @@ class Publisher
 
     const TOPIC_NAME = 'synerise.queue.data.mixed.single';
 
-    public function publish(string $model, int $storeId, int $entityId, $retries = 0)
+    public function publish(string $model, int $entityId, int $storeId, ?int $websiteId = null, ?int $retries = 0)
     {
-        $this->publisher->publish(self::TOPIC_NAME, new Message($model,  $storeId,  $entityId,  $retries));
+        $this->publisher->publish(self::TOPIC_NAME, new Message($model, $entityId, $storeId, $websiteId, $retries));
     }
 }

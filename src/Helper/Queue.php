@@ -76,12 +76,6 @@ class Queue extends \Magento\Framework\App\Helper\AbstractHelper
         $this->publisher->publish('synerise.queue.events', $serializedData);
     }
 
-    /** @todo: move to publisher */
-    public function publishUpdate(string $model, int $storeId, int $entityId = null, $retries = 0)
-    {
-        $this->publisher->publish('synerise.queue.data.mixed.single', new Message($model,  $storeId,  $entityId,  $retries));
-    }
-
     public function getEnabledStores()
     {
         $enabledStoresString = $this->scopeConfig->getValue(

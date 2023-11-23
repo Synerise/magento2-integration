@@ -49,10 +49,9 @@ class Customer implements ConsumerInterface
 
     private function execute(Message $message)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($message->getStoreId())
-            ->addAttributesToSelect($message->getStoreId())
+            ->addAttributesToSelect($this->sender->getAttributesToSelect($message->getStoreId()))
             ->filterByEntityId($message->getEntityId())
             ->getCollection();
 

@@ -5,45 +5,50 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\EventClientAction;
+use Synerise\Integration\Helper\Category;
+use Synerise\Integration\Helper\Event;
+use Synerise\Integration\Helper\Image;
+use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Tracking;
 
 class WishlistAddProduct implements ObserverInterface
 {
     const EVENT = 'wishlist_add_product';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Catalog
+     * @var Category
      */
-    protected $catalogHelper;
+    protected $categoryHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var Image
+     */
+    protected $imageHelper;
+
+    /**
+     * @var Queue
      */
     protected $queueHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var Event
      */
     protected $eventHelper;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        Category $categoryHelper,
+        Image $imageHelper,
+        Tracking $trackingHelper,
+        Queue $queueHelper,
+        Event $eventHelper
     ) {
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
+        $this->categoryHelper = $categoryHelper;
+        $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
@@ -78,11 +83,11 @@ class WishlistAddProduct implements ObserverInterface
             if ($categoryIds) {
                 $params['categories'] = [];
                 foreach ($categoryIds as $categoryId) {
-                    $params['categories'][] = $this->catalogHelper->getFormattedCategoryPath($categoryId);
+                    $params['categories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
                 }
 
                 if ($product->getCategoryId()) {
-                    $category = $this->catalogHelper->getFormattedCategoryPath($product->getCategoryId());
+                    $category = $this->categoryHelper->getFormattedCategoryPath($product->getCategoryId());
                     if ($category) {
                         $params['category'] = $category;
                     }
@@ -90,7 +95,7 @@ class WishlistAddProduct implements ObserverInterface
             }
 
             if ($product->getImage()) {
-                $params['image'] = $this->catalogHelper->getOriginalImageUrl($product->getImage());
+                $params['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
             }
 
             $source = $this->trackingHelper->getSource();

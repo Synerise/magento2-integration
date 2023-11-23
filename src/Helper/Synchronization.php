@@ -52,7 +52,6 @@ class Synchronization
         return $enabledStoresString ? explode(',', $enabledStoresString) : [];
     }
 
-
     /**
      * @param int $storeId
      * @return int
@@ -62,7 +61,6 @@ class Synchronization
     {
         return $this->storeManager->getStore($storeId)->getWebsiteId();
     }
-
 
     /**
      * Filters enabled stores to return only default ones. Utilized by customer sender.

@@ -4,22 +4,27 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
+use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var Customer
+     * @var Publisher
      */
-    protected $customerHelper;
+    protected $publisher;
+
+    /**
+     * @var Sender
+     */
+    protected $sender;
 
     /**
      * @var Tracking
@@ -37,12 +42,14 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        Customer $customerHelper,
+        Publisher $publisher,
+        Sender $sender,
         Tracking $trackingHelper,
         Queue $queueHelper,
         Event $eventHelper
     ) {
-        $this->customerHelper = $customerHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
@@ -66,7 +73,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
                 $this->trackingHelper->manageClientUuid($subscriber->getEmail());
             }
 
-            $createAClientInCrmRequest = $this->customerHelper->prepareRequestFromSubscription($subscriber);
+            $createAClientInCrmRequest = $this->sender->prepareRequestFromSubscription($subscriber);
 
             if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
                 $this->queueHelper->publishEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
@@ -86,10 +93,10 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      */
     protected function addItemToQueue($subscriber)
     {
-        $this->queueHelper->publishUpdate(
+        $this->publisher->publish(
             'subscriber',
-            $subscriber->getStoreId(),
-            $subscriber->getId()
+            $subscriber->getId(),
+            $subscriber->getStoreId()
         );
     }
 }

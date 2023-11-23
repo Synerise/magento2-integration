@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch;
 
-
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
 use Magento\Authorization\Model\UserContextInterface;
@@ -56,8 +55,9 @@ class Publisher
 
     public function schedule(
         $model,
-        $storeId,
         $entityIds,
+        $storeId,
+        $websiteId = null,
         int $bulkSize = 100
     )
     {
@@ -67,10 +67,11 @@ class Publisher
         $operations = [];
         foreach ($entityIdsChunks as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
+                $bulkUuid,
                 sprintf(self::TOPIC_FORMAT, $model),
-                $storeId,
                 $entityIdsChunk,
-                $bulkUuid
+                $storeId,
+                $websiteId
             );
         }
 
@@ -92,22 +93,24 @@ class Publisher
     /**
      * Make asynchronous operation
      *
-     * @param string $topicName
-     * @param int $storeId
-     * @param int[] $entityIds
      * @param string $bulkUuid
-     *
+     * @param string $topicName
+     * @param int[] $entityIds
+     * @param int $storeId
+     * @param int|null $websiteId
      * @return OperationInterface
      */
     private function makeOperation(
+        string $bulkUuid,
         string $topicName,
-        int $storeId,
         array $entityIds,
-        string $bulkUuid
+        int $storeId,
+        ?int $websiteId = null
     ): OperationInterface {
         $dataToEncode = [
             'entity_ids' => $entityIds,
             'store_id' => $storeId,
+            'website_id' => $websiteId
         ];
 
         $operation = [

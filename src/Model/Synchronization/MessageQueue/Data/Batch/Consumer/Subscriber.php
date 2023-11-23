@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
-
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;

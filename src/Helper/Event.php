@@ -5,7 +5,9 @@ namespace Synerise\Integration\Helper;
 use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CustomeventRequest;
+use Synerise\Integration\Model\Synchronization\Sender\Product as ProductSender;
+use Synerise\Integration\Model\Synchronization\Sender\Order as OrderSender;
+use Synerise\Integration\Model\Synchronization\Sender\Customer as CustomerSender;
 use Synerise\Integration\Observer\CartAddProduct;
 use Synerise\Integration\Observer\CartQtyUpdate;
 use Synerise\Integration\Observer\CartRemoveProduct;
@@ -23,6 +25,10 @@ use Synerise\Integration\Observer\WishlistRemoveProduct;
 
 class Event
 {
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * @var Api
@@ -30,44 +36,32 @@ class Event
     private $apiHelper;
 
     /**
-     * @var Tracking
+     * @var CustomerSender
      */
-    private $trackingHelper;
+    private $customerSender;
 
     /**
-     * @var Catalog
+     * @var OrderSender
      */
-    private $catalogHelper;
+    private $orderSender;
 
     /**
-     * @var Customer
+     * @var ProductSender
      */
-    private $customerHelper;
-
-    /**
-     * @var Order
-     */
-    private $orderHelper;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private $productSender;
 
     public function __construct(
         LoggerInterface $logger,
         Api $apiHelper,
-        Tracking $trackingHelper,
-        Catalog $catalogHelper,
-        Customer $customerHelper,
-        Order $orderHelper
+        CustomerSender $customerSender,
+        OrderSender $orderSender,
+        ProductSender $productSender
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
-        $this->trackingHelper = $trackingHelper;
-        $this->catalogHelper = $catalogHelper;
-        $this->customerHelper = $customerHelper;
-        $this->orderHelper = $orderHelper;
+        $this->customerSender = $customerSender;
+        $this->orderSender = $orderSender;
+        $this->productSender = $productSender;
     }
 
     /**
@@ -79,13 +73,15 @@ class Event
      * @return void
      * @throws ApiException
      * @throws ValidatorException
+     * @throws \Synerise\CatalogsApiClient\ApiException
      */
     public function sendEvent($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
     {
         try {
+            $timeout = $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId);
             $apiInstance = $this->apiHelper->getDefaultApiInstance(
                 $storeId,
-                $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId)
+                $timeout
             );
 
             switch ($event_name) {
@@ -111,13 +107,13 @@ class Event
                     $apiInstance->clientLoggedOut('4.4', $payload);
                     break;
                 case OrderPlace::EVENT:
-                    $apiInstance->createATransaction('4.4', $payload);
+                    $this->orderSender->createATransaction($payload, $storeId, $timeout);
                     if ($entityId) {
-                        $this->orderHelper->markItemsAsSent([$entityId]);
+                        $this->orderSender->markItemsAsSent([$entityId]);
                     }
                     break;
                 case CatalogProductDeleteBefore::EVENT:
-                    $this->catalogHelper->sendItemsToSyneriseWithCatalogCheck($payload, $storeId);
+                    $this->productSender->addItemsBatchWithCatalogCheck($payload, $storeId);
                     break;
                 case WishlistAddProduct::EVENT:
                     $apiInstance->clientAddedProductToFavorites('4.4', $payload);
@@ -125,42 +121,14 @@ class Event
                 case NewsletterSubscriberDeleteAfter::EVENT:
                 case NewsletterSubscriberSaveAfter::EVENT:
                 case 'ADD_OR_UPDATE_CLIENT':
-                    list($body, $statusCode, $headers) = $apiInstance->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', [ $payload ]);
-                    if ($statusCode != 202) {
-                        $this->logger->error('Client update failed', ['api_response_body' => $body]);
-                    } elseif ($entityId) {
-                        $this->customerHelper->markCustomersAsSent([$entityId], $storeId);
+                    $this->customerSender->batchAddOrUpdateClients($payload, $storeId, $timeout);
+                    if ($entityId) {
+                        $this->customerSender->markCustomersAsSent([$entityId], $storeId);
                     }
             }
         } catch (\Synerise\ApiClient\ApiException $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
             throw $e;
         }
-    }
-
-    public function prepareCartStatusEvent(\Magento\Quote\Model\Quote $quote, $totalAmount, $totalQuantity): CustomeventRequest
-    {
-        $params = [
-            'source' => $this->trackingHelper->getSource(),
-            'applicationName' => $this->trackingHelper->getApplicationName(),
-            'storeId' => $this->trackingHelper->getStoreId(),
-            'storeUrl' => $this->trackingHelper->getStoreBaseUrl(),
-            'products' => $this->catalogHelper->prepareProductsFromQuote($quote),
-            'totalAmount' => $totalAmount,
-            'totalQuantity' => $totalQuantity
-        ];
-
-        if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
-            $params['snrs_params'] = $this->trackingHelper->getCookieParams();
-        }
-
-        return new CustomeventRequest([
-            'event_salt' => $this->trackingHelper->generateEventSalt(),
-            'time' => $this->trackingHelper->getCurrentTime(),
-            'action' => 'cart.status',
-            'label' => 'CartStatus',
-            'client' => $this->trackingHelper->prepareClientDataFromQuote($quote),
-            'params' => $params
-        ]);
     }
 }

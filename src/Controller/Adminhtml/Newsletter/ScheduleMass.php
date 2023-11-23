@@ -81,7 +81,7 @@ class ScheduleMass extends Action
                 $collection->addStoreFilter($enabledStoreId);
                 $ids = $collection->getAllIds();
                 if (!empty($ids)) {
-                    $this->publisher->schedule(Sender::MODEL, $enabledStoreId, $collection->getAllIds());
+                    $this->publisher->schedule(Sender::MODEL, $collection->getAllIds(), $enabledStoreId);
                     $storeIds[] = $enabledStoreId;
                     $itemsCount += $collection->getSize();
                 }

@@ -57,7 +57,7 @@ class Publisher
         string $model,
         array $ranges,
         int $storeId,
-        int $websiteId
+        ?int $websiteId
     )
     {
         $bulkUuid = $this->identityService->generateId();
@@ -96,7 +96,7 @@ class Publisher
      *
      * @param string $topicName
      * @param int $storeId
-     * @param int $websiteId
+     * @param int|null $websiteId
      * @param int $gt
      * @param int $le
      * @param string $bulkUuid

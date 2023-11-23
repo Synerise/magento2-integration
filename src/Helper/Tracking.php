@@ -10,7 +10,6 @@ use Mobile_Detect;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\Model\Client;
-use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 
 class Tracking
@@ -391,6 +390,20 @@ class Tracking
         }
 
         return \Synerise\Integration\Model\Config\Source\EventTracking\Events::OPTIONS[$event];
+    }
+
+    /**
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
+     * @param null|string $uuid
+     * @return array
+     */
+    public function prepareClientDataFromCustomer($customer, $uuid = null)
+    {
+        return [
+            'email' => $customer->getEmail(),
+            'customId' => $customer->getId(),
+            'uuid' => $uuid
+        ];
     }
 
     /**

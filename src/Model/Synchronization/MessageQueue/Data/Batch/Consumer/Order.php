@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
-
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
@@ -125,7 +124,6 @@ class Order
      */
     private function execute(array $data)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
             ->filterByEntityIds($data['entity_ids'])

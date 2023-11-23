@@ -4,29 +4,28 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Order;
 use Synerise\Integration\Helper\Queue;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
+use Synerise\Integration\Model\Synchronization\Sender\Order;
 
 class OrderPlace implements ObserverInterface
 {
     const EVENT = 'sales_order_place_after';
 
     /**
-     * @var Api
+     * @var Publisher
      */
-    protected $apiHelper;
+    protected $publisher;
 
     /**
      * @var Order
      */
-    protected $orderHelper;
+    protected $sender;
 
     /**
      * @var Tracking
@@ -44,15 +43,15 @@ class OrderPlace implements ObserverInterface
     protected $eventHelper;
 
     public function __construct(
-        Api $apiHelper,
+        Publisher $publisher,
         Tracking $trackingHelper,
-        Order $orderHelper,
+        Order $sender,
         Queue $queueHelper,
         Event $eventHelper
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->publisher = $publisher;
         $this->trackingHelper = $trackingHelper;
-        $this->orderHelper = $orderHelper;
+        $this->sender = $sender;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
     }
@@ -70,7 +69,7 @@ class OrderPlace implements ObserverInterface
 
             $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
 
-            $params = $this->orderHelper->preapreOrderParams(
+            $params = $this->sender->preapreOrderParams(
                 $order,
                 $this->trackingHelper->generateUuidByEmail($order->getCustomerEmail())
             );
@@ -120,10 +119,10 @@ class OrderPlace implements ObserverInterface
 
     protected function addItemToQueue(\Magento\Sales\Model\Order $order)
     {
-        $this->queueHelper->publishUpdate(
+        $this->publisher->publish(
             'order',
-            $order->getStoreId(),
-            $order->getId()
+            $order->getId(),
+            $order->getStoreId()
         );
     }
 }
