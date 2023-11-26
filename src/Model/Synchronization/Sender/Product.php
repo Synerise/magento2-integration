@@ -148,11 +148,14 @@ class Product implements SenderInterface
     }
 
     /**
-     * @param Collection $collection
+     * @param $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return void
-     * @throws \Exception
+     * @throws ApiException
+     * @throws NoSuchEntityException
+     * @throws ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
@@ -205,7 +208,7 @@ class Product implements SenderInterface
 
         try {
             $this->addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout);
-        } catch (\Exception $e) {
+        } catch (ApiException $e) {
             if ($e->getCode() === 404) {
                 $catalogId = $this->catalogHelper->addCatalog($storeId);
                 $this->addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout);
@@ -426,8 +429,8 @@ class Product implements SenderInterface
 
     /**
      * @param int[] $ids
-     * @return void
      * @param int $storeId
+     * @return void
      */
     protected function markItemsAsSent(array $ids, $storeId = 0)
     {

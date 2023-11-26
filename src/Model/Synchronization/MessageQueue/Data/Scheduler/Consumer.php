@@ -154,7 +154,7 @@ class Consumer
                 break;
             }
 
-            $le = end($ids);
+            $le = (int) end($ids);
             $ranges[] = [
                 'gt' => $gt,
                 'le' => $le
@@ -167,7 +167,7 @@ class Consumer
             $data['model'],
             $ranges,
             $data['store_id'],
-            Product::MODEL ? $this->synchronization->getWebsiteIdByStoreId($data['store_id']): null
+            $data['model'] == Product::MODEL ? $this->synchronization->getWebsiteIdByStoreId($data['store_id']): null
         );
     }
 }

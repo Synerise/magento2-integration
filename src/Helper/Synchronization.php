@@ -4,8 +4,9 @@ namespace Synerise\Integration\Helper;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Synerise\Integration\Model\Config\Source\Synchronization\Model;
 
 class Synchronization
 {
@@ -18,38 +19,62 @@ class Synchronization
     /**
      * @var ScopeConfigInterface
      */
-    private $scopeConfig;
-
-    /**
-     * @var WebsiteCollectionFactory
-     */
-    private $websiteCollectionFactory;
+    protected $scopeConfig;
 
     /**
      * @var StoreManagerInterface
      */
-    private $storeManager;
+    protected $storeManager;
+
+    /**
+     * @var string[]
+     */
+    protected $enabledModels;
+
+    /**
+     * @var string[]
+     */
+    protected $enabledStores;
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        WebsiteCollectionFactory $websiteCollectionFactory,
         StoreManagerInterface $storeManager
     ) {
         $this->scopeConfig = $scopeConfig;
-        $this->websiteCollectionFactory = $websiteCollectionFactory;
         $this->storeManager = $storeManager;
+
+        $enabledModels = $this->scopeConfig->getValue(self::XML_PATH_SYNCHRONIZATION_MODELS);
+        $this->enabledModels = !empty($enabledModels) ? explode(',', $enabledModels) : [];
+
+        $enabledStores = $this->scopeConfig->getValue(self::XML_PATH_SYNCHRONIZATION_STORES);
+        $this->enabledStores = !empty($enabledStores) ? explode(',', $enabledStores) : [];
     }
 
     /**
-     * @return array
+     * @param string $model
+     * @return bool
+     */
+    public function isEnabledModel(string $model) {
+        if (!isset(Model::OPTIONS[$model])) {
+            throw new \InvalidArgumentException($model . ' is not a valid data model');
+        }
+        return isset($this->enabledModels[$model]);
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getEnabledModels()
+    {
+        return $this->enabledModels;
+    }
+
+    /**
+     * @return string[]
      */
     public function getEnabledStores()
     {
-        $enabledStoresString = $this->scopeConfig->getValue(
-            self::XML_PATH_SYNCHRONIZATION_STORES
-        );
-
-        return $enabledStoresString ? explode(',', $enabledStoresString) : [];
+        return $this->enabledStores;
     }
 
     /**
@@ -70,7 +95,7 @@ class Synchronization
     {
         return (int) $this->scopeConfig->getValue(
             self::XML_PATH_CRON_STATUS_PAGE_SIZE,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORE,
             $storeId
         );
     }

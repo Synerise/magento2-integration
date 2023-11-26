@@ -120,17 +120,18 @@ class Product
      * @param array $data
      * @return void
      * @throws ApiException
-     * @throws \Exception
+     * @throws NoSuchEntityException
+     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws \Synerise\CatalogsApiClient\ApiException
      */
     private function execute(array $data)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
             ->addAttributesToSelect($data['store_id'])
             ->filterByEntityRange($data['gt'], $data['le'])
             ->getCollection();
 
-        $this->sender->sendItems($collection, $data['store_id']);
+        $this->sender->sendItems($collection, $data['store_id'], $data['website_id']);
     }
 }

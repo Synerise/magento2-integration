@@ -55,23 +55,29 @@ class ScheduleAll extends Action implements HttpGetActionInterface
      */
     public function execute()
     {
-        $storeIds = [];
-        foreach ($this->synchronization->getEnabledStores() as $storeId)
-        {
-            /** @var Collection $collection */
-            $collection = $this->provider->createCollection()
-                ->addStoreFilter($storeId)
-                ->getCollection();
+        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
 
-            if ($collection->getSize()) {
-                $storeIds[] = $storeId;
+            $storeIds = [];
+            foreach ($this->synchronization->getEnabledStores() as $storeId)
+            {
+                $collection = $this->provider->createCollection()
+                    ->addStoreFilter($storeId)
+                    ->getCollection();
+
+                if ($collection->getSize()) {
+                    $storeIds[] = $storeId;
+                }
             }
-        }
 
-        if (!empty($storeIds)) {
-            $this->publisher->schedule(
-                Sender::MODEL,
-                $storeIds
+            if (!empty($storeIds)) {
+                $this->publisher->schedule(
+                    Sender::MODEL,
+                    $storeIds
+                );
+            }
+        } else {
+            $this->messageManager->addErrorMessage(
+            __('Nothing to synchronize. %1s are excluded from synchronization.', Sender::MODEL)
             );
         }
 

@@ -37,6 +37,10 @@ class Product implements ConsumerInterface
         $this->sender = $sender;
     }
 
+    /**
+     * @param Message $message
+     * @return void
+     */
     public function process(Message $message)
     {
         try {
@@ -47,9 +51,16 @@ class Product implements ConsumerInterface
         }
     }
 
+    /**
+     * @param Message $message
+     * @return void
+     * @throws ApiException
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws \Synerise\CatalogsApiClient\ApiException
+     */
     private function execute(Message $message)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($message->getStoreId())
             ->addAttributesToSelect($message->getStoreId())

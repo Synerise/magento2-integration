@@ -43,7 +43,7 @@ class ScheduleMass extends Action
     /**
      * @var Synchronization
      */
-    private $synchronizationHelper;
+    private $synchronization;
 
     public function __construct(
         Context $context,
@@ -51,13 +51,13 @@ class ScheduleMass extends Action
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,
-        Synchronization $synchronizationHelper
+        Synchronization $synchronization
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
         $this->publisher = $publisher;
-        $this->synchronizationHelper = $synchronizationHelper;
+        $this->synchronization = $synchronization;
 
         parent::__construct($context);
     }
@@ -70,43 +70,49 @@ class ScheduleMass extends Action
      */
     public function execute()
     {
-        $storeIds = [];
-        $itemsCount = 0;
-        $enabledStoreIds = $this->synchronizationHelper->getEnabledStores();
-        /** @var Collection $collection */
-        $collection = $this->filter->getCollection($this->collectionFactory->create());
+        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
+            $storeIds = [];
+            $itemsCount = 0;
+            $enabledStoreIds = $this->synchronization->getEnabledStores();
+            $collection = $this->filter->getCollection($this->collectionFactory->create());
 
-        try {
-            foreach ($enabledStoreIds as $enabledStoreId) {
-                $collection->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
-                $ids = $collection->getAllIds();
-                if (!empty($ids)) {
-                    $this->publisher->schedule(Sender::MODEL, $collection->getAllIds(), $enabledStoreId);
-                    $storeIds[] = $enabledStoreId;
-                    $itemsCount += $collection->getSize();
+            try {
+                foreach ($enabledStoreIds as $enabledStoreId) {
+                    /** @var Collection $collection */
+                    $collection->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
+                    $ids = $collection->getAllIds();
+                    if (!empty($ids)) {
+                        $this->publisher->schedule(Sender::MODEL, $collection->getAllIds(), $enabledStoreId);
+                        $storeIds[] = $enabledStoreId;
+                        $itemsCount += $collection->getSize();
+                    }
                 }
-            }
 
-            if (!empty($storeIds)) {
-                $this->messageManager->addSuccessMessage(
-                    __(
-                        'A total of %1 %2(s) have been added to synchronization queue for stores: %3',
-                        $itemsCount,
-                        Sender::MODEL,
-                        implode(',',$storeIds)
-                    )
-                );
-            } else {
-                $this->messageManager->addErrorMessage(
-                    __(
-                        'Nothing to synchronize. No stores enabled for selected %1(s).',
-                        Sender::MODEL
-                    )
-                );
+                if (!empty($storeIds)) {
+                    $this->messageManager->addSuccessMessage(
+                        __(
+                            'A total of %1 %2(s) have been added to synchronization queue for stores: %3',
+                            $itemsCount,
+                            Sender::MODEL,
+                            implode(',',$storeIds)
+                        )
+                    );
+                } else {
+                    $this->messageManager->addErrorMessage(
+                        __(
+                            'Nothing to synchronize. No stores enabled for selected %1(s).',
+                            Sender::MODEL
+                        )
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
+                $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
             }
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
-            $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
+        } else {
+            $this->messageManager->addErrorMessage(
+                __('Nothing to synchronize. %1s are excluded from synchronization.', Sender::MODEL)
+            );
         }
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */

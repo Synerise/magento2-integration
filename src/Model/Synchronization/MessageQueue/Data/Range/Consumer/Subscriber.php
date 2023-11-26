@@ -125,7 +125,6 @@ class Subscriber
      */
     private function execute(array $data)
     {
-        /** @var Collection $collection */
         $collection = $this->provider->createCollection()
             ->addStoreFilter($data['store_id'])
             ->filterByEntityRange($data['gt'], $data['le'])

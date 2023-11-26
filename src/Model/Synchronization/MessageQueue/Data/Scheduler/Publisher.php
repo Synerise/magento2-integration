@@ -59,7 +59,7 @@ class Publisher
     )
     {
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = __('%s full synchronization request.', ucfirst($model));
+        $bulkDescription = __('%1 full synchronization request.', ucfirst($model));
         $operations = [];
         foreach ($storeIds as $storeId) {
             $operations[] = $this->makeOperation(

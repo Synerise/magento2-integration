@@ -17,17 +17,21 @@
             <event_tracking>
                 <events>customer_save_after,customer_login,customer_logout,customer_register_success,sales_order_place_after,checkout_cart_add_product_complete,sales_quote_save_after,checkout_cart_update_items_after,sales_quote_remove_item,catalog_product_save_after,catalog_product_delete_after,catalog_product_import_bunch_save_after,newsletter_subscriber_save_after,product_is_salable_change,stock_status_change,wishlist_add_product,wishlist_item_delete_after,product_review_save_after</events>
             </event_tracking>
-            <cron_status>
-                <expr>*/5 * * * *</expr>
-                <page_size>500</page_size>
-            </cron_status>
-            <cron_queue>
-                <expr>* * * * *</expr>
-                <page_size>500</page_size>
-            </cron_queue>
             <synchronization>
                 <models>customer,order,product,subscriber</models>
             </synchronization>
+            <customer>
+                <limit>100</limit>
+            </customer>
+            <order>
+                <limit>100</limit>
+            </order>
+            <product>
+                <limit>100</limit>
+            </product>
+            <subscriber>
+                <limit>100</limit>
+            </subscriber>
             <queue>
                 <connection>db</connection>
             </queue>

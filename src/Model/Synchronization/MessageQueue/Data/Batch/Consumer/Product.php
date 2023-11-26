@@ -10,6 +10,7 @@ use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Model\Synchronization\Provider\Product as Provider;
 use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
@@ -66,7 +67,7 @@ class Product
     {
         try {
             $this->execute($this->serializer->unserialize($operation->getSerializedData()));
-        } catch(ApiException $e) {
+        } catch(ApiException | CatalogApiException $e) {
             $message = $e->getMessage();
             if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500) {
                 $status = OperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
@@ -119,7 +120,9 @@ class Product
      * @param array $data
      * @return void
      * @throws ApiException
-     * @throws \Exception
+     * @throws CatalogApiException
+     * @throws NoSuchEntityException
+     * @throws \Magento\Framework\Exception\ValidatorException
      */
     private function execute(array $data)
     {
