@@ -2,8 +2,8 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler;
 
+use Magento\Framework\Amqp\Config as AmqpConfig;
 use Magento\Framework\Bulk\OperationInterface;
-use Magento\Framework\Data\Collection\AbstractDb;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -19,7 +19,6 @@ use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Synchronization\CollectionFactoryProvider;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Publisher;
 use Synerise\Integration\Model\Synchronization\Filter;
-use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
 use Synerise\Integration\Model\Synchronization\Sender\Product;
 
 class Consumer
@@ -38,6 +37,11 @@ class Consumer
      * @var EntityManager
      */
     private $entityManager;
+
+    /**
+     * @var AmqpConfig
+     */
+    private $amqpConfig;
 
     /**
      * @var CollectionFactoryProvider
@@ -63,6 +67,7 @@ class Consumer
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
+        AmqpConfig $amqpConfig,
         CollectionFactoryProvider $collectionFactoryProvider,
         Filter $filter,
         Publisher $publisher,
@@ -71,6 +76,7 @@ class Consumer
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
+        $this->amqpConfig = $amqpConfig;
         $this->collectionFactoryProvider = $collectionFactoryProvider;
         $this->filter = $filter;
         $this->publisher = $publisher;
@@ -147,6 +153,8 @@ class Consumer
      */
     private function execute(array $data)
     {
+        $this->amqpConfig->getChannel()->queue_purge(Publisher::getTopicName($data['model']));
+
         $collectionFactory = $this->collectionFactoryProvider->get($data['model']);
         /** @var CustomerCollection|OrderCollection|ProductCollection|SubscriberCollection $collection */
         $collection = $this->filter->addStoreFilter($collectionFactory->create(), $data['store_id']);

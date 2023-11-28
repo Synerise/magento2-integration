@@ -59,7 +59,7 @@ class Publisher
         $operations = [];
         foreach ($ranges as $range) {
             $operations[] = $this->makeOperation(
-                sprintf(self::TOPIC_FORMAT, $model),
+                self::getTopicName($model),
                 $storeId,
                 $websiteId,
                 $range['gt'],
@@ -121,5 +121,14 @@ class Publisher
         ];
 
         return $this->operationFactory->create($operation);
+    }
+
+    /**
+     * @param string $model
+     * @return string
+     */
+    public static function getTopicName(string $model): string
+    {
+        return sprintf(self::TOPIC_FORMAT, $model);
     }
 }

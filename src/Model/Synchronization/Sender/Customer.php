@@ -213,7 +213,6 @@ class Customer implements SenderInterface
         );
     }
 
-
     /**
      * @param int $addressId
      * @return AddressInterface|null
