@@ -45,6 +45,10 @@ class CatalogProductSaveAfter implements ObserverInterface
             return;
         }
 
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+            return;
+        }
+
         try {
             $this->publishForEachStore($observer->getEvent()->getProduct());
         } catch (\Exception $e) {

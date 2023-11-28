@@ -67,6 +67,10 @@ class StockStatusChange implements ObserverInterface
             return;
         }
 
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+            return;
+        }
+
         /** @var GetLegacyStockItem $getLegacyStockItem */
         $getLegacyStockItem = $this->objectManager->get(GetLegacyStockItem::class);
 

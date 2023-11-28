@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
 use Magento\Sales\Model\ResourceModel\Order\Collection;
+use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
@@ -11,7 +12,7 @@ use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Model\Synchronization\Provider\Order as Provider;
+use Synerise\Integration\Model\Synchronization\Filter;
 use Synerise\Integration\Model\Synchronization\Sender\Order as Sender;
 
 class Order
@@ -32,9 +33,14 @@ class Order
     private $entityManager;
 
     /**
-     * @var Provider
+     * @var CollectionFactory
      */
-    private $provider;
+    private $collectionFactory;
+
+    /**
+     * @var Filter
+     */
+    private $filter;
 
     /**
      * @var Sender
@@ -45,14 +51,16 @@ class Order
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
-        Provider $provider,
+        CollectionFactory $collectionFactory,
+        Filter $filter,
         Sender $sender
     ) {
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->provider = $provider;
-        $this->sender =  $sender;
+        $this->collectionFactory = $collectionFactory;
+        $this->filter = $filter;
+        $this->sender = $sender;
     }
 
     /**
@@ -124,10 +132,13 @@ class Order
      */
     private function execute(array $data)
     {
-        $collection = $this->provider->createCollection()
-            ->addStoreFilter($data['store_id'])
-            ->filterByEntityIds($data['entity_ids'])
-            ->getCollection();
+        /** @var Collection $collection */
+        $collection = $this->filter->filterByEntityIds(
+            $this->collectionFactory->create(),
+            $data['entity_ids'],
+            $data['store_id'],
+            Sender::MAX_PAGE_SIZE
+        );
 
         $this->sender->sendItems($collection, $data['store_id']);
     }

@@ -62,6 +62,10 @@ class ProductIsSalableChange implements ObserverInterface
             return;
         }
 
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+            return;
+        }
+
         $eventName = $observer->getEvent()->getName();
 
         try {

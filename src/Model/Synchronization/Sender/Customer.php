@@ -15,8 +15,8 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
+use Synerise\Integration\Model\Synchronization\Config\Customer as Config;
 use Synerise\Integration\Model\Synchronization\SenderInterface;
 
 class Customer implements SenderInterface
@@ -29,6 +29,8 @@ class Customer implements SenderInterface
         2 => InBodyClientSex::FEMALE,
         3 => InBodyClientSex::NOT_SPECIFIED
     ];
+
+    const MAX_PAGE_SIZE = 500;
 
     /**
      * @var AddressRepositoryInterface
@@ -191,7 +193,7 @@ class Customer implements SenderInterface
     public function getEnabledAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            Attributes::XML_PATH_CUSTOMERS_ATTRIBUTES,
+            Config::XML_PATH_CUSTOMER_ATTRIBUTES,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
@@ -255,19 +257,6 @@ class Customer implements SenderInterface
         $this->resource->getConnection()->insertOnDuplicate(
             $this->resource->getTableName('synerise_sync_customer'),
             $data
-        );
-    }
-
-    /**
-     * @param int|null $storeId
-     * @return int
-     */
-    public function getPageSize(?int $storeId = null): int
-    {
-        return (int) $this->scopeConfig->getValue(
-            Synchronization::XML_PATH_CRON_STATUS_PAGE_SIZE,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
         );
     }
 }

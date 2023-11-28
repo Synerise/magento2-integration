@@ -10,7 +10,12 @@ use Synerise\Integration\Model\Config\Source\Synchronization\Model;
 
 class Synchronization
 {
-    const XML_PATH_CRON_STATUS_PAGE_SIZE = 'synerise/cron_status/page_size';
+    const XML_PATH_PAGE_SIZE_ARRAY = [
+        'customer' => 'synerise/customer/limit',
+        'order' => 'synerise/order/limit',
+        'product' => 'synerise/product/limit',
+        'subscriber' => 'synerise/subscriber/limit'
+    ];
 
     const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
 
@@ -58,7 +63,7 @@ class Synchronization
         if (!isset(Model::OPTIONS[$model])) {
             throw new \InvalidArgumentException($model . ' is not a valid data model');
         }
-        return isset($this->enabledModels[$model]);
+        return in_array($model, $this->enabledModels);
     }
 
     /**
@@ -88,13 +93,18 @@ class Synchronization
     }
 
     /**
+     * @param string $model
      * @param int|null $storeId
      * @return int
      */
-    public function getPageSize(?int $storeId = null): int
+    public function getPageSize(string $model, ?int $storeId = null): int
     {
+        if (!isset(self::XML_PATH_PAGE_SIZE_ARRAY[$model])) {
+            throw new \InvalidArgumentException('Invalid model');
+        }
+
         return (int) $this->scopeConfig->getValue(
-            self::XML_PATH_CRON_STATUS_PAGE_SIZE,
+            self::XML_PATH_PAGE_SIZE_ARRAY[$model],
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

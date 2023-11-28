@@ -3,12 +3,13 @@
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Consumer;
 
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Model\Synchronization\Filter;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\ConsumerInterface;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Message;
 use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
-use Synerise\Integration\Model\Synchronization\Provider\Subscriber as Provider;
 
 class Subscriber implements ConsumerInterface
 {
@@ -18,9 +19,14 @@ class Subscriber implements ConsumerInterface
     private $logger;
 
     /**
-     * @var Provider
+     * @var CollectionFactory
      */
-    private $provider;
+    private $collectionFactory;
+
+    /**
+     * @var Filter
+     */
+    private $filter;
 
     /**
      * @var Sender
@@ -29,11 +35,13 @@ class Subscriber implements ConsumerInterface
 
     public function __construct(
         LoggerInterface $logger,
-        Provider $provider,
+        CollectionFactory $collectionFactory,
+        Filter $filter,
         Sender $sender
     ) {
         $this->logger = $logger;
-        $this->provider = $provider;
+        $this->collectionFactory = $collectionFactory;
+        $this->filter = $filter;
         $this->sender = $sender;
     }
 
@@ -47,13 +55,20 @@ class Subscriber implements ConsumerInterface
         }
     }
 
+    /**
+     * @param Message $message
+     * @return void
+     * @throws ApiException
+     */
     private function execute(Message $message)
     {
         /** @var Collection $collection */
-        $collection = $this->provider->createCollection()
-            ->addStoreFilter($message->getStoreId())
-            ->filterByEntityId($message->getEntityId())
-            ->getCollection();
+        $collection = $this->filter->filterByEntityId(
+            $this->collectionFactory->create(),
+            $message->getEntityId(),
+            $message->getStoreId(),
+            Sender::MAX_PAGE_SIZE
+        );
 
         $this->sender->sendItems($collection, $message->getStoreId());
     }

@@ -3,16 +3,23 @@
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler;
 
 use Magento\Framework\Bulk\OperationInterface;
+use Magento\Framework\Data\Collection\AbstractDb;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
+use Magento\Customer\Model\ResourceModel\Customer\Collection as CustomerCollection;
+use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection as SubscriberCollection;
+use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Model\Synchronization\CollectionFactoryProvider;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Publisher;
-use Synerise\Integration\Model\Synchronization\ProviderFactory;
+use Synerise\Integration\Model\Synchronization\Filter;
+use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
 use Synerise\Integration\Model\Synchronization\Sender\Product;
 
 class Consumer
@@ -33,9 +40,14 @@ class Consumer
     private $entityManager;
 
     /**
-     * @var ProviderFactory
+     * @var CollectionFactoryProvider
      */
-    private $providerFactory;
+    private $collectionFactoryProvider;
+    
+    /**
+     * @var Filter
+     */
+    private $filter;
     
     /**
      * @var Publisher
@@ -51,14 +63,16 @@ class Consumer
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
-        ProviderFactory $providerFactory,
+        CollectionFactoryProvider $collectionFactoryProvider,
+        Filter $filter,
         Publisher $publisher,
         Synchronization $synchronization
     ) {
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->providerFactory = $providerFactory;
+        $this->collectionFactoryProvider = $collectionFactoryProvider;
+        $this->filter = $filter;
         $this->publisher = $publisher;
         $this->synchronization = $synchronization;
     }
@@ -127,25 +141,23 @@ class Consumer
     /**
      * @param array $data
      * @return void
-     * @throws ApiException
      * @throws NoSuchEntityException
      * @throws LocalizedException
      * @throws \Exception
      */
     private function execute(array $data)
     {
-        $provider = $this->providerFactory->get( $data['model']);
-        $pageSize = $this->synchronization->getPageSize($data['store_id']);
+        $collectionFactory = $this->collectionFactoryProvider->get($data['model']);
+        /** @var CustomerCollection|OrderCollection|ProductCollection|SubscriberCollection $collection */
+        $collection = $this->filter->addStoreFilter($collectionFactory->create(), $data['store_id']);
+        
+        $pageSize = $this->synchronization->getPageSize($data['model'], $data['store_id']);
 
         $le = $gt = 0;
-        $lastId = $provider->getCurrentLastId($data['store_id']);
+        $lastId = $this->filter->getLastId($collection);
         if (!$lastId) {
             return;
         }
-
-        $collection = $provider->createCollection()
-            ->addStoreFilter($data['store_id'])
-            ->getCollection();
 
         $ranges = [];
         while ($le < $lastId) {
@@ -164,6 +176,7 @@ class Consumer
         }
 
         $this->publisher->schedule(
+            $data['user_id'],
             $data['model'],
             $ranges,
             $data['store_id'],

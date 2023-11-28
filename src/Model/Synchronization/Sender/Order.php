@@ -3,21 +3,18 @@
 namespace Synerise\Integration\Model\Synchronization\Sender;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
-use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Category;
 use Synerise\Integration\Helper\Image;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\SenderInterface;
 
@@ -26,15 +23,12 @@ class Order implements SenderInterface
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';
 
+    const MAX_PAGE_SIZE = 500;
+
     /**
      * @var SearchCriteriaBuilder
      */
     protected $searchCriteriaBuilder;
-
-    /**
-     * @var ScopeConfigInterface
-     */
-    protected $scopeConfig;
 
     /**
      * @var ResourceConnection
@@ -73,7 +67,6 @@ class Order implements SenderInterface
 
     public function __construct(
         SearchCriteriaBuilder $searchCriteriaBuilder,
-        ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         RuleRepositoryInterface $ruleRepository,
         LoggerInterface $logger,
@@ -83,7 +76,6 @@ class Order implements SenderInterface
         Tracking $trackingHelper
     ) {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
-        $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
         $this->ruleRepository = $ruleRepository;
         $this->logger = $logger;
@@ -386,19 +378,6 @@ class Order implements SenderInterface
             ->where('order_id = ?', $orderId);
 
         return $connection->fetchOne($select);
-    }
-
-    /**
-     * @param int|null $storeId
-     * @return int
-     */
-    public function getPageSize(?int $storeId = null): int
-    {
-        return (int) $this->scopeConfig->getValue(
-            Synchronization::XML_PATH_CRON_STATUS_PAGE_SIZE,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
     }
 
     /**

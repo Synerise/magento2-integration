@@ -11,10 +11,4 @@ interface SenderInterface
      * @return mixed
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null);
-
-    /**
-     * @param int|null $storeId
-     * @return int
-     */
-    public function getPageSize(?int $storeId = null): int;
 }

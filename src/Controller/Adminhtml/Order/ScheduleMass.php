@@ -71,8 +71,6 @@ class ScheduleMass extends Action
     public function execute()
     {
         if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
-
-
             $storeIds = [];
             $itemsCount = 0;
             $enabledStoreIds = $this->synchronization->getEnabledStores();
@@ -84,7 +82,13 @@ class ScheduleMass extends Action
                     $collection->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
                     $ids = $collection->getAllIds();
                     if (!empty($ids)) {
-                        $this->publisher->schedule(Sender::MODEL, $collection->getAllIds(), $enabledStoreId);
+                        $this->publisher->schedule(
+                            Sender::MODEL,
+                            $collection->getAllIds(),
+                            $enabledStoreId,
+                            null,
+                            $this->synchronization->getPageSize(\Synerise\Integration\Model\Synchronization\Sender\Customer::MODEL)
+                        );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();
                     }
@@ -113,7 +117,7 @@ class ScheduleMass extends Action
             }
         } else {
             $this->messageManager->addErrorMessage(
-                __('Nothing to synchronize. %1s are excluded from synchronization.', Sender::MODEL)
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
             );
         }
 

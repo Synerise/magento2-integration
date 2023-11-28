@@ -15,7 +15,7 @@
                     <action method="setStatusData">
                         <argument name="header" xsi:type="string">Catalog status</argument>
                         <argument name="subHeader" xsi:type="string">Products sent</argument>
-                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/catalog/scheduleAll</argument>
+                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/product/scheduleAll</argument>
                         <argument name="table" xsi:type="string">synerise_sync_product</argument>
                         <argument name="column" xsi:type="string">COUNT(DISTINCT product_id)</argument>
                     </action>
@@ -41,7 +41,7 @@
                     <action method="setStatusData">
                         <argument name="header" xsi:type="string">Newsletter status</argument>
                         <argument name="subHeader" xsi:type="string">Subscribers sent</argument>
-                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/newsletter/scheduleAll</argument>
+                        <argument name="scheduleAllUrlPath" xsi:type="string">synerise/subscriber/scheduleAll</argument>
                         <argument name="table" xsi:type="string">synerise_sync_subscriber</argument>
                     </action>
                 </block>

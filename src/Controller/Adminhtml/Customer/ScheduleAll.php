@@ -5,9 +5,11 @@ namespace Synerise\Integration\Controller\Adminhtml\Customer;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
+use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Model\Synchronization\Filter;
 use \Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler\Publisher;
 use Synerise\Integration\Model\Synchronization\Provider\Customer as Provider;
 use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
@@ -19,11 +21,15 @@ class ScheduleAll extends Action implements HttpGetActionInterface
      */
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
 
+    /**
+     * @var CollectionFactory
+     */
+    private $collectionFactory;
 
     /**
-     * @var Provider
+     * @var Filter
      */
-    protected $provider;
+    private $filter;
 
     /**
      * @var Publisher
@@ -37,13 +43,16 @@ class ScheduleAll extends Action implements HttpGetActionInterface
 
     public function __construct(
         Context $context,
-        Provider $provider,
+        CollectionFactory $collectionFactory,
+        Filter $filter,
         Publisher $publisher,
         Synchronization $synchronization
     ) {
-        $this->provider = $provider;
+        $this->collectionFactory = $collectionFactory;
+        $this->filter = $filter;
         $this->publisher = $publisher;
         $this->synchronization = $synchronization;
+        $this->messageManager = $context->getMessageManager();
 
         parent::__construct($context);
     }
@@ -60,9 +69,11 @@ class ScheduleAll extends Action implements HttpGetActionInterface
             $storeIds = [];
             foreach ($this->synchronization->getEnabledStores() as $storeId)
             {
-                $collection = $this->provider->createCollection()
-                    ->addStoreFilter($storeId)
-                    ->getCollection();
+                /** @var Collection $collection */
+                $collection = $this->filter->addStoreFilter(
+                    $this->collectionFactory->create(),
+                    $storeId
+                );
 
                 if ($collection->getSize()) {
                     $storeIds[] = $storeId;
@@ -74,10 +85,24 @@ class ScheduleAll extends Action implements HttpGetActionInterface
                     Sender::MODEL,
                     $storeIds
                 );
+                $this->messageManager->addSuccessMessage(
+                    __(
+                        '%1 synchronization has been scheduled for stores: %2',
+                        ucfirst(Sender::MODEL),
+                        implode(',',$storeIds)
+                    )
+                );
+            } else {
+                $this->messageManager->addErrorMessage(
+                    __(
+                        'Nothing to synchronize. No stores enabled for %1s.',
+                        Sender::MODEL
+                    )
+                );
             }
         } else {
             $this->messageManager->addErrorMessage(
-                __('Nothing to synchronize. %1s are excluded from synchronization.', Sender::MODEL)
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
             );
         }
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */

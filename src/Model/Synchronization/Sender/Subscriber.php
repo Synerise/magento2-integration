@@ -2,18 +2,15 @@
 
 namespace Synerise\Integration\Model\Synchronization\Sender;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Newsletter\Model\Subscriber as SubscriberModel;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
-use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Synchronization\SenderInterface;
 
 class Subscriber implements SenderInterface
@@ -21,10 +18,7 @@ class Subscriber implements SenderInterface
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
 
-    /**
-     * @var ScopeConfigInterface
-     */
-    protected $scopeConfig;
+    const MAX_PAGE_SIZE = 500;
 
     /**
      * @var ResourceConnection
@@ -47,13 +41,11 @@ class Subscriber implements SenderInterface
     protected $trackingHelper;
 
     public function __construct(
-        ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         LoggerInterface $logger,
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
-        $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
@@ -138,19 +130,6 @@ class Subscriber implements SenderInterface
         $this->resource->getConnection()->insertOnDuplicate(
             $this->resource->getConnection()->getTableName('synerise_sync_subscriber'),
             $data
-        );
-    }
-
-    /**
-     * @param int|null $storeId
-     * @return int
-     */
-    public function getPageSize(?int $storeId = null): int
-    {
-        return (int) $this->scopeConfig->getValue(
-            Synchronization::XML_PATH_CRON_STATUS_PAGE_SIZE,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
         );
     }
 }

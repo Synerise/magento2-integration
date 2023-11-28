@@ -4,7 +4,6 @@ namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range;
 
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
-use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\Bulk\BulkManagementInterface;
 use Magento\Framework\DataObject\IdentityGeneratorInterface;
 use Magento\Framework\Exception\LocalizedException;
@@ -18,11 +17,6 @@ class Publisher
      * @var BulkManagementInterface
      */
     private $bulkManagement;
-
-    /**
-     * @var UserContextInterface
-     */
-    private $userContext;
 
     /**
      * @var IdentityGeneratorInterface
@@ -43,17 +37,16 @@ class Publisher
         BulkManagementInterface $bulkManagement,
         IdentityGeneratorInterface $identityService,
         OperationInterfaceFactory $operationFactory,
-        UserContextInterface $userContext,
         SerializerInterface $serializer
     ) {
         $this->bulkManagement = $bulkManagement;
-        $this->userContext = $userContext;
         $this->identityService = $identityService;
         $this->operationFactory = $operationFactory;
         $this->serializer = $serializer;
     }
 
     public function schedule(
+        int $userId,
         string $model,
         array $ranges,
         int $storeId,
@@ -80,7 +73,7 @@ class Publisher
                 $bulkUuid,
                 $operations,
                 $bulkDescription,
-                $this->userContext->getUserId()
+                $userId
             );
 
             if (!$result) {
@@ -128,26 +121,5 @@ class Publisher
         ];
 
         return $this->operationFactory->create($operation);
-    }
-
-    /**
-     * @param int $gt
-     * @param int $le
-     * @param int $bulkSize
-     * @return array
-     */
-    protected function prepareRanges(int $gt, int $le, int $bulkSize): array
-    {
-        $steps = range($gt, $le, $bulkSize);
-        $ranges = [];
-
-        while(current($steps) !== false && current($steps) !== $le) {
-            $ranges[] = [
-                'gt' => current($steps),
-                'le' => next($steps) ?: $le
-            ];
-        }
-
-        return $ranges;
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer;
 
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
@@ -11,7 +13,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
-use Synerise\Integration\Model\Synchronization\Provider\Product as Provider;
+use Synerise\Integration\Model\Synchronization\Filter;
 use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
 class Product
@@ -32,9 +34,14 @@ class Product
     private $entityManager;
 
     /**
-     * @var Provider
+     * @var CollectionFactory
      */
-    private $provider;
+    private $collectionFactory;
+
+    /**
+     * @var Filter
+     */
+    private $filter;
 
     /**
      * @var Sender
@@ -45,14 +52,16 @@ class Product
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
-        Provider $provider,
+        CollectionFactory $collectionFactory,
+        Filter $filter,
         Sender $sender
     ) {
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->provider = $provider;
-        $this->sender =  $sender;
+        $this->collectionFactory = $collectionFactory;
+        $this->filter = $filter;
+        $this->sender = $sender;
     }
 
     /**
@@ -116,22 +125,23 @@ class Product
         $this->entityManager->save($operation);
     }
 
+
     /**
      * @param array $data
      * @return void
      * @throws ApiException
-     * @throws CatalogApiException
-     * @throws NoSuchEntityException
-     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws \Exception
      */
     private function execute(array $data)
     {
-        $collection = $this->provider->createCollection()
-            ->addStoreFilter($data['store_id'])
-            ->addAttributesToSelect($this->sender->getAttributesToSelect($data['store_id']))
-            ->filterByEntityIds($data['entity_ids'])
-            ->getCollection();
+        /** @var Collection $collection */
+        $collection = $this->filter->filterByEntityIds(
+            $this->collectionFactory->create(),
+            $data['entity_ids'],
+            $data['store_id'],
+            Sender::MAX_PAGE_SIZE
+        )->addAttributeToSelect($this->sender->getEnabledAttributes($data['store_id']));
 
-        $this->sender->sendItems($collection, $data['store_id'], $data['website_id']);
+        $this->sender->sendItems($collection, $data['store_id']);
     }
 }

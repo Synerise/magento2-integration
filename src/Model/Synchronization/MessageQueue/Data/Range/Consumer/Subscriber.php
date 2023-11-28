@@ -12,11 +12,13 @@ use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Model\Synchronization\Provider\Subscriber as Provider;
+use Synerise\Integration\Model\Synchronization\Filter;
 use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
 
 class Subscriber
 {
+    const MAX_PAGE_SIZE = 500;
+
     /**
      * @var LoggerInterface
      */
@@ -33,9 +35,14 @@ class Subscriber
     private $entityManager;
 
     /**
-     * @var Provider
+     * @var CollectionFactory
      */
-    private $provider;
+    private $collectionFactory;
+
+    /**
+     * @var Filter
+     */
+    private $filter;
 
     /**
      * @var Sender
@@ -46,13 +53,15 @@ class Subscriber
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
-        Provider $provider,
+        CollectionFactory $collectionFactory,
+        Filter $filter,
         Sender $sender
     ) {
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->provider = $provider;
+        $this->collectionFactory = $collectionFactory;
+        $this->filter = $filter;
         $this->sender = $sender;
     }
 
@@ -125,10 +134,14 @@ class Subscriber
      */
     private function execute(array $data)
     {
-        $collection = $this->provider->createCollection()
-            ->addStoreFilter($data['store_id'])
-            ->filterByEntityRange($data['gt'], $data['le'])
-            ->getCollection();
+        /** @var Collection $collection */
+        $collection = $this->filter->filterByEntityRange(
+            $this->collectionFactory->create(),
+            $data['gt'],
+            $data['le'],
+            $data['store_id'],
+            Sender::MAX_PAGE_SIZE
+        );
 
         $this->sender->sendItems($collection, $data['store_id']);
     }

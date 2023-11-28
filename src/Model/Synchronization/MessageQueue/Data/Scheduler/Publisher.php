@@ -65,7 +65,8 @@ class Publisher
             $operations[] = $this->makeOperation(
                 $model,
                 $storeId,
-                $bulkUuid
+                $bulkUuid,
+                $this->userContext->getUserId()
             );
         }
 
@@ -90,17 +91,19 @@ class Publisher
      * @param string $model
      * @param int $storeId
      * @param string $bulkUuid
-     *
+     * @param int $userId
      * @return OperationInterface
      */
     private function makeOperation(
         string $model,
         int $storeId,
-        string $bulkUuid
+        string $bulkUuid,
+        int $userId
     ): OperationInterface {
         $dataToEncode = [
             'model' => $model,
-            'store_id' => $storeId
+            'store_id' => $storeId,
+            'user_id' => $userId
         ];
 
         $operation = [

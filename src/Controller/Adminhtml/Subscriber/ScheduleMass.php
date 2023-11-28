@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Newsletter;
+namespace Synerise\Integration\Controller\Adminhtml\Subscriber;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
@@ -93,7 +93,13 @@ class ScheduleMass extends Action implements HttpPostActionInterface
                         $collection->addStoreFilter($enabledStoreId);
                         $ids = $collection->getAllIds();
                         if (!empty($ids)) {
-                            $this->publisher->schedule(Sender::MODEL, $collection->getAllIds(), $enabledStoreId);
+                            $this->publisher->schedule(
+                                Sender::MODEL,
+                                $collection->getAllIds(),
+                                $enabledStoreId,
+                                null,
+                                $this->synchronization->getPageSize(Sender::MODEL)
+                            );
                             $storeIds[] = $enabledStoreId;
                             $itemsCount += $collection->getSize();
                         }
@@ -123,7 +129,7 @@ class ScheduleMass extends Action implements HttpPostActionInterface
             }
         } else {
             $this->messageManager->addErrorMessage(
-            __('Nothing to synchronize. %1s are excluded from synchronization.', Sender::MODEL)
+            __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
             );
         }
 

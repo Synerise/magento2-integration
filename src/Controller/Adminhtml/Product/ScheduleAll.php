@@ -1,16 +1,17 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Newsletter;
+namespace Synerise\Integration\Controller\Adminhtml\Product;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
-use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Synerise\Integration\Helper\Synchronization;
-use \Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler\Publisher;
-use Synerise\Integration\Model\Synchronization\Provider\Subscriber as Provider;
-use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
+use Synerise\Integration\Model\Synchronization\Filter;
+use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler\Publisher;
+use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
 
 class ScheduleAll extends Action implements HttpGetActionInterface
 {
@@ -19,11 +20,15 @@ class ScheduleAll extends Action implements HttpGetActionInterface
      */
     const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
 
+    /**
+     * @var CollectionFactory
+     */
+    private $collectionFactory;
 
     /**
-     * @var Provider
+     * @var Filter
      */
-    protected $provider;
+    private $filter;
 
     /**
      * @var Publisher
@@ -37,13 +42,16 @@ class ScheduleAll extends Action implements HttpGetActionInterface
 
     public function __construct(
         Context $context,
-        Provider $provider,
+        CollectionFactory $collectionFactory,
+        Filter $filter,
         Publisher $publisher,
         Synchronization $synchronization
     ) {
-        $this->provider = $provider;
+        $this->collectionFactory = $collectionFactory;
+        $this->filter = $filter;
         $this->publisher = $publisher;
         $this->synchronization = $synchronization;
+        $this->messageManager = $context->getMessageManager();
 
         parent::__construct($context);
     }
@@ -57,32 +65,47 @@ class ScheduleAll extends Action implements HttpGetActionInterface
     public function execute()
     {
         if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
-
-
             $storeIds = [];
             foreach ($this->synchronization->getEnabledStores() as $storeId)
             {
-                $collection = $this->provider->createCollection()
-                    ->addStoreFilter($storeId)
-                    ->getCollection();
+                /** @var Collection $collection */
+                $collection = $this->filter->addStoreFilter(
+                    $this->collectionFactory->create(),
+                    $storeId
+                );
 
                 if ($collection->getSize()) {
                     $storeIds[] = $storeId;
                 }
             }
 
+
             if (!empty($storeIds)) {
                 $this->publisher->schedule(
                     Sender::MODEL,
                     $storeIds
                 );
+                $this->messageManager->addSuccessMessage(
+                    __(
+                        '%1 synchronization has been scheduled for stores: %2', ucfirst(Sender::MODEL),
+                        Sender::MODEL,
+                        implode(',',$storeIds)
+                    )
+                );
+            } else {
+                $this->messageManager->addErrorMessage(
+                    __(
+                        '%1 synchronization has been scheduled for stores: %2',
+                        ucfirst(Sender::MODEL),
+                        implode(',',$storeIds)
+                    )
+                );
             }
         } else {
             $this->messageManager->addErrorMessage(
-                __('Nothing to synchronize. %1s are excluded from synchronization.', Sender::MODEL)
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
             );
         }
-
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('synerise/dashboard/index');

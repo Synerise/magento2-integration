@@ -4,14 +4,16 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Sales\Model\Order;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Order;
+use Synerise\Integration\Model\Synchronization\Sender\Order as Sender;
 
 class OrderPlace implements ObserverInterface
 {
@@ -23,9 +25,14 @@ class OrderPlace implements ObserverInterface
     protected $publisher;
 
     /**
-     * @var Order
+     * @var Sender
      */
     protected $sender;
+
+    /**
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
 
     /**
      * @var Tracking
@@ -44,12 +51,14 @@ class OrderPlace implements ObserverInterface
 
     public function __construct(
         Publisher $publisher,
+        Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
-        Order $sender,
+        Sender $sender,
         Queue $queueHelper,
         Event $eventHelper
     ) {
         $this->publisher = $publisher;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
         $this->sender = $sender;
         $this->queueHelper = $queueHelper;
@@ -63,11 +72,15 @@ class OrderPlace implements ObserverInterface
         }
 
         try {
-            /** @var \Magento\Sales\Model\Order $order */
+            /** @var Order $order */
             $order = $observer->getEvent()->getOrder();
             $storeId = $order->getStoreId();
 
             $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
+
+            if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+                return;
+            }
 
             $params = $this->sender->preapreOrderParams(
                 $order,
@@ -117,10 +130,10 @@ class OrderPlace implements ObserverInterface
         }
     }
 
-    protected function addItemToQueue(\Magento\Sales\Model\Order $order)
+    protected function addItemToQueue(Order $order)
     {
         $this->publisher->publish(
-            'order',
+            Sender::MODEL,
             $order->getId(),
             $order->getStoreId()
         );

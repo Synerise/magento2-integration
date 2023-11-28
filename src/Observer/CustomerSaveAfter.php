@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Customer\Model\Customer;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
@@ -9,9 +10,10 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Customer;
+use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
 
 class CustomerSaveAfter implements ObserverInterface
 {
@@ -22,9 +24,14 @@ class CustomerSaveAfter implements ObserverInterface
     ];
 
     /**
-     * @var Customer
+     * @var Sender
      */
     protected $sender;
+
+    /**
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
 
     /**
      * @var Tracking
@@ -52,13 +59,15 @@ class CustomerSaveAfter implements ObserverInterface
     protected $publisher;
 
     public function __construct(
+        Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
-        Customer $sender,
+        Sender $sender,
         Http $request,
         Publisher $publisher,
         Queue $queueHelper,
         Event $eventHelper
     ) {
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
         $this->sender = $sender;
         $this->request = $request;
@@ -74,6 +83,10 @@ class CustomerSaveAfter implements ObserverInterface
         }
 
         if (in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
+            return;
+        }
+
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
 
@@ -95,10 +108,10 @@ class CustomerSaveAfter implements ObserverInterface
         }
     }
 
-    protected function addItemToQueue(\Magento\Customer\Model\Customer $customer)
+    protected function addItemToQueue(Customer $customer)
     {
         $this->publisher->publish(
-            'customer',
+            Sender::MODEL,
             (int) $customer->getId(),
             $customer->getStoreId()
         );

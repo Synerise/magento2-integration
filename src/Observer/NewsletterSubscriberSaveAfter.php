@@ -8,6 +8,7 @@ use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Event;
 use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
 use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
@@ -27,6 +28,11 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $sender;
 
     /**
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -44,12 +50,14 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     public function __construct(
         Publisher $publisher,
         Sender $sender,
+        Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
         Queue $queueHelper,
         Event $eventHelper
     ) {
         $this->publisher = $publisher;
         $this->sender = $sender;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
         $this->queueHelper = $queueHelper;
         $this->eventHelper = $eventHelper;
@@ -61,6 +69,10 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     public function execute(Observer $observer)
     {
         if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+            return;
+        }
+
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
 
@@ -94,7 +106,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected function addItemToQueue($subscriber)
     {
         $this->publisher->publish(
-            'subscriber',
+            Sender::MODEL,
             $subscriber->getId(),
             $subscriber->getStoreId()
         );

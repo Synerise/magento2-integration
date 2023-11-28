@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Catalog;
+namespace Synerise\Integration\Controller\Adminhtml\Product;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
@@ -86,7 +86,8 @@ class ScheduleMass extends Action
                             Sender::MODEL,
                             $collection->getAllIds(),
                             $enabledStoreId,
-                            $this->synchronization->getWebsiteIdByStoreId($enabledStoreId)
+                            $this->synchronization->getWebsiteIdByStoreId($enabledStoreId),
+                            $this->synchronization->getPageSize(Sender::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();
