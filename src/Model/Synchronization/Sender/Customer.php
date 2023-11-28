@@ -193,7 +193,7 @@ class Customer implements SenderInterface
     public function getEnabledAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            Config::XML_PATH_CUSTOMER_ATTRIBUTES,
+            Attributes::XML_PATH_CUSTOMER_ATTRIBUTES,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

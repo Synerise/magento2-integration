@@ -313,7 +313,7 @@ class Product implements SenderInterface
     public function getEnabledAttributes($storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
-            Config::XML_PATH_PRODUCT_ATTRIBUTES,
+            Attributes::XML_PATH_PRODUCT_ATTRIBUTES,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

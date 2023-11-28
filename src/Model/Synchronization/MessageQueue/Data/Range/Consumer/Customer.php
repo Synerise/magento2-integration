@@ -139,7 +139,7 @@ class Customer
             $data['le'],
             $data['store_id'],
             Sender::MAX_PAGE_SIZE
-        )->addAttributeToSelect($this->sender->getEnabledAttributes($data['store_id']));
+        )->addAttributeToSelect($this->sender->getAttributesToSelect($data['store_id']));
 
         $this->sender->sendItems($collection, $data['store_id']);
     }

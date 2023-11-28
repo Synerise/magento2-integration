@@ -68,7 +68,7 @@ class Customer implements ConsumerInterface
             $message->getEntityId(),
             $message->getStoreId(),
             Sender::MAX_PAGE_SIZE
-        )->addAttributeToSelect($this->sender->getEnabledAttributes($message->getStoreId()));
+        )->addAttributeToSelect($this->sender->getAttributesToSelect($message->getStoreId()));
 
         $this->sender->sendItems($collection, $message->getStoreId());
     }
