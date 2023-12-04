@@ -36,17 +36,22 @@
             </argument>
         </arguments>
     </virtualType>
-    <type name="Synerise\Integration\Controller\Adminhtml\Catalog\ScheduleMass">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
     <type name="Synerise\Integration\Controller\Adminhtml\Customer\ScheduleMass">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Controller\Adminhtml\Newsletter\ScheduleMass">
+    <type name="Synerise\Integration\Controller\Adminhtml\Order\ScheduleMass">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\Controller\Adminhtml\Product\ScheduleMass">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\Controller\Adminhtml\Subscriber\ScheduleMass">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
@@ -61,12 +66,7 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Controller\Adminhtml\Order\ScheduleMass">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
-    <type name="Synerise\Integration\Cron\Synchronization">
+    <type name="Synerise\Integration\Cron\MessageQueue\Retry">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
@@ -76,32 +76,17 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Helper\Catalog">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
-    <type name="Synerise\Integration\Helper\Customer">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
-    <type name="Synerise\Integration\Helper\Event">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
-    <type name="Synerise\Integration\Helper\Order">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
     <type name="Synerise\Integration\Helper\Tracking">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\MessageQueue\Consumer\Event">
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Batch\Customer">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Batch\Order">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
@@ -111,7 +96,77 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Batch\Subscriber">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Item\Customer">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Item\Order">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Item\Product">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Item\Subscriber">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Range\Customer">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Range\Order">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
     <type name="Synerise\Integration\MessageQueue\Consumer\Data\Range\Product">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Range\Subscriber">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Scheduler">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Consumer\Event">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Sender\Data\Customer">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Sender\Data\Order">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Sender\Data\Product">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Sender\Data\Subscriber">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
