@@ -8,21 +8,21 @@ use Magento\Sales\Model\Order;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Order as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
 
 class OrderPlace implements ObserverInterface
 {
     const EVENT = 'sales_order_place_after';
 
     /**
-     * @var Publisher
+     * @var EventPublisher
      */
-    protected $publisher;
+    protected $eventPublisher;
 
     /**
      * @var Sender
@@ -40,29 +40,29 @@ class OrderPlace implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var Queue
+     * @var DataItemPublisher
      */
-    protected $queueHelper;
+    protected $dataItemPublisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $event;
 
     public function __construct(
-        Publisher $publisher,
+        EventPublisher $eventPublisher,
         Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
         Sender $sender,
-        Queue $queueHelper,
-        Event $eventHelper
+        DataItemPublisher $dataItemPublisher,
+        Event $event
     ) {
-        $this->publisher = $publisher;
+        $this->eventPublisher = $eventPublisher;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
         $this->sender = $sender;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->event = $event;
     }
 
     public function execute(Observer $observer)
@@ -111,15 +111,15 @@ class OrderPlace implements ObserverInterface
                 ]);
             }
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $transactionRequest, $storeId, $order->getId());
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->eventPublisher->publish(self::EVENT, $transactionRequest, $storeId, $order->getId());
                 if ($createAClientInCrmRequest) {
-                    $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                    $this->eventPublisher->publish('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
                 }
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $transactionRequest, $storeId, $order->getId());
+                $this->event->send(self::EVENT, $transactionRequest, $storeId, $order->getId());
                 if ($createAClientInCrmRequest) {
-                    $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                    $this->event->send('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
                 }
             }
         } catch (ApiException $e) {
@@ -132,7 +132,7 @@ class OrderPlace implements ObserverInterface
 
     protected function addItemToQueue(Order $order)
     {
-        $this->publisher->publish(
+        $this->dataItemPublisher->publish(
             Sender::MODEL,
             $order->getId(),
             $order->getStoreId()

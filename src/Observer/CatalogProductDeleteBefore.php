@@ -6,11 +6,11 @@ use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
+use Synerise\Integration\MessageQueue\Sender\Data\Product as Sender;
 
 class CatalogProductDeleteBefore implements ObserverInterface
 {
@@ -37,29 +37,29 @@ class CatalogProductDeleteBefore implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $event;
 
     public function __construct(
         Sender $sender,
         Api $apiHelper,
         Tracking $trackingHelper,
         Synchronization $synchronizationHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        Publisher $publisher,
+        Event $event
     ) {
-        $this->sender = $sender;
+        $this->event = $event;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->synchronizationHelper = $synchronizationHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -83,10 +83,10 @@ class CatalogProductDeleteBefore implements ObserverInterface
                     );
                     $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
-                    if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                        $this->queueHelper->publishEvent(self::EVENT, [$addItemRequest], $storeId);
+                    if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                        $this->publisher->publish(self::EVENT, [$addItemRequest], $storeId);
                     } else {
-                        $this->eventHelper->sendEvent(self::EVENT, [$addItemRequest], $storeId);
+                        $this->event->send(self::EVENT, [$addItemRequest], $storeId);
                     }
                 }
             }

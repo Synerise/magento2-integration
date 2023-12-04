@@ -7,8 +7,8 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Product as Sender;
 
 class CatalogProductSaveAfter implements ObserverInterface
 {

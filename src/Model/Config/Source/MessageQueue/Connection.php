@@ -9,7 +9,7 @@ class Connection implements \Magento\Framework\Data\OptionSourceInterface
     const TOPICS = [
         'synerise.queue.events',
         'synerise.queue.data.scheduler',
-        'synerise.queue.data.mixed.single',
+        'synerise.queue.data.item',
         'synerise.queue.data.customer.batch',
         'synerise.queue.data.customer.range',
         'synerise.queue.data.order.batch',
@@ -24,6 +24,8 @@ class Connection implements \Magento\Framework\Data\OptionSourceInterface
         'db' => 'db',
         'amqp' => 'amqp'
     ];
+
+    const MAX_RETRIES = 3;
 
     public function toOptionArray()
     {

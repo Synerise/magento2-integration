@@ -9,10 +9,9 @@ use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Synerise\Integration\Helper\Synchronization;
-use Synerise\Integration\Model\Synchronization\Filter;
-use \Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler\Publisher;
-use Synerise\Integration\Model\Synchronization\Provider\Order as Provider;
-use Synerise\Integration\Model\Synchronization\Sender\Order as Sender;
+use Synerise\Integration\MessageQueue\Filter;
+use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
 
 class ScheduleAll extends Action implements HttpGetActionInterface
 {

@@ -11,8 +11,8 @@ use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
 class ProductReview implements ObserverInterface
@@ -55,14 +55,14 @@ class ProductReview implements ObserverInterface
     protected $review;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $sender;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -70,16 +70,16 @@ class ProductReview implements ObserverInterface
         StoreManagerInterface $storeManager,
         Api $apiHelper,
         Tracking $trackingHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        Publisher $publisher,
+        Event $sender
     ) {
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -152,12 +152,12 @@ class ProductReview implements ObserverInterface
                 'display_name' => $this->review->getNickname()
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $customEventRequest, $storeId);
-                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
+                $this->publisher->publish('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
-                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->sender->send(self::EVENT, $customEventRequest, $storeId);
+                $this->sender->send('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {

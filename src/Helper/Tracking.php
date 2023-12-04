@@ -44,6 +44,11 @@ class Tracking
 
     const XML_PATH_PAGE_TRACKING_SCRIPT = 'synerise/page_tracking/script';
 
+    const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
+
+    const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
+
+
     /**
      * @var \Magento\Framework\Stdlib\CookieManagerInterface
      */
@@ -532,6 +537,41 @@ class Tracking
     {
         return $this->backendSession->getUser() && $this->backendSession->getUser()->getId();
     }
+
+
+    public function isEventEnabled($event = null, $storeId = null): bool
+    {
+        if (!$event) {
+            return true;
+        }
+
+        $events = explode(',', $this->scopeConfig->getValue(
+            self::XML_PATH_QUEUE_EVENTS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ));
+
+        return in_array($event, $events);
+    }
+
+    public function isQueueAvailable(string $event = null, int $storeId = null): bool
+    {
+        if (!$this->isQueueEnabled($storeId)) {
+            return false;
+        }
+
+        return $this->isEventEnabled($event, $storeId);
+    }
+
+    private function isQueueEnabled(int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_QUEUE_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
 
     public function getLogger(): LoggerInterface
     {

@@ -21,14 +21,14 @@ class CartQtyUpdate implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var \Synerise\Integration\MessageQueue\Publisher\Event
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var \Synerise\Integration\MessageQueue\Sender\Event
      */
-    protected $eventHelper;
+    protected $sender;
 
     /**
      * @var \Synerise\Integration\Helper\Cart
@@ -38,14 +38,14 @@ class CartQtyUpdate implements ObserverInterface
     public function __construct(
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper,
+        \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
+        \Synerise\Integration\MessageQueue\Sender\Event $sender,
         \Synerise\Integration\Helper\Cart $cartHelper
     ) {
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
         $this->cartHelper = $cartHelper;
     }
 
@@ -78,10 +78,10 @@ class CartQtyUpdate implements ObserverInterface
                     (int) $quote->getItemsQty()
                 );
 
-                if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                    $this->queueHelper->publishEvent(self::EVENT, $cartStatusEvent, $storeId);
+                if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                    $this->publisher->publish(self::EVENT, $cartStatusEvent, $storeId);
                 } else {
-                    $this->eventHelper->sendEvent(self::EVENT, $cartStatusEvent, $storeId);
+                    $this->sender->send(self::EVENT, $cartStatusEvent, $storeId);
                 }
             }
         } catch (ApiException $e) {

@@ -5,8 +5,8 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Product as Sender;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
 {

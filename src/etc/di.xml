@@ -101,17 +101,17 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Model\Synchronization\MessageQueue\Event\Consumer">
+    <type name="Synerise\Integration\MessageQueue\Consumer\Event">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Consumer\Product">
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Batch\Product">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Model\Synchronization\MessageQueue\Data\Range\Consumer\Product">
+    <type name="Synerise\Integration\MessageQueue\Consumer\Data\Range\Product">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

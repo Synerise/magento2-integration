@@ -8,12 +8,12 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\MessageQueue\Sender\Event as EventSender;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Customer as CustomerSender;
 
 class CustomerSaveAfter implements ObserverInterface
 {
@@ -24,9 +24,9 @@ class CustomerSaveAfter implements ObserverInterface
     ];
 
     /**
-     * @var Sender
+     * @var EventSender
      */
-    protected $sender;
+    protected $eventSender;
 
     /**
      * @var Synchronization
@@ -44,36 +44,36 @@ class CustomerSaveAfter implements ObserverInterface
     private $request;
 
     /**
-     * @var Publisher
+     * @var EventPublisher
      */
-    protected $queueHelper;
+    protected $eventPublisher;
 
     /**
-     * @var Event
+     * @var CustomerSender
      */
-    protected $eventHelper;
+    protected $customerSender;
 
     /**
-     * @var Publisher
+     * @var DataItemPublisher
      */
-    protected $publisher;
+    protected $dataItemPublisher;
 
     public function __construct(
         Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
-        Sender $sender,
+        EventSender $eventSender,
         Http $request,
-        Publisher $publisher,
-        Queue $queueHelper,
-        Event $eventHelper
+        EventPublisher $eventPublisher,
+        DataItemPublisher $dataItemPublisher,
+        CustomerSender $customerSender
     ) {
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->sender = $sender;
+        $this->eventSender = $eventSender;
         $this->request = $request;
-        $this->publisher = $publisher;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->eventPublisher = $eventPublisher;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->customerSender = $customerSender;
     }
 
     public function execute(Observer $observer)
@@ -86,19 +86,19 @@ class CustomerSaveAfter implements ObserverInterface
             return;
         }
 
-        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+        if (!$this->synchronizationHelper->isEnabledModel(CustomerSender::MODEL)) {
             return;
         }
 
         try {
             $customer = $observer->getCustomer();
             $storeId = $customer->getStoreId();
-            $createClientInCRMRequest = new CreateaClientinCRMRequest($this->sender->preapreParams($customer));
+            $createClientInCRMRequest = new CreateaClientinCRMRequest($this->customerSender->preapreParams($customer));
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->eventPublisher->publish('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
             } else {
-                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
+                $this->eventSender->send('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
             }
         } catch (ApiException $e) {
             $this->addItemToQueue($observer->getCustomer());
@@ -110,8 +110,8 @@ class CustomerSaveAfter implements ObserverInterface
 
     protected function addItemToQueue(Customer $customer)
     {
-        $this->publisher->publish(
-            Sender::MODEL,
+        $this->dataItemPublisher->publish(
+            CustomerSender::MODEL,
             (int) $customer->getId(),
             $customer->getStoreId()
         );

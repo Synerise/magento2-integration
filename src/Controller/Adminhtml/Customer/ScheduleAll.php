@@ -9,10 +9,9 @@ use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Synerise\Integration\Helper\Synchronization;
-use Synerise\Integration\Model\Synchronization\Filter;
-use \Synerise\Integration\Model\Synchronization\MessageQueue\Data\Scheduler\Publisher;
-use Synerise\Integration\Model\Synchronization\Provider\Customer as Provider;
-use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
+use Synerise\Integration\MessageQueue\Filter;
+use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Customer as Sender;
 
 class ScheduleAll extends Action implements HttpGetActionInterface
 {

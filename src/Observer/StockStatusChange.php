@@ -11,8 +11,8 @@ use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
 use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Product as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Product as Sender;
 
 class StockStatusChange implements ObserverInterface
 {

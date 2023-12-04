@@ -6,9 +6,9 @@ use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Category;
-use Synerise\Integration\Helper\Event;
+use Synerise\Integration\MessageQueue\Sender\Event;
 use Synerise\Integration\Helper\Image;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
 class WishlistAddProduct implements ObserverInterface
@@ -31,27 +31,27 @@ class WishlistAddProduct implements ObserverInterface
     protected $imageHelper;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $sender;
 
     public function __construct(
         Category $categoryHelper,
         Image $imageHelper,
         Tracking $trackingHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        Publisher $publisher,
+        Event $sender
     ) {
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -116,10 +116,10 @@ class WishlistAddProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {

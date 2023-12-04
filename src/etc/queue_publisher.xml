@@ -4,7 +4,7 @@
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>
-    <publisher topic="synerise.queue.data.mixed.single" >
+    <publisher topic="synerise.queue.data.item" >
         <connection name="amqp" exchange="magento" disabled="true"/>
         <connection name="db" exchange="magento" disabled="false"/>
     </publisher>

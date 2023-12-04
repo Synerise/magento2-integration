@@ -10,8 +10,8 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Order as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
 
 class ScheduleMass extends Action
 {
@@ -87,7 +87,7 @@ class ScheduleMass extends Action
                             $collection->getAllIds(),
                             $enabledStoreId,
                             null,
-                            $this->synchronization->getPageSize(\Synerise\Integration\Model\Synchronization\Sender\Customer::MODEL)
+                            $this->synchronization->getPageSize(\Synerise\Integration\MessageQueue\Sender\Data\Customer::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();

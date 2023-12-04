@@ -9,8 +9,8 @@
     <broker topic="synerise.queue.events" exchange="magento" type="db">
         <queue name="synerise.queue.events" consumer="synerise.queue.events"/>
     </broker>
-    <broker topic="synerise.queue.data.mixed.single" exchange="magento" type="db">
-        <queue name="synerise.queue.data.mixed.single" consumer="synerise.queue.data.mixed.single"/>
+    <broker topic="synerise.queue.data.item" exchange="magento" type="db">
+        <queue name="synerise.queue.data.item" consumer="synerise.queue.data.item"/>
     </broker>
     <broker topic="synerise.queue.data.scheduler" exchange="magento" type="db">
         <queue name="synerise.queue.data.scheduler" consumer="synerise.queue.data.scheduler"/>

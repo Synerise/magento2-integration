@@ -10,8 +10,8 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Batch\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Customer as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Customer as Sender;
 
 class ScheduleMass extends Action
 {
@@ -74,12 +74,13 @@ class ScheduleMass extends Action
             $storeIds = [];
             $itemsCount = 0;
             $enabledStoreIds = $this->synchronization->getEnabledStores();
-            $collection = $this->filter->getCollection($this->collectionFactory->create());
 
             try {
                 foreach ($enabledStoreIds as $enabledStoreId) {
                     /** @var Collection $collection */
-                    $collection->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
+                    $collection = $this->filter->getCollection($this->collectionFactory->create())
+                        ->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
+
                     $ids = $collection->getAllIds();
                     if (!empty($ids)) {
                         $this->publisher->schedule(
@@ -90,7 +91,7 @@ class ScheduleMass extends Action
                             $this->synchronization->getPageSize(Sender::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
-                        $itemsCount += $collection->getSize();
+                        $itemsCount += $collection->count();
                     }
                 }
 

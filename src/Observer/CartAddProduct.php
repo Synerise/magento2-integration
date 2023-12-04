@@ -27,27 +27,27 @@ class CartAddProduct implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var \Synerise\Integration\MessageQueue\Publisher\Event
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var \Synerise\Integration\MessageQueue\Sender\Event
      */
-    protected $eventsHelper;
+    protected $sender;
 
     public function __construct(
         \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Cart $cartHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventsHelper
+        \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
+        \Synerise\Integration\MessageQueue\Sender\Event $sender
     ) {
         $this->apiHelper = $apiHelper;
         $this->cartHelper = $cartHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventsHelper = $eventsHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -94,10 +94,10 @@ class CartAddProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->queueHelper->isQueueAvailable()) {
-                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventsHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {

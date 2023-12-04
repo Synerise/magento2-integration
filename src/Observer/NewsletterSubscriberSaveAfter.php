@@ -6,21 +6,21 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\MessageQueue\Data\Single\Publisher;
-use Synerise\Integration\Model\Synchronization\Sender\Subscriber as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var Publisher
+     * @var DataItemPublisher
      */
-    protected $publisher;
+    protected $dataItemPublisher;
 
     /**
      * @var Sender
@@ -38,29 +38,29 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var Queue
+     * @var EventPublisher
      */
-    protected $queueHelper;
+    protected $eventPublisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $event;
 
     public function __construct(
-        Publisher $publisher,
+        DataItemPublisher $dataItemPublisher,
         Sender $sender,
         Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        EventPublisher $eventPublisher,
+        Event $event
     ) {
-        $this->publisher = $publisher;
-        $this->sender = $sender;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->event = $event;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->eventPublisher = $eventPublisher;
+        $this->sender = $sender;
     }
 
     /**
@@ -87,10 +87,10 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
 
             $createAClientInCrmRequest = $this->sender->prepareRequestFromSubscription($subscriber);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->eventPublisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
+                $this->event->send(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             }
         } catch (ApiException $e) {
             $this->addItemToQueue($subscriber);
@@ -105,7 +105,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      */
     protected function addItemToQueue($subscriber)
     {
-        $this->publisher->publish(
+        $this->dataItemPublisher->publish(
             Sender::MODEL,
             $subscriber->getId(),
             $subscriber->getStoreId()
