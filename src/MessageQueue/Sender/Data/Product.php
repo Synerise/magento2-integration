@@ -431,4 +431,20 @@ class Product implements SenderInterface
             $data
         );
     }
+
+    /**
+     * @param int[] $entityIds
+     * @param int $storeId
+     * @return void
+     */
+    public function deleteStatus(array $entityIds, int $storeId)
+    {
+        $this->connection->delete(
+            $this->connection->getTableName('synerise_sync_product'),
+            [
+                'store_id = ?' => $storeId,
+                'product_id IN (?)' => $entityIds,
+            ]
+        );
+    }
 }

@@ -74,7 +74,7 @@ class Event
      * @throws ValidatorException
      * @throws \Synerise\CatalogsApiClient\ApiException
      */
-    public function send($event_name, $payload, int $storeId, int $timeout = null)
+    public function send($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
     {
         try {
             $timeout = $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId);
@@ -110,9 +110,15 @@ class Event
                     break;
                 case CatalogProductDeleteBefore::EVENT:
                     $this->productSender->addItemsBatchWithCatalogCheck($payload, $storeId);
+                    if($entityId) {
+                        $this->productSender->deleteStatus([$entityId], $storeId);
+                    }
                     break;
                 case NewsletterSubscriberDeleteAfter::EVENT:
                     $this->subscriberSender->batchAddOrUpdateClients([$payload], $storeId, $timeout);
+                    if($entityId) {
+                        $this->subscriberSender->deleteStatus([$entityId]);
+                    }
                     break;
                 case OrderPlace::CUSTOMER_UPDATE:
                 case ProductReview::CUSTOMER_UPDATE:

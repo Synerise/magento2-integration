@@ -55,10 +55,10 @@ class Filter
         $idFieldName = $this->getIdFieldName($collection);
         $collection
             ->addFieldToFilter(
-                $collection->getIdFieldName(),
+                $idFieldName,
                 ['eq' => $entityId]
             )
-            ->setOrder($collection->getIdFieldName(), 'ASC')
+            ->setOrder($idFieldName, 'ASC')
             ->setPageSize($pageSize ?: self::DEFAULT_PAGE_SIZE);
 
         return $this->addStoreFilter($collection, $storeId);

@@ -53,11 +53,11 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
         try {
             $createAClientInCrmRequest = new CreateaClientinCRMRequest([
                 'email' => $subscriber->getSubscriberEmail(),
-                'agreements' => ['email' =>  0]
+                'agreements' => ['email' => 0]
             ]);
 
-            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->publisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                $this->publisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             } else {
                 $this->sender->send(self::EVENT, $createAClientInCrmRequest, $storeId);
             }

@@ -126,7 +126,8 @@ class Event
         $this->sender->send(
             $event['event_name'],
             $event['event_payload'],
-            $event['store_id']
+            $event['store_id'],
+            $event['entity_id']
         );
     }
 

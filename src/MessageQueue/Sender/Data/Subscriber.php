@@ -3,6 +3,7 @@
 namespace Synerise\Integration\MessageQueue\Sender\Data;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Newsletter\Model\Subscriber as SubscriberModel;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
@@ -20,9 +21,9 @@ class Subscriber implements SenderInterface
     const MAX_PAGE_SIZE = 500;
 
     /**
-     * @var ResourceConnection
+     * @var AdapterInterface
      */
-    protected $resource;
+    protected $connection;
 
     /**
      * @var LoggerInterface
@@ -45,7 +46,7 @@ class Subscriber implements SenderInterface
         Api $apiHelper,
         Tracking $trackingHelper
     ) {
-        $this->resource = $resource;
+        $this->connection = $resource->getConnection();
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
@@ -65,7 +66,7 @@ class Subscriber implements SenderInterface
 
         foreach ($collection as $subscriber) {
             $requests[] = $this->prepareRequestFromSubscription($subscriber);
-            $ids[] =  $subscriber->getEntityId();
+            $ids[] =  $subscriber->getId();
         }
 
         if (!empty($requests)) {
@@ -127,8 +128,8 @@ class Subscriber implements SenderInterface
             ];
         }
 
-        $this->resource->getConnection()->insertOnDuplicate(
-            $this->resource->getConnection()->getTableName('synerise_sync_subscriber'),
+        $this->connection->insertOnDuplicate(
+            $this->connection->getTableName('synerise_sync_subscriber'),
             $data
         );
     }
@@ -139,5 +140,19 @@ class Subscriber implements SenderInterface
     public function getAttributesToSelect(int $storeId): array
     {
         return [];
+    }
+
+    /**
+     * @param int[] $entityIds
+     * @return void
+     */
+    public function deleteStatus(array $entityIds)
+    {
+        $this->connection->delete(
+            $this->connection->getTableName('synerise_sync_subscriber'),
+            [
+                'subscriber_id IN (?)' => $entityIds,
+            ]
+        );
     }
 }
