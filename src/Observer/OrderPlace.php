@@ -7,27 +7,19 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Model\Order;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\MessageQueue\Sender\Event;
-use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\MessageQueue\Sender\Data\Order as OrderSender;
+use Synerise\Integration\MessageQueue\Sender\Event as EventSender;
+
 
 class OrderPlace implements ObserverInterface
 {
     const EVENT = 'sales_order_place_after';
 
-    /**
-     * @var EventPublisher
-     */
-    protected $eventPublisher;
-
-    /**
-     * @var Sender
-     */
-    protected $sender;
+    const CUSTOMER_UPDATE = 'customer_update_guest_order';
 
     /**
      * @var Synchronization
@@ -45,24 +37,34 @@ class OrderPlace implements ObserverInterface
     protected $dataItemPublisher;
 
     /**
-     * @var Event
+     * @var EventPublisher
      */
-    protected $event;
+    protected $eventPublisher;
+
+    /**
+     * @var OrderSender
+     */
+    protected $orderSender;
+
+    /**
+     * @var EventSender
+     */
+    protected $eventSender;
 
     public function __construct(
-        EventPublisher $eventPublisher,
-        Synchronization $synchronizationHelper,
-        Tracking $trackingHelper,
-        Sender $sender,
         DataItemPublisher $dataItemPublisher,
-        Event $event
+        EventPublisher $eventPublisher,
+        OrderSender $orderSender,
+        EventSender $eventSender,
+        Synchronization $synchronizationHelper,
+        Tracking $trackingHelper
     ) {
+        $this->dataItemPublisher = $dataItemPublisher;
         $this->eventPublisher = $eventPublisher;
+        $this->orderSender = $orderSender;
+        $this->eventSender = $eventSender;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->sender = $sender;
-        $this->dataItemPublisher = $dataItemPublisher;
-        $this->event = $event;
     }
 
     public function execute(Observer $observer)
@@ -78,64 +80,52 @@ class OrderPlace implements ObserverInterface
 
             $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
 
-            if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+            if (!$this->synchronizationHelper->isEnabledModel(OrderSender::MODEL)) {
                 return;
             }
 
-            $params = $this->sender->preapreOrderParams(
-                $order,
-                $this->trackingHelper->generateUuidByEmail($order->getCustomerEmail())
-            );
-
-            if(empty($params)) {
-                return;
-            }
-
-            $transactionRequest = new CreateatransactionRequest($params);
-
-            $createAClientInCrmRequest = null;
-            if ($order->getCustomerIsGuest()) {
-                $shippingAddress = $order->getShippingAddress();
-
-                $phone = null;
-                if ($shippingAddress) {
-                    $phone = $shippingAddress->getTelephone();
-                }
-
-                $createAClientInCrmRequest = new CreateaClientinCRMRequest([
-                    'email' => $order->getCustomerEmail(),
-                    'uuid' => $this->trackingHelper->getClientUuid(),
-                    'phone' => $phone,
-                    'first_name' => $order->getCustomerFirstname(),
-                    'last_name' => $order->getCustomerLastname()
-                ]);
-            }
+            $guestCustomerRequest = $this->prepareGuestCustomerRequest($order);
 
             if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->eventPublisher->publish(self::EVENT, $transactionRequest, $storeId, $order->getId());
-                if ($createAClientInCrmRequest) {
-                    $this->eventPublisher->publish('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->dataItemPublisher->publish(OrderSender::MODEL,$order->getId(), $order->getStoreId());
+                if ($guestCustomerRequest) {
+                    $this->eventPublisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
                 }
             } else {
-                $this->event->send(self::EVENT, $transactionRequest, $storeId, $order->getId());
-                if ($createAClientInCrmRequest) {
-                    $this->event->send('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->orderSender->sendItems([$order], $storeId);
+                if ($guestCustomerRequest) {
+                    $this->eventSender->send(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
                 }
             }
         } catch (ApiException $e) {
-            $this->addItemToQueue($order);
         } catch (\Exception $e) {
             $this->trackingHelper->getLogger()->error($e);
-            $this->addItemToQueue($order);
         }
     }
 
-    protected function addItemToQueue(Order $order)
+    /**
+     * @param Order $order
+     * @return CreateaClientinCRMRequest|null
+     */
+    protected function prepareGuestCustomerRequest(Order $order): ?CreateaClientinCRMRequest
     {
-        $this->dataItemPublisher->publish(
-            Sender::MODEL,
-            $order->getId(),
-            $order->getStoreId()
-        );
+        if (!$order->getCustomerIsGuest()) {
+            return null;
+        }
+
+        $shippingAddress = $order->getShippingAddress();
+
+        $phone = null;
+        if ($shippingAddress) {
+            $phone = $shippingAddress->getTelephone();
+        }
+
+        return new CreateaClientinCRMRequest([
+            'email' => $order->getCustomerEmail(),
+            'uuid' => $this->trackingHelper->getClientUuid(),
+            'phone' => $phone,
+            'first_name' => $order->getCustomerFirstname(),
+            'last_name' => $order->getCustomerLastname()
+        ]);
     }
 }

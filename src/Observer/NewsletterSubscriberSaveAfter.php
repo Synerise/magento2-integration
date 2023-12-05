@@ -76,39 +76,26 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
             return;
         }
 
-        $event = $observer->getEvent();
         /** @var Subscriber $subscriber */
-        $subscriber = $event->getDataObject();
+        $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
         try {
             if (!$this->trackingHelper->isLoggedIn()) {
                 $this->trackingHelper->manageClientUuid($subscriber->getEmail());
             }
 
-            $createAClientInCrmRequest = $this->sender->prepareRequestFromSubscription($subscriber);
-
             if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->eventPublisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
+                $this->dataItemPublisher->publish(
+                    Sender::MODEL,
+                    $subscriber->getEntityId(),
+                    $storeId
+                );
             } else {
-                $this->event->send(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
+                $this->sender->sendItems([$subscriber], $storeId);
             }
         } catch (ApiException $e) {
-            $this->addItemToQueue($subscriber);
         } catch (\Exception $e) {
             $this->trackingHelper->getLogger()->error($e);
-            $this->addItemToQueue($subscriber);
         }
-    }
-
-    /**
-     * @param $subscriber
-     */
-    protected function addItemToQueue($subscriber)
-    {
-        $this->dataItemPublisher->publish(
-            Sender::MODEL,
-            $subscriber->getId(),
-            $subscriber->getStoreId()
-        );
     }
 }

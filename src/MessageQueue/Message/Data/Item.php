@@ -34,20 +34,20 @@ Class Item
 
     /**
      * @param string $model
-     * @param int $entityId
-     * @param int $storeId
-     * @param int|null $websiteId
+     * @param int $entity_id
+     * @param int $store_id
+     * @param int|null $website_id
      * @param int $retries
      */
-    public function __construct(string $model, int $entityId, int $storeId, ?int $websiteId = null, int $retries = 0)
+    public function __construct(string $model, int $entity_id, int $store_id, ?int $website_id = null, int $retries = 0)
     {
         $this->model = $model;
-        $this->entityId = $entityId;
-        $this->storeId = $storeId;
-        $this->websiteId = $websiteId;
+        $this->entityId = $entity_id;
+        $this->storeId = $store_id;
+        $this->websiteId = $website_id;
         $this->retries = $retries;
 
-        if ($model == Product::MODEL && !$websiteId) {
+        if ($model == Product::MODEL && !$website_id) {
             throw new InvalidArgumentException('Website id required for Product');
         }
     }

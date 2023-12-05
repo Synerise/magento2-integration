@@ -19,6 +19,8 @@ class ProductReview implements ObserverInterface
 {
     const EVENT = 'product_review_save_after';
 
+    const CUSTOMER_UPDATE = 'customer_update_product_review';
+
     /**
      * @var ProductRepositoryInterface
      */
@@ -154,10 +156,10 @@ class ProductReview implements ObserverInterface
 
             if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
                 $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
-                $this->publisher->publish('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->publisher->publish(self::CUSTOMER_UPDATE, $createAClientInCrmRequest, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $customEventRequest, $storeId);
-                $this->sender->send('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->sender->send(self::CUSTOMER_UPDATE, $createAClientInCrmRequest, $storeId);
             }
         } catch (ApiException $e) {
         } catch (\Exception $e) {

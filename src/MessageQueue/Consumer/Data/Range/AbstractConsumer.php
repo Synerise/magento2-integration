@@ -55,7 +55,7 @@ abstract class AbstractConsumer extends AbstractOperationConsumer
             $data['gt'],
             $data['le'],
             $data['store_id'],
-            self::getPageSize()
+            static::getPageSize()
         );
 
         $attributes = $this->sender->getAttributesToSelect($data['store_id']);

@@ -4,6 +4,7 @@ namespace Synerise\Integration\MessageQueue\Sender\Data;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
+use Magento\Customer\Model\Customer as CustomerModel;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
@@ -70,37 +71,32 @@ class Customer implements SenderInterface
     }
 
     /**
-     * @param Collection $collection
+     * @param Collection|CustomerModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return void
-     * @throws \Synerise\ApiClient\ApiException
+     * @throws \Synerise\ApiClient\ApiException|ValidatorException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
         {
-            if (!$collection->getSize()) {
-                return;
-            }
-
-            $ids = [];
             $createAClientInCrmRequests = [];
-
-            if (!$collection->count()) {
-                return;
-            }
+            $ids = [];
 
             foreach ($collection as $customer) {
-                $ids[] = $customer->getEntityId();
                 $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($this->preapreParams($customer, $storeId));
+                $ids[] = $customer->getEntityId();
             }
 
-            $this->batchAddOrUpdateClients(
-                $createAClientInCrmRequests,
-                $storeId,
-                $this->apiHelper->getScheduledRequestTimeout($storeId)
-            );
-            $this->markCustomersAsSent($ids, $storeId);
+            if (!empty($createAClientInCrmRequests)) {
+                $this->batchAddOrUpdateClients(
+                    $createAClientInCrmRequests,
+                    $storeId,
+                    $this->apiHelper->getScheduledRequestTimeout($storeId)
+                );
+                $this->markCustomersAsSent($ids, $storeId);
+            }
+
         }
     }
 

@@ -9,7 +9,9 @@ use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
 {
-    const EVENT = 'newsletter_subscriber_save_after';
+    const EVENT = 'newsletter_subscriber_delete_after';
+
+    const EVENT_FOR_CONFIG = 'newsletter_subscriber_save_after';
 
     /**
      * @var \Synerise\Integration\Helper\Tracking
@@ -38,7 +40,7 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
             return;
         }
 

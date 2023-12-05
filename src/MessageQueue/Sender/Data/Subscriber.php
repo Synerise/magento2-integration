@@ -52,7 +52,7 @@ class Subscriber implements SenderInterface
     }
 
     /**
-     * @param Collection $collection
+     * @param Collection|SubscriberModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @throws ApiException
@@ -60,21 +60,22 @@ class Subscriber implements SenderInterface
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
-        if (!$collection->count()) {
-            return;
-        }
-
         $requests = [];
+        $ids = [];
+
         foreach ($collection as $subscriber) {
             $requests[] = $this->prepareRequestFromSubscription($subscriber);
+            $ids[] =  $subscriber->getEntityId();
         }
 
-        $this->batchAddOrUpdateClients(
-            $requests,
-            $storeId,
-            $this->apiHelper->getScheduledRequestTimeout($storeId)
-        );
-        $this->markSubscribersAsSent($collection->getAllIds());
+        if (!empty($requests)) {
+            $this->batchAddOrUpdateClients(
+                $requests,
+                $storeId,
+                $this->apiHelper->getScheduledRequestTimeout($storeId)
+            );
+            $this->markSubscribersAsSent($ids);
+        }
     }
 
     /**

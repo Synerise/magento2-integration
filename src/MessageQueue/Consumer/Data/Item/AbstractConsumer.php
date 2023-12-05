@@ -113,7 +113,7 @@ abstract class AbstractConsumer
             $this->createCollection(),
             $item->getEntityId(),
             $item->getStoreId(),
-            self::getPageSize()
+            static::getPageSize()
         );
 
         $attributes = $this->sender->getAttributesToSelect($item->getStoreId());

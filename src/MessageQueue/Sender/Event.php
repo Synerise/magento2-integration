@@ -7,7 +7,6 @@ use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\MessageQueue\Sender\Data\Customer as CustomerSender;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as OrderSender;
 use Synerise\Integration\MessageQueue\Sender\Data\Product as ProductSender;
 use Synerise\Integration\MessageQueue\Sender\Data\Subscriber as SubscriberSender;
 use Synerise\Integration\Observer\CartAddProduct;
@@ -19,7 +18,6 @@ use Synerise\Integration\Observer\CustomerLogin;
 use Synerise\Integration\Observer\CustomerLogout;
 use Synerise\Integration\Observer\CustomerRegister;
 use Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter;
-use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
 use Synerise\Integration\Observer\OrderPlace;
 use Synerise\Integration\Observer\ProductReview;
 use Synerise\Integration\Observer\WishlistAddProduct;
@@ -43,11 +41,6 @@ class Event
     private $customerSender;
 
     /**
-     * @var OrderSender
-     */
-    private $orderSender;
-
-    /**
      * @var ProductSender
      */
     private $productSender;
@@ -61,14 +54,12 @@ class Event
         LoggerInterface $logger,
         Api $apiHelper,
         CustomerSender $customerSender,
-        OrderSender $orderSender,
         ProductSender $productSender,
         SubscriberSender $subscriberSender
     ) {
         $this->logger = $logger;
         $this->apiHelper = $apiHelper;
         $this->customerSender = $customerSender;
-        $this->orderSender = $orderSender;
         $this->productSender = $productSender;
         $this->subscriberSender = $subscriberSender;
     }
@@ -77,14 +68,13 @@ class Event
      * @param $event_name
      * @param $payload
      * @param int $storeId
-     * @param int|null $entityId
      * @param int|null $timeout
      * @return void
      * @throws ApiException
      * @throws ValidatorException
      * @throws \Synerise\CatalogsApiClient\ApiException
      */
-    public function send($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
+    public function send($event_name, $payload, int $storeId, int $timeout = null)
     {
         try {
             $timeout = $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId);
@@ -115,32 +105,20 @@ class Event
                 case CustomerLogout::EVENT:
                     $apiInstance->clientLoggedOut('4.4', $payload);
                     break;
-                case OrderPlace::EVENT:
-                    $this->orderSender->createATransaction($payload, $storeId, $timeout);
-                    if ($entityId) {
-                        $this->orderSender->markItemsAsSent([$entityId]);
-                    }
+                case WishlistAddProduct::EVENT:
+                    $apiInstance->clientAddedProductToFavorites('4.4', $payload);
                     break;
                 case CatalogProductDeleteBefore::EVENT:
                     $this->productSender->addItemsBatchWithCatalogCheck($payload, $storeId);
                     break;
-                case WishlistAddProduct::EVENT:
-                    $apiInstance->clientAddedProductToFavorites('4.4', $payload);
-                    break;
                 case NewsletterSubscriberDeleteAfter::EVENT:
-                case NewsletterSubscriberSaveAfter::EVENT:
-                    $this->subscriberSender->batchAddOrUpdateClients($payload, $storeId, $timeout);
-                    if ($entityId) {
-                        $this->subscriberSender->markSubscribersAsSent([$entityId]);
-                    }
+                    $this->subscriberSender->batchAddOrUpdateClients([$payload], $storeId, $timeout);
                     break;
-                case 'ADD_OR_UPDATE_CLIENT':
-                    $this->customerSender->batchAddOrUpdateClients($payload, $storeId, $timeout);
-                    if ($entityId) {
-                        $this->customerSender->markCustomersAsSent([$entityId], $storeId);
-                    }
+                case OrderPlace::CUSTOMER_UPDATE:
+                case ProductReview::CUSTOMER_UPDATE:
+                    $this->customerSender->batchAddOrUpdateClients([$payload], $storeId, $timeout);
             }
-        } catch (\Synerise\ApiClient\ApiException $e) {
+        } catch (ApiException $e) {
             $this->logger->error('Synerise Api request failed', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
             throw $e;
         }

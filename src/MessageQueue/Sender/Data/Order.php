@@ -7,6 +7,7 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Model\Order as OrderModel;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Psr\Log\LoggerInterface;
@@ -85,19 +86,17 @@ class Order implements SenderInterface
     }
 
     /**
-     * @param Collection $collection
+     * @param Collection|OrderModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return void
      * @throws ApiException
      * @throws ValidatorException
+     * @throws NoSuchEntityException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
         $ids = $createATransactionRequest = [];
-        if (!$collection->count()) {
-            return;
-        }
 
         foreach ($collection as $order) {
             $ids[] = $order->getEntityId();
