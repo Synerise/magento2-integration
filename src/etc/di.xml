@@ -171,4 +171,9 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
+    <type name="Synerise\Integration\MessageQueue\Sender\Event">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
 </config>

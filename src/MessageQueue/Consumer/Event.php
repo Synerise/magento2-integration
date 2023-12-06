@@ -96,8 +96,7 @@ class Event
             $this->logger->error($e->getMessage());
             $isRetryable = true;
         } catch(ApiException | CatalogApiException $e) {
-            $isRetryable = ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500);
-            $this->logger->critical($e->getMessage());
+            $isRetryable = ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() == 403 || $e->getCode() >= 500);
         } catch (Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
             $isRetryable = ($e instanceof LockWaitException || $e instanceof DeadlockException || $e instanceof ConnectionException);
@@ -154,7 +153,7 @@ class Event
     }
 
     /**
-     * Publish deprecated event as data item or modify and send
+     * Check for deprecated events. Publish as data item or modify and send.
      *
      * @param array $event
      * @return bool true if event published to different queue
