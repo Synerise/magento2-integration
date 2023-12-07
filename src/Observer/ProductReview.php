@@ -9,7 +9,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\DataStorage;
 use Synerise\Integration\MessageQueue\Sender\Event;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
@@ -42,11 +41,6 @@ class ProductReview implements ObserverInterface
     protected $data;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -70,7 +64,6 @@ class ProductReview implements ObserverInterface
         ProductRepositoryInterface $productRepository,
         VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
-        Api $apiHelper,
         Tracking $trackingHelper,
         Publisher $publisher,
         Event $sender
@@ -78,7 +71,6 @@ class ProductReview implements ObserverInterface
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;

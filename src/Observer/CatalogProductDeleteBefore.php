@@ -5,7 +5,6 @@ namespace Synerise\Integration\Observer;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\MessageQueue\Sender\Event;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Synchronization;
@@ -20,11 +19,6 @@ class CatalogProductDeleteBefore implements ObserverInterface
      * @var Sender
      */
     protected $sender;
-
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
 
     /**
      * @var Synchronization
@@ -48,14 +42,12 @@ class CatalogProductDeleteBefore implements ObserverInterface
 
     public function __construct(
         Sender $sender,
-        Api $apiHelper,
         Tracking $trackingHelper,
         Synchronization $synchronizationHelper,
         Publisher $publisher,
         Event $event
     ) {
         $this->event = $event;
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->publisher = $publisher;

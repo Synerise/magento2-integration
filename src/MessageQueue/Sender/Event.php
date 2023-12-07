@@ -5,7 +5,7 @@ namespace Synerise\Integration\MessageQueue\Sender;
 use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Api;
+use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\MessageQueue\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\MessageQueue\Sender\Data\Product as ProductSender;
 use Synerise\Integration\MessageQueue\Sender\Data\Subscriber as SubscriberSender;
@@ -22,18 +22,15 @@ use Synerise\Integration\Observer\OrderPlace;
 use Synerise\Integration\Observer\ProductReview;
 use Synerise\Integration\Observer\WishlistAddProduct;
 use Synerise\Integration\Observer\WishlistRemoveProduct;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Event
+class Event extends AbstractSender
 {
     /**
-     * @var LoggerInterface
+     * @var ConfigFactory
      */
-    private $logger;
-
-    /**
-     * @var Api
-     */
-    private $apiHelper;
+    protected $configFactory;
 
     /**
      * @var CustomerSender
@@ -52,35 +49,41 @@ class Event
 
     public function __construct(
         LoggerInterface $logger,
-        Api $apiHelper,
-        CustomerSender $customerSender,
+        InstanceFactory $apiInstanceFactory,
+        ConfigFactory $configFactory,
+        CustomerSender$customerSender,
         ProductSender $productSender,
         SubscriberSender $subscriberSender
     ) {
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
+        $this->configFactory = $configFactory;
         $this->customerSender = $customerSender;
         $this->productSender = $productSender;
         $this->subscriberSender = $subscriberSender;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
      * @param $event_name
      * @param $payload
      * @param int $storeId
+     * @param int|null $entityId
      * @param int|null $timeout
+     * @param bool $isRetry
      * @return void
      * @throws ApiException
+     * @throws CatalogApiException
      * @throws ValidatorException
-     * @throws \Synerise\CatalogsApiClient\ApiException
      */
-    public function send($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null)
+    public function send($event_name, $payload, int $storeId, int $entityId = null, int $timeout = null, bool $isRetry = false)
     {
         try {
-            $timeout = $timeout ?: $this->apiHelper->getScheduledRequestTimeout($storeId);
-            $apiInstance = $this->apiHelper->getDefaultApiInstance(
-                $storeId,
-                $timeout
+            $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
+
+            $apiInstance = $this->apiInstanceFactory->getApiInstance(
+                $config->getScopeKey(),
+                'default',
+                $config
             );
 
             switch ($event_name) {
@@ -124,9 +127,11 @@ class Event
                 case ProductReview::CUSTOMER_UPDATE:
                     $this->customerSender->batchAddOrUpdateClients([$payload], $storeId, $timeout);
             }
-        } catch (ApiException $e) {
-            $this->logger->error('Synerise Api request failed', ['exception' => $e, 'api_response_body' => $e->getResponseBody()]);
-            throw $e;
+        } catch (ApiException | CatalogApiException $e) {
+            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
+            if (!$isRetry) {
+                $this->send($event_name, $payload, $storeId, $entityId, $timeout, true);
+            }
         }
     }
 }

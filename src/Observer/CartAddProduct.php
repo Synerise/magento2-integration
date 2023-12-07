@@ -12,11 +12,6 @@ class CartAddProduct implements ObserverInterface
     const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var \Synerise\Integration\Helper\Cart
      */
     protected $cartHelper;
@@ -37,13 +32,11 @@ class CartAddProduct implements ObserverInterface
     protected $sender;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Cart $cartHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
         \Synerise\Integration\MessageQueue\Sender\Event $sender
     ) {
-        $this->apiHelper = $apiHelper;
         $this->cartHelper = $cartHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;

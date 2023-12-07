@@ -18,15 +18,18 @@ use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddItem;
-use Synerise\Integration\Helper\Api;
+use Synerise\CatalogsApiClient\Model\Bag;
 use Synerise\Integration\Helper\Catalog;
 use Synerise\Integration\Helper\Category;
 use Synerise\Integration\Helper\Image;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Config\Source\Products\Attributes;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Product implements SenderInterface
+class Product extends AbstractSender implements SenderInterface
 {
     const MODEL = 'product';
     const ENTITY_ID = 'entity_id';
@@ -86,11 +89,6 @@ class Product implements SenderInterface
     protected $stockRegistry;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Catalog
      */
     protected $catalogHelper;
@@ -117,19 +115,19 @@ class Product implements SenderInterface
 
     public function __construct(
         LoggerInterface $logger,
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
         ProductRepositoryInterface $productRepository,
         Configurable $configurable,
         ResourceConnection $resource,
         StockRegistry $stockRegistry,
-        Api $apiHelper,
         Catalog $catalogHelper,
         Category $categoryHelper,
         Image $imageHelper,
         Tracking $trackingHelper,
         ?IsProductSalableInterface $isProductSalable = null
-
     ) {
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
@@ -138,12 +136,13 @@ class Product implements SenderInterface
         $this->configurable = $configurable;
         $this->connection = $resource->getConnection();
         $this->stockRegistry = $stockRegistry;
-        $this->apiHelper = $apiHelper;
         $this->catalogHelper = $catalogHelper;
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
         $this->isProductSalable = $isProductSalable;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
@@ -189,15 +188,14 @@ class Product implements SenderInterface
      */
     public function addItemsBatchWithCatalogCheck($addItemRequest, $storeId)
     {
-        $timeout = $this->apiHelper->getScheduledRequestTimeout($storeId);
-        $catalogId = $this->catalogHelper->getOrAddCatalog($storeId, $timeout);
+        $catalogId = $this->getOrAddCatalog($storeId);
 
         try {
-            $this->addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout);
+            $this->addItemsBatch($catalogId, $addItemRequest, $storeId);
         } catch (ApiException $e) {
             if ($e->getCode() === 404) {
-                $catalogId = $this->catalogHelper->addCatalog($storeId);
-                $this->addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout);
+                $catalogId = $this->addCatalog($storeId);
+                $this->addItemsBatch($catalogId, $addItemRequest, $storeId);
             } else {
                 throw $e;
             }
@@ -208,20 +206,60 @@ class Product implements SenderInterface
      * @param $catalogId
      * @param $addItemRequest
      * @param $storeId
-     * @param $timeout
+     * @param bool $isRetry
      * @return void
      * @throws ApiException
+     * @throws ValidatorException
      */
-    public function addItemsBatch($catalogId, $addItemRequest, $storeId, $timeout = null)
+    public function addItemsBatch($catalogId, $addItemRequest, $storeId, $isRetry = false)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getItemsApiInstance($storeId, $timeout)
-            ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
+        try {
+            list ($body, $statusCode, $headers) = $this->getItemsApiInstance($storeId)
+                ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
 
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
+            if (substr($statusCode, 0, 1) != 2) {
+                throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
+            } elseif ($statusCode == 207) {
+                $this->logger->warning('Request partially accepted', ['response' => $body]);
+            }
+        } catch (ApiException $e) {
+            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
+            if (!$isRetry) {
+                $this->addItemsBatch($catalogId, $addItemRequest, $storeId, true);
+            }
         }
+    }
+
+    /**
+     * @param int $storeId
+     * @return mixed
+     * @throws \Synerise\ApiClient\ApiException
+     * @throws ValidatorException
+     */
+    protected function getItemsApiInstance(int $storeId)
+    {
+        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
+        return $this->apiInstanceFactory->getApiInstance(
+            $config->getScopeKey(),
+            'items',
+            $config
+        );
+    }
+
+    /**
+     * @param int $storeId
+     * @return mixed
+     * @throws \Synerise\ApiClient\ApiException
+     * @throws ValidatorException
+     */
+    protected function getCatalogsApiInstance(int $storeId)
+    {
+        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
+        return $this->apiInstanceFactory->getApiInstance(
+            $config->getScopeKey(),
+            'catalogs',
+            $config
+        );
     }
 
     /**
@@ -411,6 +449,90 @@ class Product implements SenderInterface
         }
         return $this->storeUrls[$storeId];
     }
+
+    /**
+     * @param $storeId
+     * @param bool $isRetry
+     * @return mixed
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function addCatalog($storeId, $isRetry = false)
+    {
+        try {
+            $addBagRequest = new \Synerise\CatalogsApiClient\Model\AddBag([
+                'name' => $this->catalogHelper->getCatalogNameByStoreId($storeId)
+            ]);
+
+            $response = $this->getCatalogsApiInstance($storeId)
+                ->addBagWithHttpInfo($addBagRequest);
+            $catalogId = $response[0]->getData()->getId();
+
+            $this->catalogHelper->saveConfigCatalogId($catalogId, $storeId);
+
+            return $catalogId;
+        } catch (ApiException $e) {
+            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
+            if (!$isRetry) {
+                $this->addCatalog($storeId, true);
+            }
+        }
+    }
+
+    /**
+     * @param $storeId
+     * @param $timeout
+     * @return mixed|string
+     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
+     * @throws \Synerise\CatalogsApiClient\ApiException
+     */
+    public function getOrAddCatalog($storeId, $timeout = null)
+    {
+        $catalogId = $this->catalogHelper->getConfigCatalogId($storeId);
+        if ($catalogId) {
+            return $catalogId;
+        }
+
+        $catalog = $this->findExistingCatalogByStoreId($storeId);
+        if ($catalog) {
+            $catalogId = $catalog->getId();
+            $this->catalogHelper->saveConfigCatalogId($catalog->getId(), $storeId);
+        }
+
+        return $catalogId ?: $this->addCatalog($storeId, $timeout);
+    }
+
+    /**
+     * @param $storeId
+     * @param bool $isRetry
+     * @return mixed|Bag|null
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function findExistingCatalogByStoreId($storeId, $isRetry = false)
+    {
+        try {
+        $catalogName = $this->catalogHelper->getCatalogNameByStoreId($storeId);
+        $getBagsResponse = $this->getCatalogsApiInstance($storeId)
+            ->getBags($catalogName);
+
+        $existingBags = $getBagsResponse->getData();
+        foreach ($existingBags as $bag) {
+            if ($bag->getName() == $catalogName) {
+                return $bag;
+            }
+        }
+    } catch (ApiException $e) {
+        $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
+        if (!$isRetry) {
+            $this->findExistingCatalogByStoreId($storeId, true);
+        }
+    }
+
+        return null;
+    }
+
 
     /**
      * @param int[] $ids

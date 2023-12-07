@@ -10,10 +10,12 @@ use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Sender\AbstractSender;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Subscriber implements SenderInterface
+class Subscriber extends AbstractSender implements SenderInterface
 {
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
@@ -31,11 +33,6 @@ class Subscriber implements SenderInterface
     protected $logger;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -43,13 +40,15 @@ class Subscriber implements SenderInterface
     public function __construct(
         ResourceConnection $resource,
         LoggerInterface $logger,
-        Api $apiHelper,
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory,
         Tracking $trackingHelper
     ) {
         $this->connection = $resource->getConnection();
         $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
@@ -72,8 +71,7 @@ class Subscriber implements SenderInterface
         if (!empty($requests)) {
             $this->batchAddOrUpdateClients(
                 $requests,
-                $storeId,
-                $this->apiHelper->getScheduledRequestTimeout($storeId)
+                $storeId
             );
             $this->markSubscribersAsSent($ids);
         }
@@ -82,22 +80,44 @@ class Subscriber implements SenderInterface
     /**
      * @param $createAClientInCrmRequests
      * @param $storeId
-     * @param null $timeout
+     * @param bool $isRetry
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $timeout = null)
+    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $isRetry = false)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
-            ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
+        try {
+            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
+                ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
+            if (substr($statusCode, 0, 1) != 2) {
+                throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
+            } elseif ($statusCode == 207) {
+                $this->logger->warning('Request partially accepted', ['response_body' => $body]);
+            }
+        } catch (ApiException $e) {
+            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
+            if (!$isRetry) {
+                $this->batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, true);
+            }
         }
     }
 
+    /**
+     * @param int $storeId
+     * @return mixed
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function getDefaultApiInstance(int $storeId)
+    {
+        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
+        return $this->apiInstanceFactory->getApiInstance(
+            $config->getScopeKey(),
+            'default',
+            $config
+        );
+    }
     /**
      * @param SubscriberModel $subscriber
      * @return CreateaClientinCRMRequest

@@ -71,11 +71,6 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Helper\Api">
-        <arguments>
-            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
-        </arguments>
-    </type>
     <type name="Synerise\Integration\Helper\Tracking">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
@@ -172,6 +167,11 @@
         </arguments>
     </type>
     <type name="Synerise\Integration\MessageQueue\Sender\Event">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\SyneriseApi\ConfigFactory">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

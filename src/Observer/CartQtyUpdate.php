@@ -70,7 +70,7 @@ class CartQtyUpdate implements ObserverInterface
 
             $quote->collectTotals();
 
-            if (!$this->trackingHelper->hasItemDataChanges($quote)) {
+            if (!$this->cartHelper->hasItemDataChanges($quote)) {
                 // quote save won't be triggered, send event.
                 $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
                     $quote,

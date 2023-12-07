@@ -5,7 +5,13 @@ namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 use Magento\Backend\App\Action;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\ValidatorException;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Model\Workspace;
+use Synerise\Integration\SyneriseApi\Config;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Save extends \Magento\Backend\App\Action
 {
@@ -15,9 +21,14 @@ class Save extends \Magento\Backend\App\Action
     const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var ConfigFactory
      */
-    protected $apiHelper;
+    private $configFactory;
+
+    /**
+     * @var InstanceFactory
+     */
+    private $apiInstanceFactory;
 
     /**
      * @param Action\Context $context
@@ -25,9 +36,11 @@ class Save extends \Magento\Backend\App\Action
     public function __construct
     (
         Action\Context $context,
-        \Synerise\Integration\Helper\Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
 
         parent::__construct($context);
     }
@@ -104,17 +117,31 @@ class Save extends \Magento\Backend\App\Action
     }
 
     /**
-     * @param $apiKey
+     * @param string $apiKey
      * @param string $scope
      * @param null $scopeId
-     * @return \Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
+     * @return ApiKeyPermissionCheckResponse
+     * @throws ValidatorException
+     * @throws ApiException
      */
     protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getJwt($scope, $scopeId, null, $apiKey);
+        $authorizationToken = $this->configFactory->getJwt(
+            $apiKey,
+            $scopeId,
+            $this->configFactory->getLiveRequestTimeout(),
+            $scope
+        );
 
-        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+        $config = new Config(
+            $this->configFactory->getApiHost($scopeId, $scope),
+            $this->configFactory->getUserAgent($scopeId, $scope),
+            $this->configFactory->getLiveRequestTimeout(),
+            null,
+            Config::AUTHORIZATION_TYPE_BEARER,
+            $authorizationToken
+        );
+
+        return $this->apiInstanceFactory->createApiInstance('apiKey', $config)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 }

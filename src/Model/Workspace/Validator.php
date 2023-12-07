@@ -3,18 +3,30 @@
 namespace Synerise\Integration\Model\Workspace;
 
 use Ramsey\Uuid\Uuid;
+use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+use Synerise\Integration\SyneriseApi\Config;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Validator extends \Magento\Framework\Validator\AbstractValidator
 {
+
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var ConfigFactory
      */
-    protected $apiHelper;
+    private $configFactory;
+
+    /**
+     * @var InstanceFactory
+     */
+    private $apiInstanceFactory;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
     }
 
     public function isValid($workspace)
@@ -31,13 +43,19 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
             $messages['invalid_guid_format'] = 'Invalid guid format';
         }
 
-        $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
-            'api_key' => $apiKey
-        ]);
-
         try {
-            $this->apiHelper->getAuthApiInstance()
-                ->profileLoginUsingPOST($business_profile_authentication_request);
+            $authenticationApi = $this->apiInstanceFactory->createApiInstance(
+                'authentication',
+                new Config(
+                    $this->configFactory->getApiHost(),
+                    $this->configFactory->getUserAgent(),
+                    $this->configFactory->getLiveRequestTimeout()
+                )
+            );
+
+            $authenticationApi->profileLoginUsingPOST(
+                new BusinessProfileAuthenticationRequest(['api_key' => $apiKey])
+            );
         } catch (\Synerise\ApiClient\ApiException $e) {
             if ($e->getCode() === 401) {
                 throw new \Magento\Framework\Exception\ValidatorException(

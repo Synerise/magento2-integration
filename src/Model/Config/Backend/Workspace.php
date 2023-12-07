@@ -4,6 +4,9 @@ namespace Synerise\Integration\Model\Config\Backend;
 
 use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\SyneriseApi\Config;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Workspace extends \Magento\Framework\App\Config\Value
 {
@@ -23,14 +26,14 @@ class Workspace extends \Magento\Framework\App\Config\Value
     protected $configWriter;
 
     /**
-     * @var \Synerise\Integration\Helper\Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var \Synerise\Integration\Model\Workspace
      */
     protected $workspace;
+
+    /**
+     * @var InstanceFactory
+     */
+    private $apiInstanceFactory;
 
     public function __construct(
         \Magento\Framework\Model\Context $context,
@@ -39,16 +42,18 @@ class Workspace extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Model\Workspace $workspace,
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->configWriter = $configWriter;
         $this->encryptor = $encryptor;
-        $this->apiHelper = $apiHelper;
         $this->workspace = $workspace;
+        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
@@ -57,10 +62,10 @@ class Workspace extends \Magento\Framework\App\Config\Value
         $workspaceId = (int) $this->getValue();
         if ($workspaceId) {
             $workspace = $this->workspace->load($workspaceId);
-            $token = $this->getJwt($workspace->getApiKey());
 
             try {
-                $response = $this->apiHelper->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
+                $token = $this->getJwt($workspace->getApiKey());
+                $response = $this->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
                     ->getOrCreateByDomain(new \Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest([
                         'domain' => $this->getConfigDomain() ?? $this->getBaseUrlDomain()
                     ]));
@@ -126,7 +131,12 @@ class Workspace extends \Magento\Framework\App\Config\Value
 
     protected function getJwt($apiKey)
     {
-        return $this->apiHelper->getJwt($this->getScope(), $this->getScopeId(), null, $apiKey);
+        return $this->configFactory->getJwt(
+            $apiKey,
+            $this->getScopeId(),
+            $this->configFactory->getLiveRequestTimeout($this->getScopeId(), $this->getScope()),
+            $this->getScope()
+        );
     }
 
     private function getConfigDomain()
@@ -150,5 +160,24 @@ class Workspace extends \Magento\Framework\App\Config\Value
 
         $parsedUrl = parse_url($baseUrl);
         return $parsedUrl['host'];
+    }
+
+    private function getTrackerApiInstance(string $scope, int $scopeId, $authorizationToken)
+    {
+        $config = new Config(
+            $this->configFactory->getApiHost($scopeId, $scope),
+            $this->configFactory->getUserAgent($scopeId, $scope),
+            $this->configFactory->getLiveRequestTimeout(),
+            null,
+            Config::AUTHORIZATION_TYPE_BEARER,
+            $authorizationToken,
+            $this->configFactory->getHandlerStack($scopeId, $scope),
+            $this->configFactory->isKeepAliveEnabled($scopeId, $scope)
+        );
+
+        return $this->apiInstanceFactory->createApiInstance(
+            'tracking',
+            $config
+        );
     }
 }

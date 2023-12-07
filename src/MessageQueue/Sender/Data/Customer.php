@@ -15,10 +15,12 @@ use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
-use Synerise\Integration\Helper\Api;
+use Synerise\Integration\MessageQueue\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Customer implements SenderInterface
+class Customer extends AbstractSender implements SenderInterface
 {
     const MODEL = 'customer';
     const ENTITY_ID = 'entity_id';
@@ -51,23 +53,19 @@ class Customer implements SenderInterface
      */
     protected $logger;
 
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
     public function __construct(
         AddressRepositoryInterface $addressRepository,
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         LoggerInterface $logger,
-        Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
         $this->addressRepository = $addressRepository;
         $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
@@ -91,8 +89,7 @@ class Customer implements SenderInterface
             if (!empty($createAClientInCrmRequests)) {
                 $this->batchAddOrUpdateClients(
                     $createAClientInCrmRequests,
-                    $storeId,
-                    $this->apiHelper->getScheduledRequestTimeout($storeId)
+                    $storeId
                 );
                 $this->markCustomersAsSent($ids, $storeId);
             }
@@ -103,20 +100,43 @@ class Customer implements SenderInterface
     /**
      * @param $createAClientInCrmRequests
      * @param $storeId
-     * @param null $timeout
+     * @param bool $isRetry
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $timeout = null)
+    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $isRetry = false)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
-            ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
+        try {
+            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
+                ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
+            if (substr($statusCode, 0, 1) != 2) {
+                throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
+            } elseif ($statusCode == 207) {
+                $this->logger->warning('Request partially accepted', ['response_body' => $body]);
+            }
+        } catch (ApiException $e) {
+            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
+            if (!$isRetry) {
+                $this->batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, true);
+            }
         }
+    }
+
+    /**
+     * @param int $storeId
+     * @return mixed
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function getDefaultApiInstance(int $storeId)
+    {
+        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
+        return $this->apiInstanceFactory->getApiInstance(
+            $config->getScopeKey(),
+            'default',
+            $config
+        );
     }
 
     /**

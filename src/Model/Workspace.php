@@ -5,7 +5,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Store\Model\ScopeInterface;
 use Ramsey\Uuid\Uuid;
-use Synerise\Integration\Helper\Api;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
 
 class Workspace extends \Magento\Framework\Model\AbstractModel
 {
@@ -121,14 +121,14 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
             foreach($workspaceMap as $websiteId => $workspaceId) {
                 if ($this->getId() == $workspaceId) {
                     $this->configWriter->save(
-                        Api::XML_PATH_API_KEY,
+                        ConfigFactory::XML_PATH_API_KEY,
                         $this->getApiKey(),
                         ScopeInterface::SCOPE_WEBSITES,
                         $websiteId
                     );
 
                     $this->configWriter->save(
-                        Api::XML_PATH_API_KEY,
+                        ConfigFactory::XML_PATH_API_KEY,
                         $this->getData('api_key'),
                         ScopeInterface::SCOPE_WEBSITES,
                         $websiteId
