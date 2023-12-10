@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
@@ -12,10 +12,11 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
-use Synerise\Integration\MessageQueue\Sender\AbstractSender;
+use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -98,45 +99,40 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $createAClientInCrmRequests
-     * @param $storeId
-     * @param bool $isRetry
+     * @param $payload
+     * @param int $storeId
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $isRetry = false)
+    public function batchAddOrUpdateClients($payload, int $storeId)
     {
         try {
-            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
-                ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
+            list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $payload) {
+                    $this->getDefaultApiInstance($storeId)
+                        ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $payload);
+                },
+                $storeId
+            );
 
-            if (substr($statusCode, 0, 1) != 2) {
-                throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-            } elseif ($statusCode == 207) {
+            if ($statusCode == 207) {
                 $this->logger->warning('Request partially accepted', ['response_body' => $body]);
             }
         } catch (ApiException $e) {
-            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
-            if (!$isRetry) {
-                $this->batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, true);
-            }
+            $this->logApiException($e);
+            throw $e;
         }
     }
 
     /**
      * @param int $storeId
-     * @return mixed
+     * @return DefaultApi
      * @throws ApiException
      * @throws ValidatorException
      */
-    protected function getDefaultApiInstance(int $storeId)
+    protected function getDefaultApiInstance(int $storeId): DefaultApi
     {
-        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
-        return $this->apiInstanceFactory->getApiInstance(
-            $config->getScopeKey(),
-            'default',
-            $config
-        );
+        return $this->getApiInstance('default', $storeId);
     }
 
     /**

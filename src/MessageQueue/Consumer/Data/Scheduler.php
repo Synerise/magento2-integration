@@ -18,7 +18,7 @@ use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Publisher\Data\Range as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
-use Synerise\Integration\MessageQueue\Sender\Data\Product;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product;
 
 class Scheduler
 {

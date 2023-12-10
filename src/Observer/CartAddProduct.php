@@ -27,7 +27,7 @@ class CartAddProduct implements ObserverInterface
     protected $publisher;
 
     /**
-     * @var \Synerise\Integration\MessageQueue\Sender\Event
+     * @var \Synerise\Integration\SyneriseApi\Sender\Event
      */
     protected $sender;
 
@@ -35,7 +35,7 @@ class CartAddProduct implements ObserverInterface
         \Synerise\Integration\Helper\Cart $cartHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
-        \Synerise\Integration\MessageQueue\Sender\Event $sender
+        \Synerise\Integration\SyneriseApi\Sender\Event $sender
     ) {
         $this->cartHelper = $cartHelper;
         $this->trackingHelper = $trackingHelper;
@@ -92,9 +92,10 @@ class CartAddProduct implements ObserverInterface
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

@@ -497,7 +497,7 @@ class Tracking
         ];
 
         try {
-            list($body, $statusCode, $headers) = $this->getDefaultApiInstance()
+            list($body, $statusCode, $headers) = $this->createDefaultApiInstance()
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
             if ($statusCode != 202 && !$this->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
@@ -615,18 +615,15 @@ class Tracking
     }
 
     /**
-     * @param int $storeId
      * @return mixed
      * @throws ApiException
      * @throws ValidatorException
      */
-    protected function getDefaultApiInstance(int $storeId)
+    protected function createDefaultApiInstance()
     {
-        $config = $this->configFactory->getConfig(ConfigFactory::MODE_LIVE, $storeId);
-        return $this->apiInstanceFactory->getApiInstance(
-            $config->getScopeKey(),
+        return $this->apiInstanceFactory->createApiInstance(
             'default',
-            $config
+            $this->configFactory->createConfig()
         );
     }
 }

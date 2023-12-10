@@ -10,10 +10,9 @@ class Config
 
     CONST AUTHORIZATION_TYPE_BEARER = 'Bearer';
 
-    /**
-     * @var string
-     */
-    private $scopeKey;
+    const MODE_LIVE = 'live';
+
+    const MODE_SCHEDULE = 'schedule';
 
     /**
      * @var string
@@ -51,16 +50,14 @@ class Config
     private $keepAlive;
 
     public function __construct(
-        string        $apiHost,
-        string        $userAgent,
-        ?float        $timeout = null,
-        ?string       $scopeKey = null,
-        ?string       $authorizationType = null,
-        ?string       $authorizationToken = null,
+        string $apiHost,
+        string $userAgent,
+        ?float $timeout = null,
+        ?string $authorizationType = null,
+        ?string $authorizationToken = null,
         ?HandlerStack $handlerStack = null,
-        ?bool         $keepAlive = false
+        ?bool $keepAlive = false
     ) {
-        $this->scopeKey = $scopeKey;
         $this->apiHost = $apiHost;
         $this->userAgent = $userAgent;
         $this->timeout = $timeout;
@@ -68,11 +65,6 @@ class Config
         $this->authorizationToken = $authorizationToken;
         $this->handlerStack = $handlerStack;
         $this->keepAlive = $keepAlive;
-    }
-
-    public function getScopeKey(): string
-    {
-        return $this->scopeKey;
     }
 
     public function getApiHost(): string

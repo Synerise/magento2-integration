@@ -12,10 +12,12 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Ui\Component\MassAction\Filter;
+use Synerise\ApiClient\Api\ApiKeyControllerApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
+use Synerise\Integration\SyneriseApi\Authentication;
 use Synerise\Integration\SyneriseApi\Config;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -39,6 +41,11 @@ class MassUpdate extends Action implements HttpPostActionInterface
     protected $filter;
 
     /**
+     * @var Authentication
+     */
+    private $authentication;
+
+    /**
      * @var ConfigFactory
      */
     private $configFactory;
@@ -54,15 +61,20 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @param Context $context
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
+     * @param Authentication $authentication
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
      */
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
+        Authentication $authentication,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory
     ) {
         $this->filter = $filter;
+        $this->authentication = $authentication;
         $this->collectionFactory = $collectionFactory;
         $this->configFactory = $configFactory;
         $this->apiInstanceFactory = $apiInstanceFactory;
@@ -128,19 +140,38 @@ class MassUpdate extends Action implements HttpPostActionInterface
     /**
      * @param string $apiKey
      * @param string $scope
-     * @param null $scopeId
+     * @param int|null $scopeId
      * @return ApiKeyPermissionCheckResponse
-     * @throws ValidatorException
      * @throws ApiException
+     * @throws ValidatorException
      */
-    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $authorizationToken = $this->configFactory->getJwt(
+    protected function checkPermissions(
+        string $apiKey,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?int $scopeId = null
+    ): ApiKeyPermissionCheckResponse
+    {
+        $authorizationToken = $this->authentication->getJwt(
             $apiKey,
-            $scopeId,
-            $this->configFactory->getLiveRequestTimeout(),
-            $scope
+            $this->configFactory->createMinimalConfig($scopeId, $scope)
         );
 
+        return $this->createApiKeyInstance($authorizationToken, $scope, $scopeId)
+            ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
+    }
+
+    /**
+     * @param string $authorizationToken
+     * @param string $scope
+     * @param int|null $scopeId
+     * @return ApiKeyControllerApi
+     */
+    protected function createApiKeyInstance(
+        string $authorizationToken,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?int $scopeId = null
+    ): ApiKeyControllerApi
+    {
         $config = new Config(
             $this->configFactory->getApiHost($scopeId, $scope),
             $this->configFactory->getUserAgent($scopeId, $scope),
@@ -150,7 +181,6 @@ class MassUpdate extends Action implements HttpPostActionInterface
             $authorizationToken
         );
 
-        return $this->apiInstanceFactory->createApiInstance('apiKey', $config)
-            ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
+        return $this->apiInstanceFactory->createApiInstance('apiKey', $config);
     }
 }

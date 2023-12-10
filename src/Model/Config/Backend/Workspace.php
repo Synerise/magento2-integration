@@ -3,7 +3,11 @@
 namespace Synerise\Integration\Model\Config\Backend;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\ValidatorException;
+use Synerise\ApiClient\Api\TrackerControllerApi;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest;
+use Synerise\Integration\SyneriseApi\Authentication;
 use Synerise\Integration\SyneriseApi\Config;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -31,6 +35,16 @@ class Workspace extends \Magento\Framework\App\Config\Value
     protected $workspace;
 
     /**
+     * @var Authentication
+     */
+    private $authentication;
+
+    /**
+     * @var ConfigFactory
+     */
+    private $configFactory;
+
+    /**
      * @var InstanceFactory
      */
     private $apiInstanceFactory;
@@ -43,12 +57,14 @@ class Workspace extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
         \Synerise\Integration\Model\Workspace $workspace,
+        Authentication $authentication,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = []
     ) {
+        $this->authentication = $authentication;
         $this->configWriter = $configWriter;
         $this->encryptor = $encryptor;
         $this->workspace = $workspace;
@@ -57,6 +73,10 @@ class Workspace extends \Magento\Framework\App\Config\Value
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
+    /**
+     * @throws ApiException
+     * @throws LocalizedException
+     */
     public function beforeSave()
     {
         $workspaceId = (int) $this->getValue();
@@ -64,9 +84,8 @@ class Workspace extends \Magento\Framework\App\Config\Value
             $workspace = $this->workspace->load($workspaceId);
 
             try {
-                $token = $this->getJwt($workspace->getApiKey());
-                $response = $this->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $token)
-                    ->getOrCreateByDomain(new \Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest([
+                $response = $this->getTrackerApiInstance($this->getScope(), $this->getScopeId(), $workspace->getApiKey())
+                    ->getOrCreateByDomain(new TrackingCodeCreationByDomainRequest([
                         'domain' => $this->getConfigDomain() ?? $this->getBaseUrlDomain()
                     ]));
             } catch (ApiException $e) {
@@ -134,7 +153,6 @@ class Workspace extends \Magento\Framework\App\Config\Value
         return $this->configFactory->getJwt(
             $apiKey,
             $this->getScopeId(),
-            $this->configFactory->getLiveRequestTimeout($this->getScopeId(), $this->getScope()),
             $this->getScope()
         );
     }
@@ -162,7 +180,15 @@ class Workspace extends \Magento\Framework\App\Config\Value
         return $parsedUrl['host'];
     }
 
-    private function getTrackerApiInstance(string $scope, int $scopeId, $authorizationToken)
+    /**
+     * @param string $scope
+     * @param int $scopeId
+     * @param string $apiKey
+     * @return TrackerControllerApi
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    private function getTrackerApiInstance(string $scope, int $scopeId, string $apiKey): TrackerControllerApi
     {
         $config = new Config(
             $this->configFactory->getApiHost($scopeId, $scope),
@@ -170,13 +196,16 @@ class Workspace extends \Magento\Framework\App\Config\Value
             $this->configFactory->getLiveRequestTimeout(),
             null,
             Config::AUTHORIZATION_TYPE_BEARER,
-            $authorizationToken,
+            $this->authentication->getJwt(
+                $apiKey,
+                $this->configFactory->createMinimalConfig($this->getScopeId(), $this->getScope())
+            ),
             $this->configFactory->getHandlerStack($scopeId, $scope),
             $this->configFactory->isKeepAliveEnabled($scopeId, $scope)
         );
 
         return $this->apiInstanceFactory->createApiInstance(
-            'tracking',
+            'tracker',
             $config
         );
     }

@@ -9,7 +9,7 @@ use Magento\Framework\MessageQueue\MessageEncoder;
 use Magento\Framework\ObjectManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\MessageQueue\Filter;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as Sender;
 
 class Order extends AbstractConsumer implements ConsumerInterface
 {

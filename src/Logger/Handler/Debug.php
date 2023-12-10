@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\Logger\Handler;
+namespace Synerise\Integration\Logger\Handler;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Filesystem\DriverInterface;

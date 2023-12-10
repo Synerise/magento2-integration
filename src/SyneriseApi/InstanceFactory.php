@@ -35,11 +35,6 @@ class InstanceFactory
     ];
 
     /**
-     * @var array
-     */
-    protected $instances = [];
-
-    /**
      * @var float
      */
     protected $timeout = 2.5;
@@ -69,18 +64,6 @@ class InstanceFactory
                     $config->getAuthorizationType() == Config::AUTHORIZATION_TYPE_BEARER ? $config->getAuthorizationToken() : null
                 )
         );
-    }
-
-    /**
-     * @param string $type
-\     * @param Config $config
-     * @return mixed
-     */
-    public function getApiInstance(string $scopeKey, string $type, Config $config) {
-        if (!isset($this->instances[$scopeKey][$type])) {
-            $this->instances[$scopeKey][$type] = $this->createApiInstance($type, $config);
-        }
-        return $this->instances[$scopeKey][$type];
     }
 
     /**
@@ -121,10 +104,5 @@ class InstanceFactory
         }
 
         return $options;
-    }
-
-    public function clearInstances($scopeKey)
-    {
-        $this->instances[$scopeKey] = [];
     }
 }

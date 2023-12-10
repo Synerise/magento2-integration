@@ -7,7 +7,7 @@ use Magento\Wishlist\Model\Wishlist;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Category;
-use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\Helper\Image;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
@@ -137,9 +137,10 @@ class WishlistRemoveProduct implements ObserverInterface
             } else {
                 $this->sender->send(self::EVENT, $customEventRequest, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

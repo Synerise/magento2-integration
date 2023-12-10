@@ -11,9 +11,8 @@ use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as OrderSender;
-use Synerise\Integration\MessageQueue\Sender\Event as EventSender;
-
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
 class OrderPlace implements ObserverInterface
 {
@@ -47,22 +46,22 @@ class OrderPlace implements ObserverInterface
     protected $orderSender;
 
     /**
-     * @var EventSender
+     * @var CustomerSender
      */
-    protected $eventSender;
+    protected $customerSender;
 
     public function __construct(
         DataItemPublisher $dataItemPublisher,
         EventPublisher $eventPublisher,
         OrderSender $orderSender,
-        EventSender $eventSender,
+        CustomerSender $customerSender,
         Synchronization $synchronizationHelper,
         Tracking $trackingHelper
     ) {
         $this->dataItemPublisher = $dataItemPublisher;
         $this->eventPublisher = $eventPublisher;
         $this->orderSender = $orderSender;
-        $this->eventSender = $eventSender;
+        $this->customerSender = $customerSender;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
     }
@@ -94,12 +93,13 @@ class OrderPlace implements ObserverInterface
             } else {
                 $this->orderSender->sendItems([$order], $storeId);
                 if ($guestCustomerRequest) {
-                    $this->eventSender->send(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
+                    $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
                 }
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 

@@ -12,7 +12,7 @@ use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Subscriber as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class ScheduleMass extends Action implements HttpPostActionInterface
 {

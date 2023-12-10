@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\MessageQueue\Consumer\Data\AbstractOperationConsumer;
 use Synerise\Integration\MessageQueue\Filter;
-use Synerise\Integration\MessageQueue\Sender\Data\SenderInterface;
+use Synerise\Integration\SyneriseApi\Sender\Data\SenderInterface;
 
 abstract class AbstractConsumer extends AbstractOperationConsumer
 {
@@ -62,8 +62,11 @@ abstract class AbstractConsumer extends AbstractOperationConsumer
             $collection->addAttributeToSelect($attributes);
         }
 
-        $this->sender->sendItems($collection, $data['store_id']);
-    }
+        $this->sender->sendItems(
+            $collection,
+            $data['store_id'],
+            $data['website_id'] ?: null
+        );    }
 
     /**
      * @return AbstractDb

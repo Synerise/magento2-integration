@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ResourceConnection;
@@ -11,12 +11,13 @@ use Magento\Sales\Model\Order as OrderModel;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Category;
 use Synerise\Integration\Helper\Image;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\MessageQueue\Sender\AbstractSender;
+use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
@@ -122,45 +123,40 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $createATransactionRequest
-     * @param $storeId
-     * @param null $timeout
+     * @param $payload
+     * @param int $storeId
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateTransactions($createATransactionRequest, $storeId, $isRetry = false)
+    public function batchAddOrUpdateTransactions($payload, int $storeId)
     {
         try {
-            list ($body, $statusCode, $headers) = $this->getDefaultApiInstance($storeId)
-                ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createATransactionRequest);
+            list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $payload) {
+                    $this->getDefaultApiInstance($storeId)
+                        ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $payload);
+                },
+                $storeId
+            );
 
-            if (substr($statusCode, 0, 1) != 2) {
-                throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-            } elseif ($statusCode == 207) {
+            if ($statusCode == 207) {
                 $this->logger->warning('Request partially accepted', ['response' => $body]);
             }
         } catch (ApiException $e) {
-            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
-            if (!$isRetry) {
-                $this->batchAddOrUpdateTransactions($createATransactionRequest, $storeId, true);
-            }
+            $this->logApiException($e);
+            throw $e;
         }
     }
 
     /**
      * @param int $storeId
-     * @return mixed
+     * @return DefaultApi
      * @throws ApiException
      * @throws ValidatorException
      */
-    protected function getDefaultApiInstance(int $storeId)
+    protected function getDefaultApiInstance(int $storeId): DefaultApi
     {
-        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
-        return $this->apiInstanceFactory->getApiInstance(
-            $config->getScopeKey(),
-            'default',
-            $config
-        );
+        return $this->getApiInstance('default', $storeId);
     }
 
     /**

@@ -11,7 +11,7 @@ use Synerise\Integration\Helper\DataStorage;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Product as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductIsSalableChange implements ObserverInterface
 {

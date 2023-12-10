@@ -12,16 +12,11 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 use Synerise\Integration\Model\Config\Backend\Workspace;
 
 class ConfigFactory
 {
-    const MODE_LIVE = 'live';
-
-    const MODE_SCHEDULE = 'schedule';
-
     const XML_PATH_API_HOST = 'synerise/api/host';
 
     const XML_PATH_API_KEY = 'synerise/api/key';
@@ -35,12 +30,6 @@ class ConfigFactory
     const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
 
     const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
-
-    protected $config = [];
-
-    protected $apiToken = [
-//        'ac683fa7-ded9-4488-84f8-11d30e6bd5b0' => 'eyJhbGciOiJSUzUxMiJ9.eyJzdWIiOiI5OWJjZmNkNzU0YTk4Y2U4OWNiODZmNzNhY2MwNDY0NSIsImF1ZCI6IkFQSSIsInJsbSI6ImJ1c2luZXNzX3Byb2ZpbGUiLCJjdGQiOjE3MDE4NTM5NjU1NzcsImlzcyI6IlN5bmVyaXNlIiwiYnBpIjo2OTgsInNlc3Npb25JZCI6IjM0NjE2NGFlLTY1OTAtNDc1Yi04NjYyLWEyYWI4NmE0YzI5ZCIsImV4cCI6MTcwMTg1NzU2NSwiYXBrIjoiYWM2ODNmYTctZGVkOS00NDg4LTg0ZjgtMTFkMzBlNmJkNWIwIn0.GQp4HSxkZnBhJxmPshw1EoP6Oma91Kz4bQNKf4YH1ko548rydEGvVWun2UDf-tHfaXUfuxeErMqNG_Qa-cQ2iC1mPEWzvnn-SIJ3q1udywEkZxIEjd1P896mJX3qMs97VL41c14_UDRZdCzNl96X_cRAHdRomj6LW1jyCC6X3ljHups8u7qN54hX1uYaqPENql60ToRtW6_Lpwd11j9AQhUOVf9UpBFQKrAP0R6Q3ib458stTMFR9meqNhCStyqEQRZvpMvko0Oyc6JOHMbsamZaRKT3qaXxpZP82z7pg_RNRbO7e0T-3_E1wwEH8iZFI_G91HI7KAPhcrBYpU1rzH58-nQKFXvi8iyVgpN3bREHIM4mN0N68MzeqhEby0fYea0r3hDCitN_gxx8N0jWKpWZwgnua9CW_Hva2zpDlSH04wU5rpXnApOVAwv8MGHccgT6zXCT9KXch2zmupxyAqc0XCIiR79IULzKZxlgntTrig0Adi8mGyq7U2XJyFco6cXjllSa2h8T7g3ZjdMaiP1EhVg2-XyV_J9rydc8K_4gUg_ghFAdnmSST9_IBWzZxWQ_czjURQj3VrppvKyvWnz3mUTzD4sIFA7XB6mV7wCkrFl2hXA32zqn5KsG53htSy8OugY_iVAWzFYcT3568IWyerhLsMz7FLw8t0xjgyI'
-    ];
 
     /**
 
@@ -64,50 +53,63 @@ class ConfigFactory
     private $scopeConfig;
 
     /**
-     * @var InstanceFactory
+     * @var Authentication
      */
-    private $instanceFactory;
+    private $authentication;
+
+    /**
+     * @var string
+     */
+    private $mode;
 
     public function __construct(
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
         TranslitUrl $translitUrl,
         StoreManagerInterface $storeManager,
-        \Synerise\Integration\SyneriseApi\InstanceFactory $instanceFactory
+        Authentication $authentication
     ) {
         $this->translitUrl = $translitUrl;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
-        $this->instanceFactory = $instanceFactory;
+        $this->authentication = $authentication;
+
+        $this->mode = isset($_SERVER['REQUEST_METHOD']) ? Config::MODE_LIVE : Config::MODE_SCHEDULE;
     }
 
     /**
-     * @param string $mode
      * @param int|null $scopeId
      * @param string $scope
+     * @param string|null $mode
      * @return Config
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function createConfig(string $mode, int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): Config
+    public function createConfig(
+        int $scopeId = null,
+        string $scope = ScopeInterface::SCOPE_STORE,
+        ?string $mode = null
+    ): Config
     {
+        $mode = $mode ?: $this->mode;
         $timeout = $this->getTimeout($mode, $scopeId, $scope);
 
         if ($this->isBasicAuthAvailable($scopeId, $scope)) {
             $authorizationType = Config::AUTHORIZATION_TYPE_BASIC;
             $authorizationToken = $this->getBasicToken();
         } else {
-            $apiKey = $this->getApiKey($scopeId, $scope);
             $authorizationType = Config::AUTHORIZATION_TYPE_BEARER;
-            $authorizationToken = $this->getJwt($apiKey, $scopeId, $timeout, $scope);
+            $authorizationToken = $this->authentication->getJwt(
+                $this->getApiKey($scopeId, $scope),
+                $this->createMinimalConfig($scopeId, $scope, $mode)
+            );
         }
 
         return new Config(
             $this->getApiHost($scopeId, $scope),
             $this->getUserAgent($scopeId, $scope),
             $timeout,
-            $this->getScopeKey($mode, $scopeId, $scope),
             $authorizationType,
             $authorizationToken,
             $this->getHandlerStack($scopeId, $scope),
@@ -116,30 +118,24 @@ class ConfigFactory
     }
 
     /**
-     * @throws ApiException
-     * @throws ValidatorException
+     * @param int|null $scopeId
+     * @param string $scope
+     * @param string|null $mode
+     * @return Config
      */
-    public function getConfig(string $mode, int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): Config
+    public function createMinimalConfig(
+        int $scopeId = null,
+        string $scope = ScopeInterface::SCOPE_STORE,
+        ?string $mode = null
+    ): Config
     {
-        $scopeKey = $this->getScopeKey($mode, $scopeId, $scope);
-        if (!isset($this->config[$scopeKey][$mode])) {
-            $this->config[$scopeKey][$mode] = $this->createConfig($mode, $scopeId, $scope);
-        }
-        return $this->config[$scopeKey][$mode];
-    }
+        $mode = $mode ?: $this->mode;
 
-
-    public function getScopeKey(string $mode, int $scopeId, string $scope = ScopeInterface::SCOPE_STORE)
-    {
-        return $mode.$scope.$scopeId;
-    }
-
-    /**
-     * @return void
-     */
-    public function clearConfig(string $mode, int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE)
-    {
-        $this->config[$this->getScopeKey($mode, $scopeId, $scope)] = [];
+        return new Config(
+            $this->getApiHost($scopeId, $scope),
+            $this->getUserAgent($scopeId, $scope),
+            $this->getTimeout($mode, $scopeId, $scope)
+        );
     }
 
     /**
@@ -161,8 +157,8 @@ class ConfigFactory
     /**
      * Api key
      *
+     * @param int|null $scopeId
      * @param string $scope
-     * @param int $scopeId
      * @return string
      */
     public function getApiKey(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): string
@@ -204,7 +200,7 @@ class ConfigFactory
     /**
      * Guid & api key based token
      *
-     * @param int $scopeId
+     * @param int|null $scopeId
      * @param string $scope
      * @return string
      */
@@ -218,17 +214,10 @@ class ConfigFactory
     }
 
     /**
-     * Checks if Api Key is set for a given scope
-     *
+     * @param int|null $scopeId
      * @param string $scope
-     * @param int $scopeId
-     * @return bool
+     * @return HandlerStack|null
      */
-    public function isApiKeySet($scope, $scopeId)
-    {
-        return (boolean) $this->getApiKey($scopeId, $scope);
-    }
-    
     public function getHandlerStack(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): ?HandlerStack
     {
         $handlerStack = null;
@@ -245,6 +234,11 @@ class ConfigFactory
         return $handlerStack;
     }
 
+    /**
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return bool
+     */
     public function isLoggerEnabled(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
         return $this->scopeConfig->isSetFlag(
@@ -254,6 +248,11 @@ class ConfigFactory
         );
     }
 
+    /**
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return bool
+     */
     public function isKeepAliveEnabled(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
         return $this->scopeConfig->isSetFlag(
@@ -263,11 +262,21 @@ class ConfigFactory
         );
     }
 
+    /**
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return bool
+     */
     public function isBasicAuthAvailable(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
         return ($this->isBaiscAuthEnabled($scopeId, $scope) && $this->getBasicToken($scopeId, $scope));
     }
 
+    /**
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return bool
+     */
     public function isBaiscAuthEnabled(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
         return $this->scopeConfig->isSetFlag(
@@ -277,16 +286,27 @@ class ConfigFactory
         );
     }
 
+    /**
+     * @param string $mode
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return float|null
+     */
     protected function getTimeout(string $mode, int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): ?float
     {
-        if($mode == self::MODE_LIVE) {
+        if($mode == COnfig::MODE_LIVE) {
             return $this->getLiveRequestTimeout($scopeId, $scope);
-        } elseif ($mode == self::MODE_SCHEDULE) {
+        } elseif ($mode == Config::MODE_SCHEDULE) {
             return $this->getScheduledRequestTimeout($scopeId, $scope);
         }
         return null;
     }
 
+    /**
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return string
+     */
     public function getLiveRequestTimeout(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): string
     {
         return (float) $this->scopeConfig->getValue(
@@ -296,6 +316,11 @@ class ConfigFactory
         );
     }
 
+    /**
+     * @param int|null $scopeId
+     * @param string $scope
+     * @return string
+     */
     public function getScheduledRequestTimeout(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): string
     {
         return (float) $this->scopeConfig->getValue(
@@ -303,38 +328,5 @@ class ConfigFactory
             $scope,
             $scopeId
         );
-    }
-
-    /**
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    public function getJwt($key, ?int $scopeId = null, ?float $timeout = null, string $scope = ScopeInterface::SCOPE_STORE)
-    {
-        try {
-            $authenticationApi = $this->instanceFactory->createApiInstance(
-                'authentication',
-                new Config(
-                    $this->getApiHost($scopeId, $scope),
-                    $this->getUserAgent($scopeId, $scope),
-                    $timeout,
-                )
-            );
-
-            $tokenResponse = $authenticationApi->profileLoginUsingPOST(
-                new BusinessProfileAuthenticationRequest(['api_key' => $key])
-            );
-
-            return $tokenResponse->getToken();
-        } catch (ApiException $e) {
-            if ($e->getCode() === 401) {
-                throw new ValidatorException(
-                    __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
-                );
-            } else {
-                $this->logger->error('Synerise Api request failed', ['exception' => $e]);
-                throw $e;
-            }
-        }
     }
 }

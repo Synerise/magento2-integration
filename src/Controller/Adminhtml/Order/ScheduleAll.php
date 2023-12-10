@@ -11,7 +11,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as Sender;
 
 class ScheduleAll extends Action implements HttpGetActionInterface
 {

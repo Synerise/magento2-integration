@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use InvalidArgumentException;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -16,14 +16,17 @@ use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\CatalogsApiClient\Api\BagsApi;
+use Synerise\CatalogsApiClient\Api\ItemsApi;
 use Synerise\CatalogsApiClient\ApiException;
+use Synerise\CatalogsApiClient\Model\AddBag;
 use Synerise\CatalogsApiClient\Model\AddItem;
 use Synerise\CatalogsApiClient\Model\Bag;
 use Synerise\Integration\Helper\Catalog;
 use Synerise\Integration\Helper\Category;
 use Synerise\Integration\Helper\Image;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\MessageQueue\Sender\AbstractSender;
+use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Config\Source\Products\Attributes;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
@@ -32,9 +35,13 @@ use Synerise\Integration\SyneriseApi\InstanceFactory;
 class Product extends AbstractSender implements SenderInterface
 {
     const MODEL = 'product';
+
     const ENTITY_ID = 'entity_id';
 
     const MAX_PAGE_SIZE = 500;
+
+    const API_EXCEPTION = ApiException::class;
+
 
     const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
 
@@ -153,7 +160,6 @@ class Product extends AbstractSender implements SenderInterface
      * @throws ApiException
      * @throws NoSuchEntityException
      * @throws ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
@@ -179,23 +185,38 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * @param $payload
+     * @param int $storeId
+     * @param int|null $entityId
+     * @return void
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function deleteItem($payload, int $storeId, ?int $entityId = null)
+    {
+        $this->addItemsBatchWithCatalogCheck($payload, $storeId);
+        if($entityId) {
+            $this->deleteStatus([$entityId], $storeId);
+        }
+    }
+
+    /**
      * @param $addItemRequest
      * @param $storeId
      * @return void
      * @throws ApiException
      * @throws ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
      */
     public function addItemsBatchWithCatalogCheck($addItemRequest, $storeId)
     {
         $catalogId = $this->getOrAddCatalog($storeId);
 
         try {
-            $this->addItemsBatch($catalogId, $addItemRequest, $storeId);
+            $this->addItemsBatch($storeId, $catalogId, $addItemRequest);
         } catch (ApiException $e) {
             if ($e->getCode() === 404) {
                 $catalogId = $this->addCatalog($storeId);
-                $this->addItemsBatch($catalogId, $addItemRequest, $storeId);
+                $this->addItemsBatch($storeId, $catalogId, $addItemRequest);
             } else {
                 throw $e;
             }
@@ -203,63 +224,54 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $catalogId
-     * @param $addItemRequest
-     * @param $storeId
-     * @param bool $isRetry
+     * @param int $storeId
+     * @param int $catalogId
+     * @param $payload
      * @return void
      * @throws ApiException
      * @throws ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
      */
-    public function addItemsBatch($catalogId, $addItemRequest, $storeId, $isRetry = false)
+    public function addItemsBatch(int $storeId, int $catalogId, $payload)
     {
         try {
-            list ($body, $statusCode, $headers) = $this->getItemsApiInstance($storeId)
-                ->addItemsBatchWithHttpInfo($catalogId, $addItemRequest);
+            list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $catalogId, $payload) {
+                    $this->getItemsApiInstance($storeId)
+                        ->addItemsBatchWithHttpInfo($catalogId, $payload);
+                },
+                $storeId
+            );
 
-            if (substr($statusCode, 0, 1) != 2) {
-                throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-            } elseif ($statusCode == 207) {
+            if ($statusCode == 207) {
                 $this->logger->warning('Request partially accepted', ['response' => $body]);
             }
         } catch (ApiException $e) {
-            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
-            if (!$isRetry) {
-                $this->addItemsBatch($catalogId, $addItemRequest, $storeId, true);
-            }
+            $this->logApiException($e);
+            throw $e;
         }
     }
 
     /**
      * @param int $storeId
-     * @return mixed
+     * @return ItemsApi
      * @throws \Synerise\ApiClient\ApiException
      * @throws ValidatorException
      */
-    protected function getItemsApiInstance(int $storeId)
+    protected function getItemsApiInstance(int $storeId): ItemsApi
     {
-        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
-        return $this->apiInstanceFactory->getApiInstance(
-            $config->getScopeKey(),
-            'items',
-            $config
-        );
+        return $this->getApiInstance('items', $storeId);
     }
 
     /**
      * @param int $storeId
+     * @return BagsApi
      * @return mixed
-     * @throws \Synerise\ApiClient\ApiException
-     * @throws ValidatorException
+     * @throws ValidatorException|\Synerise\ApiClient\ApiException
      */
-    protected function getCatalogsApiInstance(int $storeId)
+    protected function getCatalogsApiInstance(int $storeId): BagsApi
     {
-        $config = $this->configFactory->getConfig(ConfigFactory::MODE_SCHEDULE, $storeId);
-        return $this->apiInstanceFactory->getApiInstance(
-            $config->getScopeKey(),
-            'catalogs',
-            $config
-        );
+        return $this->getApiInstance('catalogs', $storeId);
     }
 
     /**
@@ -451,31 +463,32 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $storeId
-     * @param bool $isRetry
+     * @param int $storeId
      * @return mixed
      * @throws ApiException
      * @throws ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
      */
-    public function addCatalog($storeId, $isRetry = false)
+    public function addCatalog(int $storeId)
     {
         try {
-            $addBagRequest = new \Synerise\CatalogsApiClient\Model\AddBag([
-                'name' => $this->catalogHelper->getCatalogNameByStoreId($storeId)
-            ]);
+            $response = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId) {
+                    $this->getCatalogsApiInstance($storeId)
+                        ->addBagWithHttpInfo(new AddBag([
+                            'name' => $this->catalogHelper->getCatalogNameByStoreId($storeId)
+                        ]));
+                },
+                $storeId
+            );
 
-            $response = $this->getCatalogsApiInstance($storeId)
-                ->addBagWithHttpInfo($addBagRequest);
             $catalogId = $response[0]->getData()->getId();
-
             $this->catalogHelper->saveConfigCatalogId($catalogId, $storeId);
 
             return $catalogId;
         } catch (ApiException $e) {
-            $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
-            if (!$isRetry) {
-                $this->addCatalog($storeId, true);
-            }
+            $this->logApiException($e);
+            throw $e;
         }
     }
 
@@ -505,30 +518,34 @@ class Product extends AbstractSender implements SenderInterface
 
     /**
      * @param $storeId
-     * @param bool $isRetry
      * @return mixed|Bag|null
      * @throws ApiException
      * @throws ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
      */
-    protected function findExistingCatalogByStoreId($storeId, $isRetry = false)
+    protected function findExistingCatalogByStoreId($storeId)
     {
         try {
-        $catalogName = $this->catalogHelper->getCatalogNameByStoreId($storeId);
-        $getBagsResponse = $this->getCatalogsApiInstance($storeId)
-            ->getBags($catalogName);
+            $catalogName = $this->catalogHelper->getCatalogNameByStoreId($storeId);
+            $getBagsResponse = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId) {
+                    $this->getCatalogsApiInstance($storeId)->getBags(
+                        $this->catalogHelper->getCatalogNameByStoreId($storeId)
+                    );
+                },
+                $storeId
+            );
 
-        $existingBags = $getBagsResponse->getData();
-        foreach ($existingBags as $bag) {
-            if ($bag->getName() == $catalogName) {
-                return $bag;
+            $existingBags = $getBagsResponse->getData();
+            foreach ($existingBags as $bag) {
+                if ($bag->getName() == $catalogName) {
+                    return $bag;
+                }
             }
+        } catch (ApiException $e) {
+            $this->logApiException($e);
+            throw $e;
         }
-    } catch (ApiException $e) {
-        $this->handleApiExceptionAndMaybeUnsetToken($e, ConfigFactory::MODE_SCHEDULE, $storeId);
-        if (!$isRetry) {
-            $this->findExistingCatalogByStoreId($storeId, true);
-        }
-    }
 
         return null;
     }

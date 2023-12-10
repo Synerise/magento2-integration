@@ -11,7 +11,7 @@ use Magento\Ui\Component\MassAction\Filter;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as Sender;
 
 class ScheduleMass extends Action
 {
@@ -87,7 +87,7 @@ class ScheduleMass extends Action
                             $collection->getAllIds(),
                             $enabledStoreId,
                             null,
-                            $this->synchronization->getPageSize(\Synerise\Integration\MessageQueue\Sender\Data\Customer::MODEL)
+                            $this->synchronization->getPageSize(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();

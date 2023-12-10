@@ -32,7 +32,7 @@
     <virtualType name="Synerise\Integration\Model\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
             <argument name="handlers" xsi:type="array">
-                <item name="debug" xsi:type="object">Synerise\Integration\Model\Logger\Handler\Debug</item>
+                <item name="debug" xsi:type="object">Synerise\Integration\Logger\Handler\Debug</item>
             </argument>
         </arguments>
     </virtualType>
@@ -143,35 +143,42 @@
     </type>
     <type name="Synerise\Integration\MessageQueue\Consumer\Event">
         <arguments>
+            <argument name="sender" xsi:type="object">Synerise\Integration\SyneriseApi\Sender\ScheduledEvent</argument>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\MessageQueue\Sender\Data\Customer">
+
+    <type name="Synerise\Integration\SyneriseApi\Sender\Data\Customer">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\MessageQueue\Sender\Data\Order">
+    <type name="Synerise\Integration\SyneriseApi\Sender\Data\Order">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\MessageQueue\Sender\Data\Product">
+    <type name="Synerise\Integration\SyneriseApi\Sender\Data\Product">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\MessageQueue\Sender\Data\Subscriber">
+    <type name="Synerise\Integration\SyneriseApi\Sender\Data\Subscriber">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\MessageQueue\Sender\Event">
+    <type name="Synerise\Integration\SyneriseApi\Sender\Event">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
     <type name="Synerise\Integration\SyneriseApi\ConfigFactory">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\SyneriseApi\Authentication">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

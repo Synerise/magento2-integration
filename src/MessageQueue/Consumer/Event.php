@@ -18,11 +18,13 @@ use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Customer;
-use Synerise\Integration\MessageQueue\Sender\Data\Order;
-use Synerise\Integration\MessageQueue\Sender\Data\Subscriber;
-use Synerise\Integration\MessageQueue\Sender\Event as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as ProductSender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
+use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 use Synerise\Integration\Model\Config\Source\MessageQueue\Connection;
+use Synerise\Integration\Observer\CatalogProductDeleteBefore;
 use Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter;
 use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
 use Synerise\Integration\Observer\OrderPlace;
@@ -54,9 +56,24 @@ class Event
     private $json;
 
     /**
-     * @var Sender
+     * @var EventSender
      */
-    private $sender;
+    private $eventSender;
+
+    /**
+     * @var CustomerSender
+     */
+    private $customerSender;
+
+    /**
+     * @var ProductSender
+     */
+    private $productSender;
+
+    /**
+     * @var SubscriberSender
+     */
+    private $subscriberSender;
 
     /**
      * @var DataItemPublisher
@@ -68,14 +85,20 @@ class Event
         ObjectManagerInterface $objectManager,
         MessageEncoder $messageEncoder,
         Json $json,
-        Sender $sender,
+        EventSender $eventSender,
+        CustomerSender$customerSender,
+        ProductSender $productSender,
+        SubscriberSender $subscriberSender,
         DataItemPublisher $dataItemPublisher
     ) {
         $this->logger = $logger;
         $this->objectManager = $objectManager;
         $this->messageEncoder = $messageEncoder;
         $this->json = $json;
-        $this->sender = $sender;
+        $this->eventSender = $eventSender;
+        $this->customerSender = $customerSender;
+        $this->productSender = $productSender;
+        $this->subscriberSender = $subscriberSender;
         $this->dataItemPublisher = $dataItemPublisher;
     }
 
@@ -122,12 +145,24 @@ class Event
      */
     private function execute(array $event)
     {
-        $this->sender->send(
-            $event['event_name'],
-            $event['event_payload'],
-            $event['store_id'],
-            $event['entity_id']
-        );
+        switch ($event['event_name']) {
+            case CatalogProductDeleteBefore::EVENT:
+                $this->productSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
+                break;
+            case NewsletterSubscriberDeleteAfter::EVENT:
+                $this->subscriberSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
+                break;
+            case OrderPlace::CUSTOMER_UPDATE:
+            case ProductReview::CUSTOMER_UPDATE:
+                $this->customerSender->batchAddOrUpdateClients([$event['event_payload']], $event['store_id']);
+                break;
+            default:
+                $this->eventSender->send(
+                    $event['event_name'],
+                    $event['event_payload'],
+                    $event['store_id']
+                );
+        }
     }
 
     /**
@@ -162,11 +197,11 @@ class Event
     {
         switch ($event['event_name']) {
             case OrderPlace::EVENT:
-                $this->publishAsDataItem(Order::MODEL, $event['entity_id'], $event['store_id']);
+                $this->publishAsDataItem(OrderSender::MODEL, $event['entity_id'], $event['store_id']);
                 return true;
             case NewsletterSubscriberSaveAfter::EVENT:
                 if ($event['entity_id']) {
-                    $this->publishAsDataItem(Subscriber::MODEL, $event['entity_id'], $event['store_id']);
+                    $this->publishAsDataItem(SubscriberSender::MODEL, $event['entity_id'], $event['store_id']);
                     return true;
                 } else {
                     $event['event_name'] = NewsletterSubscriberDeleteAfter::EVENT;
@@ -175,7 +210,7 @@ class Event
             case 'ADD_OR_UPDATE_CLIENT':
                 $entityId = $event['event_payload']['customId'] ?? null;
                 if ($entityId) {
-                    $this->publishAsDataItem(Customer::MODEL, $entityId, $event['store_id']);
+                    $this->publishAsDataItem(CustomerSender::MODEL, $entityId, $event['store_id']);
                     return true;
                 } elseif(isset($event['event_payload']['displayName'])) {
                     $event['event_name'] = ProductReview::CUSTOMER_UPDATE;
@@ -196,16 +231,12 @@ class Event
      */
     protected function publishAsDataItem(string $model, ?int $entityId, ?int $storeId)
     {
-        try {
-            if($entityId && $storeId) {
-                $this->dataItemPublisher->publish(
-                    $model,
-                    $entityId,
-                    $storeId
-                );
-            }
-        } catch (\Exception $e) {
-
+        if($entityId && $storeId) {
+            $this->dataItemPublisher->publish(
+                $model,
+                $entityId,
+                $storeId
+            );
         }
     }
 
