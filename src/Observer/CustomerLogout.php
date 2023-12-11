@@ -6,19 +6,13 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\EventClientAction;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
 class CustomerLogout implements ObserverInterface
 {
     const EVENT = 'customer_logout';
-
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
 
     /**
      * @var Tracking
@@ -36,12 +30,10 @@ class CustomerLogout implements ObserverInterface
     protected $sender;
 
     public function __construct(
-        Api $apiHelper,
         Tracking $trackingHelper,
         Publisher $publisher,
         Event $sender
     ) {
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;
@@ -82,9 +74,10 @@ class CustomerLogout implements ObserverInterface
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

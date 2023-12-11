@@ -9,7 +9,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Subscriber as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
@@ -77,9 +77,10 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
             } else {
                 $this->sender->sendItems([$subscriber], $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

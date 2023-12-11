@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 interface SenderInterface
 {

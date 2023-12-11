@@ -214,7 +214,7 @@
                 <field id="events" type="multiselect" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Events to send by queue</label>
                     <config_path>synerise/queue/events</config_path>
-                    <source_model>Synerise\Integration\Model\Config\Source\Queue\Events</source_model>
+                    <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Events</source_model>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>

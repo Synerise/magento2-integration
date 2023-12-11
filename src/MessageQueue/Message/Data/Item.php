@@ -2,7 +2,7 @@
 namespace Synerise\Integration\MessageQueue\Message\Data;
 
 use InvalidArgumentException;
-use Synerise\Integration\MessageQueue\Sender\Data\Product;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product;
 
 Class Item
 {

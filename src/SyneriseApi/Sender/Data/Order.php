@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ResourceConnection;
@@ -11,14 +11,17 @@ use Magento\Sales\Model\Order as OrderModel;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Category;
 use Synerise\Integration\Helper\Image;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Order implements SenderInterface
+class Order extends AbstractSender implements SenderInterface
 {
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';
@@ -46,11 +49,6 @@ class Order implements SenderInterface
     protected $ruleRepository;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Category
      */
     protected $categoryHelper;
@@ -70,7 +68,8 @@ class Order implements SenderInterface
         ResourceConnection $resource,
         RuleRepositoryInterface $ruleRepository,
         LoggerInterface $logger,
-        Api $apiHelper,
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory,
         Category $categoryHelper,
         Image $imageHelper,
         Tracking $trackingHelper
@@ -79,10 +78,11 @@ class Order implements SenderInterface
         $this->resource = $resource;
         $this->ruleRepository = $ruleRepository;
         $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
@@ -113,8 +113,7 @@ class Order implements SenderInterface
         if (!empty($createATransactionRequest)) {
             $this->batchAddOrUpdateTransactions(
                 $createATransactionRequest,
-                $storeId,
-                $this->apiHelper->getScheduledRequestTimeout($storeId)
+                $storeId
             );
         }
 
@@ -124,41 +123,40 @@ class Order implements SenderInterface
     }
 
     /**
-     * @param $createATransactionRequest
-     * @param $storeId
-     * @param null $timeout
+     * @param $payload
+     * @param int $storeId
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateTransactions($createATransactionRequest, $storeId, $timeout = null)
+    public function batchAddOrUpdateTransactions($payload, int $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
-            ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $createATransactionRequest);
+        try {
+            list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $payload) {
+                    $this->getDefaultApiInstance($storeId)
+                        ->batchAddOrUpdateTransactionsWithHttpInfo('4.4', $payload);
+                },
+                $storeId
+            );
 
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
+            if ($statusCode == 207) {
+                $this->logger->warning('Request partially accepted', ['response' => $body]);
+            }
+        } catch (ApiException $e) {
+            $this->logApiException($e);
+            throw $e;
         }
     }
 
     /**
-     * @param $createATransactionRequest
-     * @param $storeId
-     * @param null $timeout
+     * @param int $storeId
+     * @return DefaultApi
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function createATransaction($createATransactionRequest, $storeId, $timeout = null)
+    protected function getDefaultApiInstance(int $storeId): DefaultApi
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
-            ->createATransactionWithHttpInfo('4.4', $createATransactionRequest);
-
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
-        }
+        return $this->getApiInstance('default', $storeId);
     }
 
     /**

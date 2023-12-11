@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
@@ -8,12 +8,15 @@ use Magento\Framework\Exception\ValidatorException;
 use Magento\Newsletter\Model\Subscriber as SubscriberModel;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Subscriber implements SenderInterface
+class Subscriber extends AbstractSender implements SenderInterface
 {
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
@@ -31,11 +34,6 @@ class Subscriber implements SenderInterface
     protected $logger;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -43,13 +41,15 @@ class Subscriber implements SenderInterface
     public function __construct(
         ResourceConnection $resource,
         LoggerInterface $logger,
-        Api $apiHelper,
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory,
         Tracking $trackingHelper
     ) {
         $this->connection = $resource->getConnection();
         $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
@@ -72,30 +72,63 @@ class Subscriber implements SenderInterface
         if (!empty($requests)) {
             $this->batchAddOrUpdateClients(
                 $requests,
-                $storeId,
-                $this->apiHelper->getScheduledRequestTimeout($storeId)
+                $storeId
             );
             $this->markSubscribersAsSent($ids);
         }
     }
 
     /**
-     * @param $createAClientInCrmRequests
-     * @param $storeId
-     * @param null $timeout
+     * @param $payload
+     * @param int $storeId
+     * @param int|null $entityId
+     * @return void
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $timeout = null)
+    public function deleteItem($payload, int $storeId, ?int $entityId = null)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
-            ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
-
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
+        $this->batchAddOrUpdateClients([$payload], $storeId);
+        if($entityId) {
+            $this->deleteStatus([$entityId]);
         }
+    }
+
+    /**
+     * @param $payload
+     * @param $storeId
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function batchAddOrUpdateClients($payload, $storeId)
+    {
+        try {
+            list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $payload) {
+                    $this->getDefaultApiInstance($storeId)
+                        ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $payload);
+                },
+                $storeId
+            );
+
+           if ($statusCode == 207) {
+                $this->logger->warning('Request partially accepted', ['response_body' => $body]);
+            }
+        } catch (ApiException $e) {
+            $this->logApiException($e);
+            throw $e;
+        }
+    }
+
+    /**
+     * @param int $storeId
+     * @return DefaultApi
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function getDefaultApiInstance(int $storeId): DefaultApi
+    {
+        return $this->getApiInstance('default', $storeId);
     }
 
     /**

@@ -2,10 +2,14 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Publisher\Event;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
 {
@@ -14,40 +18,38 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     const EVENT_FOR_CONFIG = 'newsletter_subscriber_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\MessageQueue\Publisher\Event
+     * @var Event
      */
     protected $publisher;
 
     /**
-     * @var \Synerise\Integration\MessageQueue\Sender\Event
+     * @var SubscriberSender
      */
     protected $sender;
 
     public function __construct(
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
-        \Synerise\Integration\MessageQueue\Sender\Event $sender
+        Tracking $trackingHelper,
+        Event $publisher,
+        SubscriberSender $sender
     ) {
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
         if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
             return;
         }
 
-        $event = $observer->getEvent();
-
         /** @var Subscriber $subscriber */
-        $subscriber = $event->getDataObject();
+        $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
 
         try {
@@ -59,11 +61,12 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
             if ($this->trackingHelper->isQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
                 $this->publisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             } else {
-                $this->sender->send(self::EVENT, $createAClientInCrmRequest, $storeId);
+                $this->sender->deleteItem($createAClientInCrmRequest, $storeId, $subscriber->getId());
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

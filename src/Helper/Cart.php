@@ -160,4 +160,13 @@ class Cart
         return $this->storeManager->getStore()->getCurrentCurrency()->getCode();
     }
 
+    /**
+     * @param \Magento\Quote\Model\Quote $quote
+     * @return bool
+     */
+    public function hasItemDataChanges(\Magento\Quote\Model\Quote $quote)
+    {
+        return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
+    }
+
 }

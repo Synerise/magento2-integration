@@ -20,7 +20,7 @@ use Synerise\Integration\MessageQueue\Message\Data\Item;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
 use Synerise\Integration\Model\Config\Source\MessageQueue\Connection;
 use Synerise\Integration\MessageQueue\Filter;
-use Synerise\Integration\MessageQueue\Sender\Data\SenderInterface;
+use Synerise\Integration\SyneriseApi\Sender\Data\SenderInterface;
 use Zend_Db_Adapter_Exception;
 
 abstract class AbstractConsumer
@@ -121,7 +121,7 @@ abstract class AbstractConsumer
             $collection->addAttributeToSelect($attributes);
         }
 
-        $this->sender->sendItems($collection, $item->getStoreId());
+        $this->sender->sendItems($collection, $item->getStoreId(), $item->getWebsiteId());
     }
 
     /**

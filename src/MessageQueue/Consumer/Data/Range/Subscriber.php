@@ -12,7 +12,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Range;
-use Synerise\Integration\MessageQueue\Sender\Data\Subscriber as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class Subscriber extends AbstractConsumer
 {

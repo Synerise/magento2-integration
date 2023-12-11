@@ -12,11 +12,6 @@ class CartAddProduct implements ObserverInterface
     const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var \Synerise\Integration\Helper\Cart
      */
     protected $cartHelper;
@@ -32,18 +27,16 @@ class CartAddProduct implements ObserverInterface
     protected $publisher;
 
     /**
-     * @var \Synerise\Integration\MessageQueue\Sender\Event
+     * @var \Synerise\Integration\SyneriseApi\Sender\Event
      */
     protected $sender;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
         \Synerise\Integration\Helper\Cart $cartHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
-        \Synerise\Integration\MessageQueue\Sender\Event $sender
+        \Synerise\Integration\SyneriseApi\Sender\Event $sender
     ) {
-        $this->apiHelper = $apiHelper;
         $this->cartHelper = $cartHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
@@ -99,9 +92,10 @@ class CartAddProduct implements ObserverInterface
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

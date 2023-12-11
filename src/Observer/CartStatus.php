@@ -26,7 +26,7 @@ class CartStatus implements ObserverInterface
     protected $publisher;
 
     /**
-     * @var \Synerise\Integration\MessageQueue\Sender\Event
+     * @var \Synerise\Integration\SyneriseApi\Sender\Event
      */
     protected $sender;
 
@@ -44,7 +44,7 @@ class CartStatus implements ObserverInterface
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
         \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
-        \Synerise\Integration\MessageQueue\Sender\Event $sender,
+        \Synerise\Integration\SyneriseApi\Sender\Event $sender,
         \Synerise\Integration\Helper\Cart $cartHelper
     ) {
         $this->catalogHelper = $catalogHelper;
@@ -75,7 +75,7 @@ class CartStatus implements ObserverInterface
 
             $cartStatusEvent = null;
 
-            if ($this->trackingHelper->hasItemDataChanges($quote)) {
+            if ($this->cartHelper->hasItemDataChanges($quote)) {
                 $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, (float) $quote->getSubtotal(), (int) $quote->getItemsQty());
             } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
                 $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, 0, 0);
@@ -93,9 +93,10 @@ class CartStatus implements ObserverInterface
                 }
                 $this->previousParams = $cartStatusEvent->getParams();
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ use Magento\Sales\Model\Order;
 use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
-use Synerise\Integration\MessageQueue\Sender\Data\Product as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class StockStatusChange implements ObserverInterface
 {

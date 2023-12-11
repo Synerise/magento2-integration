@@ -12,7 +12,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch;
-use Synerise\Integration\MessageQueue\Sender\Data\Order as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as Sender;
 
 class Order extends AbstractConsumer
 {

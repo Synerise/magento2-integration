@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\MessageQueue\Sender\Data;
+namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
@@ -12,13 +12,16 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
+use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
-use Synerise\Integration\Helper\Api;
+use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Customer implements SenderInterface
+class Customer extends AbstractSender implements SenderInterface
 {
     const MODEL = 'customer';
     const ENTITY_ID = 'entity_id';
@@ -51,23 +54,19 @@ class Customer implements SenderInterface
      */
     protected $logger;
 
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
     public function __construct(
         AddressRepositoryInterface $addressRepository,
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         LoggerInterface $logger,
-        Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
         $this->addressRepository = $addressRepository;
         $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
-        $this->logger = $logger;
-        $this->apiHelper = $apiHelper;
+
+        parent::__construct($logger, $configFactory, $apiInstanceFactory);
     }
 
     /**
@@ -91,8 +90,7 @@ class Customer implements SenderInterface
             if (!empty($createAClientInCrmRequests)) {
                 $this->batchAddOrUpdateClients(
                     $createAClientInCrmRequests,
-                    $storeId,
-                    $this->apiHelper->getScheduledRequestTimeout($storeId)
+                    $storeId
                 );
                 $this->markCustomersAsSent($ids, $storeId);
             }
@@ -101,22 +99,40 @@ class Customer implements SenderInterface
     }
 
     /**
-     * @param $createAClientInCrmRequests
-     * @param $storeId
-     * @param null $timeout
+     * @param $payload
+     * @param int $storeId
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($createAClientInCrmRequests, $storeId, $timeout = null)
+    public function batchAddOrUpdateClients($payload, int $storeId)
     {
-        list ($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance($storeId, $timeout)
-            ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
+        try {
+            list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $payload) {
+                    $this->getDefaultApiInstance($storeId)
+                        ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $payload);
+                },
+                $storeId
+            );
 
-        if (substr($statusCode, 0, 1) != 2) {
-            throw new ApiException(sprintf('Invalid Status [%d]', $statusCode));
-        } elseif ($statusCode == 207) {
-            $this->logger->warning('Request partially accepted', ['response' => $body]);
+            if ($statusCode == 207) {
+                $this->logger->warning('Request partially accepted', ['response_body' => $body]);
+            }
+        } catch (ApiException $e) {
+            $this->logApiException($e);
+            throw $e;
         }
+    }
+
+    /**
+     * @param int $storeId
+     * @return DefaultApi
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function getDefaultApiInstance(int $storeId): DefaultApi
+    {
+        return $this->getApiInstance('default', $storeId);
     }
 
     /**

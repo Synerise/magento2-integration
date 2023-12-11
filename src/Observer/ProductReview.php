@@ -9,9 +9,9 @@ use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\MessageQueue\Sender\Event;
+use Synerise\Integration\SyneriseApi\Sender\Event;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
@@ -42,11 +42,6 @@ class ProductReview implements ObserverInterface
     protected $data;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -66,22 +61,27 @@ class ProductReview implements ObserverInterface
      */
     protected $sender;
 
+    /**
+     * @var CustomerSender
+     */
+    private $customerSender;
+
     public function __construct(
         ProductRepositoryInterface $productRepository,
         VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
-        Api $apiHelper,
         Tracking $trackingHelper,
         Publisher $publisher,
-        Event $sender
+        Event $sender,
+        CustomerSender $customerSender
     ) {
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;
+        $this->customerSender = $customerSender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -149,21 +149,22 @@ class ProductReview implements ObserverInterface
                 'params' => $params
             ]);
 
-            $createAClientInCrmRequest = new CreateaClientinCRMRequest([
+            $guestCustomerRequest = new CreateaClientinCRMRequest([
                 'uuid' => $this->trackingHelper->getClientUuid(),
                 'display_name' => $this->review->getNickname()
             ]);
 
             if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
                 $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
-                $this->publisher->publish(self::CUSTOMER_UPDATE, $createAClientInCrmRequest, $storeId);
+                $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $customEventRequest, $storeId);
-                $this->sender->send(self::CUSTOMER_UPDATE, $createAClientInCrmRequest, $storeId);
+                $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

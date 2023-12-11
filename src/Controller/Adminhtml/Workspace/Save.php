@@ -3,9 +3,16 @@
 namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\ValidatorException;
+use Synerise\ApiClient\Api\ApiKeyControllerApi;
+use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Model\Workspace;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Save extends \Magento\Backend\App\Action
 {
@@ -15,19 +22,28 @@ class Save extends \Magento\Backend\App\Action
     const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var ConfigFactory
      */
-    protected $apiHelper;
+    private $configFactory;
 
     /**
-     * @param Action\Context $context
+     * @var InstanceFactory
+     */
+    private $apiInstanceFactory;
+
+    /**
+     * @param Context $context
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
      */
     public function __construct
     (
         Action\Context $context,
-        \Synerise\Integration\Helper\Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
 
         parent::__construct($context);
     }
@@ -104,17 +120,40 @@ class Save extends \Magento\Backend\App\Action
     }
 
     /**
-     * @param $apiKey
+     * @param string $apiKey
      * @param string $scope
-     * @param null $scopeId
-     * @return \Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse
-     * @throws \Magento\Framework\Exception\ValidatorException
-     * @throws \Synerise\ApiClient\ApiException
+     * @param int|null $scopeId
+     * @return ApiKeyPermissionCheckResponse
+     * @throws ApiException
+     * @throws ValidatorException
      */
-    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getJwt($scope, $scopeId, null, $apiKey);
-
-        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+    protected function checkPermissions(
+        string $apiKey,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?int $scopeId = null
+    ): ApiKeyPermissionCheckResponse
+    {
+        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
+    }
+
+    /**
+     * @param string $apiKey
+     * @param string $scope
+     * @param int|null $scopeId
+     * @return ApiKeyControllerApi
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function createApiKeyInstance(
+        string $apiKey,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?int $scopeId = null
+    ): ApiKeyControllerApi
+    {
+        return $this->apiInstanceFactory->createApiInstance(
+            'apiKey',
+            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
+        );
     }
 }

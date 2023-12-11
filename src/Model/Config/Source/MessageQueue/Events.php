@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Model\Config\Source\Queue;
+namespace Synerise\Integration\Model\Config\Source\MessageQueue;
 
 class Events implements \Magento\Framework\Data\OptionSourceInterface
 {

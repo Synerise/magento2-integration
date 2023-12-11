@@ -2,21 +2,39 @@
 
 namespace Synerise\Integration\Model\Workspace;
 
+use Magento\Framework\Exception\ValidatorException;
 use Ramsey\Uuid\Uuid;
+use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Model\Workspace;
+use Synerise\Integration\SyneriseApi\Authentication;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
 
 class Validator extends \Magento\Framework\Validator\AbstractValidator
 {
+
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var ConfigFactory
      */
-    protected $apiHelper;
+    private $configFactory;
+
+    /**
+     * @var Authentication
+     */
+    private $authentication;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper
+        Authentication $authentication,
+        ConfigFactory $configFactory
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->authentication = $authentication;
+        $this->configFactory = $configFactory;
     }
 
+    /**
+     * @param Workspace $workspace
+     * @return bool
+     * @throws ApiException
+     */
     public function isValid($workspace)
     {
         $messages = [];
@@ -24,28 +42,20 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
         $apiKey = $workspace->getApiKey();
         if (!Uuid::isValid($apiKey)) {
             $messages['invalid_api_key_format'] = 'Invalid api key format';
+        } else {
+            try {
+                $this->authentication->getJwt(
+                    $apiKey,
+                    $this->configFactory->createMinimalConfig()
+                );
+            } catch(ValidatorException $e) {
+                $messages['invalid_api_key'] = $e->getMessage();
+            }
         }
 
         $guid = $workspace->getGuid();
         if ($guid && !Uuid::isValid($guid)) {
             $messages['invalid_guid_format'] = 'Invalid guid format';
-        }
-
-        $business_profile_authentication_request = new \Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest([
-            'api_key' => $apiKey
-        ]);
-
-        try {
-            $this->apiHelper->getAuthApiInstance()
-                ->profileLoginUsingPOST($business_profile_authentication_request);
-        } catch (\Synerise\ApiClient\ApiException $e) {
-            if ($e->getCode() === 401) {
-                throw new \Magento\Framework\Exception\ValidatorException(
-                    __('Test request failed. Please make sure this a valid, profile scoped api key and try again.')
-                );
-            } else {
-                throw $e;
-            }
         }
 
         $this->_addMessages($messages);
