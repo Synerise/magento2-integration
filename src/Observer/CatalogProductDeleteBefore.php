@@ -12,10 +12,11 @@ use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
-
 class CatalogProductDeleteBefore implements ObserverInterface
 {
-    const EVENT = 'catalog_product_delete_after';
+    const EVENT = 'catalog_product_delete_before';
+
+    const EVENT_FOR_CONFIG = 'catalog_product_delete_after';
 
     /**
      * @var Sender
@@ -51,7 +52,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
             return;
         }
 
@@ -70,8 +71,8 @@ class CatalogProductDeleteBefore implements ObserverInterface
                     );
                     $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
-                    if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                        $this->publisher->publish(self::EVENT, [$addItemRequest], $storeId, $product->getEntityId());
+                    if ($this->trackingHelper->isQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                        $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());
                     } else {
                         $this->sender->deleteItem($addItemRequest, $storeId, $product->getEntityId());
                     }

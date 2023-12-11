@@ -11,8 +11,6 @@ use Synerise\ApiClient\Api\ApiKeyControllerApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Model\Workspace;
-use Synerise\Integration\SyneriseApi\Authentication;
-use Synerise\Integration\SyneriseApi\Config;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
@@ -22,11 +20,6 @@ class Save extends \Magento\Backend\App\Action
      * Authorization level
      */
     const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
-
-    /**
-     * @var Authentication
-     */
-    private $authentication;
 
     /**
      * @var ConfigFactory
@@ -40,18 +33,15 @@ class Save extends \Magento\Backend\App\Action
 
     /**
      * @param Context $context
-     * @param Authentication $authentication
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      */
     public function __construct
     (
         Action\Context $context,
-        Authentication $authentication,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory
     ) {
-        $this->authentication = $authentication;
         $this->configFactory = $configFactory;
         $this->apiInstanceFactory = $apiInstanceFactory;
 
@@ -143,36 +133,27 @@ class Save extends \Magento\Backend\App\Action
         ?int $scopeId = null
     ): ApiKeyPermissionCheckResponse
     {
-        $authorizationToken = $this->authentication->getJwt(
-            $apiKey,
-            $this->configFactory->createMinimalConfig($scopeId, $scope)
-        );
-
-        return $this->createApiKeyInstance($authorizationToken, $scope, $scopeId)
+        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 
     /**
-     * @param string $authorizationToken
+     * @param string $apiKey
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyControllerApi
+     * @throws ApiException
+     * @throws ValidatorException
      */
     protected function createApiKeyInstance(
-        string $authorizationToken,
+        string $apiKey,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
     ): ApiKeyControllerApi
     {
-        $config = new Config(
-            $this->configFactory->getApiHost($scopeId, $scope),
-            $this->configFactory->getUserAgent($scopeId, $scope),
-            $this->configFactory->getLiveRequestTimeout(),
-            null,
-            Config::AUTHORIZATION_TYPE_BEARER,
-            $authorizationToken
+        return $this->apiInstanceFactory->createApiInstance(
+            'apiKey',
+            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
         );
-
-        return $this->apiInstanceFactory->createApiInstance('apiKey', $config);
     }
 }

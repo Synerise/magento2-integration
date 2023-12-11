@@ -194,8 +194,8 @@ class Product extends AbstractSender implements SenderInterface
      */
     public function deleteItem($payload, int $storeId, ?int $entityId = null)
     {
-        $this->addItemsBatchWithCatalogCheck($payload, $storeId);
-        if($entityId) {
+        $this->addItemsBatchWithCatalogCheck([$payload], $storeId);
+        if ($entityId) {
             $this->deleteStatus([$entityId], $storeId);
         }
     }

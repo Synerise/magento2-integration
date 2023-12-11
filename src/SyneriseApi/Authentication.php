@@ -48,16 +48,16 @@ class Authentication
                 'Synerise Api request failed',
                 [
                     'exception' => preg_replace('/ response:.*/s', '', $e->getMessage()),
-                    'response_body' => preg_replace('/\n/s', '', $e->getResponseBody())
+                    'response_body' => preg_replace('/\n/s', '', (string) $e->getResponseBody())
                 ]
             );
             if ($e->getCode() === 401) {
                 throw new ValidatorException(
-                    __('Profile login failed. Please make sure this a valid, profile scoped api key and try again.')
+                    __('Workspace login failed. Please make sure this a valid api key of type `workspace` and try again.')
                 );
-            } else {
-                throw $e;
             }
+
+            throw $e;
         }
     }
 

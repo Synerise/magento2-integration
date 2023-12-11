@@ -17,8 +17,6 @@ use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
-use Synerise\Integration\SyneriseApi\Authentication;
-use Synerise\Integration\SyneriseApi\Config;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
@@ -41,11 +39,6 @@ class MassUpdate extends Action implements HttpPostActionInterface
     protected $filter;
 
     /**
-     * @var Authentication
-     */
-    private $authentication;
-
-    /**
      * @var ConfigFactory
      */
     private $configFactory;
@@ -61,7 +54,6 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @param Context $context
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
-     * @param Authentication $authentication
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      */
@@ -69,12 +61,10 @@ class MassUpdate extends Action implements HttpPostActionInterface
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        Authentication $authentication,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory
     ) {
         $this->filter = $filter;
-        $this->authentication = $authentication;
         $this->collectionFactory = $collectionFactory;
         $this->configFactory = $configFactory;
         $this->apiInstanceFactory = $apiInstanceFactory;
@@ -151,36 +141,27 @@ class MassUpdate extends Action implements HttpPostActionInterface
         ?int $scopeId = null
     ): ApiKeyPermissionCheckResponse
     {
-        $authorizationToken = $this->authentication->getJwt(
-            $apiKey,
-            $this->configFactory->createMinimalConfig($scopeId, $scope)
-        );
-
-        return $this->createApiKeyInstance($authorizationToken, $scope, $scopeId)
+        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 
     /**
-     * @param string $authorizationToken
+     * @param string $apiKey
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyControllerApi
+     * @throws ApiException
+     * @throws ValidatorException
      */
     protected function createApiKeyInstance(
-        string $authorizationToken,
+        string $apiKey,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
     ): ApiKeyControllerApi
     {
-        $config = new Config(
-            $this->configFactory->getApiHost($scopeId, $scope),
-            $this->configFactory->getUserAgent($scopeId, $scope),
-            $this->configFactory->getLiveRequestTimeout(),
-            null,
-            Config::AUTHORIZATION_TYPE_BEARER,
-            $authorizationToken
+        return $this->apiInstanceFactory->createApiInstance(
+            'apiKey',
+            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
         );
-
-        return $this->apiInstanceFactory->createApiInstance('apiKey', $config);
     }
 }

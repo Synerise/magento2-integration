@@ -7,8 +7,7 @@ use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\Api\TrackerControllerApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\TrackingCodeCreationByDomainRequest;
-use Synerise\Integration\SyneriseApi\Authentication;
-use Synerise\Integration\SyneriseApi\Config;
+use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
@@ -16,7 +15,6 @@ class Workspace extends \Magento\Framework\App\Config\Value
 {
     const XML_PATH_API_KEY = 'synerise/api/key';
     const XML_PATH_API_BASIC_TOKEN = 'synerise/api/basic_token';
-    const XML_PATH_WORKSPACE_ID = 'synerise/workspace/id';
     const ERROR_MSG_403 = 'Please make sure this api key has all required roles.';
 
     /**
@@ -33,11 +31,6 @@ class Workspace extends \Magento\Framework\App\Config\Value
      * @var \Synerise\Integration\Model\Workspace
      */
     protected $workspace;
-
-    /**
-     * @var Authentication
-     */
-    private $authentication;
 
     /**
      * @var ConfigFactory
@@ -57,14 +50,12 @@ class Workspace extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
         \Synerise\Integration\Model\Workspace $workspace,
-        Authentication $authentication,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = []
     ) {
-        $this->authentication = $authentication;
         $this->configWriter = $configWriter;
         $this->encryptor = $encryptor;
         $this->workspace = $workspace;
@@ -120,7 +111,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
             }
 
             $this->configWriter->save(
-                \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_KEY,
+                Tracking::XML_PATH_PAGE_TRACKING_KEY,
                 $response->getCode(),
                 $this->getScope(),
                 $this->getScopeId()
@@ -139,7 +130,7 @@ class Workspace extends \Magento\Framework\App\Config\Value
             );
 
             $this->configWriter->delete(
-                \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_KEY,
+                Tracking::XML_PATH_PAGE_TRACKING_KEY,
                 $this->getScope(),
                 $this->getScopeId()
             );
@@ -148,19 +139,13 @@ class Workspace extends \Magento\Framework\App\Config\Value
         parent::beforeSave();
     }
 
-    protected function getJwt($apiKey)
-    {
-        return $this->configFactory->getJwt(
-            $apiKey,
-            $this->getScopeId(),
-            $this->getScope()
-        );
-    }
-
-    private function getConfigDomain()
+    /**
+     * @return string|null
+     */
+    private function getConfigDomain(): ?string
     {
         $domain = $this->_config->getValue(
-            \Synerise\Integration\Helper\Tracking::XML_PATH_PAGE_TRACKING_DOMAIN,
+            Tracking::XML_PATH_PAGE_TRACKING_DOMAIN,
             $this->getScope(),
             $this->getScopeId()
         );
@@ -168,7 +153,10 @@ class Workspace extends \Magento\Framework\App\Config\Value
         return $domain ? trim($domain, '.') : null;
     }
 
-    private function getBaseUrlDomain()
+    /**
+     * @return string
+     */
+    private function getBaseUrlDomain(): string
     {
         $baseUrl = $this->_config->getValue(
             \Magento\Store\Model\Store::XML_PATH_UNSECURE_BASE_LINK_URL,
@@ -190,23 +178,9 @@ class Workspace extends \Magento\Framework\App\Config\Value
      */
     private function getTrackerApiInstance(string $scope, int $scopeId, string $apiKey): TrackerControllerApi
     {
-        $config = new Config(
-            $this->configFactory->getApiHost($scopeId, $scope),
-            $this->configFactory->getUserAgent($scopeId, $scope),
-            $this->configFactory->getLiveRequestTimeout(),
-            null,
-            Config::AUTHORIZATION_TYPE_BEARER,
-            $this->authentication->getJwt(
-                $apiKey,
-                $this->configFactory->createMinimalConfig($this->getScopeId(), $this->getScope())
-            ),
-            $this->configFactory->getHandlerStack($scopeId, $scope),
-            $this->configFactory->isKeepAliveEnabled($scopeId, $scope)
-        );
-
         return $this->apiInstanceFactory->createApiInstance(
             'tracker',
-            $config
+            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
         );
     }
 }

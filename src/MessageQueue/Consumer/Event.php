@@ -207,6 +207,10 @@ class Event
                     $event['event_name'] = NewsletterSubscriberDeleteAfter::EVENT;
                     break;
                 }
+            case CatalogProductDeleteBefore::EVENT_FOR_CONFIG:
+                $event['event_payload'] = $event['event_payload'][0];
+                $event['event_name'] = CatalogProductDeleteBefore::EVENT;
+                break;
             case 'ADD_OR_UPDATE_CLIENT':
                 $entityId = $event['event_payload']['customId'] ?? null;
                 if ($entityId) {

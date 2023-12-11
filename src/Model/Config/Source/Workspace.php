@@ -26,12 +26,12 @@ class Workspace implements \Magento\Framework\Data\OptionSourceInterface
             ]
         ];
 
-        $profiles = $this->collectionFactory->create();
-        /** @var \Synerise\Integration\Model\Workspace $profile */
-        foreach ($profiles as $profile) {
+        $workspaces = $this->collectionFactory->create();
+        /** @var \Synerise\Integration\Model\Workspace $workspace */
+        foreach ($workspaces as $workspace) {
             $options[] = [
-                'value' => $profile->getId(),
-                'label' => $profile->getName()
+                'value' => $workspace->getId(),
+                'label' => $workspace->getName()
             ];
         }
 

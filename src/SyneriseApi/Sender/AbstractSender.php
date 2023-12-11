@@ -7,7 +7,6 @@ use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
-
 use Synerise\Integration\SyneriseApi\Config;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -61,7 +60,8 @@ abstract class AbstractSender
         try {
             return $send();
         } catch (\Exception $e) {
-            if($e instanceof self::API_EXCEPTION && $this->isTokenExpired($e)) {
+            $apiExceptionClass = self::API_EXCEPTION;
+            if($e instanceof $apiExceptionClass && $this->isTokenExpired($e)) {
                 $this->clearCachedInstances($storeId);
                 return $send();
             } else {
@@ -88,7 +88,7 @@ abstract class AbstractSender
             'Synerise Api request failed',
             [
                 'exception' => preg_replace('/ response:.*/s', '', $e->getMessage()),
-                'response_body' => preg_replace('/\n/s', '', $e->getResponseBody())
+                'response_body' => preg_replace('/\n/s', '', (string) $e->getResponseBody())
             ]
         );
     }

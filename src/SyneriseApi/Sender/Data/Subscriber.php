@@ -88,7 +88,7 @@ class Subscriber extends AbstractSender implements SenderInterface
      */
     public function deleteItem($payload, int $storeId, ?int $entityId = null)
     {
-        $this->batchAddOrUpdateClients($payload, $storeId);
+        $this->batchAddOrUpdateClients([$payload], $storeId);
         if($entityId) {
             $this->deleteStatus([$entityId]);
         }

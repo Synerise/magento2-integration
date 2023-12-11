@@ -87,13 +87,12 @@ class ConfigFactory
      * @throws ValidatorException
      */
     public function createConfig(
-        int $scopeId = null,
+        ?int $scopeId = null,
         string $scope = ScopeInterface::SCOPE_STORE,
         ?string $mode = null
     ): Config
     {
         $mode = $mode ?: $this->mode;
-        $timeout = $this->getTimeout($mode, $scopeId, $scope);
 
         if ($this->isBasicAuthAvailable($scopeId, $scope)) {
             $authorizationType = Config::AUTHORIZATION_TYPE_BASIC;
@@ -109,13 +108,45 @@ class ConfigFactory
         return new Config(
             $this->getApiHost($scopeId, $scope),
             $this->getUserAgent($scopeId, $scope),
-            $timeout,
+            $this->getTimeout($mode, $scopeId, $scope),
             $authorizationType,
             $authorizationToken,
             $this->getHandlerStack($scopeId, $scope),
             $this->isKeepAliveEnabled($scopeId, $scope)
         );
     }
+
+    /**
+     * @param string $apiKey
+     * @param int|null $scopeId
+     * @param string $scope
+     * @param string|null $mode
+     * @return Config
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function createConfigWithApiKey(
+        string $apiKey,
+        ?int $scopeId = null,
+        string $scope = ScopeInterface::SCOPE_STORE,
+        ?string $mode = null
+    ): Config
+    {
+        $mode = $mode ?: $this->mode;
+        return new Config(
+            $this->getApiHost($scopeId, $scope),
+            $this->getUserAgent($scopeId, $scope),
+            $this->getTimeout($mode, $scopeId, $scope),
+            Config::AUTHORIZATION_TYPE_BEARER,
+            $this->authentication->getJwt(
+                $apiKey,
+                $this->createMinimalConfig($scopeId, $scope, $mode)
+            ),
+            $this->getHandlerStack($scopeId, $scope),
+            $this->isKeepAliveEnabled($scopeId, $scope)
+        );
+    }
+
 
     /**
      * @param int|null $scopeId
