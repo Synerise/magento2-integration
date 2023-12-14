@@ -37,12 +37,24 @@
         </arguments>
     </type>
     <type name="Magento\Framework\MessageQueue\Consumer\Config\CompositeReader">
-        <plugin name="queueConfigPluginSynerise"
-                type="Synerise\Integration\MessageQueue\Config\Consumer\ConfigReaderPlugin" sortOrder="2" />
+        <arguments>
+            <argument name="readers" xsi:type="array">
+                <item name="xmlReader" xsi:type="object" sortOrder="10">Magento\Framework\MessageQueue\Consumer\Config\Xml\Reader</item>
+                <item name="envReader" xsi:type="object" sortOrder="20">Magento\Framework\MessageQueue\Consumer\Config\Env\Reader</item>
+                <item name="syneriseReader" xsi:type="object" sortOrder="15">Synerise\Integration\MessageQueue\Config\Reader\Consumer</item>
+            </argument>
+        </arguments>
     </type>
     <type name="Magento\Framework\MessageQueue\Publisher\Config\CompositeReader">
-        <plugin name="queueConfigPluginSynerise"
-                type="Synerise\Integration\MessageQueue\Config\Publisher\ConfigReaderPlugin" sortOrder="2" />
+        <arguments>
+            <argument name="readers" xsi:type="array">
+                <item name="asyncServiceReader" xsi:type="object" sortOrder="0">Magento\WebapiAsync\Code\Generator\Config\RemoteServiceReader\Publisher</item>
+                <item name="remoteServiceReader" xsi:type="object" sortOrder="10">Magento\Framework\MessageQueue\Publisher\Config\RemoteService\Reader</item>
+                <item name="xmlReader" xsi:type="object" sortOrder="20">Magento\Framework\MessageQueue\Publisher\Config\Xml\Reader</item>
+                <item name="envReader" xsi:type="object" sortOrder="30">Magento\Framework\MessageQueue\Publisher\Config\Env\Reader</item>
+                <item name="syneriseReader" xsi:type="object" sortOrder="15">Synerise\Integration\MessageQueue\Config\Reader\Publisher</item>
+            </argument>
+        </arguments>
     </type>
     <type name="Magento\Config\Model\Config\TypePool">
         <arguments>
