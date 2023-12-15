@@ -26,7 +26,7 @@ class Order extends AbstractSender implements SenderInterface
     const MODEL = 'order';
     const ENTITY_ID = 'entity_id';
 
-    const MAX_PAGE_SIZE = 500;
+    const MAX_PAGE_SIZE = 100;
 
     /**
      * @var SearchCriteriaBuilder

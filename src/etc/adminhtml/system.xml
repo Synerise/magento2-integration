@@ -55,7 +55,7 @@
                 <field id="limit" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Max items per request</label>
                     <config_path>synerise/product/limit</config_path>
-                    <validate>validate-digits validate-digits-range digits-range-1-500</validate>
+                    <validate>validate-digits validate-digits-range digits-range-1-100</validate>
                 </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
@@ -74,7 +74,7 @@
                 <field id="limit" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Max items per request</label>
                     <config_path>synerise/customer/limit</config_path>
-                    <validate>validate-digits validate-digits-range digits-range-1-500</validate>
+                    <validate>validate-digits validate-digits-range digits-range-1-100</validate>
                 </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
@@ -88,7 +88,7 @@
                 <field id="limit" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Max items per request</label>
                     <config_path>synerise/order/limit</config_path>
-                    <validate>validate-digits validate-digits-range digits-range-1-500</validate>
+                    <validate>validate-digits validate-digits-range digits-range-1-100</validate>
                 </field>
             </group>
             <group id="subscriber" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -96,7 +96,7 @@
                 <field id="limit" translate="label" type="text" sortOrder="2" showInDefault="1">
                     <label>Max items per request</label>
                     <config_path>synerise/subscriber/limit</config_path>
-                    <validate>validate-digits validate-digits-range digits-range-1-500</validate>
+                    <validate>validate-digits validate-digits-range digits-range-1-100</validate>
                 </field>
             </group>
         </section>
