@@ -32,9 +32,6 @@
             <subscriber>
                 <limit>25</limit>
             </subscriber>
-            <queue>
-                <connection>db</connection>
-            </queue>
         </synerise>
     </default>
 </config>
