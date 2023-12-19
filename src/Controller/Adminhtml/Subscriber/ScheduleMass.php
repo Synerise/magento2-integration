@@ -2,10 +2,13 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Subscriber;
 
+use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
@@ -66,13 +69,20 @@ class ScheduleMass extends Action implements HttpPostActionInterface
     /**
      * Execute action
      *
-     * @return \Magento\Backend\Model\View\Result\Redirect
-     * @throws \Magento\Framework\Exception\LocalizedException | \Exception
+     * @return Redirect
+     * @throws Exception
      */
     public function execute()
     {
-        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
-
+        if (!$this->synchronization->isSynchronizationEnabled()) {
+            $this->messageManager->addErrorMessage(
+                __('Synchronization is disabled. Please review your configuration.')
+            );
+        } elseif (!$this->synchronization->isEnabledModel(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)) {
+            $this->messageManager->addErrorMessage(
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
+            );
+        } else {
             $subscribersIds = $this->getRequest()->getParam('subscriber');
             if (!is_array($subscribersIds)) {
                 $this->messageManager->addErrorMessage(__('Please select one or more subscribers.'));
@@ -122,18 +132,14 @@ class ScheduleMass extends Action implements HttpPostActionInterface
                             )
                         );
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
                     $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
                 }
             }
-        } else {
-            $this->messageManager->addErrorMessage(
-            __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
-            );
         }
 
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('newsletter/subscriber/index');
     }

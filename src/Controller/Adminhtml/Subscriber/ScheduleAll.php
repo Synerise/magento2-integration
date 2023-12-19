@@ -2,8 +2,11 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Subscriber;
 
+use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Backend\Model\View\Result\Redirect;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\Framework\App\Action\HttpGetActionInterface;
@@ -59,14 +62,20 @@ class ScheduleAll extends Action implements HttpGetActionInterface
     /**
      * Execute action
      *
-     * @return \Magento\Backend\Model\View\Result\Redirect
-     * @throws \Magento\Framework\Exception\LocalizedException | \Exception
+     * @return Redirect
+     * @throws LocalizedException | Exception
      */
     public function execute()
     {
-        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
-
-
+        if (!$this->synchronization->isSynchronizationEnabled()) {
+            $this->messageManager->addErrorMessage(
+                __('Synchronization is disabled. Please review your configuration.')
+            );
+        } elseif (!$this->synchronization->isEnabledModel(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)) {
+            $this->messageManager->addErrorMessage(
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
+            );
+        } else {
             $storeIds = [];
             foreach ($this->synchronization->getEnabledStores() as $storeId)
             {
@@ -81,7 +90,6 @@ class ScheduleAll extends Action implements HttpGetActionInterface
                 }
             }
 
-
             if (!empty($storeIds)) {
                 $this->publisher->schedule(
                     Sender::MODEL,
@@ -92,7 +100,7 @@ class ScheduleAll extends Action implements HttpGetActionInterface
                         '%1 synchronization has been scheduled for stores: %2',
                         ucfirst(Sender::MODEL),
                         implode(',',$storeIds)
-                )
+                    )
                 );
             } else {
                 $this->messageManager->addErrorMessage(
@@ -102,13 +110,8 @@ class ScheduleAll extends Action implements HttpGetActionInterface
                     )
                 );
             }
-        } else {
-            $this->messageManager->addErrorMessage(
-                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
-            );
         }
-
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('synerise/dashboard/index');
     }

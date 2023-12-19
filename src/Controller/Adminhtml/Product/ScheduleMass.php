@@ -2,11 +2,14 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Product;
 
+use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Ui\Component\MassAction\Filter;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
@@ -65,12 +68,20 @@ class ScheduleMass extends Action
     /**
      * Execute action
      *
-     * @return \Magento\Backend\Model\View\Result\Redirect
-     * @throws \Magento\Framework\Exception\LocalizedException | \Exception
+     * @return Redirect
+     * @throws LocalizedException | Exception
      */
     public function execute()
     {
-        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
+        if (!$this->synchronization->isSynchronizationEnabled()) {
+            $this->messageManager->addErrorMessage(
+                __('Synchronization is disabled. Please review your configuration.')
+            );
+        } elseif (!$this->synchronization->isEnabledModel(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)) {
+            $this->messageManager->addErrorMessage(
+                __('%1s are excluded from synchronization.', ucfirst(\Synerise\Integration\SyneriseApi\Sender\Data\Subscriber::MODEL))
+            );
+        } else {
             $storeIds = [];
             $itemsCount = 0;
             $enabledStoreIds = $this->synchronization->getEnabledStores();
@@ -108,17 +119,13 @@ class ScheduleMass extends Action
                         __('Nothing to synchronize. Stores for selected product(s) not enabled for synchronization.')
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->error('Failed to schedule records to synchronization queue', ['exception' => $e]);
                 $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
             }
-        } else {
-            $this->messageManager->addErrorMessage(
-                __('Nothing to synchronize. Products are excluded from synchronization.')
-            );
         }
 
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('catalog/product/index');
     }

@@ -2,8 +2,10 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Customer;
 
+use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\Controller\ResultFactory;
@@ -65,17 +67,25 @@ class ScheduleMass extends Action
     /**
      * Execute action
      *
-     * @return \Magento\Backend\Model\View\Result\Redirect
-     * @throws \Magento\Framework\Exception\LocalizedException | \Exception
+     * @return Redirect
+     * @throws Exception
      */
     public function execute()
     {
-        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
-            $storeIds = [];
-            $itemsCount = 0;
-            $enabledStoreIds = $this->synchronization->getEnabledStores();
-
+        if (!$this->synchronization->isSynchronizationEnabled()) {
+            $this->messageManager->addErrorMessage(
+                __('Synchronization is disabled. Please review your configuration.')
+            );
+        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
+            $this->messageManager->addErrorMessage(
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
+            );
+        } else {
             try {
+                $storeIds = [];
+                $itemsCount = 0;
+                $enabledStoreIds = $this->synchronization->getEnabledStores();
+
                 foreach ($enabledStoreIds as $enabledStoreId) {
                     /** @var Collection $collection */
                     $collection = $this->filter->getCollection($this->collectionFactory->create())
@@ -112,17 +122,13 @@ class ScheduleMass extends Action
                         )
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
                 $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
             }
-        } else {
-            $this->messageManager->addErrorMessage(
-                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
-            );
         }
 
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('customer/index/index');
     }

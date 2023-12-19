@@ -2,12 +2,15 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Customer;
 
+use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\LocalizedException;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
@@ -59,12 +62,20 @@ class ScheduleAll extends Action implements HttpGetActionInterface
     /**
      * Execute action
      *
-     * @return \Magento\Backend\Model\View\Result\Redirect
-     * @throws \Magento\Framework\Exception\LocalizedException | \Exception
+     * @return Redirect
+     * @throws LocalizedException | Exception
      */
     public function execute()
     {
-        if ($this->synchronization->isEnabledModel(Sender::MODEL)) {
+        if (!$this->synchronization->isSynchronizationEnabled()) {
+            $this->messageManager->addErrorMessage(
+                __('Synchronization is disabled. Please review your configuration.')
+            );
+        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
+            $this->messageManager->addErrorMessage(
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
+            );
+        } else {
             $storeIds = [];
             foreach ($this->synchronization->getEnabledStores() as $storeId)
             {
@@ -99,12 +110,8 @@ class ScheduleAll extends Action implements HttpGetActionInterface
                     )
                 );
             }
-        } else {
-            $this->messageManager->addErrorMessage(
-                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL), Sender::MODEL)
-            );
         }
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $resultRedirect->setPath('synerise/dashboard/index');
     }

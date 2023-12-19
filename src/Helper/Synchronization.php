@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Helper;
 
+use InvalidArgumentException;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\ScopeInterface;
@@ -16,6 +17,8 @@ class Synchronization
         'product' => 'synerise/product/limit',
         'subscriber' => 'synerise/subscriber/limit'
     ];
+
+    const XML_PATH_SYNCHRONIZATION_ENABLED = 'synerise/synchronization/enabled';
 
     const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
 
@@ -56,12 +59,36 @@ class Synchronization
     }
 
     /**
-     * @param string $model
+     * @param int $scopeId
+     * @param string $scope
      * @return bool
      */
-    public function isEnabledModel(string $model) {
+    public function isEventQueueEnabled(int $scopeId, string $scope = ScopeInterface::SCOPE_STORE): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            Tracking::XML_PATH_QUEUE_ENABLED,
+            $scope,
+            $scopeId
+        );
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSynchronizationEnabled(): bool
+    {
+        return $this->scopeConfig->isSetFlag(Synchronization::XML_PATH_SYNCHRONIZATION_ENABLED);
+    }
+
+    /**
+     * @param string $model
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public function isEnabledModel(string $model): bool
+    {
         if (!isset(Model::OPTIONS[$model])) {
-            throw new \InvalidArgumentException($model . ' is not a valid data model');
+            throw new InvalidArgumentException($model . ' is not a valid data model');
         }
         return in_array($model, $this->enabledModels);
     }
@@ -100,7 +127,7 @@ class Synchronization
     public function getPageSize(string $model, ?int $storeId = null): int
     {
         if (!isset(self::XML_PATH_PAGE_SIZE_ARRAY[$model])) {
-            throw new \InvalidArgumentException('Invalid model');
+            throw new InvalidArgumentException('Invalid model');
         }
 
         return (int) $this->scopeConfig->getValue(

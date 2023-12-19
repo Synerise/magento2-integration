@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Communication;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
@@ -16,13 +15,13 @@ class Config implements ConfigInterface
     protected $topics = [];
 
     /**
-     * @var ScopeConfigInterface
+     * @var Synchronization
      */
-    protected $scopeConfig;
+    protected $synchronization;
 
-    public function __construct(ScopeConfigInterface $scopeConfig)
+    public function __construct(Synchronization $synchronization)
     {
-        $this->scopeConfig = $scopeConfig;
+        $this->synchronization = $synchronization;
 
         $this->initData();
     }
@@ -51,7 +50,8 @@ class Config implements ConfigInterface
     public function getTopicHandlers($topicName)
     {
         $topicData = $this->getTopic($topicName);
-        return $topicData[self::TOPIC_HANDLERS];    }
+        return $topicData[self::TOPIC_HANDLERS];
+    }
 
     /**
      * @return array
@@ -66,45 +66,57 @@ class Config implements ConfigInterface
      */
     private function initData()
     {
-        $enabledModels = $this->getEnabledModels();
-        $enabledStores = $this->getEnabledStores();
+        $enabledModels = $this->synchronization->getEnabledModels();
+        $enabledStores = $this->synchronization->getEnabledStores();
 
         $result = [];
 
-        $topicName = 'synerise.queue.events';
-        $result[$topicName] = $this->getTopicConfig(
-            $topicName,
-            "Synerise\\Integration\\MessageQueue\\Consumer\\Event",
-            'string',
-        );
-
-        $topicName = 'synerise.queue.data.scheduler';
-        $result[$topicName] = $this->getTopicConfig(
-            $topicName,
-            "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Scheduler"
-        );
-
-        $topicName =  "synerise.queue.data.item";
-        $result[$topicName] = $this->getTopicConfig(
-            $topicName,
-            "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Item",
-            "Synerise\\Integration\\MessageQueue\\Message\\Data\\Item"
-        );
-
-        foreach($enabledModels as $model) {
-            foreach($enabledStores as $storeId) {
-                $topicName = $this->getDataTopicName($model, 'batch', $storeId);
-                $result[$topicName] = $this->getTopicConfig(
-                    $topicName,
-                    "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Batch\\" . ucfirst($model)
-                );
-
-                $topicName = $this->getDataTopicName($model, 'range', $storeId);
-                $result[$topicName] = $this->getTopicConfig(
-                    $topicName,
-                    "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Range\\" . ucfirst($model)
-                );
+        $isEventQueueEnabled = false;
+        foreach ($enabledStores as $enabledStore) {
+            if ($this->synchronization->isEventQueueEnabled($enabledStore)) {
+                $isEventQueueEnabled = true;
             }
+        }
+
+        if($isEventQueueEnabled) {
+            $topicName = 'synerise.queue.events';
+            $result[$topicName] = $this->getTopicConfig(
+                $topicName,
+                "Synerise\\Integration\\MessageQueue\\Consumer\\Event",
+                'string',
+            );
+        }
+
+        if ($this->synchronization->isSynchronizationEnabled()) {
+            $topicName = 'synerise.queue.data.scheduler';
+            $result[$topicName] = $this->getTopicConfig(
+                $topicName,
+                "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Scheduler"
+            );
+
+            $topicName =  "synerise.queue.data.item";
+            $result[$topicName] = $this->getTopicConfig(
+                $topicName,
+                "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Item",
+                "Synerise\\Integration\\MessageQueue\\Message\\Data\\Item"
+            );
+
+            foreach($enabledModels as $model) {
+                foreach($enabledStores as $storeId) {
+                    $topicName = $this->getDataTopicName($model, 'batch', $storeId);
+                    $result[$topicName] = $this->getTopicConfig(
+                        $topicName,
+                        "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Batch\\" . ucfirst($model)
+                    );
+
+                    $topicName = $this->getDataTopicName($model, 'range', $storeId);
+                    $result[$topicName] = $this->getTopicConfig(
+                        $topicName,
+                        "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Range\\" . ucfirst($model)
+                    );
+                }
+            }
+
         }
 
         $this->topics = $result;
@@ -149,23 +161,5 @@ class Config implements ConfigInterface
     {
         $topicName =  "synerise.queue.data.$model.$type";
         return $storeId ? "$topicName.$storeId" : "$topicName";
-    }
-
-    /**
-     * @return string[]
-     */
-    protected function getEnabledModels(): array
-    {
-        $enabledModels = $this->scopeConfig->getValue(Synchronization::XML_PATH_SYNCHRONIZATION_MODELS);
-        return !empty($enabledModels) ? explode(',', $enabledModels) : [];
-    }
-
-    /**
-     * @return string[]
-     */
-    protected function getEnabledStores(): array
-    {
-        $enabledStores = $this->scopeConfig->getValue(Synchronization::XML_PATH_SYNCHRONIZATION_STORES);
-        return !empty($enabledStores) ? explode(',', $enabledStores) : [];
     }
 }
