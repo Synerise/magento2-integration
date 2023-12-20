@@ -83,22 +83,22 @@
             </argument>
         </arguments>
     </virtualType>
-    <type name="Synerise\Integration\Controller\Adminhtml\Customer\ScheduleMass">
+    <type name="Synerise\Integration\Controller\Adminhtml\Synchronization\Batch\Customer">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Controller\Adminhtml\Order\ScheduleMass">
+    <type name="Synerise\Integration\Controller\Adminhtml\Synchronization\Batch\Order">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Controller\Adminhtml\Product\ScheduleMass">
+    <type name="Synerise\Integration\Controller\Adminhtml\Synchronization\Batch\Product">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
-    <type name="Synerise\Integration\Controller\Adminhtml\Subscriber\ScheduleMass">
+    <type name="Synerise\Integration\Controller\Adminhtml\Synchronization\Batch\Subscriber">
         <arguments>
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>

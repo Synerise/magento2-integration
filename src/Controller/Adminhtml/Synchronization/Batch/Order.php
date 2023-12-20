@@ -1,26 +1,27 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Customer;
+namespace Synerise\Integration\Controller\Adminhtml\Synchronization\Batch;
 
 use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
-use Magento\Customer\Model\ResourceModel\Customer\Collection;
-use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Sales\Model\ResourceModel\Order\Collection;
+use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
-use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as Sender;
 
-class ScheduleMass extends Action
+class Order extends Action
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
+    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
 
     /**
      * @var LoggerInterface
@@ -68,7 +69,7 @@ class ScheduleMass extends Action
      * Execute action
      *
      * @return Redirect
-     * @throws Exception
+     * @throws LocalizedException | Exception
      */
     public function execute()
     {
@@ -76,21 +77,19 @@ class ScheduleMass extends Action
             $this->messageManager->addErrorMessage(
                 __('Synchronization is disabled. Please review your configuration.')
             );
-        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
+        } elseif (!$this->synchronization->isEnabledModel(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)) {
             $this->messageManager->addErrorMessage(
                 __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
             );
-        } else {
+        } else {            $storeIds = [];
+            $itemsCount = 0;
+            $enabledStoreIds = $this->synchronization->getEnabledStores();
+            /** @var Collection $collection */
+            $collection = $this->filter->getCollection($this->collectionFactory->create());
+
             try {
-                $storeIds = [];
-                $itemsCount = 0;
-                $enabledStoreIds = $this->synchronization->getEnabledStores();
-
                 foreach ($enabledStoreIds as $enabledStoreId) {
-                    /** @var Collection $collection */
-                    $collection = $this->filter->getCollection($this->collectionFactory->create())
-                        ->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
-
+                    $collection->addFieldToFilter('store_id', ['eq' => $enabledStoreId]);
                     $ids = $collection->getAllIds();
                     if (!empty($ids)) {
                         $this->publisher->schedule(
@@ -98,10 +97,10 @@ class ScheduleMass extends Action
                             $collection->getAllIds(),
                             $enabledStoreId,
                             null,
-                            $this->synchronization->getPageSize(Sender::MODEL)
+                            $this->synchronization->getPageSize(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
-                        $itemsCount += $collection->count();
+                        $itemsCount += $collection->getSize();
                     }
                 }
 
@@ -130,6 +129,6 @@ class ScheduleMass extends Action
 
         /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
-        return $resultRedirect->setPath('customer/index/index');
+        return $resultRedirect->setPath('sales/order/index');
     }
 }

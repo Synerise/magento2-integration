@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Block\Adminhtml\Synchronization\Schedule;
+namespace Synerise\Integration\Block\Adminhtml\Synchronization\All;
 
 use Magento\Backend\Block\Template\Context;
 use Magento\Directory\Helper\Data as DirectoryHelper;
@@ -40,7 +40,7 @@ class Select extends \Magento\Backend\Block\Template
      */
     public function getSubmitUrl()
     {
-        return $this->getUrl('*/*/schedule_execute');
+        return $this->getUrl('*/*/all_schedule');
     }
 
     /**

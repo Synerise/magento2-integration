@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Subscriber;
+namespace Synerise\Integration\Controller\Adminhtml\Synchronization\Batch;
 
 use Exception;
 use Magento\Backend\App\Action;
@@ -17,7 +17,7 @@ use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
-class ScheduleMass extends Action implements HttpPostActionInterface
+class Subscriber extends Action implements HttpPostActionInterface
 {
     /**
      * Authorization level

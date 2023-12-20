@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Synchronization\Schedule;
+namespace Synerise\Integration\Controller\Adminhtml\Synchronization\All;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
@@ -12,7 +12,7 @@ use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
 
-class Execute extends Action implements HttpPostActionInterface
+class Schedule extends Action implements HttpPostActionInterface
 {
     /**
      * Authorization level

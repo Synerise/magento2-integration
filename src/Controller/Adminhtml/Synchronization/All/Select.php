@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Controller\Adminhtml\Synchronization\Schedule;
+namespace Synerise\Integration\Controller\Adminhtml\Synchronization\All;
 
 use Exception;
 use Magento\Backend\App\Action;
