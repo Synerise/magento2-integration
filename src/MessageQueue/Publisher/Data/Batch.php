@@ -3,6 +3,7 @@
 namespace Synerise\Integration\MessageQueue\Publisher\Data;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Phrase;
 
 class Batch extends AbstractBulk
 {
@@ -13,13 +14,12 @@ class Batch extends AbstractBulk
         array $entityIds,
         int $storeId,
         ?int $websiteId = null,
-        ?int $userId = null,
         int $bulkSize = 100
     )
     {
         $entityIdsChunks = array_chunk($entityIds, $bulkSize);
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = __('Synchronization of %1 selected %2(s) from store %3 to Synerise', count($entityIds), $model, $storeId);
+        $bulkDescription = $this->getBulKDescription(count($entityIds), $model, $storeId);
         $operations = [];
         foreach ($entityIdsChunks as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
@@ -36,8 +36,7 @@ class Batch extends AbstractBulk
             $result = $this->bulkManagement->scheduleBulk(
                 $bulkUuid,
                 $operations,
-                $bulkDescription,
-                $userId ?: $this->userContext->getUserId()
+                $bulkDescription
             );
             if (!$result) {
                 throw new LocalizedException(
@@ -47,4 +46,14 @@ class Batch extends AbstractBulk
         }
     }
 
+    /**
+     * @param int $count
+     * @param string $model
+     * @param int $storeId
+     * @return Phrase
+     */
+    public function getBulKDescription(int $count, string $model, int $storeId): Phrase
+    {
+        return __('Synerise: Batch %1 synchronization of %2 selected item(s) (Store id: %3)', $model, $count, $storeId);
+    }
 }

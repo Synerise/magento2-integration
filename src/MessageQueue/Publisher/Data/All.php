@@ -3,6 +3,7 @@
 namespace Synerise\Integration\MessageQueue\Publisher\Data;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Phrase;
 
 class All extends AbstractBulk
 {
@@ -17,7 +18,7 @@ class All extends AbstractBulk
     )
     {
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = __('Scheduled full %1 synchronization to Synerise (Store id: %2)', $model, $storeId);
+        $bulkDescription = $this->getBulKDescription($model, $storeId);
         $operations = [];
         foreach ($entityIds as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
@@ -43,5 +44,16 @@ class All extends AbstractBulk
                 );
             }
         }
+    }
+
+
+    /**
+     * @param string $model
+     * @param int $storeId
+     * @return Phrase
+     */
+    public function getBulKDescription(string $model, int $storeId): Phrase
+    {
+        return __('Synerise: Full %1 synchronization (Store id: %2)', $model, $storeId);
     }
 }

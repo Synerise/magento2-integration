@@ -8,6 +8,7 @@ use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\Bulk\BulkManagementInterface;
 use Magento\Framework\DataObject\IdentityGeneratorInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Phrase;
 use Magento\Framework\Serialize\SerializerInterface;
 
 class Scheduler
@@ -59,7 +60,7 @@ class Scheduler
     )
     {
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = __('%1 full synchronization request.', ucfirst($model));
+        $bulkDescription = $this->getBulKDescription($model, $storeIds);
         $operations = [];
         foreach ($storeIds as $storeId) {
             $operations[] = $this->makeOperation(
@@ -116,5 +117,15 @@ class Scheduler
         ];
 
         return $this->operationFactory->create($operation);
+    }
+
+    /**
+     * @param string $model
+     * @param array $storeIds
+     * @return Phrase
+     */
+    public function getBulKDescription(string $model, array $storeIds): Phrase
+    {
+        return __('Synerise: Full %1 synchronization request (Store ids: %2)', $model, implode(',', $storeIds));
     }
 }
