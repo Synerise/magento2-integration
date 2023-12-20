@@ -6,6 +6,7 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\MysqlMq\Model\QueueManagement;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
@@ -44,5 +45,21 @@ class MysqlScheduler extends AbstractScheduler
 
     protected function purgeQueue(string $topicName)
     {
+        $messageStatusTable = $this->connection->getTableName('queue_message_status');
+        $messageTable = $this->connection->getTableName('queue_message');
+
+        $query = sprintf(
+            "UPDATE %s JOIN %s ON %s.message_id = %s.id SET status = %s
+                WHERE queue_message_status.status IN (%s) AND topic_name = '%s'",
+            $messageStatusTable,
+            $messageTable,
+            $messageStatusTable,
+            $messageTable,
+            QueueManagement::MESSAGE_STATUS_TO_BE_DELETED,
+            implode(",", [QueueManagement::MESSAGE_STATUS_NEW, QueueManagement::MESSAGE_STATUS_RETRY_REQUIRED]),
+            $topicName
+        );
+
+        return $this->connection->query($query);
     }
 }
