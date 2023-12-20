@@ -6,9 +6,17 @@ use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
 use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\MessageQueue\Consumer\Event;
+use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk;
+use Synerise\Integration\MessageQueue\Publisher\Data\All;
+use Synerise\Integration\MessageQueue\Publisher\Data\Batch;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item;
+use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler;
 
 class Config implements ConfigInterface
 {
+    const MAX_RETRIES = 3;
+
     /**
      * @var array 
      */
@@ -79,7 +87,7 @@ class Config implements ConfigInterface
         }
 
         if($isEventQueueEnabled) {
-            $topicName = 'synerise.queue.events';
+            $topicName = Event::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
                 "Synerise\\Integration\\MessageQueue\\Consumer\\Event",
@@ -88,31 +96,32 @@ class Config implements ConfigInterface
         }
 
         if ($this->synchronization->isSynchronizationEnabled()) {
-            $topicName = 'synerise.queue.data.scheduler';
+            $topicName = Scheduler::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
-                "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Scheduler"
+                "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\MysqlScheduler"
             );
 
-            $topicName =  "synerise.queue.data.item";
+            $topicName =  Item::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
                 "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Item",
                 "Synerise\\Integration\\MessageQueue\\Message\\Data\\Item"
             );
 
+            $handlerType = "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Bulk";
             foreach($enabledModels as $model) {
                 foreach($enabledStores as $storeId) {
-                    $topicName = $this->getDataTopicName($model, 'batch', $storeId);
+                    $topicName = AbstractBulk::getTopicName($model, Batch::TYPE, $storeId);
                     $result[$topicName] = $this->getTopicConfig(
                         $topicName,
-                        "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Batch\\" . ucfirst($model)
+                        $handlerType
                     );
 
-                    $topicName = $this->getDataTopicName($model, 'range', $storeId);
+                    $topicName = AbstractBulk::getTopicName($model, All::TYPE, $storeId);
                     $result[$topicName] = $this->getTopicConfig(
                         $topicName,
-                        "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Range\\" . ucfirst($model)
+                        $handlerType
                     );
                 }
             }
@@ -149,17 +158,5 @@ class Config implements ConfigInterface
                 ]
             ]
         ];
-    }
-
-    /**
-     * @param string $model
-     * @param string $type
-     * @param int|null $storeId
-     * @return string
-     */
-    protected function getDataTopicName(string $model, string $type, ?int $storeId = null): string
-    {
-        $topicName =  "synerise.queue.data.$model.$type";
-        return $storeId ? "$topicName.$storeId" : "$topicName";
     }
 }

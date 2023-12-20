@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\MessageQueue\Consumer\Data;
 
-use Magento\Framework\Amqp\Config as AmqpConfig;
 use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
@@ -16,11 +15,12 @@ use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
-use Synerise\Integration\MessageQueue\Publisher\Data\Range as Publisher;
+use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
+use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product;
 
-class Scheduler
+abstract class AbstractScheduler
 {
     /**
      * @var LoggerInterface
@@ -30,43 +30,37 @@ class Scheduler
     /**
      * @var SerializerInterface
      */
-    private $serializer;
+    protected $serializer;
 
     /**
      * @var EntityManager
      */
-    private $entityManager;
-
-    /**
-     * @var AmqpConfig
-     */
-    private $amqpConfig;
+    protected $entityManager;
 
     /**
      * @var CollectionFactoryProvider
      */
-    private $collectionFactoryProvider;
+    protected $collectionFactoryProvider;
     
     /**
      * @var Filter
      */
-    private $filter;
+    protected $filter;
     
     /**
      * @var Publisher
      */
-    private $publisher;
+    protected $publisher;
 
     /**
      * @var Synchronization
      */
-    private $synchronization;
+    protected $synchronization;
 
     public function __construct(
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
-        AmqpConfig $amqpConfig,
         CollectionFactoryProvider $collectionFactoryProvider,
         Filter $filter,
         Publisher $publisher,
@@ -75,7 +69,6 @@ class Scheduler
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->amqpConfig = $amqpConfig;
         $this->collectionFactoryProvider = $collectionFactoryProvider;
         $this->filter = $filter;
         $this->publisher = $publisher;
@@ -93,7 +86,13 @@ class Scheduler
     public function process(\Magento\AsynchronousOperations\Api\Data\OperationInterface $operation)
     {
         try {
-            $this->execute($this->serializer->unserialize($operation->getSerializedData()));
+            $data = $this->serializer->unserialize($operation->getSerializedData());
+            $this->purgeQueue(AbstractBulk::getTopicName(
+                $data['model'],
+                Publisher::TYPE,
+                $data['store_id']
+            ));
+            $this->execute($data);
         } catch (\Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
             if ($e instanceof \Magento\Framework\DB\Adapter\LockWaitException
@@ -145,42 +144,43 @@ class Scheduler
      */
     protected function execute(array $data)
     {
-        $this->amqpConfig->getChannel()->queue_purge(Publisher::getTopicName($data['model']));
-
         $collectionFactory = $this->collectionFactoryProvider->get($data['model']);
         /** @var CustomerCollection|OrderCollection|ProductCollection|SubscriberCollection $collection */
         $collection = $this->filter->addStoreFilter($collectionFactory->create(), $data['store_id']);
-        
+
         $pageSize = $this->synchronization->getPageSize($data['model'], $data['store_id']);
 
-        $le = $gt = 0;
+        $gt = 0;
         $lastId = $this->filter->getLastId($collection);
         if (!$lastId) {
             return;
         }
 
-        $ranges = [];
-        while ($le < $lastId) {
-            $ids = $collection->getAllIds($pageSize, $gt);
-            if (!count($ids)) {
+        $ids = [];
+        while ($gt < $lastId) {
+            $curIds = $collection->getAllIds($pageSize, $gt);
+            if (!count($curIds)) {
                 break;
             }
 
-            $le = (int) end($ids);
-            $ranges[] = [
-                'gt' => $gt,
-                'le' => $le
-            ];
-
-            $gt = $le;
+            $ids[] = $curIds;
+            $gt = (int) end($curIds);
         }
 
-        $this->publisher->schedule(
-            $data['user_id'],
-            $data['model'],
-            $ranges,
-            $data['store_id'],
-            $data['model'] == Product::MODEL ? $this->synchronization->getWebsiteIdByStoreId($data['store_id']): null
-        );
+        if(!empty($ids)) {
+            $this->publisher->schedule(
+                $data['user_id'],
+                $data['model'],
+                $ids,
+                $data['store_id'],
+                $data['model'] == Product::MODEL ? $this->synchronization->getWebsiteIdByStoreId($data['store_id']) : null
+            );
+        }
     }
+
+    /**
+     * @param string $topicName
+     * @return void
+     */
+    abstract protected function purgeQueue(string $topicName);
 }

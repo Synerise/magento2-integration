@@ -1,9 +1,11 @@
 <?php
 namespace Synerise\Integration\MessageQueue\Config\Reader;
 
+use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\MessageQueue\ConsumerInterface;
 use Magento\Framework\MessageQueue\DefaultValueProvider;
 use Synerise\Integration\Communication\Config;
+use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler;
 
 class Consumer implements \Magento\Framework\Config\ReaderInterface
 {
@@ -29,6 +31,10 @@ class Consumer implements \Magento\Framework\Config\ReaderInterface
     {
         $result = [];
         foreach ($this->config->getTopics() as $topicName => $topicConfig) {
+            if ($topicName == Scheduler::TOPIC_NAME && $this->defaultValueProvider->getConnection() == 'amqp') {
+                $topicConfig['handlers'][ConfigInterface::HANDLER_TYPE] = "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\AmqpScheduler";
+            }
+
             $result[$topicName] = $this->getConsumerConfig($topicName, array_values($topicConfig['handlers']));
         }
         return $result;

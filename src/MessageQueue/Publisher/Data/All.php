@@ -4,24 +4,22 @@ namespace Synerise\Integration\MessageQueue\Publisher\Data;
 
 use Magento\Framework\Exception\LocalizedException;
 
-class Batch extends AbstractBulk
+class All extends AbstractBulk
 {
-    const TYPE = 'batch';
+    const TYPE = 'all';
 
     public function schedule(
+        int $userId,
         string $model,
         array $entityIds,
         int $storeId,
-        ?int $websiteId = null,
-        ?int $userId = null,
-        int $bulkSize = 100
+        ?int $websiteId = null
     )
     {
-        $entityIdsChunks = array_chunk($entityIds, $bulkSize);
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = __('Synchronization of %1 selected %2(s) from store %3 to Synerise', count($entityIds), $model, $storeId);
+        $bulkDescription = __('Scheduled full %1 synchronization to Synerise (Store id: %2)', $model, $storeId);
         $operations = [];
-        foreach ($entityIdsChunks as $entityIdsChunk) {
+        foreach ($entityIds as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
                 $bulkUuid,
                 $model,
@@ -37,7 +35,7 @@ class Batch extends AbstractBulk
                 $bulkUuid,
                 $operations,
                 $bulkDescription,
-                $userId ?: $this->userContext->getUserId()
+                $userId
             );
             if (!$result) {
                 throw new LocalizedException(
@@ -46,5 +44,4 @@ class Batch extends AbstractBulk
             }
         }
     }
-
 }

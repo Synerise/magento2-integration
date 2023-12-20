@@ -19,11 +19,17 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
-use Synerise\Integration\Model\Config\Source\MessageQueue\Connection;
+use Synerise\Integration\Communication\Config;
+use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
+use Synerise\Integration\MessageQueue\Filter;
+use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk as BulkPublisher;
+use Synerise\Integration\SyneriseApi\SenderFactory;
 use Zend_Db_Adapter_Exception;
 
-abstract class AbstractOperationConsumer
+class Bulk
 {
+    const MAX_PAGE_SIZE = 100;
+
     /**
      * @var LoggerInterface
      */
@@ -49,18 +55,68 @@ abstract class AbstractOperationConsumer
      */
     private $messageEncoder;
 
+    /**
+     * @var CollectionFactoryProvider
+     */
+    private $collectionFactoryProvider;
+
+    /**
+     * @var SenderFactory
+     */
+    private $senderFactory;
+
+    /**
+     * @var Filter
+     */
+    private $filter;
+
     public function __construct(
         LoggerInterface $logger,
         ObjectManagerInterface $objectManager,
         EntityManager $entityManager,
         SerializerInterface $serializer,
-        MessageEncoder $messageEncoder
+        MessageEncoder $messageEncoder,
+        CollectionFactoryProvider $collectionFactoryProvider,
+        SenderFactory $senderFactory,
+        Filter $filter
     ) {
         $this->logger = $logger;
         $this->objectManager = $objectManager;
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         $this->messageEncoder = $messageEncoder;
+        $this->collectionFactoryProvider = $collectionFactoryProvider;
+        $this->senderFactory = $senderFactory;
+        $this->filter = $filter;
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     * @throws ApiException
+     * @throws LocalizedException
+     */
+    protected function execute(array $data)
+    {
+        $sender = $this->senderFactory->get($data['model']);
+
+        $collection = $this->filter->filterByEntityIds(
+            $this->collectionFactoryProvider->get($data['model'])->create(),
+            $data['entity_ids'],
+            $data['store_id'],
+            self::MAX_PAGE_SIZE
+        );
+
+        $attributes = $sender->getAttributesToSelect($data['store_id']);
+        if(!empty($attributes)) {
+            $collection->addAttributeToSelect($attributes);
+        }
+
+        $sender->sendItems(
+            $collection,
+            $data['store_id'],
+            $data['website_id'] ?: null
+        );
     }
 
     /**
@@ -128,8 +184,11 @@ abstract class AbstractOperationConsumer
         $isRetryScheduled = false;
         if ($status == BulkOperationInterface::STATUS_TYPE_RETRIABLY_FAILED) {
             $data['retries'] = (isset($data['retries'])) ? ++$data['retries'] : 0;
-            if ($data['retries'] <= Connection::MAX_RETRIES) {
-                $isRetryScheduled = $this->scheduleRetry($operation);
+            if ($data['retries'] <= Config::MAX_RETRIES) {
+                $isRetryScheduled = $this->scheduleRetry(
+                    BulkPublisher::getTopicName($data['model'], $data['type'], $data['store_id']),
+                    $operation
+                );
             }
         }
 
@@ -144,14 +203,16 @@ abstract class AbstractOperationConsumer
     }
 
     /**
+     * @param string $topicName
      * @param OperationInterface $operation
      * @return bool
      */
-    protected function scheduleRetry(OperationInterface $operation): bool
+    protected function scheduleRetry(
+        string $topicName,
+        OperationInterface $operation
+    ): bool
     {
         try {
-            $topicName = self::getTopicName();
-
             $retry = $this->objectManager->create('Synerise\Integration\Model\MessageQueue\Retry');
             $retry
                 ->setBody($this->messageEncoder->encode($topicName, $operation))
@@ -164,22 +225,4 @@ abstract class AbstractOperationConsumer
             return false;
         }
     }
-
-    /**
-     * @param array $data
-     * @return void
-     * @throws ApiException
-     * @throws Exception
-     */
-    abstract protected function execute(array $data);
-
-    /**
-     * @return string
-     */
-    abstract static protected function getModelName(): string;
-
-    /**
-     * @return string
-     */
-    abstract static protected function getTopicName(): string;
 }
