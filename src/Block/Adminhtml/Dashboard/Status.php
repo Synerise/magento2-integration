@@ -115,6 +115,6 @@ class Status extends \Magento\Backend\Block\Template
 
     public function getScheduleAllUrl()
     {
-        return $this->getUrl($this->scheduleAllUrlPath);
+        return $this->getUrl('synerise/synchronization/schedule_select');
     }
 }

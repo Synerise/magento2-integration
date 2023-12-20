@@ -94,9 +94,18 @@ class Synchronization
     }
 
     /**
+     * @param int $storeId
+     * @return bool
+     */
+    public function isEnabledStore(int $storeId): bool
+    {
+        return in_array($storeId, $this->enabledStores);
+    }
+
+    /**
      * @return string[]
      */
-    public function getEnabledModels()
+    public function getEnabledModels(): array
     {
         return $this->enabledModels;
     }
@@ -104,7 +113,7 @@ class Synchronization
     /**
      * @return string[]
      */
-    public function getEnabledStores()
+    public function getEnabledStores(): array
     {
         return $this->enabledStores;
     }

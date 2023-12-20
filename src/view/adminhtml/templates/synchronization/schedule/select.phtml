@@ -1,0 +1,37 @@
+<?php /** @var $block Synerise\Integration\Block\Adminhtml\Synchronization\Schedule\Select */ ?>
+<form action="<?= $block->escapeUrl($block->getSubmitUrl()) ?>"
+      method="post"
+      id="attributes-edit-form"
+      class="attributes-edit-form"
+      enctype="multipart/form-data">
+    <?= $block->getBlockHtml('formkey') ?>
+    <?php foreach ($block->getEnabledModels() as $model): ?>
+    <fieldset class="fieldset admin__fieldset " id="fields">
+        <legend class="admin__legend legend">
+            <span><?php echo ucfirst($model); ?></span>
+        </legend>
+        <div  class="admin__field field field-activity user-defined type-multiselect" >
+            <label class="label admin__field-label" for="include_<?php echo $model ?>" >Schedule</label>
+            <div class="admin__field-control control">
+                <select id="include_<?php echo $model ?>" name="include[<?php echo $model ?>]">
+                    <option value="1" selected>Yes</option>
+                    <option value="0" >No</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin__field field field-activity user-defined type-multiselect" >
+            <label class="label admin__field-label" for="stores_<?php echo $model ?>" >Stores</label>
+            <div class="admin__field-control control">
+                <select id="stores_<?php echo $model ?>" name="stores[<?php echo $model ?>][]" class="select multiselect admin__control-multiselect" multiple="multiple">
+                    <?php foreach ($block->getEnabledStores() as $store): ?>
+                    <option value="<?php echo $store; ?>" selected><?php echo $block->getStoreNameById($store); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+    </fieldset>
+    <?php endforeach; ?>
+    <button title="Send" type="submit" class="action-default scalable save primary">
+        <span>Submit</span>
+    </button>
+</form>
