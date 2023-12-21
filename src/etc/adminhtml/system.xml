@@ -66,7 +66,7 @@
                     <label>Attributes</label>
                     <config_path>synerise/product/attributes</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes</source_model>
-                    <comment>The changes of attribute selection will apply only to products which haven’t been sent to Synerise yet. To apply the changes to all products go to Marketing > Synerise > Dashboard and use Schedule all items option.</comment>
+                    <comment>The changes of attribute selection will apply only to products which haven’t been sent to Synerise yet. To apply the changes to all products schedule full synchronization for all affected scopes.</comment>
                 </field>
                 <field id="labels" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1">
                     <label>Labels as values</label>
@@ -85,7 +85,7 @@
                     <label>Attributes</label>
                     <config_path>synerise/customer/attributes</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Customers\Attributes</source_model>
-                    <comment>The changes of attribute selection will apply only for customers who haven’t been sent to Synerise yet. To apply the changes to all customers go to Marketing > Synerise > Dashboard and use Schedule all items option.</comment>
+                    <comment>The changes of attribute selection will apply only for customers who haven’t been sent to Synerise yet. To apply the changes to all customers schedule full synchronization for all affected scopes.</comment>
                 </field>
             </group>
             <group id="order" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">

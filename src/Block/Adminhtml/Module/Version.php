@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Block\Adminhtml\Dashboard;
+namespace Synerise\Integration\Block\Adminhtml\Module;
 
 use Magento\Backend\Block\Template\Context;
 use Magento\Directory\Helper\Data as DirectoryHelper;
@@ -17,8 +17,8 @@ class Version extends \Magento\Backend\Block\Template
     public function __construct(
         Context $context,
         VersionHelper $versionHelper,
-        array $data = [], ?JsonHelper
-        $jsonHelper = null,
+        array $data = [],
+        ?JsonHelper $jsonHelper = null,
         ?DirectoryHelper $directoryHelper = null
     ) {
         $this->versionHelper = $versionHelper;
