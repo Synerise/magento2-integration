@@ -38,7 +38,7 @@ class Product extends AbstractSender implements SenderInterface
 
     const ENTITY_ID = 'entity_id';
 
-    const MAX_PAGE_SIZE = 500;
+    const MAX_PAGE_SIZE = 100;
 
     const API_EXCEPTION = ApiException::class;
 

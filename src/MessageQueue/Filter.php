@@ -66,27 +66,6 @@ class Filter
 
     /**
      * @param AbstractDb $collection
-     * @param int $gt
-     * @param int $lteq
-     * @param int $storeId
-     * @param int|null $pageSize
-     * @return AbstractDb
-     * @throws LocalizedException
-     */
-    public function filterByEntityIdRange(AbstractDb $collection, int $gt, int $lteq, int $storeId, ?int $pageSize = null): AbstractDb
-    {
-        $idFieldName = $this->getIdFieldName($collection);
-        $collection
-            ->addFieldToFilter($idFieldName, ['gt' => $gt])
-            ->addFieldToFilter($idFieldName, ['lteq' => $lteq])
-            ->setOrder($idFieldName, 'ASC')
-            ->setPageSize($pageSize ?: self::DEFAULT_PAGE_SIZE);
-
-        return $this->addStoreFilter($collection, $storeId);
-    }
-
-    /**
-     * @param AbstractDb $collection
      * @return string
      * @throws LocalizedException
      */

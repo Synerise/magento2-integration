@@ -17,13 +17,13 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
+use Synerise\Integration\Communication\Config;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as ProductSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
-use Synerise\Integration\Model\Config\Source\MessageQueue\Connection;
 use Synerise\Integration\Observer\CatalogProductDeleteBefore;
 use Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter;
 use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
@@ -132,7 +132,7 @@ class Event
 
         if ($isRetryable) {
             $deserializedData['retries'] = (isset($deserializedData['retries'])) ? ++$deserializedData['retries'] : 0;
-            if ($deserializedData['retries'] <= Connection::MAX_RETRIES) {
+            if ($deserializedData['retries'] <= Config::MAX_RETRIES) {
                 $this->scheduleRetry($this->json->serialize($deserializedData));
             }
         }

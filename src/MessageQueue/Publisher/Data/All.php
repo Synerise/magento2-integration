@@ -5,23 +5,22 @@ namespace Synerise\Integration\MessageQueue\Publisher\Data;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
 
-class Batch extends AbstractBulk
+class All extends AbstractBulk
 {
-    const TYPE = 'batch';
+    const TYPE = 'all';
 
     public function schedule(
+        int $userId,
         string $model,
         array $entityIds,
         int $storeId,
-        ?int $websiteId = null,
-        int $bulkSize = 100
+        ?int $websiteId = null
     )
     {
-        $entityIdsChunks = array_chunk($entityIds, $bulkSize);
         $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = $this->getBulKDescription(count($entityIds), $model, $storeId);
+        $bulkDescription = $this->getBulKDescription($model, $storeId);
         $operations = [];
-        foreach ($entityIdsChunks as $entityIdsChunk) {
+        foreach ($entityIds as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
                 $bulkUuid,
                 $model,
@@ -36,7 +35,8 @@ class Batch extends AbstractBulk
             $result = $this->bulkManagement->scheduleBulk(
                 $bulkUuid,
                 $operations,
-                $bulkDescription
+                $bulkDescription,
+                $userId
             );
             if (!$result) {
                 throw new LocalizedException(
@@ -46,14 +46,14 @@ class Batch extends AbstractBulk
         }
     }
 
+
     /**
-     * @param int $count
      * @param string $model
      * @param int $storeId
      * @return Phrase
      */
-    public function getBulKDescription(int $count, string $model, int $storeId): Phrase
+    public function getBulKDescription(string $model, int $storeId): Phrase
     {
-        return __('Synerise: Batch %1 synchronization of %2 selected item(s) (Store id: %3)', $model, $count, $storeId);
+        return __('Synerise: Full %1 synchronization (Store id: %2)', $model, $storeId);
     }
 }

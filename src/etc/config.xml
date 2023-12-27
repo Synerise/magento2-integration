@@ -21,20 +21,17 @@
                 <models>customer,order,product,subscriber</models>
             </synchronization>
             <customer>
-                <limit>100</limit>
+                <limit>25</limit>
             </customer>
             <order>
-                <limit>100</limit>
+                <limit>25</limit>
             </order>
             <product>
-                <limit>100</limit>
+                <limit>25</limit>
             </product>
             <subscriber>
-                <limit>100</limit>
+                <limit>25</limit>
             </subscriber>
-            <queue>
-                <connection>db</connection>
-            </queue>
         </synerise>
     </default>
 </config>

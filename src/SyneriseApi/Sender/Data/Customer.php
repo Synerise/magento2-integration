@@ -32,8 +32,6 @@ class Customer extends AbstractSender implements SenderInterface
         3 => InBodyClientSex::NOT_SPECIFIED
     ];
 
-    const MAX_PAGE_SIZE = 500;
-
     /**
      * @var AddressRepositoryInterface
      */

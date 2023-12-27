@@ -5,7 +5,6 @@
             <resource id="Magento_Backend::admin">
                 <resource id="Magento_Backend::marketing">
                     <resource id="Synerise_Integration::synerise" title="Synerise" sortOrder="5">
-                        <resource id="Synerise_Integration::dashboard" title="Dashboard" sortOrder="1" />
                         <resource id="Synerise_Integration::workspace" title="Workspaces" sortOrder="2" >
                             <resource id="Synerise_Integration::workspace_add" title="Add Workspaces" sortOrder="1" />
                             <resource id="Synerise_Integration::workspace_delete" title="Delete Workspaces" sortOrder="1" />

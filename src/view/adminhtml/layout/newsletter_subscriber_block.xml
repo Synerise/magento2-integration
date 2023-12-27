@@ -5,7 +5,7 @@
                 <argument name="options" xsi:type="array">
                     <item name="synerise_update" xsi:type="array">
                         <item name="label" xsi:type="string" translate="true">Send to Synerise</item>
-                        <item name="url" xsi:type="string">synerise/subscriber/scheduleMass</item>
+                        <item name="url" xsi:type="string">synerise/synchronization/batch_subscriber</item>
                     </item>
                 </argument>
             </arguments>

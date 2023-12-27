@@ -7,38 +7,36 @@ use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\Bulk\BulkManagementInterface;
 use Magento\Framework\DataObject\IdentityGeneratorInterface;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Phrase;
 use Magento\Framework\Serialize\SerializerInterface;
 
-class Scheduler
+abstract class AbstractBulk
 {
-    const TOPIC_NAME = 'synerise.queue.data.scheduler';
+    const TOPIC_FORMAT = 'synerise.queue.data.%s.%s.%s';
 
     /**
      * @var BulkManagementInterface
      */
-    private $bulkManagement;
+    protected $bulkManagement;
 
     /**
      * @var UserContextInterface
      */
-    private $userContext;
+    protected $userContext;
 
     /**
      * @var IdentityGeneratorInterface
      */
-    private $identityService;
+    protected $identityService;
 
     /**
      * @var OperationInterfaceFactory
      */
-    private $operationFactory;
+    protected $operationFactory;
 
     /**
      * @var SerializerInterface
      */
-    private $serializer;
+    protected $serializer;
 
     public function __construct(
         BulkManagementInterface $bulkManagement,
@@ -54,63 +52,38 @@ class Scheduler
         $this->serializer = $serializer;
     }
 
-    public function schedule(
-        $model,
-        $storeIds
-    )
-    {
-        $bulkUuid = $this->identityService->generateId();
-        $bulkDescription = $this->getBulKDescription($model, $storeIds);
-        $operations = [];
-        foreach ($storeIds as $storeId) {
-            $operations[] = $this->makeOperation(
-                $model,
-                $storeId,
-                $bulkUuid,
-                $this->userContext->getUserId()
-            );
-        }
-
-        if (!empty($operations)) {
-            $result = $this->bulkManagement->scheduleBulk(
-                $bulkUuid,
-                $operations,
-                $bulkDescription,
-                $this->userContext->getUserId()
-            );
-            if (!$result) {
-                throw new LocalizedException(
-                    __('Something went wrong while processing the request.')
-                );
-            }
-        }
-    }
-
     /**
      * Make asynchronous operation
      *
-     * @param string $model
-     * @param int $storeId
      * @param string $bulkUuid
-     * @param int $userId
+     * @param string $model
+     * @param string $type
+     * @param int[] $entityIds
+     * @param int $storeId
+     * @param int|null $websiteId
      * @return OperationInterface
      */
-    private function makeOperation(
-        string $model,
-        int $storeId,
+    protected function makeOperation(
         string $bulkUuid,
-        int $userId
+        string $model,
+        string $type,
+        array $entityIds,
+        int $storeId,
+        ?int $websiteId = null
     ): OperationInterface {
         $dataToEncode = [
+            'bulk_uuid' => $bulkUuid,
+            'type' => $type,
             'model' => $model,
+            'entity_ids' => $entityIds,
             'store_id' => $storeId,
-            'user_id' => $userId
+            'website_id' => $websiteId
         ];
 
         $operation = [
             'data' => [
                 'bulk_uuid' => $bulkUuid,
-                'topic_name' => self::TOPIC_NAME,
+                'topic_name' => self::getTopicName($model, $type, $storeId),
                 'serialized_data' => $this->serializer->serialize($dataToEncode),
                 'status' => \Magento\Framework\Bulk\OperationInterface::STATUS_TYPE_OPEN,
             ]
@@ -121,11 +94,12 @@ class Scheduler
 
     /**
      * @param string $model
-     * @param array $storeIds
-     * @return Phrase
+     * @param string $type
+     * @param int|null $storeId
+     * @return string
      */
-    public function getBulKDescription(string $model, array $storeIds): Phrase
+    public static function getTopicName(string $model, string $type, int $storeId): string
     {
-        return __('Synerise: Full %1 synchronization request (Store ids: %2)', $model, implode(',', $storeIds));
+        return sprintf(self::TOPIC_FORMAT, $type, $model, $storeId);
     }
 }

@@ -1,0 +1,87 @@
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">synerise_synchronization_listing.synerise_synchronization_listing_data_source</item>
+            <item name="deps" xsi:type="string">synerise_synchronization_listing.synerise_synchronization_listing_data_source</item>
+        </item>
+        <item name="spinner" xsi:type="string">synchronization_columns</item>
+    </argument>
+    <dataSource name="synerise_synchronization_listing_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+            <argument name="class" xsi:type="string">Synerise\Integration\Ui\DataProvider\Synchronization\DataProvider</argument>
+            <argument name="name" xsi:type="string">synerise_synchronization_listing_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">name</argument>
+            <argument name="requestFieldName" xsi:type="string">name</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="component" xsi:type="string">Magento_Ui/js/grid/provider</item>
+                    <item name="update_url" xsi:type="url" path="mui/index/render"/>
+                    <item name="storageConfig" xsi:type="array">
+                        <item name="indexField" xsi:type="string">name</item>
+                    </item>
+                    <item name="filter_url_params" xsi:type="array">
+                        <item name="store" xsi:type="string">*</item>
+                    </item>
+                </item>
+            </argument>
+        </argument>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <massaction name="listing_massaction">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="selectProvider" xsi:type="string">synerise_synchronization_listing.synerise_synchronization_listing.synchronization_columns.names</item>
+                    <item name="indexField" xsi:type="string">name</item>
+                </item>
+            </argument>
+            <action name="schedule" class="Synerise\Integration\Ui\Component\Action\StoreScopedAction">
+                <argument name="data" xsi:type="array">
+                    <item name="config" xsi:type="array">
+                        <item name="type" xsi:type="string">schedule</item>
+                        <item name="label" xsi:type="string" translate="true">Schedule</item>
+                        <item name="urlPath" xsi:type="string">*/*/all</item>
+                        <item name="confirm" xsi:type="array">
+                            <item name="title" xsi:type="string" translate="true">Schedule synchronization</item>
+                            <item name="message" xsi:type="string" translate="true">Are you sure you want to schedule synchronization for selected items and scope?</item>
+                        </item>
+                    </item>
+                </argument>
+            </action>
+        </massaction>
+    </listingToolbar>
+    <columns name="synchronization_columns">
+        <selectionsColumn name="names">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="resizeEnabled" xsi:type="boolean">false</item>
+                    <item name="resizeDefaultWidth" xsi:type="string">55</item>
+                    <item name="indexField" xsi:type="string">name</item>
+                </item>
+            </argument>
+        </selectionsColumn>
+        <column name="name">
+            <settings>
+                <label translate="true">Model</label>
+                <sortable>false</sortable>
+            </settings>
+        </column>
+        <column name="sent">
+            <settings>
+                <label translate="true">Sent</label>
+                <sortable>false</sortable>
+            </settings>
+        </column>
+        <column name="total">
+            <settings>
+                <label translate="true">Total</label>
+                <sortable>false</sortable>
+            </settings>
+        </column>
+        <column name="enabled">
+            <settings>
+                <label translate="true">Enabled</label>
+                <sortable>false</sortable>
+            </settings>
+        </column>
+    </columns>
+</listing>

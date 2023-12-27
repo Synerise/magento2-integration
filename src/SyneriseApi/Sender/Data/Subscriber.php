@@ -21,7 +21,7 @@ class Subscriber extends AbstractSender implements SenderInterface
     const MODEL = 'subscriber';
     const ENTITY_ID = 'subscriber_id';
 
-    const MAX_PAGE_SIZE = 500;
+    const MAX_PAGE_SIZE = 100;
 
     /**
      * @var AdapterInterface
