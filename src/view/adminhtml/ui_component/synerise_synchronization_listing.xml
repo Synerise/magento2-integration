@@ -8,7 +8,7 @@
     </argument>
     <dataSource name="synerise_synchronization_listing_data_source">
         <argument name="dataProvider" xsi:type="configurableObject">
-            <argument name="class" xsi:type="string">Synerise\Integration\Ui\DataProvider\synchronization\DataProvider</argument>
+            <argument name="class" xsi:type="string">Synerise\Integration\Ui\DataProvider\Synchronization\DataProvider</argument>
             <argument name="name" xsi:type="string">synerise_synchronization_listing_data_source</argument>
             <argument name="primaryFieldName" xsi:type="string">name</argument>
             <argument name="requestFieldName" xsi:type="string">name</argument>
@@ -18,6 +18,9 @@
                     <item name="update_url" xsi:type="url" path="mui/index/render"/>
                     <item name="storageConfig" xsi:type="array">
                         <item name="indexField" xsi:type="string">name</item>
+                    </item>
+                    <item name="filter_url_params" xsi:type="array">
+                        <item name="store" xsi:type="string">*</item>
                     </item>
                 </item>
             </argument>

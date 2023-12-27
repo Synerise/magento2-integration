@@ -3,6 +3,9 @@ namespace Synerise\Integration\Ui\DataProvider\Synchronization;
 
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory as CustomerCollectionFactory;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\Search\ReportingInterface;
+use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
@@ -11,17 +14,12 @@ use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory as Subsc
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Config\Source\Synchronization\Model;
 
-class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
+class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider
 {
     /**
      * @var AdapterInterface
      */
     protected $connection;
-
-    /**
-     * @var RequestInterface
-     */
-    protected $request;
 
     /**
      * @var Synchronization
@@ -51,6 +49,9 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     public function __construct(
         ResourceConnection $resource,
         RequestInterface $request,
+        ReportingInterface $reporting,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        FilterBuilder $filterBuilder,
         Synchronization $synchronization,
         CustomerCollectionFactory $customerCollectionFactory,
         ProductCollectionFactory $productCollectionFactory,
@@ -63,14 +64,23 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
         array $data = []
     ) {
         $this->connection = $resource->getConnection();
-        $this->request = $request;
         $this->synchronization = $synchronization;
         $this->customerCollectionFactory = $customerCollectionFactory;
         $this->productCollectionFactory = $productCollectionFactory;
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->subscriberCollectionFactory = $subscriberCollectionFactory;
 
-        parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
+        parent::__construct(
+            $name,
+            $primaryFieldName,
+            $requestFieldName,
+            $reporting,
+            $searchCriteriaBuilder,
+            $request,
+            $filterBuilder,
+            $meta,
+            $data
+        );
     }
 
     /**
@@ -79,13 +89,11 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     public function getData(): array
     {
         $items = [];
-        $storeId = $this->request->getParam('store_id');
-
         foreach(Model::OPTIONS as $modelKey => $modelName) {
             $items[] = [
                 'name' => $modelName,
-                'sent' => $this->getSentCount($modelKey, $storeId),
-                'total' => $this->getTotalCount($modelKey, $storeId),
+                'sent' => $this->getSentCount($modelKey, $this->request->getParam('store')),
+                'total' => $this->getTotalCount($modelKey, $this->request->getParam('store')),
                 'enabled' => $this->synchronization->isEnabledModel($modelKey) ? 'Yes' : 'No'
             ];
         }
@@ -107,9 +115,9 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
             $this->connection->getTableName('synerise_sync_'.$model),
             "COUNT(DISTINCT {$model}_id)"
         );
-        
+
         if ($storeId) {
-            $select->where('store_id = %', $storeId);
+            $select->where('store_id = ?', $storeId);
         }
         
         return (int) $this->connection->fetchOne($select);
