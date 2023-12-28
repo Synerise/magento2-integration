@@ -4,30 +4,26 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Sales\Model\Order;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Order;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
 class OrderPlace implements ObserverInterface
 {
     const EVENT = 'sales_order_place_after';
 
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
+    const CUSTOMER_UPDATE = 'customer_update_guest_order';
 
     /**
-     * @var Order
+     * @var Synchronization
      */
-    protected $orderHelper;
+    protected $synchronizationHelper;
 
     /**
      * @var Tracking
@@ -35,34 +31,39 @@ class OrderPlace implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var QueueResourceModel
+     * @var DataItemPublisher
      */
-    protected $queueResourceModel;
+    protected $dataItemPublisher;
 
     /**
-     * @var Queue
+     * @var EventPublisher
      */
-    protected $queueHelper;
+    protected $eventPublisher;
 
     /**
-     * @var Event
+     * @var OrderSender
      */
-    protected $eventHelper;
+    protected $orderSender;
+
+    /**
+     * @var CustomerSender
+     */
+    protected $customerSender;
 
     public function __construct(
-        Api $apiHelper,
-        Tracking $trackingHelper,
-        Order $orderHelper,
-        QueueResourceModel $queueResourceModel,
-        Queue $queueHelper,
-        Event $eventHelper
+        DataItemPublisher $dataItemPublisher,
+        EventPublisher $eventPublisher,
+        OrderSender $orderSender,
+        CustomerSender $customerSender,
+        Synchronization $synchronizationHelper,
+        Tracking $trackingHelper
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->eventPublisher = $eventPublisher;
+        $this->orderSender = $orderSender;
+        $this->customerSender = $customerSender;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->orderHelper = $orderHelper;
-        $this->queueResourceModel = $queueResourceModel;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
     }
 
     public function execute(Observer $observer)
@@ -72,70 +73,59 @@ class OrderPlace implements ObserverInterface
         }
 
         try {
-            /** @var \Magento\Sales\Model\Order $order */
+            /** @var Order $order */
             $order = $observer->getEvent()->getOrder();
             $storeId = $order->getStoreId();
 
             $this->trackingHelper->manageClientUuid($order->getCustomerEmail());
 
-            $params = $this->orderHelper->preapreOrderParams(
-                $order,
-                $this->trackingHelper->generateUuidByEmail($order->getCustomerEmail())
-            );
-
-            if(empty($params)) {
+            if (!$this->synchronizationHelper->isEnabledModel(OrderSender::MODEL)) {
                 return;
             }
 
-            $transactionRequest = new CreateatransactionRequest($params);
+            $guestCustomerRequest = $this->prepareGuestCustomerRequest($order);
 
-            $createAClientInCrmRequest = null;
-            if ($order->getCustomerIsGuest()) {
-                $shippingAddress = $order->getShippingAddress();
-
-                $phone = null;
-                if ($shippingAddress) {
-                    $phone = $shippingAddress->getTelephone();
-                }
-
-                $createAClientInCrmRequest = new CreateaClientinCRMRequest([
-                    'email' => $order->getCustomerEmail(),
-                    'uuid' => $this->trackingHelper->getClientUuid(),
-                    'phone' => $phone,
-                    'first_name' => $order->getCustomerFirstname(),
-                    'last_name' => $order->getCustomerLastname()
-                ]);
-            }
-
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $transactionRequest, $storeId, $order->getId());
-                if ($createAClientInCrmRequest) {
-                    $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->dataItemPublisher->publish(OrderSender::MODEL,$order->getId(), $order->getStoreId());
+                if ($guestCustomerRequest) {
+                    $this->eventPublisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
                 }
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $transactionRequest, $storeId, $order->getId());
-                if ($createAClientInCrmRequest) {
-                    $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->orderSender->sendItems([$order], $storeId);
+                if ($guestCustomerRequest) {
+                    $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
                 }
             }
-        } catch (ApiException $e) {
-            $this->addItemToQueue($order);
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
-            $this->addItemToQueue($order);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 
-    protected function addItemToQueue(\Magento\Sales\Model\Order $order)
+    /**
+     * @param Order $order
+     * @return CreateaClientinCRMRequest|null
+     */
+    protected function prepareGuestCustomerRequest(Order $order): ?CreateaClientinCRMRequest
     {
-        try {
-            $this->queueResourceModel->addItem(
-                'order',
-                $order->getStoreId(),
-                $order->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
+        if (!$order->getCustomerIsGuest()) {
+            return null;
         }
+
+        $shippingAddress = $order->getShippingAddress();
+
+        $phone = null;
+        if ($shippingAddress) {
+            $phone = $shippingAddress->getTelephone();
+        }
+
+        return new CreateaClientinCRMRequest([
+            'email' => $order->getCustomerEmail(),
+            'uuid' => $this->trackingHelper->getClientUuid(),
+            'phone' => $phone,
+            'first_name' => $order->getCustomerFirstname(),
+            'last_name' => $order->getCustomerLastname()
+        ]);
     }
 }

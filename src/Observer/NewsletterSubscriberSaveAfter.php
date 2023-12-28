@@ -4,56 +4,47 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var QueueResourceModel
+     * @var DataItemPublisher
      */
-    protected $queueResourceModel;
+    protected $dataItemPublisher;
 
     /**
-     * @var Customer
+     * @var Sender
      */
-    protected $customerHelper;
+    protected $sender;
+
+    /**
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
 
     /**
      * @var Tracking
      */
     protected $trackingHelper;
 
-    /**
-     * @var Queue
-     */
-    protected $queueHelper;
-
-    /**
-     * @var Event
-     */
-    protected $eventHelper;
-
     public function __construct(
-        Customer $customerHelper,
-        Tracking $trackingHelper,
-        QueueResourceModel $queueResourceModel,
-        Queue $queueHelper,
-        Event $eventHelper
+        DataItemPublisher $dataItemPublisher,
+        Sender $sender,
+        Synchronization $synchronizationHelper,
+        Tracking $trackingHelper
     ) {
-        $this->customerHelper = $customerHelper;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueResourceModel = $queueResourceModel;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->sender = $sender;
     }
 
     /**
@@ -65,43 +56,31 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
             return;
         }
 
-        $event = $observer->getEvent();
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+            return;
+        }
+
         /** @var Subscriber $subscriber */
-        $subscriber = $event->getDataObject();
+        $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
         try {
             if (!$this->trackingHelper->isLoggedIn()) {
                 $this->trackingHelper->manageClientUuid($subscriber->getEmail());
             }
 
-            $createAClientInCrmRequest = $this->customerHelper->prepareRequestFromSubscription($subscriber);
-
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->dataItemPublisher->publish(
+                    Sender::MODEL,
+                    $subscriber->getId(),
+                    $storeId
+                );
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
+                $this->sender->sendItems([$subscriber], $storeId);
             }
-        } catch (ApiException $e) {
-            $this->addItemToQueue($subscriber);
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
-            $this->addItemToQueue($subscriber);
-        }
-    }
-
-    /**
-     * @param $subscriber
-     */
-    protected function addItemToQueue($subscriber)
-    {
-        try {
-            $this->queueResourceModel->addItem(
-                'subscriber',
-                $subscriber->getStoreId(),
-                $subscriber->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

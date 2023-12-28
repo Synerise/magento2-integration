@@ -9,16 +9,17 @@ use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
 use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\SyneriseApi\Sender\Event;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
 class ProductReview implements ObserverInterface
 {
     const EVENT = 'product_review_save_after';
+
+    const CUSTOMER_UPDATE = 'customer_update_product_review';
 
     /**
      * @var ProductRepositoryInterface
@@ -41,16 +42,6 @@ class ProductReview implements ObserverInterface
     protected $data;
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -61,33 +52,36 @@ class ProductReview implements ObserverInterface
     protected $review;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $sender;
+
+    /**
+     * @var CustomerSender
+     */
+    private $customerSender;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
         VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
-        Api $apiHelper,
-        Customer $customerHelper,
         Tracking $trackingHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        Publisher $publisher,
+        Event $sender,
+        CustomerSender $customerSender
     ) {
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
-        $this->apiHelper = $apiHelper;
-        $this->customerHelper = $customerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
+        $this->customerSender = $customerSender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -155,21 +149,22 @@ class ProductReview implements ObserverInterface
                 'params' => $params
             ]);
 
-            $createAClientInCrmRequest = new CreateaClientinCRMRequest([
+            $guestCustomerRequest = new CreateaClientinCRMRequest([
                 'uuid' => $this->trackingHelper->getClientUuid(),
                 'display_name' => $this->review->getNickname()
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $customEventRequest, $storeId);
-                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
+                $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
-                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->sender->send(self::EVENT, $customEventRequest, $storeId);
+                $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

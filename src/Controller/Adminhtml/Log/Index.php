@@ -31,7 +31,6 @@ class Index extends \Magento\Backend\App\Action
     public function execute()
     {
         $this->_view->loadLayout();
-        $this->_setActiveMenu('Magento_Backend::content');
         $this->_view->getPage()->getConfig()->getTitle()->prepend(__('Synerise logs'));
         $this->_view->renderLayout();
     }

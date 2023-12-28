@@ -92,6 +92,15 @@ class Workspaces extends Value
         $this->setValue(!empty($decodedValue) ? $decodedValue : null);
     }
 
+    /**
+     * Save workspace id for each website
+     * config path: synerise/workspace/id
+     *
+     * @param $websiteId
+     * @param $workspaceId
+     * @return void
+     * @throws \Exception
+     */
     protected function saveLinkedConfig($websiteId, $workspaceId)
     {
         $configData = [

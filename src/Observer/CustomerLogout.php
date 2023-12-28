@@ -6,10 +6,8 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\EventClientAction;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\SyneriseApi\Sender\Event;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
 class CustomerLogout implements ObserverInterface
@@ -17,42 +15,28 @@ class CustomerLogout implements ObserverInterface
     const EVENT = 'customer_logout';
 
     /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $sender;
 
     public function __construct(
-        Api $apiHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        Publisher $publisher,
+        Event $sender
     ) {
-        $this->apiHelper = $apiHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(Observer $observer)
@@ -73,7 +57,7 @@ class CustomerLogout implements ObserverInterface
                 'event_salt' => $this->trackingHelper->generateEventSalt(),
                 'time' => $this->trackingHelper->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->customerHelper->prepareIdentityParams(
+                'client' => $this->trackingHelper->prepareClientDataFromCustomer(
                     $customer,
                     $this->trackingHelper->generateUuidByEmail($customer->getEmail())
                 ),
@@ -85,14 +69,15 @@ class CustomerLogout implements ObserverInterface
                 ]
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

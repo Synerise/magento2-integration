@@ -3,55 +3,56 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\ApiException as DefaultApiException;
+use Synerise\CatalogsApiClient\ApiException;
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class CatalogProductDeleteBefore implements ObserverInterface
 {
-    const EVENT = 'catalog_product_delete_after';
+    const EVENT = 'catalog_product_delete_before';
+
+    const EVENT_FOR_CONFIG = 'catalog_product_delete_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var Sender
      */
-    protected $apiHelper;
+    protected $sender;
 
     /**
-     * @var \Synerise\Integration\Helper\Catalog
+     * @var Synchronization
      */
-    protected $catalogHelper;
+    protected $synchronizationHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var Publisher
      */
-    protected $queueHelper;
-
-    /**
-     * @var \Synerise\Integration\Helper\Event
-     */
-    protected $eventHelper;
+    protected $publisher;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        Synchronization $synchronizationHelper,
+        Tracking $trackingHelper,
+        Publisher $publisher,
+        Sender $sender
     ) {
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
             return;
         }
 
@@ -59,24 +60,28 @@ class CatalogProductDeleteBefore implements ObserverInterface
         $product = $observer->getEvent()->getProduct();
 
         try {
-            $enabledCatalogStores = $this->catalogHelper->getStoresForCatalogs();
+            $enabledCatalogStores = $this->synchronizationHelper->getEnabledStores();
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
                 if (in_array($storeId, $enabledCatalogStores)) {
-                    $attributes = $this->catalogHelper->getProductAttributesToSelect($product->getStoreId());
-                    $addItemRequest = $this->catalogHelper->prepareItemRequest($product, $attributes);
+
+                    $addItemRequest = $this->sender->prepareItemRequest(
+                        $product,
+                        $this->synchronizationHelper->getWebsiteIdByStoreId($storeId)
+                    );
                     $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
-                    if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                        $this->queueHelper->publishEvent(self::EVENT, [$addItemRequest], $storeId);
+                    if ($this->trackingHelper->isQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                        $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());
                     } else {
-                        $this->eventHelper->sendEvent(self::EVENT, [$addItemRequest], $storeId);
+                        $this->sender->deleteItem($addItemRequest, $storeId, $product->getEntityId());
                     }
                 }
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException && !$e instanceof DefaultApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

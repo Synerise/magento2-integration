@@ -17,8 +17,6 @@ class Uninstall implements UninstallInterface
 {
     const TABLES = [
         'synerise_workspace',
-        'synerise_cron_status',
-        'synerise_cron_queue',
         'synerise_sync_subscriber',
         'synerise_sync_order',
         'synerise_sync_customer',
@@ -59,7 +57,6 @@ class Uninstall implements UninstallInterface
                 $setup->getConnection()->dropTable($table);
             }
         }
- /// synerise/product/cron_enabled
         $collection = $this->collectionFactory->create()
             ->addPathFilter('synerise');
         foreach ($collection as $config) {

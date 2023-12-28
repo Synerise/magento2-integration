@@ -3,12 +3,15 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\DataStorage;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductIsSalableChange implements ObserverInterface
 {
@@ -25,30 +28,41 @@ class ProductIsSalableChange implements ObserverInterface
     protected $data;
 
     /**
+     * @var Synchronization
+     */
+    protected $synchronizationHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var SyncProduct
+     * @var Publisher
      */
-    protected $syncProduct;
+    protected $publisher;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
         DataStorage $data,
+        Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
-        SyncProduct $syncProduct
+        Publisher $publisher
     ) {
         $this->productRepository = $productRepository;
         $this->data = $data;
+        $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->syncProduct = $syncProduct;
+        $this->publisher = $publisher;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
         if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+            return;
+        }
+
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
 
@@ -81,9 +95,9 @@ class ProductIsSalableChange implements ObserverInterface
 
             if (!empty($changedProducts)) {
                 try {
-                    $this->syncProduct->addItemsToQueue(
-                        $changedProducts
-                    );
+                    foreach($changedProducts as $changedProduct) {
+                        $this->publishForEachStore($changedProduct);
+                    }
                 } catch (\Exception $e) {
                     $this->trackingHelper->getLogger()->error($e);
                 }
@@ -94,6 +108,22 @@ class ProductIsSalableChange implements ObserverInterface
             }
         } catch (\Exception $e) {
             $this->trackingHelper->getLogger()->error($e);
+        }
+    }
+
+    protected function publishForEachStore(Product $product)
+    {
+        $enabledStores = $this->synchronizationHelper->getEnabledStores();
+        $storeIds = $product->getStoreIds();
+        foreach ($storeIds as $storeId) {
+            if (in_array($storeId, $enabledStores)) {
+                $this->publisher->publish(
+                    Sender::MODEL,
+                    $product->getEntityId(),
+                    $product->getStoreId(),
+                    $this->synchronizationHelper->getWebsiteIdByStoreId($product->getStoreId())
+                );
+            }
         }
     }
 }

@@ -3,15 +3,18 @@
 namespace Synerise\Integration\Helper;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Magento\Quote\Model\Quote;
 use Magento\Store\Model\ScopeInterface;
 use Mobile_Detect;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
+use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\Client;
-use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Tracking
 {
@@ -45,6 +48,11 @@ class Tracking
 
     const XML_PATH_PAGE_TRACKING_SCRIPT = 'synerise/page_tracking/script';
 
+    const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
+
+    const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
+
+
     /**
      * @var \Magento\Framework\Stdlib\CookieManagerInterface
      */
@@ -69,11 +77,6 @@ class Tracking
      * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $storeManager;
-
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
 
     protected $addressRepository;
 
@@ -112,6 +115,16 @@ class Tracking
      */
     private $scopeConfig;
 
+    /**
+     * @var ConfigFactory
+     */
+    private $configFactory;
+
+    /**
+     * @var InstanceFactory
+     */
+    private $apiInstanceFactory;
+
     public function __construct(
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
@@ -124,7 +137,8 @@ class Tracking
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
         \Magento\Customer\Model\Session $customerSession,
         \Magento\Newsletter\Model\Subscriber $subscriber,
-        Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
@@ -136,7 +150,8 @@ class Tracking
         $this->addressRepository = $addressRepository;
         $this->customerSession = $customerSession;
         $this->subscriber= $subscriber;
-        $this->apiHelper = $apiHelper;
+        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
         $this->scopeResolver = $scopeResolver;
     }
 
@@ -160,7 +175,7 @@ class Tracking
      */
     public function isLiveEventTrackingEnabled($event = null, $storeId = null)
     {
-        if (!$this->apiHelper->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
+        if (!$this->isApiKeySet(ScopeInterface::SCOPE_STORE, $storeId)) {
             return false;
         }
 
@@ -193,6 +208,22 @@ class Tracking
         ));
 
         return in_array($event, $events);
+    }
+
+    /**
+     * Checks if Api Key is set for a given scope
+     *
+     * @param string $scope
+     * @param int $scopeId
+     * @return bool
+     */
+    public function isApiKeySet($scope, $scopeId)
+    {
+        return (boolean) $this->scopeConfig->getValue(
+            ConfigFactory::XML_PATH_API_KEY,
+            $scope,
+            $scopeId
+        );
     }
 
     /**
@@ -394,6 +425,20 @@ class Tracking
     }
 
     /**
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
+     * @param null|string $uuid
+     * @return array
+     */
+    public function prepareClientDataFromCustomer($customer, $uuid = null)
+    {
+        return [
+            'email' => $customer->getEmail(),
+            'customId' => $customer->getId(),
+            'uuid' => $uuid
+        ];
+    }
+
+    /**
      * @param Quote $quote
      * @return Client
      */
@@ -452,7 +497,7 @@ class Tracking
         ];
 
         try {
-            list($body, $statusCode, $headers) = $this->apiHelper->getDefaultApiInstance()
+            list($body, $statusCode, $headers) = $this->createDefaultApiInstance()
                 ->batchAddOrUpdateClientsWithHttpInfo('application/json', '4.4', $createAClientInCrmRequests);
 
             if ($statusCode != 202 && !$this->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
@@ -469,11 +514,6 @@ class Tracking
                 $this->logger->error($e);
             }
         }
-    }
-
-    public function hasItemDataChanges(Quote $quote)
-    {
-        return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
     }
 
     public function overflow32($v)
@@ -520,6 +560,41 @@ class Tracking
         return $this->backendSession->getUser() && $this->backendSession->getUser()->getId();
     }
 
+
+    public function isEventEnabled($event = null, $storeId = null): bool
+    {
+        if (!$event) {
+            return true;
+        }
+
+        $events = explode(',', $this->scopeConfig->getValue(
+            self::XML_PATH_QUEUE_EVENTS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ));
+
+        return in_array($event, $events);
+    }
+
+    public function isQueueAvailable(string $event = null, int $storeId = null): bool
+    {
+        if (!$this->isQueueEnabled($storeId)) {
+            return false;
+        }
+
+        return $this->isEventEnabled($event, $storeId);
+    }
+
+    private function isQueueEnabled(int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_QUEUE_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+
     public function getLogger(): LoggerInterface
     {
         return $this->logger;
@@ -537,5 +612,18 @@ class Tracking
     public function generateEventSalt()
     {
         return (string) Uuid::uuid4();
+    }
+
+    /**
+     * @return mixed
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    protected function createDefaultApiInstance()
+    {
+        return $this->apiInstanceFactory->createApiInstance(
+            'default',
+            $this->configFactory->createConfig()
+        );
     }
 }

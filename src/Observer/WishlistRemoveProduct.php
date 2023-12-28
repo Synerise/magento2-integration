@@ -3,57 +3,63 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Wishlist\Model\Wishlist;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequest;
+use Synerise\Integration\Helper\Category;
+use Synerise\Integration\SyneriseApi\Sender\Event;
+use Synerise\Integration\Helper\Image;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
+use Synerise\Integration\Helper\Tracking;
 
 class WishlistRemoveProduct implements ObserverInterface
 {
     const EVENT = 'wishlist_item_delete_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var \Synerise\Integration\Helper\Catalog
-     */
-    protected $catalogHelper;
-
-    /**
-     * @var \Synerise\Integration\Helper\Tracking
-     */
-    protected $trackingHelper;
-
-    /**
-     * @var \Magento\Wishlist\Model\Wishlist
+     * @var Wishlist
      */
     protected $wishlist;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var Tracking
      */
-    protected $queueHelper;
+    protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var Category
      */
-    protected $eventHelper;
+    protected $categoryHelper;
+
+    /**
+     * @var Image
+     */
+    protected $imageHelper;
+
+    /**
+     * @var Publisher
+     */
+    protected $publisher;
+
+    /**
+     * @var Event
+     */
+    protected $sender;
 
     public function __construct(
-        \Magento\Wishlist\Model\Wishlist $wishlist,
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        Wishlist $wishlist,
+        Category $categoryHelper,
+        Image $imageHelper,
+        Tracking $trackingHelper,
+        Publisher $publisher,
+        Event $sender
     ) {
         $this->wishlist = $wishlist;
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
+        $this->categoryHelper = $categoryHelper;
+        $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -72,7 +78,7 @@ class WishlistRemoveProduct implements ObserverInterface
 
             $storeId = $item->getStoreId();
 
-            /** @var \Magento\Wishlist\Model\Wishlist $wishlist */
+            /** @var Wishlist $wishlist */
             $wishlist = $this->wishlist->load($item->getWishlistId());
 
             if (!$wishlist->getCustomerId()) {
@@ -92,11 +98,11 @@ class WishlistRemoveProduct implements ObserverInterface
             if ($categoryIds) {
                 $params['categories'] = [];
                 foreach ($categoryIds as $categoryId) {
-                    $params['categories'][] = $this->catalogHelper->getFormattedCategoryPath($categoryId);
+                    $params['categories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
                 }
 
                 if ($product->getCategoryId()) {
-                    $category = $this->catalogHelper->getFormattedCategoryPath($product->getCategoryId());
+                    $category = $this->categoryHelper->getFormattedCategoryPath($product->getCategoryId());
                     if ($category) {
                         $params['category'] = $category;
                     }
@@ -104,7 +110,7 @@ class WishlistRemoveProduct implements ObserverInterface
             }
 
             if ($product->getImage()) {
-                $params['image'] = $this->catalogHelper->getOriginalImageUrl($product->getImage());
+                $params['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
             }
 
             $source = $this->trackingHelper->getSource();
@@ -126,14 +132,15 @@ class WishlistRemoveProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $customEventRequest, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
+                $this->sender->send(self::EVENT, $customEventRequest, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

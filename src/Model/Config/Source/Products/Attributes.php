@@ -2,8 +2,8 @@
 
 namespace Synerise\Integration\Model\Config\Source\Products;
 
-use \Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory;
-use \Magento\Framework\Data\OptionSourceInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory;
+use Magento\Framework\Data\OptionSourceInterface;
 
 class Attributes implements OptionSourceInterface
 {
@@ -13,6 +13,7 @@ class Attributes implements OptionSourceInterface
         'image',
         'visibility'
     ];
+    const XML_PATH_PRODUCT_ATTRIBUTES = 'synerise/product/attributes';
 
     /** @var CollectionFactory */
     private $collectionFactory;

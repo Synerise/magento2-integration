@@ -12,14 +12,9 @@ class CartAddProduct implements ObserverInterface
     const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var \Synerise\Integration\Helper\Cart
      */
-    protected $apiHelper;
-
-    /**
-     * @var \Synerise\Integration\Helper\Catalog
-     */
-    protected $catalogHelper;
+    protected $cartHelper;
 
     /**
      * @var \Synerise\Integration\Helper\Tracking
@@ -27,27 +22,25 @@ class CartAddProduct implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var \Synerise\Integration\MessageQueue\Publisher\Event
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var \Synerise\Integration\SyneriseApi\Sender\Event
      */
-    protected $eventsHelper;
+    protected $sender;
 
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
+        \Synerise\Integration\Helper\Cart $cartHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventsHelper
+        \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
+        \Synerise\Integration\SyneriseApi\Sender\Event $sender
     ) {
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
+        $this->cartHelper = $cartHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventsHelper = $eventsHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -75,7 +68,7 @@ class CartAddProduct implements ObserverInterface
             }
 
             $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
-            $params = $this->catalogHelper->prepareParamsFromQuoteProduct($product);
+            $params = $this->cartHelper->prepareParamsFromQuoteProduct($product);
 
             $params["source"] = $this->trackingHelper->getSource();
             $params["applicationName"] = $this->trackingHelper->getApplicationName();
@@ -94,14 +87,15 @@ class CartAddProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->queueHelper->isQueueAvailable()) {
-                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventsHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }

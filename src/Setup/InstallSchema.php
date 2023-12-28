@@ -184,52 +184,6 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
             $installer->getConnection()->createTable($table);
         }
 
-        if (!$installer->tableExists('synerise_cron_queue')) {
-            $table = $installer->getConnection()->newTable(
-                $installer->getTable('synerise_cron_queue')
-            )
-                ->addColumn(
-                    'id',
-                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
-                    null,
-                    ['identity' => true, 'nullable' => false, 'primary' => true, 'unsigned' => true],
-                    'ID'
-                )
-                ->addColumn(
-                    'model',
-                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-                    10,
-                    ['nullable' => false],
-                    'Data model'
-                )
-                ->addColumn(
-                    'store_id',
-                    \Magento\Framework\DB\Ddl\Table::TYPE_SMALLINT,
-                    5,
-                    ['nullable' => false, 'unsigned' => true],
-                    'Store ID'
-                )
-                ->addColumn(
-                    'entity_id',
-                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
-                    null,
-                    ['nullable' => false, 'unsigned' => true],
-                    'Entity ID'
-                )
-                ->addIndex(
-                    $installer->getIdxName(
-                        'synerise_cron_queue',
-                        ['model', 'store_id', 'entity_id'],
-                        \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE
-                    ),
-                    ['model', 'store_id', 'entity_id'],
-                    ['type' => \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE]
-                )
-                ->setComment('Synerise cron queue');
-
-            $installer->getConnection()->createTable($table);
-        }
-
         if (!$installer->tableExists('synerise_sync_subscriber')) {
             $table = $installer->getConnection()->newTable(
                 $installer->getTable('synerise_sync_subscriber')

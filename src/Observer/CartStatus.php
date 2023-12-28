@@ -21,14 +21,19 @@ class CartStatus implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var \Synerise\Integration\MessageQueue\Publisher\Event
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var \Synerise\Integration\SyneriseApi\Sender\Event
      */
-    protected $eventHelper;
+    protected $sender;
+
+    /**
+     * @var \Synerise\Integration\Helper\Cart
+     */
+    protected $cartHelper;
 
     /**
      * @var CustomeventRequestParams
@@ -38,13 +43,15 @@ class CartStatus implements ObserverInterface
     public function __construct(
         \Synerise\Integration\Helper\Catalog $catalogHelper,
         \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        \Synerise\Integration\MessageQueue\Publisher\Event $publisher,
+        \Synerise\Integration\SyneriseApi\Sender\Event $sender,
+        \Synerise\Integration\Helper\Cart $cartHelper
     ) {
         $this->catalogHelper = $catalogHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
+        $this->cartHelper = $cartHelper;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -68,10 +75,10 @@ class CartStatus implements ObserverInterface
 
             $cartStatusEvent = null;
 
-            if ($this->trackingHelper->hasItemDataChanges($quote)) {
-                $cartStatusEvent = $this->eventHelper->prepareCartStatusEvent($quote, (float) $quote->getSubtotal(), (int) $quote->getItemsQty());
+            if ($this->cartHelper->hasItemDataChanges($quote)) {
+                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, (float) $quote->getSubtotal(), (int) $quote->getItemsQty());
             } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
-                $cartStatusEvent = $this->eventHelper->prepareCartStatusEvent($quote, 0, 0);
+                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, 0, 0);
             }
 
             if ($cartStatusEvent) {
@@ -79,16 +86,17 @@ class CartStatus implements ObserverInterface
                     return;
                 }
 
-                if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                    $this->queueHelper->publishEvent(self::EVENT, $cartStatusEvent, $storeId);
+                if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+                    $this->publisher->publish(self::EVENT, $cartStatusEvent, $storeId);
                 } else {
-                    $this->eventHelper->sendEvent(self::EVENT, $cartStatusEvent, $storeId);
+                    $this->sender->send(self::EVENT, $cartStatusEvent, $storeId);
                 }
                 $this->previousParams = $cartStatusEvent->getParams();
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if(!$e instanceof ApiException) {
+                $this->trackingHelper->getLogger()->error($e);
+            }
         }
     }
 }
