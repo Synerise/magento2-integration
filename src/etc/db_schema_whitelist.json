@@ -1,37 +1,4 @@
 {
-    "synerise_cron_queue": {
-        "column": {
-            "id": true,
-            "model": true,
-            "store_id": true,
-            "entity_id": true
-        },
-        "constraint": {
-            "PRIMARY": true,
-            "SYNERISE_CRON_QUEUE_MODEL_STORE_ID_ENTITY_ID": true
-        }
-    },
-    "synerise_cron_status": {
-        "column": {
-            "id": true,
-            "model": true,
-            "store_id": true,
-            "website_id": true,
-            "start_id": true,
-            "stop_id": true,
-            "state": true,
-            "attempts": true,
-            "retry_at": true
-        },
-        "index": {
-            "SYNERISE_CRON_STATUS_STATE": true
-        },
-        "constraint": {
-            "PRIMARY": true,
-            "SYNERISE_CRON_STATUS_MODEL_STORE_ID_WEBSITE_ID": true,
-            "SYNERISE_CRON_STATUS_MODEL_WEBSITE_ID_STORE_ID": true
-        }
-    },
     "synerise_sync_customer": {
         "column": {
             "customer_id": true,
@@ -84,6 +51,17 @@
         "constraint": {
             "PRIMARY": true,
             "SYNERISE_WORKSPACE_UUID": true
+        }
+    },
+    "synerise_queue_message_retry": {
+        "column": {
+            "id": true,
+            "topic_name": true,
+            "body": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
         }
     }
 }
