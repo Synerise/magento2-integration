@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="synerise_cron_queue" resource="default" engine="innodb"
+           comment="Synerise Cron Queue">
+        <column xsi:type="int" name="id" unsigned="true" nullable="false" identity="true" comment="ID"/>
+        <column xsi:type="varchar" name="model" length="10" nullable="false" comment="Data model"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" comment="Entity ID"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="SYNERISE_CRON_QUEUE_MODEL_STORE_ID_ENTITY_ID">
+            <column name="model"/>
+            <column name="store_id"/>
+            <column name="entity_id"/>
+        </constraint>
+    </table>
+    <table name="synerise_cron_status" resource="default" engine="innodb"
+           comment="Synerise Cron Status">
+        <column xsi:type="int" name="id" unsigned="true" nullable="false" identity="true" comment="ID"/>
+        <column xsi:type="varchar" name="model" length="10" nullable="false" comment="Data model"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="smallint" name="website_id" unsigned="true" nullable="false" comment="Website ID"/>
+        <column xsi:type="int" name="start_id" unsigned="true" nullable="true"  comment="Start ID"/>
+        <column xsi:type="int" name="stop_id" unsigned="true" nullable="true"  comment="Stop ID"/>
+        <column xsi:type="smallint" name="state" unsigned="true" nullable="false" comment="State"/>
+        <column xsi:type="smallint" name="attempts" unsigned="true" nullable="true" comment="Attempts"/>
+        <column xsi:type="timestamp" name="retry_at" on_update="false" nullable="true" comment="Retry At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="SYNERISE_CRON_STATUS_MODEL_WEBSITE_ID_STORE_ID">
+            <column name="model"/>
+            <column name="website_id"/>
+            <column name="store_id"/>
+        </constraint>
+        <index xsi:type="index" referenceId="SYNERISE_CRON_STATUS_STATE">
+            <column name="state"/>
+        </index>
+    </table>
+    <table name="synerise_sync_customer" resource="default" engine="innodb"
+           comment="Synerise Synchronization Customer Status">
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="false" comment="Customer ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="timestamp" name="synerise_updated_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Synerise Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="customer_id"/>
+            <column name="store_id"/>
+        </constraint>
+    </table>
+    <table name="synerise_sync_order" resource="default" engine="innodb"
+           comment="Synerise Synchronization Order Status">
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false" comment="Order ID"/>
+        <column xsi:type="timestamp" name="synerise_updated_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Synerise Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="order_id"/>
+        </constraint>
+    </table>
+    <table name="synerise_sync_product" resource="default" engine="innodb"
+           comment="Synerise Synchronization Product Status">
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="false" comment="Product ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="timestamp" name="synerise_updated_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Synerise Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="product_id"/>
+            <column name="store_id"/>
+        </constraint>
+    </table>
+    <table name="synerise_sync_subscriber" resource="default" engine="innodb"
+           comment="Synerise Synchronization Subscriber Status">
+        <column xsi:type="int" name="subscriber_id" unsigned="true" nullable="false" comment="Subscriber ID"/>
+        <column xsi:type="timestamp" name="synerise_updated_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Synerise Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="subscriber_id"/>
+        </constraint>
+    </table>
+    <table name="synerise_workspace" resource="default" engine="innodb"
+           comment="Synerise Workspace">
+        <column xsi:type="int" name="id" unsigned="true" nullable="false" identity="true" comment="Workspace ID"/>
+        <column xsi:type="varchar" name="name" length="100" nullable="false" comment="Workspace Name"/>
+        <column xsi:type="varchar" name="api_key" length="100"  nullable="false" comment="Workspace Api Key"/>
+        <column xsi:type="varchar" name="uuid" length="36"  nullable="false" comment="Workspace Uuid"/>
+        <column xsi:type="varchar" name="guid" length="100"  nullable="true" comment="Workspace Guid"/>
+        <column xsi:type="varchar" name="missing_permissions" length="255" comment="Workspace Missing Permissions"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="SYNERISE_WORKSPACE_UUID">
+            <column name="uuid"/>
+        </constraint>
+    </table>
+</schema>
