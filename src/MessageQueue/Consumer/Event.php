@@ -112,13 +112,13 @@ class Event
 
         try {
             $deserializedData = $this->json->unserialize($event);
-            if(!$this->handleDeprecatedEvent($deserializedData)) {
+            if (!$this->handleDeprecatedEvent($deserializedData)) {
                 $this->execute($deserializedData);
             }
-        } catch(TransferException $e) {
+        } catch (TransferException $e) {
             $this->logger->error($e->getMessage());
             $isRetryable = true;
-        } catch(ApiException | CatalogApiException $e) {
+        } catch (ApiException | CatalogApiException $e) {
             $isRetryable = ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() == 403 || $e->getCode() >= 500);
         } catch (Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
@@ -181,7 +181,7 @@ class Event
                 ->save();
 
             return true;
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e);
             return false;
         }
@@ -216,7 +216,7 @@ class Event
                 if ($entityId) {
                     $this->publishAsDataItem(CustomerSender::MODEL, $entityId, $event['store_id']);
                     return true;
-                } elseif(isset($event['event_payload']['displayName'])) {
+                } elseif (isset($event['event_payload']['displayName'])) {
                     $event['event_name'] = ProductReview::CUSTOMER_UPDATE;
                 } else {
                     $event['event_name'] = OrderPlace::CUSTOMER_UPDATE;
@@ -235,7 +235,7 @@ class Event
      */
     protected function publishAsDataItem(string $model, ?int $entityId, ?int $storeId)
     {
-        if($entityId && $storeId) {
+        if ($entityId && $storeId) {
             $this->dataItemPublisher->publish(
                 $model,
                 $entityId,
@@ -247,7 +247,7 @@ class Event
     /**
      * @return string
      */
-    static protected function getTopicName(): string
+    protected static function getTopicName(): string
     {
         return self::TOPIC_NAME;
     }

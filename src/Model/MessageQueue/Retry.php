@@ -9,5 +9,4 @@ class Retry extends \Magento\Framework\Model\AbstractModel
     {
         $this->_init('Synerise\Integration\Model\ResourceModel\MessageQueue\Retry');
     }
-
 }

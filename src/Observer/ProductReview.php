@@ -162,7 +162,7 @@ class ProductReview implements ObserverInterface
                 $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

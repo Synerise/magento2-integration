@@ -6,9 +6,9 @@ use GuzzleHttp\HandlerStack;
 
 class Config
 {
-    CONST AUTHORIZATION_TYPE_BASIC = 'Basic';
+    const AUTHORIZATION_TYPE_BASIC = 'Basic';
 
-    CONST AUTHORIZATION_TYPE_BEARER = 'Bearer';
+    const AUTHORIZATION_TYPE_BEARER = 'Bearer';
 
     const MODE_LIVE = 'live';
 

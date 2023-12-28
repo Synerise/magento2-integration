@@ -64,7 +64,7 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
                 $this->sender->deleteItem($createAClientInCrmRequest, $storeId, $subscriber->getId());
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

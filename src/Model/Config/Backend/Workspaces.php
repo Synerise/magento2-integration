@@ -61,7 +61,7 @@ class Workspaces extends Value
         $oldValue = $encodedOldValue ? $this->serializer->unserialize($encodedOldValue) : [];
 
         if (!empty($value)) {
-            foreach($value as $websiteId => $workspaceId) {
+            foreach ($value as $websiteId => $workspaceId) {
                 if (!isset($oldValue[$websiteId]) || $oldValue[$websiteId] != $workspaceId) {
                     $this->saveLinkedConfig($websiteId, $workspaceId);
                 }
@@ -83,7 +83,7 @@ class Workspaces extends Value
         $decodedValue = $value ? $this->serializer->unserialize($value) : [];
 
         $websites = $this->websiteCollectionFactory->create();
-        foreach($websites as $website) {
+        foreach ($websites as $website) {
             if (!isset($decodedValue[$website->getId()])) {
                 $decodedValue[$website->getId()] = [''];
             }

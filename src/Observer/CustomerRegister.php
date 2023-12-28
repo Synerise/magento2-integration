@@ -78,7 +78,7 @@ class CustomerRegister implements ObserverInterface
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

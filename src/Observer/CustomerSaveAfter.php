@@ -88,7 +88,7 @@ class CustomerSaveAfter implements ObserverInterface
                 $this->sender->sendItems([$customer], $storeId);
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

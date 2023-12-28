@@ -117,7 +117,7 @@ class Order extends AbstractSender implements SenderInterface
             );
         }
 
-        if($ids) {
+        if ($ids) {
             $this->markItemsAsSent($ids);
         }
     }
@@ -291,7 +291,7 @@ class Order extends AbstractSender implements SenderInterface
             "quantity" => $item->getQtyOrdered()
         ];
 
-        if($snrs_params) {
+        if ($snrs_params) {
             $params['snrs_params'] = $snrs_params;
         }
 

@@ -57,8 +57,7 @@ class Scheduler
     public function schedule(
         $model,
         $storeIds
-    )
-    {
+    ) {
         $bulkUuid = $this->identityService->generateId();
         $bulkDescription = $this->getBulKDescription($model, $storeIds);
         $operations = [];

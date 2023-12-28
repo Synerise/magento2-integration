@@ -89,7 +89,7 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
     public function getData(): array
     {
         $items = [];
-        foreach(Model::OPTIONS as $modelKey => $modelName) {
+        foreach (Model::OPTIONS as $modelKey => $modelName) {
             $items[] = [
                 'name' => $modelName,
                 'sent' => $this->getSentCount($modelKey, $this->request->getParam('store')),
@@ -129,7 +129,7 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
      */
     protected function getTotalCount(string $model, ?int $storeId = null): int
     {
-        switch($model) {
+        switch ($model) {
             case 'customer':
                 $collection = $this->customerCollectionFactory->create();
                 if ($storeId) {

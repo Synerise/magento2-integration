@@ -58,8 +58,8 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
         WriterInterface $configWriter,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
-        array $data = [])
-    {
+        array $data = []
+    ) {
         $this->encryptor = $encryptor;
         $this->validator = $validator;
         $this->scopeConfig = $scopeConfig;
@@ -118,7 +118,7 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
         $workspaceMapString = $this->scopeConfig->getValue(self::XML_PATH_WORKSPACE_MAP);
         if ($workspaceMapString) {
             $workspaceMap = json_decode($workspaceMapString);
-            foreach($workspaceMap as $websiteId => $workspaceId) {
+            foreach ($workspaceMap as $websiteId => $workspaceId) {
                 if ($this->getId() == $workspaceId) {
                     $this->configWriter->save(
                         ConfigFactory::XML_PATH_API_KEY,

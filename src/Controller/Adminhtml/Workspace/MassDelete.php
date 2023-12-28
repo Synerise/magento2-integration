@@ -12,7 +12,6 @@ use Magento\Ui\Component\MassAction\Filter;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 
-
 class MassDelete extends Action implements HttpPostActionInterface
 {
     /**

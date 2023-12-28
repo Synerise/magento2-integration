@@ -11,12 +11,12 @@ use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory as Work
 class Workspaces extends Field
 {
     /**
-     * @var WebsiteCollectionFactory 
+     * @var WebsiteCollectionFactory
      */
     protected $websiteCollectionFactory;
 
     /**
-     * @var WorkspaceCollectionFactory 
+     * @var WorkspaceCollectionFactory
      */
     protected $workspaceCollectionFactory;
 
@@ -51,7 +51,7 @@ class Workspaces extends Field
 
         $rows = [];
         $websitesCollection = $this->websiteCollectionFactory->create();
-        foreach($websitesCollection as $website) {
+        foreach ($websitesCollection as $website) {
             $rows[$website->getId()] = [
                 'id' => $website->getId(),
                 'name' => $website->getName(),
@@ -66,5 +66,4 @@ class Workspaces extends Field
     {
         return $this->workspaceCollectionFactory->create();
     }
-
 }

@@ -83,10 +83,10 @@ class Item
 
         try {
             $this->execute($item);
-        } catch(TransferException $e) {
+        } catch (TransferException $e) {
             $this->logger->error($e->getMessage());
             $isRetryable = true;
-        } catch(ApiException | CatalogApiException $e) {
+        } catch (ApiException | CatalogApiException $e) {
             $isRetryable = ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500);
             $this->logger->critical($e->getMessage());
         } catch (Zend_Db_Adapter_Exception $e) {
@@ -127,7 +127,7 @@ class Item
         );
 
         $attributes = $sender->getAttributesToSelect($item->getStoreId());
-        if(!empty($attributes)) {
+        if (!empty($attributes)) {
             $collection->addAttributeToSelect($attributes);
         }
 
@@ -150,7 +150,7 @@ class Item
                 ->save();
 
             return true;
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e);
             return false;
         }

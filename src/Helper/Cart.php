@@ -52,7 +52,7 @@ class Cart
             'totalQuantity' => $totalQuantity
         ];
 
-        if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
+        if ($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
             $params['snrs_params'] = $this->trackingHelper->getCookieParams();
         }
 
@@ -168,5 +168,4 @@ class Cart
     {
         return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
     }
-
 }

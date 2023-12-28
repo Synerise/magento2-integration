@@ -15,8 +15,7 @@ class All extends AbstractBulk
         array $entityIds,
         int $storeId,
         ?int $websiteId = null
-    )
-    {
+    ) {
         $bulkUuid = $this->identityService->generateId();
         $bulkDescription = $this->getBulKDescription($model, $storeId);
         $operations = [];

@@ -167,7 +167,7 @@ abstract class AbstractScheduler
             $gt = (int) end($curIds);
         }
 
-        if(!empty($ids)) {
+        if (!empty($ids)) {
             $this->publisher->schedule(
                 $data['user_id'],
                 $data['model'],

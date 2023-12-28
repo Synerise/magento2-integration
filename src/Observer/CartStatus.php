@@ -94,7 +94,7 @@ class CartStatus implements ObserverInterface
                 $this->previousParams = $cartStatusEvent->getParams();
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

@@ -56,12 +56,13 @@ abstract class AbstractSender
      * @return mixed
      * @throws \Exception
      */
-    protected function sendWithTokenExpiredCatch(callable $send, int $storeId) {
+    protected function sendWithTokenExpiredCatch(callable $send, int $storeId)
+    {
         try {
             return $send();
         } catch (\Exception $e) {
             $apiExceptionClass = self::API_EXCEPTION;
-            if($e instanceof $apiExceptionClass && $this->isTokenExpired($e)) {
+            if ($e instanceof $apiExceptionClass && $this->isTokenExpired($e)) {
                 $this->clearCachedInstances($storeId);
                 return $send();
             } else {
@@ -83,7 +84,8 @@ abstract class AbstractSender
      * @param ApiException|CatalogApiException $e
      * @return void
      */
-    protected function logApiException(Exception $e) {
+    protected function logApiException(Exception $e)
+    {
         $this->logger->error(
             'Synerise Api request failed',
             [
@@ -110,7 +112,8 @@ abstract class AbstractSender
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function getApiInstance(string $type, int $storeId) {
+    public function getApiInstance(string $type, int $storeId)
+    {
         if (!isset($this->instances[$storeId][$type])) {
             $this->instances[$storeId][$type] = $this->apiInstanceFactory->createApiInstance(
                 $type,
@@ -131,5 +134,4 @@ abstract class AbstractSender
         }
         return $this->config[$storeId];
     }
-
 }

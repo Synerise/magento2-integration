@@ -41,7 +41,7 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     ) {
         $this->logHelper = $logHelper;
 
-        parent::__construct($name, $primaryFieldName,$requestFieldName, $meta, $data);
+        parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
     }
 
     /**
@@ -159,7 +159,7 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
      */
     protected function getFiles(string $path, int $sorting_order = SCANDIR_SORT_DESCENDING): array
     {
-        return is_dir($path) ? array_values(array_diff(scandir($path, $sorting_order), array('..', '.'))) : [];
+        return is_dir($path) ? array_values(array_diff(scandir($path, $sorting_order), ['..', '.'])) : [];
     }
 
     /**
@@ -169,7 +169,7 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
      */
     protected function formatBytes($bytes, int $precision = 2): string
     {
-        $units = array('B', 'KB', 'MB', 'GB', 'TB');
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));

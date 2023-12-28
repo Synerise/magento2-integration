@@ -36,8 +36,7 @@ class Save extends \Magento\Backend\App\Action
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      */
-    public function __construct
-    (
+    public function __construct(
         Action\Context $context,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory
@@ -131,8 +130,7 @@ class Save extends \Magento\Backend\App\Action
         string $apiKey,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
-    ): ApiKeyPermissionCheckResponse
-    {
+    ): ApiKeyPermissionCheckResponse {
         return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
@@ -149,8 +147,7 @@ class Save extends \Magento\Backend\App\Action
         string $apiKey,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
-    ): ApiKeyControllerApi
-    {
+    ): ApiKeyControllerApi {
         return $this->apiInstanceFactory->createApiInstance(
             'apiKey',
             $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)

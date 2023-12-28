@@ -16,5 +16,4 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
     {
         $this->_init('Synerise\Integration\Model\Workspace', 'Synerise\Integration\Model\ResourceModel\Workspace');
     }
-
 }

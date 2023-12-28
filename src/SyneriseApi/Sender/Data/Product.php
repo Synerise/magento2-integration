@@ -321,7 +321,7 @@ class Product extends AbstractSender implements SenderInterface
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
 
-        if($this->isProductSalable) {
+        if ($this->isProductSalable) {
             $isSalable = $this->isProductSalable->execute($product->getSku(), $stockStatus->getStockId());
             $value['is_salable'] = (int) ($isSalable && $product->getStatus() == 1 && (int) $value['stock_status']);
         }
@@ -348,7 +348,7 @@ class Product extends AbstractSender implements SenderInterface
     public function getAttributesToSelect(int $storeId): array
     {
         if (!isset($this->attributes[$storeId])) {
-            $this->attributes[$storeId] = array_merge($this->getEnabledAttributes($storeId),Attributes::REQUIRED);
+            $this->attributes[$storeId] = array_merge($this->getEnabledAttributes($storeId), Attributes::REQUIRED);
         }
         return $this->attributes[$storeId];
     }

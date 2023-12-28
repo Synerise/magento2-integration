@@ -65,7 +65,7 @@ class All extends Action implements HttpPostActionInterface
                 $selectedStoreIds = $this->getSelectedStoreIds($this->getRequest()->getParam('store'));
                 $selectedModels = $this->getSelectedModels($this->getRequest()->getParam('selected'));
 
-                foreach($selectedModels as $model) {
+                foreach ($selectedModels as $model) {
                     if (!$this->synchronization->isEnabledModel($model)) {
                         $this->messageManager->addErrorMessage(
                             __('%1s are excluded from synchronization.', ucfirst($model))
@@ -140,10 +140,10 @@ class All extends Action implements HttpPostActionInterface
      */
     protected function getSelectedModels(?array $selected): array
     {
-        if($selected) {
+        if ($selected) {
             $enabledModels = [];
-            foreach(Model::OPTIONS as $modelKey => $modelName) {
-                if(in_array($modelName, $selected)) {
+            foreach (Model::OPTIONS as $modelKey => $modelName) {
+                if (in_array($modelName, $selected)) {
                     $enabledModels[] = $modelKey;
                 }
             }

@@ -121,7 +121,7 @@ class Subscriber extends Action implements HttpPostActionInterface
                                 'A total of %1 %2(s) have been added to synchronization queue for stores: %3',
                                 $itemsCount,
                                 Sender::MODEL,
-                                implode(',',$storeIds)
+                                implode(',', $storeIds)
                             )
                         );
                     } else {

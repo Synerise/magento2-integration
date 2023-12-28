@@ -89,7 +89,7 @@ class Subscriber extends AbstractSender implements SenderInterface
     public function deleteItem($payload, int $storeId, ?int $entityId = null)
     {
         $this->batchAddOrUpdateClients([$payload], $storeId);
-        if($entityId) {
+        if ($entityId) {
             $this->deleteStatus([$entityId]);
         }
     }
@@ -111,7 +111,7 @@ class Subscriber extends AbstractSender implements SenderInterface
                 $storeId
             );
 
-           if ($statusCode == 207) {
+            if ($statusCode == 207) {
                 $this->logger->warning('Request partially accepted', ['response_body' => $body]);
             }
         } catch (ApiException $e) {

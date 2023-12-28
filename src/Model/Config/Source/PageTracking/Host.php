@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\Model\Config\Source\PageTracking;
 
-
 class Host implements \Magento\Framework\Data\OptionSourceInterface
 {
     public function toOptionArray()
@@ -17,7 +16,5 @@ class Host implements \Magento\Framework\Data\OptionSourceInterface
                 'label' => 'gcp'
             ]
         ];
-
-
     }
 }

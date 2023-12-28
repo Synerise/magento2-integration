@@ -20,7 +20,6 @@ use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-
 class MassUpdate extends Action implements HttpPostActionInterface
 {
     /**
@@ -139,8 +138,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
         string $apiKey,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
-    ): ApiKeyPermissionCheckResponse
-    {
+    ): ApiKeyPermissionCheckResponse {
         return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
@@ -157,8 +155,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
         string $apiKey,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
-    ): ApiKeyControllerApi
-    {
+    ): ApiKeyControllerApi {
         return $this->apiInstanceFactory->createApiInstance(
             'apiKey',
             $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)

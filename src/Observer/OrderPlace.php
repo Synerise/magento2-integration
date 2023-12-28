@@ -86,7 +86,7 @@ class OrderPlace implements ObserverInterface
             $guestCustomerRequest = $this->prepareGuestCustomerRequest($order);
 
             if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->dataItemPublisher->publish(OrderSender::MODEL,$order->getId(), $order->getStoreId());
+                $this->dataItemPublisher->publish(OrderSender::MODEL, $order->getId(), $order->getStoreId());
                 if ($guestCustomerRequest) {
                     $this->eventPublisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
                 }
@@ -97,7 +97,7 @@ class OrderPlace implements ObserverInterface
                 }
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

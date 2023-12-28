@@ -18,7 +18,7 @@ class Config implements ConfigInterface
     const MAX_RETRIES = 3;
 
     /**
-     * @var array 
+     * @var array
      */
     protected $topics = [];
 
@@ -86,7 +86,7 @@ class Config implements ConfigInterface
             }
         }
 
-        if($isEventQueueEnabled) {
+        if ($isEventQueueEnabled) {
             $topicName = Event::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
@@ -110,8 +110,8 @@ class Config implements ConfigInterface
             );
 
             $handlerType = "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Bulk";
-            foreach($enabledModels as $model) {
-                foreach($enabledStores as $storeId) {
+            foreach ($enabledModels as $model) {
+                foreach ($enabledStores as $storeId) {
                     $topicName = AbstractBulk::getTopicName($model, Batch::TYPE, $storeId);
                     $result[$topicName] = $this->getTopicConfig(
                         $topicName,
@@ -143,8 +143,7 @@ class Config implements ConfigInterface
         string $handlerType,
         string $request = "Magento\\AsynchronousOperations\\Api\\Data\\OperationInterface",
         string $request_type = 'object_interface'
-    ): array
-    {
+    ): array {
         return [
             self::TOPIC_NAME => $topicName,
             self::TOPIC_IS_SYNCHRONOUS => false,

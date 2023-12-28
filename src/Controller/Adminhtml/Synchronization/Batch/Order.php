@@ -81,7 +81,8 @@ class Order extends Action
             $this->messageManager->addErrorMessage(
                 __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
             );
-        } else {            $storeIds = [];
+        } else {
+            $storeIds = [];
             $itemsCount = 0;
             $enabledStoreIds = $this->synchronization->getEnabledStores();
             /** @var Collection $collection */
@@ -110,7 +111,7 @@ class Order extends Action
                             'A total of %1 %2(s) have been added to synchronization queue for stores: %3',
                             $itemsCount,
                             Sender::MODEL,
-                            implode(',',$storeIds)
+                            implode(',', $storeIds)
                         )
                     );
                 } else {

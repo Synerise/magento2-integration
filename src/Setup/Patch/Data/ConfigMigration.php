@@ -13,7 +13,7 @@ use Magento\Store\Model\ScopeInterface;
 use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Model\AbstractSynchronization;
 
-Class ConfigMigration implements DataPatchInterface
+class ConfigMigration implements DataPatchInterface
 {
     const CONFIG_PATHS_TO_DELETE = [
         'synerise/product/cron_enabled',
@@ -105,7 +105,7 @@ Class ConfigMigration implements DataPatchInterface
                         $enabledModels[] = $pathParts[1];
                     }
                 }
-            } elseif($config->getPath() == Api::XML_PATH_API_KEY && $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
+            } elseif ($config->getPath() == Api::XML_PATH_API_KEY && $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
                 $configToDelete[] = $config;
             }
         }
@@ -118,7 +118,7 @@ Class ConfigMigration implements DataPatchInterface
         }
 
         if (!empty($configToDelete)) {
-            foreach($configToDelete as $config) {
+            foreach ($configToDelete as $config) {
                 $this->deleteConfig($config);
             }
         }

@@ -8,7 +8,7 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Model\AbstractSynchronization;
 
-Class DefaultStores implements DataPatchInterface
+class DefaultStores implements DataPatchInterface
 {
     /**
      * @var StoreManagerInterface

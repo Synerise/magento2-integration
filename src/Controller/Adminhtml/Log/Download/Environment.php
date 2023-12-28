@@ -69,7 +69,7 @@ class Environment extends System
     public function execute()
     {
         $moduleList = $this->moduleList->getAll();
-        foreach($moduleList as &$module) {
+        foreach ($moduleList as &$module) {
             $codeVersion = $this->version->getMagentoModuleVersion($module['name']);
             $module['code_version'] = $codeVersion;
         }

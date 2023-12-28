@@ -108,7 +108,7 @@ class Bulk
         );
 
         $attributes = $sender->getAttributesToSelect($data['store_id']);
-        if(!empty($attributes)) {
+        if (!empty($attributes)) {
             $collection->addAttributeToSelect($attributes);
         }
 
@@ -134,12 +134,12 @@ class Bulk
 
         try {
             $this->execute($data);
-        } catch(TransferException $e) {
+        } catch (TransferException $e) {
             $this->logger->error($e->getMessage());
             $message = $e->getMessage();
             $errorCode = $e->getCode();
             $status = BulkOperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
-        } catch(ApiException | CatalogApiException $e) {
+        } catch (ApiException | CatalogApiException $e) {
             $message = $e->getMessage();
             $errorCode = $e->getCode();
             if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500) {
@@ -210,8 +210,7 @@ class Bulk
     protected function scheduleRetry(
         string $topicName,
         OperationInterface $operation
-    ): bool
-    {
+    ): bool {
         try {
             $retry = $this->objectManager->create('Synerise\Integration\Model\MessageQueue\Retry');
             $retry
@@ -220,7 +219,7 @@ class Bulk
                 ->save();
 
             return true;
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e);
             return false;
         }

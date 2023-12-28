@@ -28,7 +28,7 @@ class DataStorage extends \Magento\Framework\App\Helper\AbstractHelper
     public function getAndUnsetData(string $key)
     {
         $preparedKey = $this->prepareKey($key);
-        if(isset($this->data[$preparedKey])){
+        if (isset($this->data[$preparedKey])) {
             $data = $this->data[$preparedKey];
             $this->removeFromData($key);
             return $data;

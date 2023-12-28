@@ -95,7 +95,7 @@ class ProductIsSalableChange implements ObserverInterface
 
             if (!empty($changedProducts)) {
                 try {
-                    foreach($changedProducts as $changedProduct) {
+                    foreach ($changedProducts as $changedProduct) {
                         $this->publishForEachStore($changedProduct);
                     }
                 } catch (\Exception $e) {

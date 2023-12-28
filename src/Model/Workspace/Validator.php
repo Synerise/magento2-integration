@@ -48,7 +48,7 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
                     $apiKey,
                     $this->configFactory->createMinimalConfig()
                 );
-            } catch(ValidatorException $e) {
+            } catch (ValidatorException $e) {
                 $messages['invalid_api_key'] = $e->getMessage();
             }
         }

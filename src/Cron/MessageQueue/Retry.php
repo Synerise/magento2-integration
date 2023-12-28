@@ -34,7 +34,7 @@ class Retry
         PublisherInterface $publisher,
         CollectionFactory $collectionFactory,
         MessageEncoder $messageEncoder
-    ){
+    ) {
         $this->logger = $logger;
         $this->publisher = $publisher;
         $this->collectionFactory = $collectionFactory;
@@ -47,14 +47,14 @@ class Retry
             ->addFieldToFilter('created_at', ['lt' => 'NOW() - INTERVAL 5 MINUTE'])
             ->setPageSize(500);
 
-        if($collection->getSize()) {
+        if ($collection->getSize()) {
             foreach ($collection as $item) {
                 try {
                     $this->publisher->publish(
                         $item->getTopicName(),
                         $this->messageEncoder->decode($item->getTopicName(), $item->getBody())
                     );
-                } catch(\Exception $e) {
+                } catch (\Exception $e) {
                     $this->logger->error($e);
                 }
 

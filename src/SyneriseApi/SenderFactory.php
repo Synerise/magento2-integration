@@ -50,5 +50,4 @@ class SenderFactory
 
         return $this->objectManager->get(self::SENDER_CLASSES[$name]);
     }
-
 }

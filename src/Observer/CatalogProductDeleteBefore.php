@@ -79,7 +79,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
                 }
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException && !$e instanceof DefaultApiException) {
+            if (!$e instanceof ApiException && !$e instanceof DefaultApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

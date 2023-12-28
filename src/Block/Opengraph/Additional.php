@@ -35,8 +35,7 @@ class Additional extends \Magento\Framework\View\Element\Template
         ScopeConfigInterface $scopeConfig,
         Category $categoryHelper,
         array $data = []
-    )
-    {
+    ) {
         $this->catalogHelper = $catalogHelper;
         $this->scopeConfig = $scopeConfig;
         $this->categoryHelper = $categoryHelper;

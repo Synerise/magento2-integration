@@ -80,18 +80,18 @@ class Customer extends AbstractSender implements SenderInterface
             $createAClientInCrmRequests = [];
             $ids = [];
 
-            foreach ($collection as $customer) {
-                $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($this->preapreParams($customer, $storeId));
-                $ids[] = $customer->getEntityId();
-            }
+        foreach ($collection as $customer) {
+            $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($this->preapreParams($customer, $storeId));
+            $ids[] = $customer->getEntityId();
+        }
 
-            if (!empty($createAClientInCrmRequests)) {
-                $this->batchAddOrUpdateClients(
-                    $createAClientInCrmRequests,
-                    $storeId
-                );
-                $this->markCustomersAsSent($ids, $storeId);
-            }
+        if (!empty($createAClientInCrmRequests)) {
+            $this->batchAddOrUpdateClients(
+                $createAClientInCrmRequests,
+                $storeId
+            );
+            $this->markCustomersAsSent($ids, $storeId);
+        }
 
         }
     }

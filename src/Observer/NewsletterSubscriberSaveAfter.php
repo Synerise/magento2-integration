@@ -78,7 +78,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
                 $this->sender->sendItems([$subscriber], $storeId);
             }
         } catch (\Exception $e) {
-            if(!$e instanceof ApiException) {
+            if (!$e instanceof ApiException) {
                 $this->trackingHelper->getLogger()->error($e);
             }
         }

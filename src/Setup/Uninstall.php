@@ -9,7 +9,6 @@ use Magento\Framework\Setup\UninstallInterface;
 use Magento\Config\Model\ResourceModel\Config\Data;
 use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory;
 
-
 /**
  * @codeCoverageIgnore
  */
@@ -39,8 +38,7 @@ class Uninstall implements UninstallInterface
     public function __construct(
         CollectionFactory $collectionFactory,
         Data $configResource
-    )
-    {
+    ) {
         $this->collectionFactory = $collectionFactory;
         $this->configResource    = $configResource;
     }

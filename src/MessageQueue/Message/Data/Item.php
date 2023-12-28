@@ -4,7 +4,7 @@ namespace Synerise\Integration\MessageQueue\Message\Data;
 use InvalidArgumentException;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product;
 
-Class Item
+class Item
 {
     /**
      * @var string

@@ -12,7 +12,7 @@ if ($block->isPageTrackingEnabled() && $block->isOpengraphEnabled()):
         <meta property="product:original_price:amount" content="<?= $block->escapeHtmlAttr($priceAmount) ?>"/>
         <?= $block->getChildHtml('meta.currency') ?>
         <meta property="product:retailer_part_no" content="<?php echo $product->getSku(); ?>"/>
-    <?php
+        <?php
     endif;
 
     $categoryIds = $product->getCategoryIds();

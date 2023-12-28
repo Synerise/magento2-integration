@@ -49,5 +49,4 @@ class CollectionFactoryProvider
 
         return $this->objectManager->get(self::COLLECTION_FACTORY_CLASSES[$name]);
     }
-
 }

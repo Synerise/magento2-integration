@@ -11,9 +11,9 @@ class StoreScopedAction extends \Magento\Ui\Component\Action
         \Magento\Framework\View\Element\UiComponent\ContextInterface $context,
         \Magento\Framework\App\RequestInterface $request,
         \Magento\Framework\UrlInterface $urlBuilder,
-        array $components = array(),
-        array $data = array(),
-       $actions = null
+        array $components = [],
+        array $data = [],
+        $actions = null
     ) {
         parent::__construct($context, $components, $data, $actions);
 

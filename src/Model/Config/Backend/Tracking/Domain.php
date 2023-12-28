@@ -6,14 +6,14 @@ class Domain extends \Magento\Framework\App\Config\Value
 {
     public function beforeSave()
     {
-        if(!$this->isValueChanged() || !$this->getValue()) {
+        if (!$this->isValueChanged() || !$this->getValue()) {
             return parent::beforeSave();
         }
 
         $baseUrlDomain = $this->getBaseUrlDomain();
-        $valueTrimmed = preg_replace('/^(http(s)?:\/\/)?((www)?\.)/','', $this->getValue());
+        $valueTrimmed = preg_replace('/^(http(s)?:\/\/)?((www)?\.)/', '', $this->getValue());
 
-        if (!$baseUrlDomain || strpos($baseUrlDomain, $valueTrimmed) === false){
+        if (!$baseUrlDomain || strpos($baseUrlDomain, $valueTrimmed) === false) {
             throw new \Exception(sprintf('Domain should be a substring of base url (%s)', $baseUrlDomain));
         }
 

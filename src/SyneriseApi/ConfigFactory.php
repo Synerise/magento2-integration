@@ -90,8 +90,7 @@ class ConfigFactory
         ?int $scopeId = null,
         string $scope = ScopeInterface::SCOPE_STORE,
         ?string $mode = null
-    ): Config
-    {
+    ): Config {
         $mode = $mode ?: $this->mode;
 
         if ($this->isBasicAuthAvailable($scopeId, $scope)) {
@@ -130,8 +129,7 @@ class ConfigFactory
         ?int $scopeId = null,
         string $scope = ScopeInterface::SCOPE_STORE,
         ?string $mode = null
-    ): Config
-    {
+    ): Config {
         $mode = $mode ?: $this->mode;
         return new Config(
             $this->getApiHost($scopeId, $scope),
@@ -158,8 +156,7 @@ class ConfigFactory
         int $scopeId = null,
         string $scope = ScopeInterface::SCOPE_STORE,
         ?string $mode = null
-    ): Config
-    {
+    ): Config {
         $mode = $mode ?: $this->mode;
 
         return new Config(
@@ -215,7 +212,7 @@ class ConfigFactory
         if ($scope == ScopeInterface::SCOPE_STORE) {
             try {
                 $baseUrl = $this->storeManager->getStore($scopeId)->getBaseUrl();
-                $domain = preg_replace('/^(http(s)?:\/\/)?((www.)?)/','', $baseUrl);
+                $domain = preg_replace('/^(http(s)?:\/\/)?((www.)?)/', '', $baseUrl);
 
                 if ($domain) {
                     $userAgent .= '-' . $this->translitUrl->filter($domain);
@@ -325,7 +322,7 @@ class ConfigFactory
      */
     protected function getTimeout(string $mode, int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): ?float
     {
-        if($mode == COnfig::MODE_LIVE) {
+        if ($mode == COnfig::MODE_LIVE) {
             return $this->getLiveRequestTimeout($scopeId, $scope);
         } elseif ($mode == Config::MODE_SCHEDULE) {
             return $this->getScheduledRequestTimeout($scopeId, $scope);

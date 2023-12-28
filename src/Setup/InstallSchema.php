@@ -64,7 +64,8 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
                     \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
                     null,
                     ['nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT_UPDATE],
-                    'Updated At')
+                    'Updated At'
+                )
                 ->setComment('Workspace Table');
             $installer->getConnection()->createTable($table);
 
@@ -80,9 +81,9 @@ class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
             );
         }
 
-        if(version_compare($context->getVersion(), '2.2.4', '<')) {
+        if (version_compare($context->getVersion(), '2.2.4', '<')) {
             $installer->getConnection()->addColumn(
-                $installer->getTable( 'synerise_workspace' ),
+                $installer->getTable('synerise_workspace'),
                 'guid',
                 [
                     'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,

@@ -58,7 +58,7 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
         }
 
         $workspace = $this->getCurrentWorkspace();
-        if($workspace->getId()) {
+        if ($workspace->getId()) {
             $this->loadedData[$workspace->getId()]['api_key'] = $workspace->getApiKey();
             $this->loadedData[$workspace->getId()]['guid'] = $workspace->getGuid();
         }

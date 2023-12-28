@@ -15,8 +15,7 @@ class Batch extends AbstractBulk
         int $storeId,
         ?int $websiteId = null,
         int $bulkSize = 100
-    )
-    {
+    ) {
         $entityIdsChunks = array_chunk($entityIds, $bulkSize);
         $bulkUuid = $this->identityService->generateId();
         $bulkDescription = $this->getBulKDescription(count($entityIds), $model, $storeId);

@@ -58,8 +58,7 @@ class Topology implements \Magento\Framework\Config\ReaderInterface
         bool $isDisabled = false,
         string $destinationType = 'queue',
         ?string $destination = null
-    )
-    {
+    ) {
         $destination = $destination?: $topic;
 
         return [

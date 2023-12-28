@@ -16,7 +16,7 @@ class InstanceFactory
         'apiKey' => \Synerise\ApiClient\Api\ApiKeyControllerApi::class
     ];
 
-   const API_CONFIGURATION_CLASSES = [
+    const API_CONFIGURATION_CLASSES = [
         'authentication' => \Synerise\ApiClient\Configuration::class,
         'default' => \Synerise\ApiClient\Configuration::class,
         'catalogs' => \Synerise\CatalogsApiClient\Configuration::class,
@@ -80,8 +80,7 @@ class InstanceFactory
         ?string $authorizationToken = null,
         ?HandlerStack $handlerStack = null,
         ?bool $keepAlive = false
-    ): array
-    {
+    ): array {
         $options = [
             'connect_timeout' => $timeout ?: $this->timeout,
             'timeout' => $timeout ?: $this->timeout
