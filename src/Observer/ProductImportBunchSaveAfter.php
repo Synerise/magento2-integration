@@ -2,7 +2,9 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Synerise\Integration\Helper\Logger;
 use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
@@ -10,7 +12,12 @@ use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
 {
-    const EVENT = 'catalog_product_import_bunch_save_after';
+    public const EVENT = 'catalog_product_import_bunch_save_after';
+
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
 
     /**
      * @var Synchronization
@@ -27,20 +34,34 @@ class ProductImportBunchSaveAfter implements ObserverInterface
      */
     protected $publisher;
 
+    /**
+     * @param Logger $loggerHelper
+     * @param Synchronization $synchronizationHelper
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     */
     public function __construct(
+        Logger $loggerHelper,
         Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
         Publisher $publisher
     ) {
+        $this->loggerHelper = $loggerHelper;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
+    public function execute(Observer $observer)
     {
         try {
-            if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
                 return;
             }
 
@@ -59,7 +80,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
                 }
             }
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            $this->loggerHelper->getLogger()->error($e);
         }
     }
 }

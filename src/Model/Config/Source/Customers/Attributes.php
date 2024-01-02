@@ -7,15 +7,15 @@ use Magento\Framework\Data\OptionSourceInterface;
 
 class Attributes implements OptionSourceInterface
 {
-    const XML_PATH_CUSTOMER_ATTRIBUTES = 'synerise/customer/attributes';
-    const REQUIRED = [
+    public const XML_PATH_CUSTOMER_ATTRIBUTES = 'synerise/customer/attributes';
+    public const REQUIRED = [
         'email',
         'entity_id',
         'firstname',
         'lastname'
     ];
 
-    const EXCLUDED = [
+    public const EXCLUDED = [
         'password_hash'
     ];
 

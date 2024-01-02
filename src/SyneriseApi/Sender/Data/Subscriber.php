@@ -7,21 +7,21 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Newsletter\Model\Subscriber as SubscriberModel;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\UuidGenerator;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Subscriber extends AbstractSender implements SenderInterface
 {
-    const MODEL = 'subscriber';
-    const ENTITY_ID = 'subscriber_id';
+    public const MODEL = 'subscriber';
 
-    const MAX_PAGE_SIZE = 100;
+    public const ENTITY_ID = 'subscriber_id';
 
     /**
      * @var AdapterInterface
@@ -29,30 +29,41 @@ class Subscriber extends AbstractSender implements SenderInterface
     protected $connection;
 
     /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var Tracking
      */
     protected $trackingHelper;
 
+    /**
+     * @var UuidGenerator
+     */
+    protected $uuidGenerator;
+
+    /**
+     * @param ResourceConnection $resource
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param UuidGenerator $uuidGenerator
+     */
     public function __construct(
         ResourceConnection $resource,
-        LoggerInterface $logger,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
-        Tracking $trackingHelper
+        Logger $loggerHelper,
+        Tracking $trackingHelper,
+        UuidGenerator $uuidGenerator
     ) {
         $this->connection = $resource->getConnection();
-        $this->logger = $logger;
         $this->trackingHelper = $trackingHelper;
+        $this->uuidGenerator = $uuidGenerator;
 
-        parent::__construct($logger, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
     }
 
     /**
+     * Send items
+     *
      * @param Collection|SubscriberModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
@@ -79,7 +90,9 @@ class Subscriber extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $payload
+     * Delete items
+     *
+     * @param mixed $payload
      * @param int $storeId
      * @param int|null $entityId
      * @return void
@@ -95,12 +108,14 @@ class Subscriber extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $payload
-     * @param $storeId
+     * Batch add or update clients
+     *
+     * @param mixed $payload
+     * @param int $storeId
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($payload, $storeId)
+    public function batchAddOrUpdateClients($payload, int $storeId)
     {
         try {
             list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
@@ -112,7 +127,7 @@ class Subscriber extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->logger->warning('Request partially accepted', ['response_body' => $body]);
+                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response_body' => $body]);
             }
         } catch (ApiException $e) {
             $this->logApiException($e);
@@ -121,6 +136,8 @@ class Subscriber extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Get Default API instance
+     *
      * @param int $storeId
      * @return DefaultApi
      * @throws ApiException
@@ -132,16 +149,18 @@ class Subscriber extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Prepare request from subscription
+     *
      * @param SubscriberModel $subscriber
      * @return CreateaClientinCRMRequest
      */
-    public function prepareRequestFromSubscription($subscriber)
+    public function prepareRequestFromSubscription(SubscriberModel $subscriber): CreateaClientinCRMRequest
     {
         $email = $subscriber->getSubscriberEmail();
         return new CreateaClientinCRMRequest(
             [
                 'email' => $email,
-                'uuid' => $this->trackingHelper->generateUuidByEmail($email),
+                'uuid' => $this->uuidGenerator->generateByEmail($email),
                 'agreements' => [
                     'email' => $subscriber->getSubscriberStatus() == SubscriberModel::STATUS_SUBSCRIBED ? 1 : 0
                 ]
@@ -150,6 +169,8 @@ class Subscriber extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Mark subscribers as sent
+     *
      * @param int[] $ids
      */
     public function markSubscribersAsSent($ids)
@@ -176,6 +197,8 @@ class Subscriber extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Delete status
+     *
      * @param int[] $entityIds
      * @return void
      */

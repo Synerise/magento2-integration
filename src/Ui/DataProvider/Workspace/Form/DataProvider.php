@@ -1,19 +1,20 @@
 <?php
 namespace Synerise\Integration\Ui\DataProvider\Workspace\Form;
 
-use Magento\Cms\Api\Data\PageInterface;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\RequestInterface;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Session\SessionManagerInterface;
+use Magento\Ui\DataProvider\AbstractDataProvider;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 use Synerise\Integration\Model\Workspace;
 
-class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
+class DataProvider extends AbstractDataProvider
 {
     /**
      * @var mixed
      */
     protected $session;
+
     /**
      * @var mixed
      */
@@ -45,11 +46,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
         parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
     }
 
-
     /**
-     * Get data
-     *
-     * @return array
+     * @inheritDoc
      */
     public function getData()
     {
@@ -66,32 +64,41 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
         return $this->loadedData;
     }
 
+    /**
+     * Get current workspace
+     *
+     * @return Workspace
+     */
     private function getCurrentWorkspace(): Workspace
     {
-        $workspace = ObjectManager::getInstance()->create('Synerise\Integration\Model\Workspace');
-
+        $workspace = ObjectManager::getInstance()->create(Workspace::class);
         $workspaceId = $this->getWorkspaceId();
         if ($workspaceId) {
-            try {
-                $workspace->load($workspaceId);
-            } catch (LocalizedException $exception) {
-            }
+            $workspace->load($workspaceId);
         }
 
         return $workspace;
     }
 
+    /**
+     * Ger workspace id from params
+     *
+     * @return int
+     */
     private function getWorkspaceId(): int
     {
         return (int) $this->request->getParam($this->getRequestFieldName());
     }
 
-    protected function getSession()
+    /**
+     * Get session manager
+     *
+     * @return SessionManagerInterface
+     */
+    protected function getSession(): SessionManagerInterface
     {
         if ($this->session === null) {
-            $this->session = ObjectManager::getInstance()->get(
-                \Magento\Framework\Session\SessionManagerInterface::class
-            );
+            $this->session = ObjectManager::getInstance()->get(SessionManagerInterface::class);
         }
         return $this->session;
     }

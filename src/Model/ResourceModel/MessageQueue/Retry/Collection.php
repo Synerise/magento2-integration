@@ -8,8 +8,19 @@ use Synerise\Integration\Model\ResourceModel\MessageQueue\Retry as RetryResource
 
 class Collection extends AbstractCollection
 {
+    /**
+     * @var string
+     */
     protected $_idFieldName = 'id';
+
+    /**
+     * @var string
+     */
     protected $_eventPrefix = 'synerise_queue_message_retry_collection';
+
+    /**
+     * @var string
+     */
     protected $_eventObject = 'synerise_queue_message_retry_collection';
 
     /**

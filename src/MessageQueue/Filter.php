@@ -7,9 +7,11 @@ use Magento\Framework\Exception\LocalizedException;
 
 class Filter
 {
-    const DEFAULT_PAGE_SIZE = 100;
+    public const DEFAULT_PAGE_SIZE = 100;
     
     /**
+     * Filter collection by store ID
+     *
      * @param AbstractDb $collection
      * @param int $storeId
      * @return AbstractDb
@@ -24,6 +26,8 @@ class Filter
     }
 
     /**
+     * Filter collection by entity IDs
+     *
      * @param AbstractDb $collection
      * @param array $entityIds
      * @param int $storeId
@@ -31,8 +35,12 @@ class Filter
      * @return AbstractDb
      * @throws LocalizedException
      */
-    public function filterByEntityIds(AbstractDb $collection, array $entityIds, int $storeId, ?int $pageSize = null): AbstractDb
-    {
+    public function filterByEntityIds(
+        AbstractDb $collection,
+        array $entityIds,
+        int $storeId,
+        ?int $pageSize = null
+    ): AbstractDb {
         $idFieldName = $this->getIdFieldName($collection);
         $collection
             ->addFieldToFilter($idFieldName, ['in' => $entityIds])
@@ -43,6 +51,8 @@ class Filter
     }
 
     /**
+     * Filter collection by entity ID
+     *
      * @param AbstractDb $collection
      * @param int $entityId
      * @param int $storeId
@@ -50,8 +60,12 @@ class Filter
      * @return AbstractDb
      * @throws LocalizedException
      */
-    public function filterByEntityId(AbstractDb $collection, int $entityId, int $storeId, ?int $pageSize = null): AbstractDb
-    {
+    public function filterByEntityId(
+        AbstractDb $collection,
+        int $entityId,
+        int $storeId,
+        ?int $pageSize = null
+    ): AbstractDb {
         $idFieldName = $this->getIdFieldName($collection);
         $collection
             ->addFieldToFilter(
@@ -65,6 +79,8 @@ class Filter
     }
 
     /**
+     * Get ID field name from the collection
+     *
      * @param AbstractDb $collection
      * @return string
      * @throws LocalizedException
@@ -75,6 +91,8 @@ class Filter
     }
 
     /**
+     * Get current last id from the collection
+     *
      * @param AbstractDb $collection
      * @return int
      * @throws LocalizedException

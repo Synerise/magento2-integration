@@ -2,9 +2,16 @@
 
 namespace Synerise\Integration\Helper;
 
+use Exception;
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\Model\CustomeventRequest;
+use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Tracking\Cookie;
 
 class Cart
 {
@@ -12,6 +19,11 @@ class Cart
      * @var StoreManagerInterface
      */
     protected $storeManager;
+
+    /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
 
     /**
      * @var Image
@@ -23,42 +35,48 @@ class Cart
      */
     protected $trackingHelper;
 
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param Cookie $cookieHelper
+     * @param Image $imageHelper
+     * @param Tracking $trackingHelper
+     */
     public function __construct(
         StoreManagerInterface $storeManager,
+        Cookie $cookieHelper,
         Image $imageHelper,
         Tracking $trackingHelper
     ) {
         $this->storeManager = $storeManager;
+        $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
     }
 
     /**
-     * @param \Magento\Quote\Model\Quote $quote
-     * @param $totalAmount
-     * @param $totalQuantity
+     * Prepare cart status event from quote
+     *
+     * @param Quote $quote
+     * @param float $totalAmount
+     * @param float $totalQuantity
      * @return CustomeventRequest
-     * @throws \Exception
+     * @throws Exception
      */
-    public function prepareCartStatusEvent(\Magento\Quote\Model\Quote $quote, $totalAmount, $totalQuantity): CustomeventRequest
+    public function prepareCartStatusEvent(Quote $quote, float $totalAmount, float $totalQuantity): CustomeventRequest
     {
-        $params = [
-            'source' => $this->trackingHelper->getSource(),
-            'applicationName' => $this->trackingHelper->getApplicationName(),
-            'storeId' => $this->trackingHelper->getStoreId(),
-            'storeUrl' => $this->trackingHelper->getStoreBaseUrl(),
-            'products' => $this->prepareProductsFromQuote($quote),
-            'totalAmount' => $totalAmount,
-            'totalQuantity' => $totalQuantity
-        ];
+        $params = $this->trackingHelper->prepareContextParams();
+        $params['products'] = $this->prepareProductsFromQuote($quote);
+        $params['totalAmount'] = $totalAmount;
+        $params['totalQuantity'] = $totalQuantity;
 
-        if ($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
-            $params['snrs_params'] = $this->trackingHelper->getCookieParams();
+        $cookieParams = $this->getCookieParams();
+        if ($cookieParams) {
+            $params['snrs_params'] = $cookieParams;
         }
 
         return new CustomeventRequest([
             'event_salt' => $this->trackingHelper->generateEventSalt(),
-            'time' => $this->trackingHelper->getCurrentTime(),
+            'time' => $this->trackingHelper->getContext()->getCurrentTime(),
             'action' => 'cart.status',
             'label' => 'CartStatus',
             'client' => $this->trackingHelper->prepareClientDataFromQuote($quote),
@@ -67,11 +85,13 @@ class Cart
     }
 
     /**
+     * Prepare products data from quote item product object
+     *
      * @param Product $product
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
-    public function prepareParamsFromQuoteProduct($product)
+    public function prepareParamsFromQuoteProduct(Product $product): array
     {
         $sku = $product->getData('sku');
         $skuVariant = $product->getSku();
@@ -110,11 +130,12 @@ class Cart
     }
 
     /**
-     * @param $quote
+     * Prepare products data from quote object
+     *
+     * @param Quote $quote
      * @return array
-     * @throws \Exception
      */
-    public function prepareProductsFromQuote($quote)
+    public function prepareProductsFromQuote(Quote $quote): array
     {
         $products = [];
         $items = $quote->getAllVisibleItems();
@@ -128,10 +149,12 @@ class Cart
     }
 
     /**
-     * @param $item
+     * Prepare product data from quote item object
+     *
+     * @param Item $item
      * @return array
      */
-    private function prepareProductFromQuoteItem($item)
+    private function prepareProductFromQuoteItem(Item $item): array
     {
         $product = $item->getProduct();
 
@@ -151,21 +174,35 @@ class Cart
     }
 
     /**
+     * Get currency code of current store
+     *
      * @return string
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
-    public function getCurrencyCode()
+    public function getCurrencyCode(): string
     {
         return $this->storeManager->getStore()->getCurrentCurrency()->getCode();
     }
 
     /**
-     * @param \Magento\Quote\Model\Quote $quote
+     * Check if cart was actually updated
+     *
+     * @param Quote $quote
      * @return bool
      */
-    public function hasItemDataChanges(\Magento\Quote\Model\Quote $quote)
+    public function hasItemDataChanges(Quote $quote): bool
     {
         return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
+    }
+
+    /**
+     * Get Cookie Params if enabled by config
+     *
+     * @return array
+     */
+    public function getCookieParams(): array
+    {
+        return ($this->cookieHelper->shouldIncludeSnrsParams()) ? $this->cookieHelper->getSnrsParams() : [];
     }
 }

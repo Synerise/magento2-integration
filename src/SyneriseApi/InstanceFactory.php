@@ -4,19 +4,25 @@ namespace Synerise\Integration\SyneriseApi;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
+use Synerise\ApiClient\Api\ApiKeyControllerApi;
+use Synerise\ApiClient\Api\AuthenticationControllerApi;
+use Synerise\ApiClient\Api\DefaultApi;
+use Synerise\ApiClient\Api\TrackerControllerApi;
+use Synerise\CatalogsApiClient\Api\BagsApi;
+use Synerise\CatalogsApiClient\Api\ItemsApi;
 
 class InstanceFactory
 {
-    const API_CLASSES = [
-        'authentication' => \Synerise\ApiClient\Api\AuthenticationControllerApi::class,
-        'default' => \Synerise\ApiClient\Api\DefaultApi::class,
-        'catalogs' => \Synerise\CatalogsApiClient\Api\BagsApi::class,
-        'items' => \Synerise\CatalogsApiClient\Api\ItemsApi::class,
-        'tracker' => \Synerise\ApiClient\Api\TrackerControllerApi::class,
-        'apiKey' => \Synerise\ApiClient\Api\ApiKeyControllerApi::class
+    public const API_CLASSES = [
+        'authentication' => AuthenticationControllerApi::class,
+        'default' => DefaultApi::class,
+        'catalogs' => BagsApi::class,
+        'items' => ItemsApi::class,
+        'tracker' => TrackerControllerApi::class,
+        'apiKey' => ApiKeyControllerApi::class
     ];
 
-    const API_CONFIGURATION_CLASSES = [
+    public const API_CONFIGURATION_CLASSES = [
         'authentication' => \Synerise\ApiClient\Configuration::class,
         'default' => \Synerise\ApiClient\Configuration::class,
         'catalogs' => \Synerise\CatalogsApiClient\Configuration::class,
@@ -25,7 +31,7 @@ class InstanceFactory
         'apiKey' => \Synerise\ApiClient\Configuration::class
     ];
 
-    const API_PATH_FORMATS = [
+    public const API_PATH_FORMATS = [
         'authentication' => '%s/v4',
         'default' => '%s/v4',
         'catalogs' => '%s/catalogs',
@@ -40,6 +46,8 @@ class InstanceFactory
     protected $timeout = 2.5;
 
     /**
+     * Create API instance by type
+     *
      * @param string $type
      * @param Config $config
      * @return mixed
@@ -61,18 +69,21 @@ class InstanceFactory
                 ->setUserAgent($config->getUserAgent())
                 ->setHost(sprintf(self::API_PATH_FORMATS[$type], $config->getApiHost()))
                 ->setAccessToken(
-                    $config->getAuthorizationType() == Config::AUTHORIZATION_TYPE_BEARER ? $config->getAuthorizationToken() : null
+                    $config->getAuthorizationType() == Config::AUTHORIZATION_TYPE_BEARER ?
+                        $config->getAuthorizationToken() : null
                 )
         );
     }
 
     /**
+     * Get Guzzle client options
+     *
+     * @param float|null $timeout
      * @param string|null $authorizationType
      * @param string|null $authorizationToken
-     * @param float|null $timeout
      * @param HandlerStack|null $handlerStack
-     * @param bool $keepAlive
-     * @return array|float[]
+     * @param bool|null $keepAlive
+     * @return array
      */
     private function getGuzzleClientOptions(
         ?float $timeout = null,

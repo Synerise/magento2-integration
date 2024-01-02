@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Helper;
+namespace Synerise\Integration\Helper\Product;
 
 use Magento\Framework\App\Cache\Manager;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -9,7 +9,7 @@ use Magento\Store\Model\ScopeInterface;
 
 class Catalog
 {
-    const XML_PATH_CATALOG_ID = 'synerise/catalog/id';
+    public const XML_PATH_CATALOG_ID = 'synerise/catalog/id';
 
     /**
      * @var Manager
@@ -26,10 +26,15 @@ class Catalog
      */
     protected $configWriter;
 
+    /**
+     * @param Manager $cacheManager
+     * @param ScopeConfigInterface $scopeConfig
+     * @param WriterInterface $configWriter
+     */
     public function __construct(
         Manager $cacheManager,
         ScopeConfigInterface $scopeConfig,
-        WriterInterface $configWriter,
+        WriterInterface $configWriter
     ) {
         $this->cacheManager = $cacheManager;
         $this->scopeConfig = $scopeConfig;
@@ -37,6 +42,8 @@ class Catalog
     }
 
     /**
+     * Get catalog ID from config
+     *
      * @param string $storeId
      * @return mixed
      */
@@ -50,11 +57,13 @@ class Catalog
     }
 
     /**
-     * @param $catalogId
-     * @param $store_id
+     * Save Catalog ID as config value
+     *
+     * @param int $catalogId
+     * @param int $store_id
      * @return void
      */
-    public function saveConfigCatalogId($catalogId, $store_id)
+    public function saveConfigCatalogId(int $catalogId, int $store_id)
     {
         $this->configWriter->save(
             self::XML_PATH_CATALOG_ID,
@@ -66,10 +75,12 @@ class Catalog
     }
 
     /**
-     * @param $storeId
+     * Get catalog name by store ID
+     *
+     * @param int $storeId
      * @return string
      */
-    public function getCatalogNameByStoreId($storeId)
+    public function getCatalogNameByStoreId(int $storeId): string
     {
         return 'store-' . $storeId;
     }

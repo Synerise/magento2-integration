@@ -9,12 +9,13 @@ use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider as UiComponentDataProvider;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory as SubscriberCollectionFactory;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Config\Source\Synchronization\Model;
 
-class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider
+class DataProvider extends UiComponentDataProvider
 {
     /**
      * @var AdapterInterface
@@ -46,6 +47,23 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
      */
     protected $subscriberCollectionFactory;
 
+    /**
+     * @param ResourceConnection $resource
+     * @param RequestInterface $request
+     * @param ReportingInterface $reporting
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param FilterBuilder $filterBuilder
+     * @param Synchronization $synchronization
+     * @param CustomerCollectionFactory $customerCollectionFactory
+     * @param ProductCollectionFactory $productCollectionFactory
+     * @param OrderCollectionFactory $orderCollectionFactory
+     * @param SubscriberCollectionFactory $subscriberCollectionFactory
+     * @param string $name
+     * @param string $primaryFieldName
+     * @param string $requestFieldName
+     * @param array $meta
+     * @param array $data
+     */
     public function __construct(
         ResourceConnection $resource,
         RequestInterface $request,
@@ -84,7 +102,7 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
     }
 
     /**
-     * @return array
+     * @inheritDoc
      */
     public function getData(): array
     {
@@ -105,6 +123,8 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
     }
 
     /**
+     * Get sent items count
+     *
      * @param string $model
      * @param int|null $storeId
      * @return int
@@ -123,6 +143,8 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
         return (int) $this->connection->fetchOne($select);
     }
     /**
+     * Get total items count
+     *
      * @param string $model
      * @param int|null $storeId
      * @return int

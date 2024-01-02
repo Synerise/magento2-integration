@@ -11,7 +11,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 
 abstract class AbstractBulk
 {
-    const TOPIC_FORMAT = 'synerise.queue.data.%s.%s.%s';
+    public const TOPIC_FORMAT = 'synerise.queue.data.%s.%s.%s';
 
     /**
      * @var BulkManagementInterface
@@ -38,6 +38,13 @@ abstract class AbstractBulk
      */
     protected $serializer;
 
+    /**
+     * @param BulkManagementInterface $bulkManagement
+     * @param IdentityGeneratorInterface $identityService
+     * @param OperationInterfaceFactory $operationFactory
+     * @param UserContextInterface $userContext
+     * @param SerializerInterface $serializer
+     */
     public function __construct(
         BulkManagementInterface $bulkManagement,
         IdentityGeneratorInterface $identityService,
@@ -93,11 +100,14 @@ abstract class AbstractBulk
     }
 
     /**
+     * Get topic name
+     *
      * @param string $model
      * @param string $type
      * @param int|null $storeId
      * @return string
      */
+    // phpcs:ignore
     public static function getTopicName(string $model, string $type, int $storeId): string
     {
         return sprintf(self::TOPIC_FORMAT, $type, $model, $storeId);

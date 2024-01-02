@@ -13,7 +13,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 
 class Scheduler
 {
-    const TOPIC_NAME = 'synerise.queue.data.scheduler';
+    public const TOPIC_NAME = 'synerise.queue.data.scheduler';
 
     /**
      * @var BulkManagementInterface
@@ -40,6 +40,13 @@ class Scheduler
      */
     private $serializer;
 
+    /**
+     * @param BulkManagementInterface $bulkManagement
+     * @param IdentityGeneratorInterface $identityService
+     * @param OperationInterfaceFactory $operationFactory
+     * @param UserContextInterface $userContext
+     * @param SerializerInterface $serializer
+     */
     public function __construct(
         BulkManagementInterface $bulkManagement,
         IdentityGeneratorInterface $identityService,
@@ -54,9 +61,17 @@ class Scheduler
         $this->serializer = $serializer;
     }
 
+    /**
+     * Consume message & schedule synchronization
+     *
+     * @param string $model
+     * @param int[] $storeIds
+     * @return void
+     * @throws LocalizedException
+     */
     public function schedule(
-        $model,
-        $storeIds
+        string $model,
+        array $storeIds
     ) {
         $bulkUuid = $this->identityService->generateId();
         $bulkDescription = $this->getBulKDescription($model, $storeIds);
@@ -119,6 +134,8 @@ class Scheduler
     }
 
     /**
+     * Get Bulk description
+     *
      * @param string $model
      * @param array $storeIds
      * @return Phrase

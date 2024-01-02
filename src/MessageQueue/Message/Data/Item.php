@@ -31,7 +31,6 @@ class Item
      */
     private $retries;
 
-
     /**
      * @param string $model
      * @param int $entity_id
@@ -53,6 +52,8 @@ class Item
     }
 
     /**
+     * Get model name
+     *
      * @return string
      */
     public function getModel(): string
@@ -61,6 +62,8 @@ class Item
     }
 
     /**
+     * Set model name
+     *
      * @param string $model
      * @return void
      */
@@ -70,6 +73,8 @@ class Item
     }
 
     /**
+     * Get entity ID
+     *
      * @return int
      */
     public function getEntityId(): int
@@ -78,6 +83,8 @@ class Item
     }
 
     /**
+     * Set entity ID
+     *
      * @param int $entityId
      * @return void
      */
@@ -87,6 +94,8 @@ class Item
     }
 
     /**
+     * Get store ID
+     *
      * @return int
      */
     public function getStoreId(): int
@@ -95,6 +104,8 @@ class Item
     }
 
     /**
+     * Set store ID
+     *
      * @param int $storeId
      * @return void
      */
@@ -104,6 +115,8 @@ class Item
     }
 
     /**
+     * Get website ID
+     *
      * @return int|null
      */
     public function getWebsiteId(): ?int
@@ -112,6 +125,8 @@ class Item
     }
 
     /**
+     * Set website ID
+     *
      * @param int $websiteId
      * @return void
      */
@@ -121,6 +136,8 @@ class Item
     }
 
     /**
+     * Get retries count
+     *
      * @return int
      */
     public function getRetries(): int
@@ -129,6 +146,8 @@ class Item
     }
 
     /**
+     * Set retires count
+     *
      * @param int $retries
      * @return void
      */

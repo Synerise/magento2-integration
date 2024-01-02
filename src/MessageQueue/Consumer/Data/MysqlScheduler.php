@@ -20,6 +20,16 @@ class MysqlScheduler extends AbstractScheduler
      */
     protected $connection;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param SerializerInterface $serializer
+     * @param EntityManager $entityManager
+     * @param CollectionFactoryProvider $collectionFactoryProvider
+     * @param Filter $filter
+     * @param Publisher $publisher
+     * @param Synchronization $synchronization
+     * @param ResourceConnection $resource
+     */
     public function __construct(
         LoggerInterface $logger,
         SerializerInterface $serializer,
@@ -43,6 +53,9 @@ class MysqlScheduler extends AbstractScheduler
         );
     }
 
+    /**
+     * @inheritDoc
+     */
     protected function purgeQueue(string $topicName)
     {
         $messageStatusTable = $this->connection->getTableName('queue_message_status');

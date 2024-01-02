@@ -2,9 +2,10 @@
 namespace Synerise\Integration\MessageQueue\Config\Reader;
 
 use Magento\Framework\Communication\ConfigInterface;
+use Magento\Framework\Config\ReaderInterface;
 use Synerise\Integration\Communication\Config;
 
-class Communication implements \Magento\Framework\Config\ReaderInterface
+class Communication implements ReaderInterface
 {
     /**
      * @var Config
@@ -20,8 +21,7 @@ class Communication implements \Magento\Framework\Config\ReaderInterface
     }
 
     /**
-     * @param $scope
-     * @return array
+     * @inheritDoc
      */
     public function read($scope = null)
     {

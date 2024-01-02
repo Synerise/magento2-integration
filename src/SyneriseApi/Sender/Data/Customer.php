@@ -11,11 +11,13 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Store\Model\ScopeInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\InBodyClientSex;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking\UuidManagement;
+use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
@@ -23,10 +25,11 @@ use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Customer extends AbstractSender implements SenderInterface
 {
-    const MODEL = 'customer';
-    const ENTITY_ID = 'entity_id';
+    public const MODEL = 'customer';
 
-    const MAPPING_GENDER = [
+    public const ENTITY_ID = 'entity_id';
+
+    public const MAPPING_GENDER = [
         1 => InBodyClientSex::MALE,
         2 => InBodyClientSex::FEMALE,
         3 => InBodyClientSex::NOT_SPECIFIED
@@ -48,15 +51,18 @@ class Customer extends AbstractSender implements SenderInterface
     protected $resource;
 
     /**
-     * @var LoggerInterface
+     * @param AddressRepositoryInterface $addressRepository
+     * @param ScopeConfigInterface $scopeConfig
+     * @param ResourceConnection $resource
+     * @param Logger $loggerHelper
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
      */
-    protected $logger;
-
     public function __construct(
         AddressRepositoryInterface $addressRepository,
         ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
-        LoggerInterface $logger,
+        Logger $loggerHelper,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory
     ) {
@@ -64,15 +70,17 @@ class Customer extends AbstractSender implements SenderInterface
         $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
 
-        parent::__construct($logger, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
     }
 
     /**
+     * Send Items
+     *
      * @param Collection|CustomerModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return void
-     * @throws \Synerise\ApiClient\ApiException|ValidatorException
+     * @throws ApiException|ValidatorException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
@@ -81,7 +89,7 @@ class Customer extends AbstractSender implements SenderInterface
             $ids = [];
 
         foreach ($collection as $customer) {
-            $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($this->preapreParams($customer, $storeId));
+            $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($this->prepareParams($customer, $storeId));
             $ids[] = $customer->getEntityId();
         }
 
@@ -97,12 +105,15 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $payload
+     * Batch add or update clients
+     *
+     * @param mixed $payload
      * @param int $storeId
+     * @param string|null $eventName
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($payload, int $storeId)
+    public function batchAddOrUpdateClients($payload, int $storeId, string $eventName = null)
     {
         try {
             list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
@@ -114,15 +125,26 @@ class Customer extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->logger->warning('Request partially accepted', ['response_body' => $body]);
+                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response_body' => $body]);
             }
         } catch (ApiException $e) {
-            $this->logApiException($e);
+            $shouldLogException = true;
+            if ($eventName == UuidManagement::EVENT) {
+                $shouldLogException = $this->loggerHelper->isExcludedFromLogging(
+                    Exclude::EXCEPTION_CLIENT_MERGE_FAIL
+                );
+            }
+
+            if ($shouldLogException) {
+                $this->logApiException($e);
+            }
             throw $e;
         }
     }
 
     /**
+     * Get default API instance
+     *
      * @param int $storeId
      * @return DefaultApi
      * @throws ApiException
@@ -134,10 +156,13 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param \Magento\Customer\Model\Customer $customer
+     * Prepare customer params
+     *
+     * @param Customer|\Magento\Customer\Model\Data\Customer $customer
+     * @param int|null $storeId
      * @return array
      */
-    public function preapreParams($customer, $storeId = null)
+    public function prepareParams($customer, ?int $storeId = null): array
     {
         $params = [
             'custom_id' => $customer->getId(),
@@ -146,11 +171,11 @@ class Customer extends AbstractSender implements SenderInterface
             'last_name' => $customer->getLastname()
         ];
 
-        if (is_a($customer, 'Magento\Customer\Model\Data\Customer')) {
+        if (is_a($customer, \Magento\Customer\Model\Data\Customer::class)) {
             /** @var \Magento\Customer\Model\Data\Customer $customer */
             $data = $customer->__toArray();
         } else {
-            /** @var \Magento\Customer\Model\Customer\Interceptor $customer */
+            /** @var \Magento\Customer\Model\Customer $customer */
             $data = (array) $customer->getData();
         }
 
@@ -195,10 +220,12 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $storeId
+     * Get enabled attributes
+     *
+     * @param int|null $storeId
      * @return array|false|string[]
      */
-    public function getEnabledAttributes($storeId = null)
+    public function getEnabledAttributes(?int $storeId = null)
     {
         $attributes = $this->scopeConfig->getValue(
             Attributes::XML_PATH_CUSTOMER_ATTRIBUTES,
@@ -221,10 +248,12 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Get address if available
+     *
      * @param int $addressId
      * @return AddressInterface|null
      */
-    protected function getAddressIfAvailable($addressId)
+    protected function getAddressIfAvailable(int $addressId): ?AddressInterface
     {
         try {
             return $addressId ? $this->addressRepository->getById($addressId) : null;
@@ -234,10 +263,12 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param mixed $val
-     * @return mixed
+     * Return value or null
+     *
+     * @param string|null $val
+     * @return string|null
      */
-    protected function valOrNull($val)
+    protected function valOrNull(?string $val): ?string
     {
         if (empty($val)) {
             return null;
@@ -247,11 +278,13 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Mark customers as sent
+     *
      * @param int[] $ids
      * @return void
      * @param int $storeId
      */
-    public function markCustomersAsSent(array $ids, $storeId = 0)
+    public function markCustomersAsSent(array $ids, int $storeId = 0)
     {
         $data = [];
         foreach ($ids as $id) {

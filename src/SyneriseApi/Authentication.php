@@ -20,6 +20,10 @@ class Authentication
      */
     private $instanceFactory;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param InstanceFactory $instanceFactory
+     */
     public function __construct(
         LoggerInterface $logger,
         InstanceFactory $instanceFactory
@@ -29,6 +33,8 @@ class Authentication
     }
 
     /**
+     * Get JWT
+     *
      * @param string $apiKey
      * @param Config $config
      * @return string
@@ -53,7 +59,8 @@ class Authentication
             );
             if ($e->getCode() === 401) {
                 throw new ValidatorException(
-                    __('Workspace login failed. Please make sure this a valid api key of type `workspace` and try again.')
+                    __('Workspace login failed. 
+                    Please make sure this a valid api key of type `workspace` and try again.')
                 );
             }
 
@@ -62,6 +69,8 @@ class Authentication
     }
 
     /**
+     * Get Authentication API instance
+     *
      * @param Config $config
      * @return AuthenticationControllerApi
      */

@@ -5,7 +5,9 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Controller\ResultInterface;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
@@ -17,7 +19,7 @@ class All extends Action implements HttpPostActionInterface
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization';
 
     /**
      * @var Publisher
@@ -39,6 +41,13 @@ class All extends Action implements HttpPostActionInterface
      */
     protected $synchronization;
 
+    /**
+     * @param Context $context
+     * @param Publisher $publisher
+     * @param Filter $filter
+     * @param CollectionFactoryProvider $collectionFactoryProvider
+     * @param Synchronization $synchronization
+     */
     public function __construct(
         Context $context,
         Publisher $publisher,
@@ -54,61 +63,13 @@ class All extends Action implements HttpPostActionInterface
         parent::__construct($context);
     }
 
+    /**
+     * Execute
+     *
+     * @return Redirect|ResponseInterface|ResultInterface
+     */
     public function execute()
     {
-        try {
-            if (!$this->synchronization->isSynchronizationEnabled()) {
-                $this->messageManager->addErrorMessage(
-                    __('Synchronization is disabled. Please review your configuration.')
-                );
-            } else {
-                $selectedStoreIds = $this->getSelectedStoreIds($this->getRequest()->getParam('store'));
-                $selectedModels = $this->getSelectedModels($this->getRequest()->getParam('selected'));
-
-                foreach ($selectedModels as $model) {
-                    if (!$this->synchronization->isEnabledModel($model)) {
-                        $this->messageManager->addErrorMessage(
-                            __('%1s are excluded from synchronization.', ucfirst($model))
-                        );
-                    } else {
-                        $storeIdsWithItems = [];
-
-                        foreach ($selectedStoreIds as $storeId) {
-                            if ($this->synchronization->isEnabledStore($storeId)) {
-                                if ($this->storeHasItems($model, $storeId)) {
-                                    $storeIdsWithItems[] = $storeId;
-                                }
-                            }
-                        }
-
-                        if (!empty($storeIdsWithItems)) {
-                            $this->publisher->schedule(
-                                $model,
-                                $storeIdsWithItems
-                            );
-                            $this->messageManager->addSuccessMessage(
-                                __(
-                                    '%1 synchronization has been scheduled for stores: %2',
-                                    ucfirst($model),
-                                    implode(',', $storeIdsWithItems)
-                                )
-                            );
-                        } else {
-                            $this->messageManager->addErrorMessage(
-                                __(
-                                    'No %1s to synchronize for selected stores: %2.',
-                                    $model,
-                                    implode(',', $selectedStoreIds)
-                                )
-                            );
-                        }
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            $this->messageManager->addErrorMessage(__('Something went wrong while processing the request.'));
-        }
-
         $params = [];
         if ($this->getRequest()->getParam('store')) {
             $params['store'] = $this->getRequest()->getParam('store');
@@ -116,10 +77,70 @@ class All extends Action implements HttpPostActionInterface
 
         /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+
+        try {
+            if (!$this->synchronization->isSynchronizationEnabled()) {
+                $this->messageManager->addErrorMessage(
+                    __('Synchronization is disabled. Please review your configuration.')
+                );
+                return $resultRedirect->setPath('*/*/index', $params);
+            }
+
+            $selectedStoreIds = $this->getSelectedStoreIds($this->getRequest()->getParam('store'));
+            $selectedModels = $this->getSelectedModels($this->getRequest()->getParam('selected'));
+
+            foreach ($selectedModels as $model) {
+                if (!$this->synchronization->isEnabledModel($model)) {
+                    $this->messageManager->addErrorMessage(
+                        __('%1s are excluded from synchronization.', ucfirst($model))
+                    );
+                    return $resultRedirect->setPath('*/*/index', $params);
+                }
+
+                $storeIdsWithItems = [];
+
+                foreach ($selectedStoreIds as $storeId) {
+                    if ($this->synchronization->isEnabledStore($storeId)) {
+                        if ($this->storeHasItems($model, $storeId)) {
+                            $storeIdsWithItems[] = $storeId;
+                        }
+                    }
+                }
+
+                if (empty($storeIdsWithItems)) {
+                    $this->messageManager->addErrorMessage(
+                        __(
+                            'No %1s to synchronize for selected stores: %2.',
+                            $model,
+                            implode(',', $selectedStoreIds)
+                        )
+                    );
+                }
+
+                $this->publisher->schedule(
+                    $model,
+                    $storeIdsWithItems
+                );
+
+                $this->messageManager->addSuccessMessage(
+                    __(
+                        '%1 synchronization has been scheduled for stores: %2',
+                        ucfirst($model),
+                        implode(',', $storeIdsWithItems)
+                    )
+                );
+            }
+
+        } catch (\Exception $e) {
+            $this->messageManager->addErrorMessage(__('Something went wrong while processing the request.'));
+        }
+
         return $resultRedirect->setPath('*/*/index', $params);
     }
 
     /**
+     * Check if store has items
+     *
      * @param string $model
      * @param int $storeId
      * @return bool
@@ -135,6 +156,8 @@ class All extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Get selected models
+     *
      * @param array|null $selected
      * @return array
      */
@@ -155,6 +178,8 @@ class All extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Get selected store IDs
+     *
      * @param int|null $scope
      * @return int[]
      */

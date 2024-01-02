@@ -8,7 +8,9 @@ use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 interface SenderInterface
 {
     /**
-     * @param $collection
+     * Send items
+     *
+     * @param mixed $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return mixed
@@ -17,6 +19,8 @@ interface SenderInterface
     public function sendItems($collection, int $storeId, ?int $websiteId = null);
 
     /**
+     * Get Attributes to collection
+     *
      * @param int $storeId
      * @return string[]
      */

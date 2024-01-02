@@ -2,10 +2,13 @@
 
 namespace Synerise\Integration\Communication;
 
+use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
 use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\MessageQueue\Consumer\Data\Bulk;
+use Synerise\Integration\MessageQueue\Consumer\Data\MysqlScheduler;
 use Synerise\Integration\MessageQueue\Consumer\Event;
 use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk;
 use Synerise\Integration\MessageQueue\Publisher\Data\All;
@@ -15,7 +18,7 @@ use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler;
 
 class Config implements ConfigInterface
 {
-    const MAX_RETRIES = 3;
+    public const MAX_RETRIES = 3;
 
     /**
      * @var array
@@ -27,6 +30,9 @@ class Config implements ConfigInterface
      */
     protected $synchronization;
 
+    /**
+     * @param Synchronization $synchronization
+     */
     public function __construct(Synchronization $synchronization)
     {
         $this->synchronization = $synchronization;
@@ -35,9 +41,7 @@ class Config implements ConfigInterface
     }
 
     /**
-     * @param $topicName
-     * @return array|mixed
-     * @throws LocalizedException
+     * @inheritDoc
      */
     public function getTopic($topicName)
     {
@@ -51,9 +55,7 @@ class Config implements ConfigInterface
     }
 
     /**
-     * @param $topicName
-     * @return array|mixed
-     * @throws LocalizedException
+     * @inheritDoc
      */
     public function getTopicHandlers($topicName)
     {
@@ -62,14 +64,16 @@ class Config implements ConfigInterface
     }
 
     /**
-     * @return array
+     * @inheritDoc
      */
-    public function getTopics()
+    public function getTopics(): array
     {
         return $this->topics;
     }
 
     /**
+     * Init config data
+     *
      * @return void
      */
     private function initData()
@@ -90,7 +94,7 @@ class Config implements ConfigInterface
             $topicName = Event::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
-                "Synerise\\Integration\\MessageQueue\\Consumer\\Event",
+                Event::class,
                 'string',
             );
         }
@@ -99,17 +103,17 @@ class Config implements ConfigInterface
             $topicName = Scheduler::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
-                "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\MysqlScheduler"
+                MysqlScheduler::class
             );
 
             $topicName =  Item::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
-                "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Item",
-                "Synerise\\Integration\\MessageQueue\\Message\\Data\\Item"
+                \Synerise\Integration\MessageQueue\Consumer\Data\Item::class,
+                \Synerise\Integration\MessageQueue\Message\Data\Item::class
             );
 
-            $handlerType = "Synerise\\Integration\\MessageQueue\\Consumer\\Data\\Bulk";
+            $handlerType = Bulk::class;
             foreach ($enabledModels as $model) {
                 foreach ($enabledStores as $storeId) {
                     $topicName = AbstractBulk::getTopicName($model, Batch::TYPE, $storeId);
@@ -132,6 +136,8 @@ class Config implements ConfigInterface
     }
 
     /**
+     * Get topic config
+     *
      * @param string $topicName
      * @param string $handlerType
      * @param string $request
@@ -141,7 +147,7 @@ class Config implements ConfigInterface
     protected function getTopicConfig(
         string $topicName,
         string $handlerType,
-        string $request = "Magento\\AsynchronousOperations\\Api\\Data\\OperationInterface",
+        string $request = OperationInterface::class,
         string $request_type = 'object_interface'
     ): array {
         return [

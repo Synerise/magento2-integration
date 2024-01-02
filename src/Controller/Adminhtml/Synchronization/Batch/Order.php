@@ -21,7 +21,7 @@ class Order extends Action
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
 
     /**
      * @var LoggerInterface
@@ -48,6 +48,14 @@ class Order extends Action
      */
     private $synchronization;
 
+    /**
+     * @param Context $context
+     * @param LoggerInterface $logger
+     * @param Filter $filter
+     * @param CollectionFactory $collectionFactory
+     * @param Publisher $publisher
+     * @param Synchronization $synchronization
+     */
     public function __construct(
         Context $context,
         LoggerInterface $logger,
@@ -77,7 +85,7 @@ class Order extends Action
             $this->messageManager->addErrorMessage(
                 __('Synchronization is disabled. Please review your configuration.')
             );
-        } elseif (!$this->synchronization->isEnabledModel(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)) {
+        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
             $this->messageManager->addErrorMessage(
                 __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
             );
@@ -98,7 +106,7 @@ class Order extends Action
                             $collection->getAllIds(),
                             $enabledStoreId,
                             null,
-                            $this->synchronization->getPageSize(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)
+                            $this->synchronization->getPageSize(Sender::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();

@@ -16,7 +16,7 @@ class MassDelete extends Action implements HttpPostActionInterface
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::log_delete';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::log_delete';
 
     /**
      * @var Log
@@ -61,6 +61,7 @@ class MassDelete extends Action implements HttpPostActionInterface
         $fileNames = $this->getRequest()->getParam('selected');
         foreach ($fileNames as $fileName) {
             try {
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction
                 unlink($this->logHelper->getLogFileAbsolutePath($fileName));
                 $deleted++;
             } catch (\Exception $e) {

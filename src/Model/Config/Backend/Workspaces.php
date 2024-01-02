@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Model\Config\Backend;
 
+use Exception;
 use Magento\Config\Model\Config\Factory as ConfigFactory;
 use Magento\Framework\App\Cache\TypeListInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -30,6 +31,18 @@ class Workspaces extends Value
      */
     protected $configFactory;
 
+    /**
+     * @param Context $context
+     * @param Registry $registry
+     * @param ScopeConfigInterface $config
+     * @param TypeListInterface $cacheTypeList
+     * @param SerializerInterface $serializer
+     * @param WebsiteCollectionFactory $websiteCollectionFactory
+     * @param ConfigFactory $configFactory
+     * @param AbstractResource|null $resource
+     * @param AbstractDb|null $resourceCollection
+     * @param array $data
+     */
     public function __construct(
         Context $context,
         Registry $registry,
@@ -49,6 +62,12 @@ class Workspaces extends Value
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
+    /**
+     * Saved linked config before save
+     *
+     * @return void
+     * @throws Exception
+     */
     public function beforeSave()
     {
         /** @var array $value */
@@ -78,7 +97,6 @@ class Workspaces extends Value
      */
     protected function _afterLoad()
     {
-        /** @var string $value */
         $value = $this->getValue();
         $decodedValue = $value ? $this->serializer->unserialize($value) : [];
 
@@ -93,15 +111,14 @@ class Workspaces extends Value
     }
 
     /**
-     * Save workspace id for each website
-     * config path: synerise/workspace/id
+     * Save workspace id for each website (config path: synerise/workspace/id)
      *
-     * @param $websiteId
-     * @param $workspaceId
+     * @param int $websiteId
+     * @param int $workspaceId
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function saveLinkedConfig($websiteId, $workspaceId)
+    protected function saveLinkedConfig(int $websiteId, int $workspaceId)
     {
         $configData = [
             'section' => 'synerise_workspace',
@@ -118,8 +135,6 @@ class Workspaces extends Value
             ],
         ];
 
-        /** @var \Magento\Config\Model\Config $configModel */
-        $configModel = $this->configFactory->create(['data' => $configData]);
-        $configModel->save();
+        $this->configFactory->create(['data' => $configData])->save();
     }
 }

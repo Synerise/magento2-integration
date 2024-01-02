@@ -11,7 +11,7 @@ use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber;
 
 class SenderFactory
 {
-    const SENDER_CLASSES = [
+    public const SENDER_CLASSES = [
         'customer' => Customer::class,
         'order' => Order::class,
         'product' => Product::class,

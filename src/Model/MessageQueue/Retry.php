@@ -2,11 +2,17 @@
 
 namespace Synerise\Integration\Model\MessageQueue;
 
-class Retry extends \Magento\Framework\Model\AbstractModel
-{
+use Magento\Framework\Model\AbstractModel;
 
+class Retry extends AbstractModel
+{
+    /**
+     * Message Retry
+     *
+     * @return void
+     */
     protected function _construct()
     {
-        $this->_init('Synerise\Integration\Model\ResourceModel\MessageQueue\Retry');
+        $this->_init(\Synerise\Integration\Model\ResourceModel\MessageQueue\Retry::class);
     }
 }

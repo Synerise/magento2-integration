@@ -4,12 +4,14 @@ namespace Synerise\Integration\Controller\Adminhtml\Log;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Controller\Adminhtml\System;
 use Magento\Framework\App\Response\Http\FileFactory;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\ResultInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\Log;
 
 class Download extends System
 {
-    const ADMIN_RESOURCE = 'Synerise_Integration::log_download';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::log_download';
 
     /**
      * @var FileFactory
@@ -26,6 +28,12 @@ class Download extends System
      */
     protected $logger;
 
+    /**
+     * @param Context $context
+     * @param FileFactory $fileFactory
+     * @param Log $logHelper
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         Context $context,
         FileFactory $fileFactory,
@@ -39,6 +47,11 @@ class Download extends System
         parent::__construct($context);
     }
 
+    /**
+     * Execute
+     *
+     * @return ResponseInterface|ResultInterface
+     */
     public function execute()
     {
         $fileName = $this->getRequest()->getParam('filename');

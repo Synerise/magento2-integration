@@ -2,22 +2,29 @@
 
 namespace Synerise\Integration\Model\Config\Source;
 
+use Magento\Framework\Data\OptionSourceInterface;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
 
-class Workspace implements \Magento\Framework\Data\OptionSourceInterface
+class Workspace implements OptionSourceInterface
 {
     /**
      * @var CollectionFactory
      */
     private $collectionFactory;
 
+    /**
+     * @param CollectionFactory $collectionFactory
+     */
     public function __construct(
         CollectionFactory $collectionFactory
     ) {
         $this->collectionFactory = $collectionFactory;
     }
 
-    public function toOptionArray()
+    /**
+     * @inheritDoc
+     */
+    public function toOptionArray(): array
     {
         $options = [
             [

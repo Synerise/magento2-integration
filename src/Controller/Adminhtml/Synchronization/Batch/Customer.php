@@ -20,12 +20,12 @@ class Customer extends Action
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    protected $logger;
 
     /**
      * @var Filter
@@ -40,13 +40,21 @@ class Customer extends Action
     /**
      * @var Publisher
      */
-    private $publisher;
+    protected $publisher;
 
     /**
      * @var Synchronization
      */
-    private $synchronization;
+    protected $synchronization;
 
+    /**
+     * @param Context $context
+     * @param LoggerInterface $logger
+     * @param Filter $filter
+     * @param CollectionFactory $collectionFactory
+     * @param Publisher $publisher
+     * @param Synchronization $synchronization
+     */
     public function __construct(
         Context $context,
         LoggerInterface $logger,

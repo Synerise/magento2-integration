@@ -14,7 +14,7 @@ use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory;
  */
 class Uninstall implements UninstallInterface
 {
-    const TABLES = [
+    public const TABLES = [
         'synerise_workspace',
         'synerise_sync_subscriber',
         'synerise_sync_order',
@@ -26,6 +26,7 @@ class Uninstall implements UninstallInterface
      * @var CollectionFactory
      */
     protected $collectionFactory;
+
     /**
      * @var Data
      */
@@ -44,6 +45,8 @@ class Uninstall implements UninstallInterface
     }
 
     /**
+     * Uninstall
+     *
      * @param SchemaSetupInterface $setup
      * @param ModuleContextInterface $context
      * @throws \Exception
@@ -63,6 +66,8 @@ class Uninstall implements UninstallInterface
     }
 
     /**
+     * Delete config
+     *
      * @param AbstractModel $config
      * @throws \Exception
      */

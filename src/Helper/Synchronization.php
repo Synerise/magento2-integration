@@ -11,18 +11,18 @@ use Synerise\Integration\Model\Config\Source\Synchronization\Model;
 
 class Synchronization
 {
-    const XML_PATH_PAGE_SIZE_ARRAY = [
+    protected const XML_PATH_PAGE_SIZE_ARRAY = [
         'customer' => 'synerise/customer/limit',
         'order' => 'synerise/order/limit',
         'product' => 'synerise/product/limit',
         'subscriber' => 'synerise/subscriber/limit'
     ];
 
-    const XML_PATH_SYNCHRONIZATION_ENABLED = 'synerise/synchronization/enabled';
+    public const XML_PATH_SYNCHRONIZATION_ENABLED = 'synerise/synchronization/enabled';
 
-    const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
+    public const XML_PATH_SYNCHRONIZATION_MODELS = 'synerise/synchronization/models';
 
-    const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
+    public const XML_PATH_SYNCHRONIZATION_STORES = 'synerise/synchronization/stores';
 
     /**
      * @var ScopeConfigInterface
@@ -44,6 +44,10 @@ class Synchronization
      */
     protected $enabledStores;
 
+    /**
+     * @param ScopeConfigInterface $scopeConfig
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager
@@ -59,6 +63,8 @@ class Synchronization
     }
 
     /**
+     * Check if Message Queue is enabled for events
+     *
      * @param int $scopeId
      * @param string $scope
      * @return bool
@@ -73,6 +79,8 @@ class Synchronization
     }
 
     /**
+     * Check if synchronization is enabled
+     *
      * @return bool
      */
     public function isSynchronizationEnabled(): bool
@@ -81,6 +89,8 @@ class Synchronization
     }
 
     /**
+     * Check if model is enabled for synchronization
+     *
      * @param string $model
      * @return bool
      * @throws InvalidArgumentException
@@ -94,6 +104,8 @@ class Synchronization
     }
 
     /**
+     * Check if store is enabled for synchronization
+     *
      * @param int $storeId
      * @return bool
      */
@@ -103,6 +115,8 @@ class Synchronization
     }
 
     /**
+     * Get an array of name of models enabled for synchronization
+     *
      * @return string[]
      */
     public function getEnabledModels(): array
@@ -111,7 +125,9 @@ class Synchronization
     }
 
     /**
-     * @return string[]
+     * Get an array IDs of stores enabled for synchronization
+     *
+     * @return int[]
      */
     public function getEnabledStores(): array
     {
@@ -119,16 +135,20 @@ class Synchronization
     }
 
     /**
+     * Get website ID by store ID
+     *
      * @param int $storeId
      * @return int
      * @throws NoSuchEntityException
      */
-    public function getWebsiteIdByStoreId(int $storeId)
+    public function getWebsiteIdByStoreId(int $storeId): int
     {
         return $this->storeManager->getStore($storeId)->getWebsiteId();
     }
 
     /**
+     * Get page size from config
+     *
      * @param string $model
      * @param int|null $storeId
      * @return int

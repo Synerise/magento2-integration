@@ -2,15 +2,35 @@
 
 namespace Synerise\Integration\Ui\Component\Action;
 
-class StoreScopedAction extends \Magento\Ui\Component\Action
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\UrlInterface;
+use Magento\Framework\View\Element\UiComponent\ContextInterface;
+use Magento\Ui\Component\Action;
+
+class StoreScopedAction extends Action
 {
+    /**
+     * @var UrlInterface
+     */
     protected $urlBuilder;
+
+    /**
+     * @var RequestInterface
+     */
     protected $request;
 
+    /**
+     * @param ContextInterface $context
+     * @param RequestInterface $request
+     * @param UrlInterface $urlBuilder
+     * @param array $components
+     * @param array $data
+     * @param array|\JsonSerializable $actions
+     */
     public function __construct(
-        \Magento\Framework\View\Element\UiComponent\ContextInterface $context,
-        \Magento\Framework\App\RequestInterface $request,
-        \Magento\Framework\UrlInterface $urlBuilder,
+        ContextInterface $context,
+        RequestInterface $request,
+        UrlInterface $urlBuilder,
         array $components = [],
         array $data = [],
         $actions = null
@@ -21,6 +41,9 @@ class StoreScopedAction extends \Magento\Ui\Component\Action
         $this->request = $request;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function prepare()
     {
         parent::prepare();

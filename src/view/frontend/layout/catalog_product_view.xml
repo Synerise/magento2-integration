@@ -4,8 +4,8 @@
         <referenceBlock name="head.additional">
             <block class="Synerise\Integration\Block\Opengraph\Additional" name="synerise.opengraph"
                    after="opengraph.general" template="Synerise_Integration::opengraph/additional.phtml"
-                   ifconfig="synerise/page_tracking/enabled" >
-                <block class="Magento\Directory\Block\Currency"  name="synerise.opengraph.currency"
+                   ifconfig="synerise/page_tracking/opengraph" >
+                <block class="Magento\Directory\Block\Currency" name="synerise.opengraph.currency"
                        as="meta.currency" template="Synerise_Integration::opengraph/currency.phtml" />
             </block>
         </referenceBlock>

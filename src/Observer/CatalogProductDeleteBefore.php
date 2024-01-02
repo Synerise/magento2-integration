@@ -7,6 +7,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException as DefaultApiException;
 use Synerise\CatalogsApiClient\ApiException;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
@@ -14,14 +15,14 @@ use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class CatalogProductDeleteBefore implements ObserverInterface
 {
-    const EVENT = 'catalog_product_delete_before';
+    public const EVENT = 'catalog_product_delete_before';
 
-    const EVENT_FOR_CONFIG = 'catalog_product_delete_after';
+    public const EVENT_FOR_CONFIG = 'catalog_product_delete_after';
 
     /**
-     * @var Sender
+     * @var Logger
      */
-    protected $sender;
+    protected $loggerHelper;
 
     /**
      * @var Synchronization
@@ -38,21 +39,41 @@ class CatalogProductDeleteBefore implements ObserverInterface
      */
     protected $publisher;
 
+    /**
+     * @var Sender
+     */
+    protected $sender;
+
+    /**
+     * @param Logger $loggerHelper
+     * @param Synchronization $synchronizationHelper
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     * @param Sender $sender
+     */
     public function __construct(
+        Logger $loggerHelper,
         Synchronization $synchronizationHelper,
         Tracking $trackingHelper,
         Publisher $publisher,
         Sender $sender
     ) {
+        $this->loggerHelper = $loggerHelper;
         $this->synchronizationHelper = $synchronizationHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
 
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
+        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG)) {
             return;
         }
 
@@ -69,9 +90,12 @@ class CatalogProductDeleteBefore implements ObserverInterface
                         $product,
                         $this->synchronizationHelper->getWebsiteIdByStoreId($storeId)
                     );
-                    $addItemRequest->setValue(array_merge($addItemRequest->getValue(), ['deleted' => 1]));
 
-                    if ($this->trackingHelper->isQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                    $value = $addItemRequest->getValue();
+                    $value['deleted'] = 1;
+                    $addItemRequest->setValue($value);
+
+                    if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
                         $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());
                     } else {
                         $this->sender->deleteItem($addItemRequest, $storeId, $product->getEntityId());
@@ -80,7 +104,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
             }
         } catch (\Exception $e) {
             if (!$e instanceof ApiException && !$e instanceof DefaultApiException) {
-                $this->trackingHelper->getLogger()->error($e);
+                $this->loggerHelper->getLogger()->error($e);
             }
         }
     }

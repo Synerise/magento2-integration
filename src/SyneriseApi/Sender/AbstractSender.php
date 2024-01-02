@@ -7,18 +7,19 @@ use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\SyneriseApi\Config;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 abstract class AbstractSender
 {
-    const API_EXCEPTION = ApiException::class;
+    public const API_EXCEPTION = ApiException::class;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected $loggerHelper;
 
     /**
      * @var ConfigFactory
@@ -40,17 +41,24 @@ abstract class AbstractSender
      */
     protected $instances;
 
+    /**
+     * @param Logger $logger
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
+     */
     public function __construct(
-        LoggerInterface $logger,
+        Logger $logger,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory
     ) {
-        $this->logger = $logger;
+        $this->loggerHelper = $logger;
         $this->apiInstanceFactory = $apiInstanceFactory;
         $this->configFactory = $configFactory;
     }
 
     /**
+     * Send request with a token expired catch
+     *
      * @param callable $send
      * @param int $storeId
      * @return mixed
@@ -72,6 +80,8 @@ abstract class AbstractSender
     }
 
     /**
+     * Check if token is expired
+     *
      * @param ApiException|CatalogApiException $e
      * @return bool
      */
@@ -81,12 +91,14 @@ abstract class AbstractSender
     }
 
     /**
+     * Log API exception
+     *
      * @param ApiException|CatalogApiException $e
      * @return void
      */
     protected function logApiException(Exception $e)
     {
-        $this->logger->error(
+        $this->loggerHelper->getLogger()->error(
             'Synerise Api request failed',
             [
                 'exception' => preg_replace('/ response:.*/s', '', $e->getMessage()),
@@ -96,6 +108,8 @@ abstract class AbstractSender
     }
 
     /**
+     * Clear cached instance
+     *
      * @param int $storeId
      * @return void
      */
@@ -106,6 +120,8 @@ abstract class AbstractSender
     }
 
     /**
+     * Get API instance
+     *
      * @param string $type
      * @param int $storeId
      * @return mixed
@@ -124,10 +140,14 @@ abstract class AbstractSender
     }
 
     /**
+     * Get config
+     *
+     * @param int $storeId
+     * @return Config
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function getConfig($storeId): Config
+    public function getConfig(int $storeId): Config
     {
         if (!isset($this->config[$storeId])) {
             $this->config[$storeId] = $this->configFactory->createConfig($storeId);

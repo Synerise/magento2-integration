@@ -7,6 +7,7 @@ use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
@@ -14,9 +15,9 @@ use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
 
 class CustomerSaveAfter implements ObserverInterface
 {
-    const EVENT = 'customer_save_after';
+    public const EVENT = 'customer_save_after';
 
-    const EXCLUDED_PATHS = [
+    public const EXCLUDED_PATHS = [
         '/newsletter/manage/save/'
     ];
 
@@ -24,6 +25,11 @@ class CustomerSaveAfter implements ObserverInterface
      * @var Synchronization
      */
     protected $synchronizationHelper;
+
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
 
     /**
      * @var Tracking
@@ -45,23 +51,39 @@ class CustomerSaveAfter implements ObserverInterface
      */
     protected $dataItemPublisher;
 
+    /**
+     * @param Synchronization $synchronizationHelper
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param Http $request
+     * @param DataItemPublisher $dataItemPublisher
+     * @param Sender $sender
+     */
     public function __construct(
         Synchronization $synchronizationHelper,
+        Logger $loggerHelper,
         Tracking $trackingHelper,
         Http $request,
         DataItemPublisher $dataItemPublisher,
         Sender $sender
     ) {
         $this->synchronizationHelper = $synchronizationHelper;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
         $this->request = $request;
         $this->dataItemPublisher = $dataItemPublisher;
         $this->sender = $sender;
     }
 
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
+        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
             return;
         }
 
@@ -78,7 +100,7 @@ class CustomerSaveAfter implements ObserverInterface
             $customer = $observer->getCustomer();
             $storeId = $customer->getStoreId();
 
-            if ($this->trackingHelper->isQueueAvailable(self::EVENT, $storeId)) {
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
                 $this->dataItemPublisher->publish(
                     Sender::MODEL,
                     (int) $customer->getEntityId(),
@@ -89,7 +111,7 @@ class CustomerSaveAfter implements ObserverInterface
             }
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {
-                $this->trackingHelper->getLogger()->error($e);
+                $this->loggerHelper->getLogger()->error($e);
             }
         }
     }

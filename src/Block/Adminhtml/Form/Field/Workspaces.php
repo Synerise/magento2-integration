@@ -6,6 +6,7 @@ use Magento\Backend\Block\Template\Context;
 use Magento\Config\Block\System\Config\Form\Field;
 use Magento\Framework\Data\Form\Element\AbstractElement;
 use Magento\Store\Model\ResourceModel\Website\CollectionFactory as WebsiteCollectionFactory;
+use Synerise\Integration\Model\ResourceModel\Workspace\Collection;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory as WorkspaceCollectionFactory;
 
 class Workspaces extends Field
@@ -39,13 +40,21 @@ class Workspaces extends Field
         $this->setTemplate('Synerise_Integration::form/field/workspaces.phtml');
     }
 
+    /**
+     * @inheritDoc
+     */
     protected function _getElementHtml(AbstractElement $element)
     {
         $this->setElement($element);
         return $this->_toHtml();
     }
 
-    public function getRows()
+    /**
+     * Get table rows with website data.
+     *
+     * @return array
+     */
+    public function getRows(): array
     {
         $values = (array) $this->getElement()->getValue();
 
@@ -62,7 +71,12 @@ class Workspaces extends Field
         return $rows;
     }
 
-    public function getWorkspaces()
+    /**
+     * Get workspaces collection.
+     *
+     * @return Collection
+     */
+    public function getWorkspaces(): Collection
     {
         return $this->workspaceCollectionFactory->create();
     }

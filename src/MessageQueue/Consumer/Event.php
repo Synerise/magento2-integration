@@ -18,7 +18,9 @@ use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Communication\Config;
+use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\Model\MessageQueue\Retry;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as ProductSender;
@@ -33,7 +35,7 @@ use Zend_Db_Adapter_Exception;
 
 class Event
 {
-    const TOPIC_NAME = 'synerise.queue.events';
+    public const TOPIC_NAME = 'synerise.queue.events';
 
     /**
      * @var LoggerInterface
@@ -80,6 +82,17 @@ class Event
      */
     private $dataItemPublisher;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param ObjectManagerInterface $objectManager
+     * @param MessageEncoder $messageEncoder
+     * @param Json $json
+     * @param EventSender $eventSender
+     * @param CustomerSender $customerSender
+     * @param ProductSender $productSender
+     * @param SubscriberSender $subscriberSender
+     * @param DataItemPublisher $dataItemPublisher
+     */
     public function __construct(
         LoggerInterface $logger,
         ObjectManagerInterface $objectManager,
@@ -103,6 +116,8 @@ class Event
     }
 
     /**
+     * Process
+     *
      * @param string $event
      * @return void
      */
@@ -122,7 +137,11 @@ class Event
             $isRetryable = ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() == 403 || $e->getCode() >= 500);
         } catch (Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
-            $isRetryable = ($e instanceof LockWaitException || $e instanceof DeadlockException || $e instanceof ConnectionException);
+            $isRetryable = (
+                $e instanceof LockWaitException ||
+                $e instanceof DeadlockException ||
+                $e instanceof ConnectionException
+            );
         } catch (NoSuchEntityException $e) {
             $this->logger->critical($e->getMessage());
             $isRetryable = ($e instanceof TemporaryStateExceptionInterface);
@@ -139,9 +158,12 @@ class Event
     }
 
     /**
+     * Send event
+     *
+     * @param array $event
      * @throws ApiException
-     * @throws ValidatorException
      * @throws CatalogApiException
+     * @throws ValidatorException
      */
     private function execute(array $event)
     {
@@ -151,6 +173,9 @@ class Event
                 break;
             case NewsletterSubscriberDeleteAfter::EVENT:
                 $this->subscriberSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
+                break;
+            case UuidManagement::EVENT:
+                $this->customerSender->batchAddOrUpdateClients($event['event_payload'], $event['store_id']);
                 break;
             case OrderPlace::CUSTOMER_UPDATE:
             case ProductReview::CUSTOMER_UPDATE:
@@ -166,15 +191,17 @@ class Event
     }
 
     /**
+     * Add message to retry table
+     *
      * @param string $event
      * @return bool
      */
     protected function scheduleRetry(string $event): bool
     {
         try {
-            $topicName = self::getTopicName();
+            $topicName = self::TOPIC_NAME;
 
-            $retry = $this->objectManager->create('Synerise\Integration\Model\MessageQueue\Retry');
+            $retry = $this->objectManager->create(Retry::class);
             $retry
                 ->setBody($this->messageEncoder->encode($topicName, $event))
                 ->setTopicName($topicName)
@@ -228,6 +255,8 @@ class Event
     }
 
     /**
+     * Publish message as data item instead of processing
+     *
      * @param string $model
      * @param int|null $entityId
      * @param int|null $storeId
@@ -242,13 +271,5 @@ class Event
                 $storeId
             );
         }
-    }
-
-    /**
-     * @return string
-     */
-    protected static function getTopicName(): string
-    {
-        return self::TOPIC_NAME;
     }
 }

@@ -2,9 +2,11 @@
 
 namespace Synerise\Integration\Model\Config\Source\MessageQueue;
 
-class Events implements \Magento\Framework\Data\OptionSourceInterface
+use Magento\Framework\Data\OptionSourceInterface;
+
+class Events implements OptionSourceInterface
 {
-    const OPTIONS = [
+    public const OPTIONS = [
         'customer_register_success'                 => 'Customer registration',
         'customer_login'                            => 'Customer login',
         'customer_logout'                           => 'Customer logout',
@@ -25,6 +27,9 @@ class Events implements \Magento\Framework\Data\OptionSourceInterface
         'newsletter_subscriber_save_after'          => 'Subscription updated'
     ];
 
+    /**
+     * @inheritDoc
+     */
     public function toOptionArray(): array
     {
         $options = [];

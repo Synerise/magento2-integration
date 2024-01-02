@@ -10,12 +10,12 @@ use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Model\Config\Backend\Workspace;
 
 class ConfigMigration implements DataPatchInterface
 {
-    const CONFIG_PATHS_TO_DELETE = [
+    protected const CONFIG_PATHS_TO_DELETE = [
         'synerise/product/cron_enabled',
         'synerise/customer/cron_enabled',
         'synerise/order/cron_enabled',
@@ -61,22 +61,38 @@ class ConfigMigration implements DataPatchInterface
         $this->configCollectionFactory = $configCollectionFactory;
     }
 
+    /**
+     * Apply
+     *
+     * @return void
+     */
     public function apply()
     {
         $this->removeUnusedEavAttributes();
         $this->removeLegacyConfigAndSetupEnabledModels();
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getAliases()
     {
         return [];
     }
 
+    /**
+     * @inheritDoc
+     */
     public static function getDependencies()
     {
         return [];
     }
 
+    /**
+     * Remove EAV attributes
+     *
+     * @return void
+     */
     protected function removeUnusedEavAttributes()
     {
         $eavSetup = $this->eavSetupFactory->create(['setup' => $this->moduleDataSetup]);
@@ -88,6 +104,11 @@ class ConfigMigration implements DataPatchInterface
         }
     }
 
+    /**
+     * Remove legacy config and enable all models by default
+     *
+     * @return void
+     */
     protected function removeLegacyConfigAndSetupEnabledModels()
     {
         $configToDelete = [];
@@ -105,14 +126,15 @@ class ConfigMigration implements DataPatchInterface
                         $enabledModels[] = $pathParts[1];
                     }
                 }
-            } elseif ($config->getPath() == Api::XML_PATH_API_KEY && $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
+            } elseif ($config->getPath() == Workspace::XML_PATH_API_KEY &&
+                $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
                 $configToDelete[] = $config;
             }
         }
 
         if (!empty($enabledModels)) {
             $this->configWriter->save(
-                AbstractSynchronization::XML_PATH_SYNCHRONIZATION_MODELS,
+                Synchronization::XML_PATH_SYNCHRONIZATION_MODELS,
                 implode(',', $enabledModels)
             );
         }
@@ -125,6 +147,8 @@ class ConfigMigration implements DataPatchInterface
     }
 
     /**
+     * Delete config
+     *
      * @param ValueInterface $config
      */
     protected function deleteConfig(ValueInterface $config)

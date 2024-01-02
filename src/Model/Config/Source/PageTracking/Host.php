@@ -2,9 +2,14 @@
 
 namespace Synerise\Integration\Model\Config\Source\PageTracking;
 
-class Host implements \Magento\Framework\Data\OptionSourceInterface
+use Magento\Framework\Data\OptionSourceInterface;
+
+class Host implements OptionSourceInterface
 {
-    public function toOptionArray()
+    /**
+     * @inheritDoc
+     */
+    public function toOptionArray(): array
     {
         return [
             [

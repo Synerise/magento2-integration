@@ -7,13 +7,13 @@ use Magento\Framework\Data\OptionSourceInterface;
 
 class Attributes implements OptionSourceInterface
 {
-    const REQUIRED = [
+    public const REQUIRED = [
         'sku',
         'price',
         'image',
         'visibility'
     ];
-    const XML_PATH_PRODUCT_ATTRIBUTES = 'synerise/product/attributes';
+    public const XML_PATH_PRODUCT_ATTRIBUTES = 'synerise/product/attributes';
 
     /** @var CollectionFactory */
     private $collectionFactory;

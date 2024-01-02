@@ -1,12 +1,13 @@
 <?php
 namespace Synerise\Integration\Block\Adminhtml\Module;
 
+use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 use Magento\Directory\Helper\Data as DirectoryHelper;
 use Magento\Framework\Json\Helper\Data as JsonHelper;
 use Synerise\Integration\Helper\Version as VersionHelper;
 
-class Version extends \Magento\Backend\Block\Template
+class Version extends Template
 {
 
     /**
@@ -14,6 +15,13 @@ class Version extends \Magento\Backend\Block\Template
      */
     private $versionHelper;
 
+    /**
+     * @param Context $context
+     * @param VersionHelper $versionHelper
+     * @param array $data
+     * @param JsonHelper|null $jsonHelper
+     * @param DirectoryHelper|null $directoryHelper
+     */
     public function __construct(
         Context $context,
         VersionHelper $versionHelper,
@@ -27,10 +35,14 @@ class Version extends \Magento\Backend\Block\Template
     }
 
     /**
+     * Get current module version.
+     *
      * @return string
      */
     public function getVersion(): string
     {
-        return $this->versionHelper->getMagentoModuleVersion('Synerise_Integration');
+        return $this->_escaper->escapeHtmlAttr(
+            $this->versionHelper->getMagentoModuleVersion('Synerise_Integration')
+        );
     }
 }

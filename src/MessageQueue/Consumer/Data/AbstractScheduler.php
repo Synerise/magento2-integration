@@ -2,7 +2,12 @@
 
 namespace Synerise\Integration\MessageQueue\Consumer\Data;
 
-use Magento\Framework\Bulk\OperationInterface;
+use Exception;
+use Magento\AsynchronousOperations\Api\Data\OperationInterface as AsynchronousOperationInterface;
+use Magento\Framework\Bulk\OperationInterface as BulkOperationInterface;
+use Magento\Framework\DB\Adapter\ConnectionException;
+use Magento\Framework\DB\Adapter\DeadlockException;
+use Magento\Framework\DB\Adapter\LockWaitException;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -19,6 +24,7 @@ use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product;
+use Zend_Db_Adapter_Exception;
 
 abstract class AbstractScheduler
 {
@@ -57,6 +63,15 @@ abstract class AbstractScheduler
      */
     protected $synchronization;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param SerializerInterface $serializer
+     * @param EntityManager $entityManager
+     * @param CollectionFactoryProvider $collectionFactoryProvider
+     * @param Filter $filter
+     * @param Publisher $publisher
+     * @param Synchronization $synchronization
+     */
     public function __construct(
         LoggerInterface $logger,
         SerializerInterface $serializer,
@@ -78,12 +93,11 @@ abstract class AbstractScheduler
     /**
      * Process
      *
-     * @param \Magento\AsynchronousOperations\Api\Data\OperationInterface $operation
-     * @throws \Exception
-     *
+     * @param AsynchronousOperationInterface $operation
      * @return void
+     * @throws Exception
      */
-    public function process(\Magento\AsynchronousOperations\Api\Data\OperationInterface $operation)
+    public function process(AsynchronousOperationInterface $operation)
     {
         try {
             $data = $this->serializer->unserialize($operation->getSerializedData());
@@ -93,17 +107,16 @@ abstract class AbstractScheduler
                 $data['store_id']
             ));
             $this->execute($data);
-        } catch (\Zend_Db_Adapter_Exception $e) {
+        } catch (Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
-            if ($e instanceof \Magento\Framework\DB\Adapter\LockWaitException
-                || $e instanceof \Magento\Framework\DB\Adapter\DeadlockException
-                || $e instanceof \Magento\Framework\DB\Adapter\ConnectionException
-            ) {
-                $status = OperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
+            if ($e instanceof LockWaitException ||
+                $e instanceof DeadlockException ||
+                $e instanceof ConnectionException) {
+                $status = BulkOperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
                 $errorCode = $e->getCode();
                 $message = $e->getMessage();
             } else {
-                $status = OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
+                $status = BulkOperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
                 $errorCode = $e->getCode();
                 $message = __(
                     'Sorry, something went wrong. Please see log for details.'
@@ -112,23 +125,23 @@ abstract class AbstractScheduler
         } catch (NoSuchEntityException $e) {
             $this->logger->critical($e->getMessage());
             $status = ($e instanceof TemporaryStateExceptionInterface)
-                ? OperationInterface::STATUS_TYPE_RETRIABLY_FAILED
-                : OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
+                ? BulkOperationInterface::STATUS_TYPE_RETRIABLY_FAILED
+                : BulkOperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
             $errorCode = $e->getCode();
             $message = $e->getMessage();
         } catch (LocalizedException $e) {
             $this->logger->critical($e->getMessage());
-            $status = OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
+            $status = BulkOperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
             $errorCode = $e->getCode();
             $message = $e->getMessage();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->critical($e->getMessage());
-            $status = OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
+            $status = BulkOperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED;
             $errorCode = $e->getCode();
             $message = __('Sorry, something went wrong. Please see log for details.');
         }
 
-        $operation->setStatus($status ?? OperationInterface::STATUS_TYPE_COMPLETE)
+        $operation->setStatus($status ?? BulkOperationInterface::STATUS_TYPE_COMPLETE)
             ->setErrorCode($errorCode ?? null)
             ->setResultMessage($message ?? null);
 
@@ -136,11 +149,13 @@ abstract class AbstractScheduler
     }
 
     /**
+     * Schedule full synchronization by message data
+     *
      * @param array $data
      * @return void
      * @throws NoSuchEntityException
      * @throws LocalizedException
-     * @throws \Exception
+     * @throws Exception
      */
     protected function execute(array $data)
     {
@@ -173,12 +188,15 @@ abstract class AbstractScheduler
                 $data['model'],
                 $ids,
                 $data['store_id'],
-                $data['model'] == Product::MODEL ? $this->synchronization->getWebsiteIdByStoreId($data['store_id']) : null
+                $data['model'] == Product::MODEL ?
+                    $this->synchronization->getWebsiteIdByStoreId($data['store_id']) : null
             );
         }
     }
 
     /**
+     * Purge messages from queue
+     *
      * @param string $topicName
      * @return void
      */

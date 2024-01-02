@@ -20,8 +20,10 @@ use Synerise\Integration\Observer\WishlistRemoveProduct;
 class Event extends AbstractSender
 {
     /**
+     * Send
+     *
      * @param string $event_name
-     * @param $payload
+     * @param mixed $payload
      * @param int $storeId
      * @return void
      * @throws ApiException
@@ -72,7 +74,9 @@ class Event extends AbstractSender
                 };
                 break;
             default:
-                throw new InvalidArgumentException('Unexpected event: '. json_encode([$event_name, $payload, $storeId]));
+                throw new InvalidArgumentException(
+                    'Unexpected event: '. json_encode([$event_name, $payload, $storeId])
+                );
         }
 
         try {
@@ -84,6 +88,8 @@ class Event extends AbstractSender
     }
 
     /**
+     * Get Default API instance
+     *
      * @param int $storeId
      * @return DefaultApi
      * @throws ApiException

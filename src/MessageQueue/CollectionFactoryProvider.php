@@ -10,7 +10,7 @@ use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollection
 
 class CollectionFactoryProvider
 {
-    const COLLECTION_FACTORY_CLASSES = [
+    protected const COLLECTION_FACTORY_CLASSES = [
         'customer' => CustomerCollectionFactory::class,
         'order' => OrderCollectionFactory::class,
         'product' => ProductCollectionFactory::class,

@@ -7,8 +7,19 @@ use Magento\Framework\Phrase;
 
 class All extends AbstractBulk
 {
-    const TYPE = 'all';
+    public const TYPE = 'all';
 
+    /**
+     * Consume message & Schedule full synchronization
+     *
+     * @param int $userId
+     * @param string $model
+     * @param array $entityIds
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @return void
+     * @throws LocalizedException
+     */
     public function schedule(
         int $userId,
         string $model,
@@ -45,8 +56,9 @@ class All extends AbstractBulk
         }
     }
 
-
     /**
+     * Get bulk description
+     *
      * @param string $model
      * @param int $storeId
      * @return Phrase

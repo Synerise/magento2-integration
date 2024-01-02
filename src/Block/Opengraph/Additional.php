@@ -3,41 +3,32 @@
 namespace Synerise\Integration\Block\Opengraph;
 
 use Magento\Catalog\Helper\Data;
-use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Pricing\Price\RegularPrice;
+use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
-use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Helper\Category;
+use Synerise\Integration\Helper\Product\Category;
 
-class Additional extends \Magento\Framework\View\Element\Template
+class Additional extends Template
 {
-    const XML_PATH_PAGE_TRACKING_ENABLED = 'synerise/page_tracking/enabled';
-
-    const XML_PATH_PAGE_TRACKING_OPENGRAPH = 'synerise/page_tracking/opengraph';
-
-    /**
-     * @var Data
-     */
-    protected $catalogHelper;
-
-    /**
-     * @var ScopeConfigInterface
-     */
-    private $scopeConfig;
-
     /**
      * @var Category
      */
     private $categoryHelper;
 
+    /**
+     * @param Context $context
+     * @param Data $catalogHelper
+     * @param Category $categoryHelper
+     * @param array $data
+     */
     public function __construct(
         Context $context,
         Data $catalogHelper,
-        ScopeConfigInterface $scopeConfig,
         Category $categoryHelper,
         array $data = []
     ) {
-        $this->catalogHelper = $catalogHelper;
-        $this->scopeConfig = $scopeConfig;
+        $this->product = $catalogHelper->getProduct();
         $this->categoryHelper = $categoryHelper;
 
         parent::__construct($context, $data);
@@ -46,38 +37,53 @@ class Additional extends \Magento\Framework\View\Element\Template
     /**
      * Retrieve current product model
      *
-     * @return \Magento\Catalog\Model\Product
+     * @return Product|null
      */
-    public function getProduct()
+    protected function getCurrentProduct(): ?Product
     {
-        return $this->catalogHelper->getProduct();
-    }
-
-    public function getFormattedCategoryPath($categoryId)
-    {
-        return $this->categoryHelper->getFormattedCategoryPath($categoryId);
+        return $this->product;
     }
 
     /**
-     * Is the page tracking enabled.
+     * Get current product price amount
      *
-     * @return bool
+     * @return string|null
      */
-    public function isPageTrackingEnabled()
+    public function getOriginalPriceAmount(): ?string
     {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_PAGE_TRACKING_ENABLED,
-            ScopeInterface::SCOPE_STORE
-        );
+        $product = $this->getCurrentProduct();
+        return (string) $product ? $product
+            ->getPriceInfo()
+            ->getPrice(RegularPrice::PRICE_CODE)
+            ->getAmount() : null;
     }
 
     /**
-     * @return bool
+     * Get current product categories array in open graph format
+     *
+     * @return array
      */
-    public function isOpengraphEnabled()
+    public function getFormattedCategories(): array
     {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_PAGE_TRACKING_OPENGRAPH
-        );
+        $categories = [];
+        $product = $this->getCurrentProduct();
+        if ($product) {
+            foreach ($product->getCategoryIds() as $categoryId) {
+                $categories[] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
+            }
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Get current product sku
+     *
+     * @return string|null
+     */
+    public function getSku(): ?string
+    {
+        $product = $this->getCurrentProduct();
+        return $product ? $product->getSku() : null;
     }
 }

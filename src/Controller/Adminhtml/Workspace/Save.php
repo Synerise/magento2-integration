@@ -14,12 +14,12 @@ use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
-class Save extends \Magento\Backend\App\Action
+class Save extends Action
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
      * @var ConfigFactory
@@ -60,8 +60,8 @@ class Save extends \Magento\Backend\App\Action
         $resultRedirect = $this->resultRedirectFactory->create();
 
         if ($data) {
-            /** @var \Synerise\Integration\Model\Workspace $model */
-            $model = $this->_objectManager->create('Synerise\Integration\Model\Workspace');
+            /** @var Workspace $model */
+            $model = $this->_objectManager->create(Workspace::class);
             $id = $this->getRequest()->getParam('id');
             if ($id) {
                 $model->load($id);
@@ -99,7 +99,7 @@ class Save extends \Magento\Backend\App\Action
                     ->save();
 
                 $this->messageManager->addSuccess(__('You saved this Workspace.'));
-                $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
+                $this->_objectManager->get(\Magento\Backend\Model\Session::class)->setFormData(false);
                 if ($this->getRequest()->getParam('back')) {
                     return $resultRedirect->setPath('*/*/edit', ['id' => $model->getId(), '_current' => true]);
                 }
@@ -119,6 +119,8 @@ class Save extends \Magento\Backend\App\Action
     }
 
     /**
+     * Check permissions
+     *
      * @param string $apiKey
      * @param string $scope
      * @param int|null $scopeId
@@ -136,6 +138,8 @@ class Save extends \Magento\Backend\App\Action
     }
 
     /**
+     * Create API key instance
+     *
      * @param string $apiKey
      * @param string $scope
      * @param int|null $scopeId

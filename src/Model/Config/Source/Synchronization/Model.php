@@ -4,14 +4,17 @@ namespace Synerise\Integration\Model\Config\Source\Synchronization;
 
 class Model implements \Magento\Framework\Data\OptionSourceInterface
 {
-    const OPTIONS = [
+    public const OPTIONS = [
         'product'       => 'Products',
         'order'         => 'Orders',
         'customer'      => 'Customers',
         'subscriber'    => 'Subscribers'
     ];
 
-    public function toOptionArray()
+    /**
+     * @inheritDoc
+     */
+    public function toOptionArray(): array
     {
         $options = [];
         foreach (self::OPTIONS as $value => $label) {

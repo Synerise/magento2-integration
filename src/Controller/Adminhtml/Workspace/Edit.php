@@ -11,7 +11,7 @@ class Edit extends Action
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
      * @var PageFactory

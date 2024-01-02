@@ -4,6 +4,7 @@ namespace Synerise\Integration\MessageQueue\Consumer\Data;
 
 use Exception;
 use Synerise\Integration\Communication\Config;
+use Synerise\Integration\Model\MessageQueue\Retry;
 use Zend_Db_Adapter_Exception;
 use GuzzleHttp\Exception\TransferException;
 use Magento\Framework\DB\Adapter\ConnectionException;
@@ -55,6 +56,14 @@ class Item
      */
     protected $filter;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param ObjectManagerInterface $objectManager
+     * @param MessageEncoder $messageEncoder
+     * @param CollectionFactoryProvider $collectionFactoryProvider
+     * @param SenderFactory $senderFactory
+     * @param Filter $filter
+     */
     public function __construct(
         LoggerInterface $logger,
         ObjectManagerInterface $objectManager,
@@ -91,7 +100,11 @@ class Item
             $this->logger->critical($e->getMessage());
         } catch (Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
-            $isRetryable = ($e instanceof LockWaitException || $e instanceof DeadlockException || $e instanceof ConnectionException);
+            $isRetryable = (
+                $e instanceof LockWaitException ||
+                $e instanceof DeadlockException ||
+                $e instanceof ConnectionException
+            );
         } catch (NoSuchEntityException $e) {
             $this->logger->critical($e->getMessage());
             $isRetryable = ($e instanceof TemporaryStateExceptionInterface);
@@ -109,6 +122,8 @@ class Item
     }
 
     /**
+     * Execute item synchronization
+     *
      * @param ItemMessage $item
      * @return void
      * @throws ApiException
@@ -135,6 +150,8 @@ class Item
     }
 
     /**
+     * Add message to retry table
+     *
      * @param ItemMessage $item
      * @return bool
      */
@@ -143,7 +160,7 @@ class Item
         try {
             $topicName = Publisher::TOPIC_NAME;
 
-            $retry = $this->objectManager->create('Synerise\Integration\Model\MessageQueue\Retry');
+            $retry = $this->objectManager->create(Retry::class);
             $retry
                 ->setBody($this->messageEncoder->encode($topicName, $item))
                 ->setTopicName($topicName)

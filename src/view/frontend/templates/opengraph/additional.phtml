@@ -1,26 +1,10 @@
 <?php
-/** @var $block \Synerise\Integration\Block\Opengraph\Additional */
-
-if ($block->isPageTrackingEnabled() && $block->isOpengraphEnabled()):
-    $product = $block->getProduct();
-    $priceAmount = $product
-        ->getPriceInfo()
-        ->getPrice(\Magento\Catalog\Pricing\Price\RegularPrice::PRICE_CODE)
-        ->getAmount();
-
-    if ($priceAmount):?>
-        <meta property="product:original_price:amount" content="<?= $block->escapeHtmlAttr($priceAmount) ?>"/>
-        <?= $block->getChildHtml('meta.currency') ?>
-        <meta property="product:retailer_part_no" content="<?php echo $product->getSku(); ?>"/>
-        <?php
-    endif;
-
-    $categoryIds = $product->getCategoryIds();
-    if ($categoryIds):
-        foreach ($categoryIds as $categoryId): ?>
-            <meta property="product:category" content="<?= $block->getFormattedCategoryPath($categoryId); ?>"/>
-        <?php   endforeach;
-    endif;
-
-endif;
+// phpcs:ignoreFile
+/** @var $block Synerise\Integration\Block\Opengraph\Additional */
 ?>
+    <meta property="product:original_price:amount" content="<?= $block->getOriginalPriceAmount(); ?>"/>
+    <?= $block->getChildHtml('meta.currency') ?>
+    <meta property="product:retailer_part_no" content="<?= $block->getSku(); ?>"/>
+<?php foreach ($block->getFormattedCategories() as $category): ?>
+    <meta property="product:category" content="<?= $category; ?>"/>
+<?php endforeach;

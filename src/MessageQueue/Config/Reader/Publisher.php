@@ -1,11 +1,11 @@
 <?php
 namespace Synerise\Integration\MessageQueue\Config\Reader;
 
-use Magento\Framework\MessageQueue\ConsumerInterface;
+use Magento\Framework\Config\ReaderInterface;
 use Magento\Framework\MessageQueue\DefaultValueProvider;
 use Synerise\Integration\Communication\Config;
 
-class Publisher implements \Magento\Framework\Config\ReaderInterface
+class Publisher implements ReaderInterface
 {
     /**
      * @var DefaultValueProvider
@@ -17,6 +17,10 @@ class Publisher implements \Magento\Framework\Config\ReaderInterface
      */
     private $config;
 
+    /**
+     * @param DefaultValueProvider $defaultValueProvider
+     * @param Config $config
+     */
     public function __construct(
         DefaultValueProvider $defaultValueProvider,
         Config $config
@@ -25,6 +29,9 @@ class Publisher implements \Magento\Framework\Config\ReaderInterface
         $this->config = $config;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function read($scope = null)
     {
         $result = [];

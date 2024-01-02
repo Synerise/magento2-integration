@@ -25,7 +25,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
 
     /**
      * @var CollectionFactory
@@ -75,8 +75,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * Workspace delete action
      *
      * @return Redirect
-     * @throws NotFoundException
-     * @throws LocalizedException
+     * @throws NotFoundException|LocalizedException
      */
     public function execute(): Redirect
     {
@@ -105,11 +104,12 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
-     * @param $workspace
-     * @throws ValidatorException
-     * @throws ApiException
+     * Update
+     *
+     * @param Workspace $workspace
+     * @throws ApiException|ValidatorException
      */
-    protected function update($workspace)
+    protected function update(Workspace $workspace)
     {
         $permissionCheck = $this->checkPermissions($workspace->getApiKey());
         $missingPermissions = [];
@@ -127,12 +127,13 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Check permissions
+     *
      * @param string $apiKey
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyPermissionCheckResponse
-     * @throws ApiException
-     * @throws ValidatorException
+     * @throws ApiException|ValidatorException
      */
     protected function checkPermissions(
         string $apiKey,
@@ -144,12 +145,13 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Create API key instance
+     *
      * @param string $apiKey
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyControllerApi
-     * @throws ApiException
-     * @throws ValidatorException
+     * @throws ApiException|ValidatorException
      */
     protected function createApiKeyInstance(
         string $apiKey,

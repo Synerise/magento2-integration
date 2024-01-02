@@ -6,7 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Synerise\Integration\Model\AbstractSynchronization;
+use Synerise\Integration\Helper\Synchronization;
 
 class DefaultStores implements DataPatchInterface
 {
@@ -25,6 +25,11 @@ class DefaultStores implements DataPatchInterface
      */
     private $configWriter;
 
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param ScopeConfigInterface $scopeConfig
+     * @param WriterInterface $configWriter
+     */
     public function __construct(
         StoreManagerInterface $storeManager,
         ScopeConfigInterface $scopeConfig,
@@ -35,22 +40,33 @@ class DefaultStores implements DataPatchInterface
         $this->configWriter = $configWriter;
     }
 
+    /**
+     * Apply
+     *
+     * @return void
+     */
     public function apply()
     {
-        if (!$this->scopeConfig->getValue(AbstractSynchronization::XML_PATH_SYNCHRONIZATION_STORES)) {
+        if (!$this->scopeConfig->getValue(Synchronization::XML_PATH_SYNCHRONIZATION_STORES)) {
             $stores = $this->storeManager->getStores();
             $this->configWriter->save(
-                AbstractSynchronization::XML_PATH_SYNCHRONIZATION_STORES,
+                Synchronization::XML_PATH_SYNCHRONIZATION_STORES,
                 implode(',', array_keys($stores))
             );
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getAliases()
     {
         return [];
     }
 
+    /**
+     * @inheritDoc
+     */
     public static function getDependencies()
     {
         return [];

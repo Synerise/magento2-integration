@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
+use Exception;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -10,23 +11,24 @@ use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order as OrderModel;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
-use Synerise\Integration\Helper\Category;
-use Synerise\Integration\Helper\Image;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Product\Category;
+use Synerise\Integration\Helper\Product\Image;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Helper\Tracking\UuidGenerator;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Order extends AbstractSender implements SenderInterface
 {
-    const MODEL = 'order';
-    const ENTITY_ID = 'entity_id';
+    public const MODEL = 'order';
 
-    const MAX_PAGE_SIZE = 100;
+    public const ENTITY_ID = 'entity_id';
 
     /**
      * @var SearchCriteriaBuilder
@@ -39,11 +41,6 @@ class Order extends AbstractSender implements SenderInterface
     protected $resource;
 
     /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * @var RuleRepositoryInterface
      */
     protected $ruleRepository;
@@ -52,6 +49,11 @@ class Order extends AbstractSender implements SenderInterface
      * @var Category
      */
     protected $categoryHelper;
+
+    /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
 
     /**
      * @var Image
@@ -63,36 +65,58 @@ class Order extends AbstractSender implements SenderInterface
      */
     protected $trackingHelper;
 
+    /**
+     * @var UuidGenerator
+     */
+    protected $uuidGenerator;
+
+    /**
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param ResourceConnection $resource
+     * @param RuleRepositoryInterface $ruleRepository
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
+     * @param Category $categoryHelper
+     * @param Cookie $cookieHelper
+     * @param Image $imageHelper
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param UuidGenerator $uuidGenerator
+     */
     public function __construct(
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ResourceConnection $resource,
         RuleRepositoryInterface $ruleRepository,
-        LoggerInterface $logger,
         ConfigFactory $configFactory,
-        InstanceFactory $apiInstanceFactory,
+        InstanceFactory  $apiInstanceFactory,
         Category $categoryHelper,
-        Image $imageHelper,
-        Tracking $trackingHelper
+        Cookie $cookieHelper,
+        Image  $imageHelper,
+        Logger $loggerHelper,
+        Tracking  $trackingHelper,
+        UuidGenerator  $uuidGenerator
     ) {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->resource = $resource;
         $this->ruleRepository = $ruleRepository;
-        $this->logger = $logger;
         $this->categoryHelper = $categoryHelper;
+        $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->uuidGenerator = $uuidGenerator;
 
-        parent::__construct($logger, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
     }
 
     /**
+     * Send items
+     *
      * @param Collection|OrderModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return void
      * @throws ApiException
      * @throws ValidatorException
-     * @throws NoSuchEntityException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
@@ -102,9 +126,9 @@ class Order extends AbstractSender implements SenderInterface
             $ids[] = $order->getEntityId();
 
             $email = $order->getCustomerEmail();
-            $uuid = $email ? $this->trackingHelper->generateUuidByEmail($email) : null;
+            $uuid = $email ? $this->uuidGenerator->generateByEmail($email) : null;
 
-            $params = $this->preapreOrderParams($order, $uuid);
+            $params = $this->prepareOrderParams($order, $uuid);
             if ($params) {
                 $createATransactionRequest[] = new CreateatransactionRequest($params);
             }
@@ -123,7 +147,9 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $payload
+     * Batch add or update transactions
+     *
+     * @param mixed $payload
      * @param int $storeId
      * @throws ApiException
      * @throws ValidatorException
@@ -140,7 +166,7 @@ class Order extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->logger->warning('Request partially accepted', ['response' => $body]);
+                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response' => $body]);
             }
         } catch (ApiException $e) {
             $this->logApiException($e);
@@ -149,6 +175,8 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Get default API instance
+     *
      * @param int $storeId
      * @return DefaultApi
      * @throws ApiException
@@ -160,13 +188,16 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param \Magento\Sales\Model\Order $order
-     * @param $uuid
+     * Prepare order params
+     *
+     * @param OrderModel $order
+     * @param string|null $uuid
      * @return array
-     * @throws NoSuchEntityException
+     * @throws Exception
      */
-    public function preapreOrderParams(\Magento\Sales\Model\Order $order, $uuid = null)
+    public function prepareOrderParams(OrderModel $order, ?string $uuid = null): array
     {
+        $context = $this->trackingHelper->getContext();
         $shippingAddress = $order->getShippingAddress();
 
         $customerData = [
@@ -189,7 +220,7 @@ class Order extends AbstractSender implements SenderInterface
             }
 
             if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
-                $this->logger->warning(
+                $this->loggerHelper->getLogger()->warning(
                     sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
                 );
 
@@ -199,8 +230,7 @@ class Order extends AbstractSender implements SenderInterface
             $products[] = $this->prepareProductParamsFromOrderItem(
                 $item,
                 $order->getOrderCurrencyCode(),
-                $order->getStoreId(),
-                $this->trackingHelper->shouldIncludeParams($order->getStoreId()) ? $this->trackingHelper->getCookieParams() : null
+                $order->getStoreId()
             );
         }
 
@@ -217,9 +247,9 @@ class Order extends AbstractSender implements SenderInterface
                     'method' => $order->getShippingMethod(),
                     'amount' => (float) $order->getShippingAmount()
                 ],
-                'applicationName' => $this->trackingHelper->getApplicationName(),
+                'applicationName' => $context->getApplicationName(),
                 'storeId' => $order->getStoreId(),
-                'storeUrl' => $this->trackingHelper->getStoreBaseUrl($order->getStoreId())
+                'storeUrl' => $context->getStoreBaseUrl($order->getStoreId())
             ],
             'order_id' => $order->getRealOrderId(),
             "payment_info" => [
@@ -227,8 +257,8 @@ class Order extends AbstractSender implements SenderInterface
             ],
             "products" => $products,
             'recorded_at' => $order->getCreatedAt() ?
-                $this->trackingHelper->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
-                $this->trackingHelper->getCurrentTime(),
+                $context->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
+                $context->getCurrentTime(),
             'revenue' => [
                 "amount" => (float) $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
@@ -237,13 +267,15 @@ class Order extends AbstractSender implements SenderInterface
                 "amount" => (float) $order->getSubTotal(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
-            'source' => $this->trackingHelper->getSource(),
+            'source' => $context->getSource(),
             'event_salt' => $order->getRealOrderId()
         ];
 
-        $snrs_params = $this->trackingHelper->getCookieParams();
-        if ($this->trackingHelper->shouldIncludeParams($order->getStoreId()) && $snrs_params) {
-            $params['metadata']['snrs_params'] = $snrs_params;
+        if ($this->cookieHelper->shouldIncludeSnrsParams($order->getStoreId())) {
+            $snrs_params = $this->cookieHelper->getSnrsParams();
+            if ($snrs_params) {
+                $params['snrs_params'] = $snrs_params;
+            }
         }
 
         $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
@@ -255,15 +287,18 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Prepare product params from order item
+     *
      * @param OrderItemInterface $item
      * @param string $currency
      * @param int|null $storeId
-     * @param string[]|null $snrs_params
      * @return array
-     * @throws NoSuchEntityException
      */
-    public function prepareProductParamsFromOrderItem($item, $currency, $storeId = null, $snrs_params = null)
-    {
+    public function prepareProductParamsFromOrderItem(
+        OrderItemInterface $item,
+        string $currency,
+        ?int $storeId = null
+    ): array {
         $product = $item->getProduct();
 
         $regularPrice = [
@@ -291,13 +326,16 @@ class Order extends AbstractSender implements SenderInterface
             "quantity" => $item->getQtyOrdered()
         ];
 
-        if ($snrs_params) {
-            $params['snrs_params'] = $snrs_params;
+        if ($this->cookieHelper->shouldIncludeSnrsParams($storeId)) {
+            $snrs_params = $this->cookieHelper->getSnrsParams();
+            if ($snrs_params) {
+                $params['snrs_params'] = $snrs_params;
+            }
         }
 
         if ($storeId) {
             $params["storeId"] = $storeId;
-            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl($storeId);
+            $params["storeUrl"] = $this->trackingHelper->getContext()->getStoreBaseUrl($storeId);
         }
 
         $itemRules = $this->prepareRulesList((string) $item->getAppliedRuleIds());
@@ -329,6 +367,8 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Prepare rule list
+     *
      * @param string $appliedRuleIds
      * @return array
      */
@@ -346,25 +386,24 @@ class Order extends AbstractSender implements SenderInterface
                 'in'
             )->create();
 
-            /**
-             * @var \Magento\SalesRule\Api\Data\RuleInterface[] $rulesList
-             */
             $rulesList = $this->ruleRepository->getList($searchCriteria)->getItems();
             foreach ($rulesList as $rule) {
                 $rules[] = $rule->getName();
             }
-        } catch (\Exception $e) {
-            $this->logger->error($e);
+        } catch (Exception $e) {
+            $this->loggerHelper->getLogger()->error($e);
         }
 
         return $rules;
     }
 
     /**
-     * @param $orderId
+     * Check if order is sent
+     *
+     * @param int $orderId
      * @return string
      */
-    public function isSent($orderId)
+    public function isSent(int $orderId): string
     {
         $connection = $this->resource->getConnection();
         $select = $connection->select();
@@ -377,10 +416,12 @@ class Order extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $ids
+     * Mark orders as sent
+     *
+     * @param string[] $ids
      * @return void
      */
-    public function markItemsAsSent($ids)
+    public function markItemsAsSent(array $ids)
     {
         $data = [];
         foreach ($ids as $id) {

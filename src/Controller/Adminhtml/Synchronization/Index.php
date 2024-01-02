@@ -2,31 +2,39 @@
 namespace Synerise\Integration\Controller\Adminhtml\Synchronization;
 
 use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\View\Result\Page;
 use Magento\Framework\View\Result\PageFactory;
 
-/**
- * Class Index
- */
 class Index extends Action implements HttpGetActionInterface
 {
-    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization';
-
-    const MENU_ID = 'Synerise_Integration::synchronization';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization';
 
     /**
      * @var PageFactory
      */
     protected $resultPageFactory;
 
+    /**
+     * @param Context $context
+     * @param PageFactory $resultPageFactory
+     */
     public function __construct(
-        \Magento\Backend\App\Action\Context $context,
-        \Magento\Framework\View\Result\PageFactory $resultPageFactory
+        Context $context,
+        PageFactory $resultPageFactory
     ) {
         parent::__construct($context);
         $this->resultPageFactory = $resultPageFactory;
     }
 
+    /**
+     * Execute
+     *
+     * @return ResponseInterface|ResultInterface|Page
+     */
     public function execute()
     {
         $resultPage = $this->resultPageFactory->create();

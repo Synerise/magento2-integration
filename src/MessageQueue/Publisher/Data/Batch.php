@@ -7,8 +7,19 @@ use Magento\Framework\Phrase;
 
 class Batch extends AbstractBulk
 {
-    const TYPE = 'batch';
+    public const TYPE = 'batch';
 
+    /**
+     * Consume message & Schedule batch synchronization
+     *
+     * @param string $model
+     * @param array $entityIds
+     * @param int $storeId
+     * @param int|null $websiteId
+     * @param int $bulkSize
+     * @return void
+     * @throws LocalizedException
+     */
     public function schedule(
         string $model,
         array $entityIds,
@@ -46,6 +57,8 @@ class Batch extends AbstractBulk
     }
 
     /**
+     * Get Bulk description
+     *
      * @param int $count
      * @param string $model
      * @param int $storeId

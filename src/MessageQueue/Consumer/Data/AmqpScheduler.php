@@ -18,6 +18,16 @@ class AmqpScheduler extends AbstractScheduler
      */
     protected $amqpConfig;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param SerializerInterface $serializer
+     * @param EntityManager $entityManager
+     * @param CollectionFactoryProvider $collectionFactoryProvider
+     * @param Filter $filter
+     * @param Publisher $publisher
+     * @param Synchronization $synchronization
+     * @param AmqpConfig $amqpConfig
+     */
     public function __construct(
         LoggerInterface $logger,
         SerializerInterface $serializer,
@@ -43,8 +53,7 @@ class AmqpScheduler extends AbstractScheduler
     }
 
     /**
-     * @param string $topicName
-     * @return void
+     * @inheritDoc
      */
     protected function purgeQueue(string $topicName)
     {

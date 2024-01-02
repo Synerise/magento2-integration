@@ -9,7 +9,7 @@ use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 
 class Debug extends Base
 {
-    const XML_PATH_DEBUG_LOGGER_ENABLED = 'synerise/debug/logger_enabled';
+    public const XML_PATH_DEBUG_LOGGER_ENABLED = 'synerise/debug/logger_enabled';
 
     /**
      * @var TimezoneInterface

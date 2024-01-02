@@ -2,9 +2,10 @@
 namespace Synerise\Integration\Ui\DataProvider\Log;
 
 use Magento\Framework\Api\SortOrder;
+use Magento\Ui\DataProvider\AbstractDataProvider;
 use Synerise\Integration\Helper\Log;
 
-class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
+class DataProvider extends AbstractDataProvider
 {
     /**
      * @var Log
@@ -31,6 +32,14 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
      */
     protected $orderDirection = 'desc';
 
+    /**
+     * @param Log $logHelper
+     * @param string $name
+     * @param string $primaryFieldName
+     * @param string $requestFieldName
+     * @param array $meta
+     * @param array $data
+     */
     public function __construct(
         Log $logHelper,
         $name,
@@ -45,7 +54,7 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
-     * @return array
+     * @inheritDoc
      */
     public function getData(): array
     {
@@ -55,13 +64,13 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
         if ($this->getOrderField() == 'filesize') {
             if ($this->getOrderDirection() == 'ASD') {
                 usort($files, function ($fileName1, $fileName2) {
-                    return filesize($this->logHelper->getLogFileAbsolutePath($fileName1)) <=>
-                        filesize($this->logHelper->getLogFileAbsolutePath($fileName2));
+                    return $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName1)) <=>
+                        $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName2));
                 });
             } else {
                 usort($files, function ($fileName1, $fileName2) {
-                    return filesize($this->logHelper->getLogFileAbsolutePath($fileName2)) <=>
-                        filesize($this->logHelper->getLogFileAbsolutePath($fileName1));
+                    return $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName2)) <=>
+                        $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName1));
                 });
             }
         }
@@ -73,8 +82,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
 
             $data = [
                 'name' => $file,
-                'filesize' => $this->formatBytes((filesize($fileAbsolutePath))),
-                'updated_at' => date("Y-m-d H:i:s.", filemtime($fileAbsolutePath)),
+                'filesize' => $this->formatBytes($this->filesize($fileAbsolutePath)),
+                'updated_at' => date("Y-m-d H:i:s.", $this->filemtime($fileAbsolutePath)),
             ];
 
             $items[] = $data;
@@ -87,11 +96,7 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
-     * self::setOrder() alias
-     *
-     * @param string $field
-     * @param string $direction
-     * @return void
+     * @inheritDoc
      */
     public function addOrder($field, $direction)
     {
@@ -100,6 +105,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
+     * Get order field
+     *
      * @return string
      */
     public function getOrderField(): string
@@ -108,6 +115,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
+     * Get order direction
+     *
      * @return string
      */
     public function getOrderDirection(): string
@@ -116,6 +125,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
+     * Get order based on scandir
+     *
      * @return int
      */
     public function getScnadirSortOrder(): int
@@ -137,6 +148,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
+     * Get limit offset
+     *
      * @return int
      */
     public function getLimitOffset(): int
@@ -145,6 +158,8 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
+     * Get limit size
+     *
      * @return int
      */
     public function getLimitSize(): int
@@ -153,21 +168,26 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
     }
 
     /**
+     * Get files
+     *
      * @param string $path
      * @param int $sorting_order
      * @return array
      */
     protected function getFiles(string $path, int $sorting_order = SCANDIR_SORT_DESCENDING): array
     {
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         return is_dir($path) ? array_values(array_diff(scandir($path, $sorting_order), ['..', '.'])) : [];
     }
 
     /**
-     * @param $bytes
+     * Format bytes
+     *
+     * @param int $bytes
      * @param int $precision
      * @return string
      */
-    protected function formatBytes($bytes, int $precision = 2): string
+    protected function formatBytes(int $bytes, int $precision = 2): string
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
@@ -178,5 +198,29 @@ class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
         $bytes /= pow(1024, $pow);
 
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Get file size
+     *
+     * @param string $fileAbsolutePath
+     * @return false|int
+     */
+    protected function filesize(string $fileAbsolutePath)
+    {
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
+        return filesize($fileAbsolutePath);
+    }
+
+    /**
+     * Get file modification time
+     *
+     * @param string $fileAbsolutePath
+     * @return false|int
+     */
+    private function filemtime(string $fileAbsolutePath): ?int
+    {
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
+        return filemtime($fileAbsolutePath);
     }
 }

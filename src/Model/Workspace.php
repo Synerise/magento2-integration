@@ -3,15 +3,22 @@ namespace Synerise\Integration\Model;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
+use Magento\Framework\Data\Collection\AbstractDb;
+use Magento\Framework\Encryption\EncryptorInterface;
+use Magento\Framework\Model\AbstractModel;
+use Magento\Framework\Model\Context;
+use Magento\Framework\Model\ResourceModel\AbstractResource;
+use Magento\Framework\Registry;
 use Magento\Store\Model\ScopeInterface;
 use Ramsey\Uuid\Uuid;
+use Synerise\Integration\Model\Workspace\Validator;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 
-class Workspace extends \Magento\Framework\Model\AbstractModel
+class Workspace extends AbstractModel
 {
-    const XML_PATH_WORKSPACE_MAP = 'synerise/workspace/map';
+    public const XML_PATH_WORKSPACE_MAP = 'synerise/workspace/map';
 
-    const REQUIRED_PERMISSIONS = [
+    public const REQUIRED_PERMISSIONS = [
         "API_CLIENT_CREATE",
         "API_BATCH_CLIENT_CREATE",
         "API_BATCH_TRANSACTION_CREATE",
@@ -30,17 +37,17 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
     ];
 
     /**
-     * @var \Magento\Framework\Encryption\EncryptorInterface
+     * @var EncryptorInterface
      */
     protected $encryptor;
 
     /**
-     * @var Workspace\Validator
+     * @var Validator
      */
     protected $validator;
 
     /**
-     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     * @var ScopeConfigInterface
      */
     protected $scopeConfig;
 
@@ -49,15 +56,26 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
      */
     protected $configWriter;
 
+    /**
+     * @param Context $context
+     * @param Registry $registry
+     * @param EncryptorInterface $encryptor
+     * @param Validator $validator
+     * @param ScopeConfigInterface $scopeConfig
+     * @param WriterInterface $configWriter
+     * @param AbstractResource|null $resource
+     * @param AbstractDb|null $resourceCollection
+     * @param array $data
+     */
     public function __construct(
-        \Magento\Framework\Model\Context $context,
-        \Magento\Framework\Registry $registry,
-        \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Synerise\Integration\Model\Workspace\Validator $validator,
+        Context $context,
+        Registry $registry,
+        EncryptorInterface $encryptor,
+        Validator $validator,
         ScopeConfigInterface $scopeConfig,
         WriterInterface $configWriter,
-        \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
-        \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
+        AbstractResource $resource = null,
+        AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->encryptor = $encryptor;
@@ -68,12 +86,23 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
     }
 
+    /**
+     * Workspace
+     *
+     * @return void
+     */
     protected function _construct()
     {
-        $this->_init('Synerise\Integration\Model\ResourceModel\Workspace');
+        $this->_init(\Synerise\Integration\Model\ResourceModel\Workspace::class);
     }
 
-    public function setApiKey($apiKey)
+    /**
+     * Set API key
+     *
+     * @param string $apiKey
+     * @return void
+     */
+    public function setApiKey(string $apiKey)
     {
         // don't save value, if an obscured value was received. This indicates that data was not changed.
         if (!empty($apiKey) && !preg_match('/^\*+$/', $apiKey)) {
@@ -83,6 +112,11 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
         }
     }
 
+    /**
+     * Get API key
+     *
+     * @return string|null
+     */
     public function getApiKey()
     {
         $value = $this->getData('api_key');
@@ -92,12 +126,23 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
         return null;
     }
 
-    public function setGuid($guid)
+    /**
+     * Set GUID
+     *
+     * @param string|null $guid
+     * @return void
+     */
+    public function setGuid(?string $guid)
     {
         $this->setData('guid', !empty($guid) ? $this->encryptor->encrypt($guid) : null);
     }
 
-    public function getGuid()
+    /**
+     * Get GUID
+     *
+     * @return string|null
+     */
+    public function getGuid(): ?string
     {
         $value = $this->getData('guid');
         if (!empty($value) && !preg_match('/^\*+$/', $value)) {
@@ -113,6 +158,12 @@ class Workspace extends \Magento\Framework\Model\AbstractModel
     {
         return $this->validator;
     }
+
+    /**
+     * Save linked config
+     *
+     * @return Workspace
+     */
     public function afterSave()
     {
         $workspaceMapString = $this->scopeConfig->getValue(self::XML_PATH_WORKSPACE_MAP);

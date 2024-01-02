@@ -29,6 +29,12 @@ class Retry
      */
     private $messageEncoder;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param PublisherInterface $publisher
+     * @param CollectionFactory $collectionFactory
+     * @param MessageEncoder $messageEncoder
+     */
     public function __construct(
         LoggerInterface $logger,
         PublisherInterface $publisher,
@@ -41,6 +47,11 @@ class Retry
         $this->messageEncoder = $messageEncoder;
     }
 
+    /**
+     * Add applicable messages back to the queues.
+     *
+     * @return void
+     */
     public function execute()
     {
         $collection = $this->collectionFactory->create()

@@ -3,13 +3,14 @@
 namespace Synerise\Integration\Model\Workspace;
 
 use Magento\Framework\Exception\ValidatorException;
+use Magento\Framework\Validator\AbstractValidator;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\SyneriseApi\Authentication;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 
-class Validator extends \Magento\Framework\Validator\AbstractValidator
+class Validator extends AbstractValidator
 {
 
     /**
@@ -22,6 +23,10 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
      */
     private $authentication;
 
+    /**
+     * @param Authentication $authentication
+     * @param ConfigFactory $configFactory
+     */
     public function __construct(
         Authentication $authentication,
         ConfigFactory $configFactory
@@ -31,11 +36,13 @@ class Validator extends \Magento\Framework\Validator\AbstractValidator
     }
 
     /**
+     * Validate workspace
+     *
      * @param Workspace $workspace
      * @return bool
      * @throws ApiException
      */
-    public function isValid($workspace)
+    public function isValid($workspace): bool
     {
         $messages = [];
 

@@ -17,19 +17,19 @@ use Synerise\Integration\Model\Config\Backend\Workspace;
 
 class ConfigFactory
 {
-    const XML_PATH_API_HOST = 'synerise/api/host';
+    public const XML_PATH_API_HOST = 'synerise/api/host';
 
-    const XML_PATH_API_KEY = 'synerise/api/key';
+    public const XML_PATH_API_KEY = 'synerise/api/key';
 
-    const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
+    public const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
 
-    const XML_PATH_API_KEEP_ALIVE_ENABLED = 'synerise/api/keep_alive_enabled';
+    public const XML_PATH_API_KEEP_ALIVE_ENABLED = 'synerise/api/keep_alive_enabled';
 
-    const XML_PATH_API_BASIC_AUTH_ENABLED = 'synerise/api/basic_auth_enabled';
+    public const XML_PATH_API_BASIC_AUTH_ENABLED = 'synerise/api/basic_auth_enabled';
 
-    const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
+    public const XML_PATH_API_SCHEDULED_REQUEST_TIMEOUT = 'synerise/api/scheduled_request_timeout';
 
-    const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
+    public const XML_PATH_API_LIVE_REQUEST_TIMEOUT = 'synerise/api/live_request_timeout';
 
     /**
 
@@ -62,6 +62,13 @@ class ConfigFactory
      */
     private $mode;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param ScopeConfigInterface $scopeConfig
+     * @param TranslitUrl $translitUrl
+     * @param StoreManagerInterface $storeManager
+     * @param Authentication $authentication
+     */
     public function __construct(
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
@@ -75,10 +82,13 @@ class ConfigFactory
         $this->scopeConfig = $scopeConfig;
         $this->authentication = $authentication;
 
+        // phpcs:ignore
         $this->mode = isset($_SERVER['REQUEST_METHOD']) ? Config::MODE_LIVE : Config::MODE_SCHEDULE;
     }
 
     /**
+     * Create config
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @param string|null $mode
@@ -116,6 +126,8 @@ class ConfigFactory
     }
 
     /**
+     * Create config with api key
+     *
      * @param string $apiKey
      * @param int|null $scopeId
      * @param string $scope
@@ -145,8 +157,9 @@ class ConfigFactory
         );
     }
 
-
     /**
+     * Create minimal config
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @param string|null $mode
@@ -167,7 +180,7 @@ class ConfigFactory
     }
 
     /**
-     * Api host
+     * Get api host
      *
      * @param int|null $scopeId
      * @param string $scope
@@ -183,7 +196,7 @@ class ConfigFactory
     }
 
     /**
-     * Api key
+     * Get api key
      *
      * @param int|null $scopeId
      * @param string $scope
@@ -199,7 +212,7 @@ class ConfigFactory
     }
 
     /**
-     * User Agent
+     * Get user agent
      *
      * @param int|null $scopeId
      * @param string $scope
@@ -242,6 +255,8 @@ class ConfigFactory
     }
 
     /**
+     * Get handler stack
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return HandlerStack|null
@@ -263,6 +278,8 @@ class ConfigFactory
     }
 
     /**
+     * Check if logger is enabled
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return bool
@@ -277,6 +294,8 @@ class ConfigFactory
     }
 
     /**
+     * Check if keep-alive is enabled
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return bool
@@ -291,21 +310,25 @@ class ConfigFactory
     }
 
     /**
+     * Check if basic auth is available
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return bool
      */
     public function isBasicAuthAvailable(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
-        return ($this->isBaiscAuthEnabled($scopeId, $scope) && $this->getBasicToken($scopeId, $scope));
+        return ($this->isBasicAuthEnabled($scopeId, $scope) && $this->getBasicToken($scopeId, $scope));
     }
 
     /**
+     * Check if basic auth is enabled
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return bool
      */
-    public function isBaiscAuthEnabled(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
+    public function isBasicAuthEnabled(int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
         return $this->scopeConfig->isSetFlag(
             self::XML_PATH_API_BASIC_AUTH_ENABLED,
@@ -315,14 +338,19 @@ class ConfigFactory
     }
 
     /**
+     * Get timeout
+     *
      * @param string $mode
      * @param int|null $scopeId
      * @param string $scope
      * @return float|null
      */
-    protected function getTimeout(string $mode, int $scopeId = null, string $scope = ScopeInterface::SCOPE_STORE): ?float
-    {
-        if ($mode == COnfig::MODE_LIVE) {
+    protected function getTimeout(
+        string $mode,
+        int $scopeId = null,
+        string $scope = ScopeInterface::SCOPE_STORE
+    ): ?float {
+        if ($mode == Config::MODE_LIVE) {
             return $this->getLiveRequestTimeout($scopeId, $scope);
         } elseif ($mode == Config::MODE_SCHEDULE) {
             return $this->getScheduledRequestTimeout($scopeId, $scope);
@@ -331,6 +359,8 @@ class ConfigFactory
     }
 
     /**
+     * Get live request timeout
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return string
@@ -345,6 +375,8 @@ class ConfigFactory
     }
 
     /**
+     * Get scheduled request timeout
+     *
      * @param int|null $scopeId
      * @param string $scope
      * @return string

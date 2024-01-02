@@ -21,7 +21,7 @@ class Product extends Action
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_catalog';
 
     /**
      * @var LoggerInterface
@@ -48,6 +48,14 @@ class Product extends Action
      */
     private $synchronization;
 
+    /**
+     * @param Context $context
+     * @param LoggerInterface $logger
+     * @param Filter $filter
+     * @param CollectionFactory $collectionFactory
+     * @param Publisher $publisher
+     * @param Synchronization $synchronization
+     */
     public function __construct(
         Context $context,
         LoggerInterface $logger,
@@ -77,9 +85,9 @@ class Product extends Action
             $this->messageManager->addErrorMessage(
                 __('Synchronization is disabled. Please review your configuration.')
             );
-        } elseif (!$this->synchronization->isEnabledModel(\Synerise\Integration\SyneriseApi\Sender\Data\Customer::MODEL)) {
+        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
             $this->messageManager->addErrorMessage(
-                __('%1s are excluded from synchronization.', ucfirst(\Synerise\Integration\SyneriseApi\Sender\Data\Subscriber::MODEL))
+                __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
             );
         } else {
             $storeIds = [];

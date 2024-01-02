@@ -23,12 +23,13 @@ use Synerise\Integration\Communication\Config;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk as BulkPublisher;
+use Synerise\Integration\Model\MessageQueue\Retry;
 use Synerise\Integration\SyneriseApi\SenderFactory;
 use Zend_Db_Adapter_Exception;
 
 class Bulk
 {
-    const MAX_PAGE_SIZE = 100;
+    public const MAX_PAGE_SIZE = 100;
 
     /**
      * @var LoggerInterface
@@ -70,6 +71,16 @@ class Bulk
      */
     private $filter;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param ObjectManagerInterface $objectManager
+     * @param EntityManager $entityManager
+     * @param SerializerInterface $serializer
+     * @param MessageEncoder $messageEncoder
+     * @param CollectionFactoryProvider $collectionFactoryProvider
+     * @param SenderFactory $senderFactory
+     * @param Filter $filter
+     */
     public function __construct(
         LoggerInterface $logger,
         ObjectManagerInterface $objectManager,
@@ -91,10 +102,12 @@ class Bulk
     }
 
     /**
+     * Execute bulk synchronization
+     *
      * @param array $data
      * @return void
      * @throws ApiException
-     * @throws LocalizedException
+     * @throws LocalizedException|CatalogApiException
      */
     protected function execute(array $data)
     {
@@ -151,7 +164,9 @@ class Bulk
             }
         } catch (Zend_Db_Adapter_Exception $e) {
             $this->logger->critical($e->getMessage());
-            if ($e instanceof LockWaitException || $e instanceof DeadlockException || $e instanceof ConnectionException) {
+            if ($e instanceof LockWaitException ||
+                $e instanceof DeadlockException ||
+                $e instanceof ConnectionException) {
                 $status = BulkOperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
                 $errorCode = $e->getCode();
                 $message = $e->getMessage();
@@ -203,6 +218,8 @@ class Bulk
     }
 
     /**
+     * Add message to retry table
+     *
      * @param string $topicName
      * @param OperationInterface $operation
      * @return bool
@@ -212,7 +229,7 @@ class Bulk
         OperationInterface $operation
     ): bool {
         try {
-            $retry = $this->objectManager->create('Synerise\Integration\Model\MessageQueue\Retry');
+            $retry = $this->objectManager->create(Retry::class);
             $retry
                 ->setBody($this->messageEncoder->encode($topicName, $operation))
                 ->setTopicName($topicName)

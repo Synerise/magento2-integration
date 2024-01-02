@@ -3,8 +3,11 @@
 namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use InvalidArgumentException;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -15,16 +18,16 @@ use Magento\Framework\Exception\ValidatorException;
 use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\CatalogsApiClient\Api\BagsApi;
 use Synerise\CatalogsApiClient\Api\ItemsApi;
 use Synerise\CatalogsApiClient\ApiException;
 use Synerise\CatalogsApiClient\Model\AddBag;
 use Synerise\CatalogsApiClient\Model\AddItem;
 use Synerise\CatalogsApiClient\Model\Bag;
-use Synerise\Integration\Helper\Catalog;
-use Synerise\Integration\Helper\Category;
-use Synerise\Integration\Helper\Image;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Product\Catalog;
+use Synerise\Integration\Helper\Product\Category;
+use Synerise\Integration\Helper\Product\Image;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
@@ -34,16 +37,13 @@ use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class Product extends AbstractSender implements SenderInterface
 {
-    const MODEL = 'product';
+    public const MODEL = 'product';
 
-    const ENTITY_ID = 'entity_id';
+    public const ENTITY_ID = 'entity_id';
 
-    const MAX_PAGE_SIZE = 100;
+    public const API_EXCEPTION = ApiException::class;
 
-    const API_EXCEPTION = ApiException::class;
-
-
-    const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
+    public const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
 
     /**
      * @var string|string[]
@@ -64,11 +64,6 @@ class Product extends AbstractSender implements SenderInterface
      * @var ScopeConfigInterface
      */
     protected $scopeConfig;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
 
     /**
      * @var StoreManagerInterface
@@ -120,8 +115,23 @@ class Product extends AbstractSender implements SenderInterface
      */
     protected $isProductSalable;
 
+    /**
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
+     * @param ScopeConfigInterface $scopeConfig
+     * @param StoreManagerInterface $storeManager
+     * @param ProductRepositoryInterface $productRepository
+     * @param Configurable $configurable
+     * @param ResourceConnection $resource
+     * @param StockRegistry $stockRegistry
+     * @param Catalog $catalogHelper
+     * @param Category $categoryHelper
+     * @param Image $imageHelper
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param IsProductSalableInterface|null $isProductSalable
+     */
     public function __construct(
-        LoggerInterface $logger,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
         ScopeConfigInterface $scopeConfig,
@@ -133,10 +143,10 @@ class Product extends AbstractSender implements SenderInterface
         Catalog $catalogHelper,
         Category $categoryHelper,
         Image $imageHelper,
+        Logger $loggerHelper,
         Tracking $trackingHelper,
         ?IsProductSalableInterface $isProductSalable = null
     ) {
-        $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
         $this->productRepository = $productRepository;
@@ -149,17 +159,18 @@ class Product extends AbstractSender implements SenderInterface
         $this->trackingHelper = $trackingHelper;
         $this->isProductSalable = $isProductSalable;
 
-        parent::__construct($logger, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
     }
 
     /**
-     * @param $collection
+     * Send items
+     *
+     * @param Collection $collection
      * @param int $storeId
      * @param int|null $websiteId
      * @return void
      * @throws ApiException
-     * @throws NoSuchEntityException
-     * @throws ValidatorException
+     * @throws NoSuchEntityException|ValidatorException|\Synerise\ApiClient\ApiException
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
@@ -185,12 +196,13 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $payload
+     * Delete items
+     *
+     * @param mixed $payload
      * @param int $storeId
      * @param int|null $entityId
      * @return void
-     * @throws ApiException
-     * @throws ValidatorException
+     * @throws ApiException|ValidatorException|\Synerise\ApiClient\ApiException
      */
     public function deleteItem($payload, int $storeId, ?int $entityId = null)
     {
@@ -201,13 +213,16 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $addItemRequest
-     * @param $storeId
+     * Add items batch with catalog check
+     *
+     * @param mixed $addItemRequest
+     * @param int $storeId
      * @return void
      * @throws ApiException
      * @throws ValidatorException
+     * @throws \Synerise\ApiClient\ApiException
      */
-    public function addItemsBatchWithCatalogCheck($addItemRequest, $storeId)
+    public function addItemsBatchWithCatalogCheck($addItemRequest, int $storeId)
     {
         $catalogId = $this->getOrAddCatalog($storeId);
 
@@ -224,9 +239,11 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Add items batch
+     *
      * @param int $storeId
      * @param int $catalogId
-     * @param $payload
+     * @param mixed $payload
      * @return void
      * @throws ApiException
      * @throws ValidatorException
@@ -244,7 +261,7 @@ class Product extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->logger->warning('Request partially accepted', ['response' => $body]);
+                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response' => $body]);
             }
         } catch (ApiException $e) {
             $this->logApiException($e);
@@ -253,6 +270,8 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Get Items API instance
+     *
      * @param int $storeId
      * @return ItemsApi
      * @throws \Synerise\ApiClient\ApiException
@@ -264,6 +283,8 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Get catalogs api instance
+     *
      * @param int $storeId
      * @return BagsApi
      * @return mixed
@@ -275,12 +296,14 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Prepare item request
+     *
      * @param \Magento\Catalog\Model\Product $product
      * @param int $websiteId
      * @return AddItem
      * @throws NoSuchEntityException
      */
-    public function prepareItemRequest(\Magento\Catalog\Model\Product $product, int $websiteId)
+    public function prepareItemRequest(\Magento\Catalog\Model\Product $product, int $websiteId): AddItem
     {
         $value = $this->getTypeSpecificData($product);
         $value['itemId'] = $product->getSku();
@@ -333,9 +356,11 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Check if attribute labels are enabled
+     *
      * @return bool
      */
-    public function isAttributeLabelEnabled()
+    public function isAttributeLabelEnabled(): bool
     {
         return $this->scopeConfig->isSetFlag(
             self::XML_PATH_PRODUCTS_LABELS_ENABLED
@@ -354,10 +379,12 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $storeId
+     * Get enabled attributes
+     *
+     * @param int|null $storeId
      * @return string[]
      */
-    public function getEnabledAttributes($storeId = null)
+    public function getEnabledAttributes(?int $storeId = null): array
     {
         $attributes = $this->scopeConfig->getValue(
             Attributes::XML_PATH_PRODUCT_ATTRIBUTES,
@@ -369,10 +396,12 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Get type specific data
+     *
      * @param \Magento\Catalog\Model\Product $product
-     * @return array|mixed
+     * @return array
      */
-    public function getTypeSpecificData(\Magento\Catalog\Model\Product $product)
+    public function getTypeSpecificData(\Magento\Catalog\Model\Product $product): array
     {
         if ($product->getVisibility() == Visibility::VISIBILITY_NOT_VISIBLE) {
             $parentIds = $this->configurable->getParentIdsByChild($product->getId());
@@ -410,11 +439,13 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $sku
-     * @param $websiteId
-     * @return \Magento\CatalogInventory\Api\Data\StockItemInterface|null
+     * Get stock status
+     *
+     * @param string $sku
+     * @param int $websiteId
+     * @return StockItemInterface|null
      */
-    public function getStockStatus($sku, $websiteId)
+    public function getStockStatus(string $sku, int $websiteId): ?StockItemInterface
     {
         $stockData = null;
         try {
@@ -425,23 +456,25 @@ class Product extends AbstractSender implements SenderInterface
 
             $stockData = $stockStatus->getStockItem();
         } catch (\Exception $exception) {
-            $this->logger->error($exception);
+            $this->loggerHelper->getLogger()->error($exception);
         }
         return $stockData;
     }
 
     /**
-     * @param $productId
-     * @param $storeId
-     * @return \Magento\Catalog\Api\Data\ProductInterface|null
+     * Get product by ID
+     *
+     * @param int $productId
+     * @param int $storeId
+     * @return ProductInterface|null
      */
-    public function getProductById($productId, $storeId)
+    public function getProductById(int $productId, int $storeId): ?ProductInterface
     {
         try {
             return $this->productRepository->getById($productId, false, $storeId);
         } catch (NoSuchEntityException $exception) {
-            if ($this->trackingHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
-                $this->logger->warning($exception->getMessage());
+            if ($this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                $this->loggerHelper->getLogger()->warning($exception->getMessage());
             }
         }
 
@@ -449,11 +482,13 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $storeId
+     * Get store base URL
+     *
+     * @param int $storeId
      * @return string|null
      * @throws NoSuchEntityException
      */
-    public function getStoreBaseUrl($storeId)
+    public function getStoreBaseUrl(int $storeId): ?string
     {
         if (!isset($this->storeUrls[$storeId])) {
             $store = $this->storeManager->getStore($storeId);
@@ -463,6 +498,8 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Add catalog
+     *
      * @param int $storeId
      * @return mixed
      * @throws ApiException
@@ -493,14 +530,16 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $storeId
-     * @param $timeout
+     * Get or add catalog
+     *
+     * @param int $storeId
+     * @param int|null $timeout
      * @return mixed|string
-     * @throws \Magento\Framework\Exception\ValidatorException
+     * @throws ApiException
+     * @throws ValidatorException
      * @throws \Synerise\ApiClient\ApiException
-     * @throws \Synerise\CatalogsApiClient\ApiException
      */
-    public function getOrAddCatalog($storeId, $timeout = null)
+    public function getOrAddCatalog(int $storeId, ?int $timeout = null)
     {
         $catalogId = $this->catalogHelper->getConfigCatalogId($storeId);
         if ($catalogId) {
@@ -517,13 +556,15 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
-     * @param $storeId
+     * Find existing catalog by store ID
+     *
+     * @param int $storeId
      * @return mixed|Bag|null
      * @throws ApiException
      * @throws ValidatorException
      * @throws \Synerise\ApiClient\ApiException
      */
-    protected function findExistingCatalogByStoreId($storeId)
+    protected function findExistingCatalogByStoreId(int $storeId)
     {
         try {
             $catalogName = $this->catalogHelper->getCatalogNameByStoreId($storeId);
@@ -550,13 +591,14 @@ class Product extends AbstractSender implements SenderInterface
         return null;
     }
 
-
     /**
+     * Mark products as sent
+     *
      * @param int[] $ids
      * @param int $storeId
      * @return void
      */
-    protected function markItemsAsSent(array $ids, $storeId = 0)
+    protected function markItemsAsSent(array $ids, int $storeId = 0)
     {
         $data = [];
         foreach ($ids as $id) {
@@ -572,6 +614,8 @@ class Product extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Delete status
+     *
      * @param int[] $entityIds
      * @param int $storeId
      * @return void

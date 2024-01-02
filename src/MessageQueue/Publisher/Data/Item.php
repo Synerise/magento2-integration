@@ -12,14 +12,19 @@ class Item
      */
     private $publisher;
 
+    /**
+     * @param PublisherInterface $publisher
+     */
     public function __construct(PublisherInterface $publisher)
     {
         $this->publisher = $publisher;
     }
 
-    const TOPIC_NAME = 'synerise.queue.data.item';
+    public const TOPIC_NAME = 'synerise.queue.data.item';
 
     /**
+     * Publish message to queue
+     *
      * @param string $model
      * @param int $entityId
      * @param int $storeId

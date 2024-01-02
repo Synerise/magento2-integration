@@ -1,10 +1,11 @@
 <?php
 namespace Synerise\Integration\MessageQueue\Config\Reader;
 
+use Magento\Framework\Config\ReaderInterface;
 use Magento\Framework\MessageQueue\DefaultValueProvider;
 use Synerise\Integration\Communication\Config;
 
-class Topology implements \Magento\Framework\Config\ReaderInterface
+class Topology implements ReaderInterface
 {
     /**
      * @var DefaultValueProvider
@@ -16,6 +17,10 @@ class Topology implements \Magento\Framework\Config\ReaderInterface
      */
     private $config;
 
+    /**
+     * @param DefaultValueProvider $defaultValueProvider
+     * @param Config $config
+     */
     public function __construct(
         DefaultValueProvider $defaultValueProvider,
         Config $config
@@ -24,6 +29,9 @@ class Topology implements \Magento\Framework\Config\ReaderInterface
         $this->config = $config;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function read($scope = null)
     {
         $connection = $this->defaultValueProvider->getConnection();
@@ -42,7 +50,12 @@ class Topology implements \Magento\Framework\Config\ReaderInterface
         ];
     }
 
-    private function generateBindings()
+    /**
+     * Generate bindings
+     *
+     * @return array
+     */
+    private function generateBindings(): array
     {
         $bindings = [];
 
@@ -53,6 +66,15 @@ class Topology implements \Magento\Framework\Config\ReaderInterface
         return $bindings;
     }
 
+    /**
+     * Prepare binding
+     *
+     * @param string $topic
+     * @param bool $isDisabled
+     * @param string $destinationType
+     * @param string|null $destination
+     * @return array
+     */
     private function prepareBinding(
         string $topic,
         bool $isDisabled = false,
