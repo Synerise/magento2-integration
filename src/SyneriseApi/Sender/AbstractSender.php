@@ -4,7 +4,6 @@ namespace Synerise\Integration\SyneriseApi\Sender;
 
 use Exception;
 use Magento\Framework\Exception\ValidatorException;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Helper\Logger;
@@ -17,7 +16,7 @@ abstract class AbstractSender
     public const API_EXCEPTION = ApiException::class;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $loggerHelper;
 

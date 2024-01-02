@@ -41,27 +41,27 @@ class Context
     /**
      * @var Logger
      */
-    protected $logger;
+    protected $loggerHelper;
 
     /**
      * @param BackedSession $backendSession
      * @param ScopeResolverInterface $scopeResolver
      * @param StoreManagerInterface $storeManager
      * @param CustomerSession $customerSession
-     * @param Logger $logger
+     * @param Logger $loggerHelper
      */
     public function __construct(
         BackedSession $backendSession,
         ScopeResolverInterface $scopeResolver,
         StoreManagerInterface $storeManager,
         CustomerSession $customerSession,
-        Logger $logger
+        Logger $loggerHelper
     ) {
         $this->backendSession = $backendSession;
         $this->storeManager = $storeManager;
         $this->customerSession = $customerSession;
         $this->scopeResolver = $scopeResolver;
-        $this->logger = $logger;
+        $this->loggerHelper = $loggerHelper;
     }
 
     /**
@@ -118,7 +118,7 @@ class Context
             $store = $this->storeManager->getStore($storeId);
             return $store ? $store->getBaseUrl() : null;
         } catch (NoSuchEntityException $e) {
-            $this->logger->getLogger()->warning($e);
+            $this->loggerHelper->getLogger()->warning($e);
             return null;
         }
     }
@@ -134,7 +134,7 @@ class Context
             $store = $this->storeManager->getStore();
             return $store ? $store->getId() : null;
         } catch (NoSuchEntityException $e) {
-            $this->logger->getLogger()->warning($e);
+            $this->loggerHelper->getLogger()->warning($e);
             return null;
         }
     }

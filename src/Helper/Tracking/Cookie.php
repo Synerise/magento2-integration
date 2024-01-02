@@ -119,12 +119,12 @@ class Cookie
     }
 
     /**
-     * Get SNRS P cookie as array
+     * Get SNRS P cookie as array or single value
      *
      * @param string|null $value
-     * @return array|null
+     * @return string|array|null
      */
-    public function getSnrsP(?string $value = null): ?array
+    public function getSnrsP(?string $value = null)
     {
         if (!isset($this->data[self::COOKIE_SNRS_P])) {
             $paramsArray = [];

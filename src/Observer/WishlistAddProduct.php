@@ -95,6 +95,7 @@ class WishlistAddProduct implements ObserverInterface
             }
 
             $product = $observer->getEvent()->getProduct();
+            $storeId = $wishlist->getStore()->getId();
 
             $params = $this->trackingHelper->prepareContextParams();
             $params['sku'] = $product->getSku();
@@ -130,10 +131,10 @@ class WishlistAddProduct implements ObserverInterface
                 'params' => $params
             ]);
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT)) {
-                $this->publisher->publish(self::EVENT, $eventClientAction, $wishlist->getStore()->getStoreId());
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->sender->send(self::EVENT, $eventClientAction, $wishlist->getStore()->getId());
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {

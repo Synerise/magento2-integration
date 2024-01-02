@@ -52,7 +52,7 @@ class Additional extends Template
     public function getOriginalPriceAmount(): ?string
     {
         $product = $this->getCurrentProduct();
-        return (string) $product ? $product
+        return $product ? (string) $product
             ->getPriceInfo()
             ->getPrice(RegularPrice::PRICE_CODE)
             ->getAmount() : null;

@@ -8,6 +8,7 @@ use Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException;
 use Magento\Framework\Stdlib\Cookie\FailureToSendException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
@@ -17,14 +18,19 @@ class UuidManagement
     public const EVENT = 'customer_merge_by_email';
 
     /**
-     * @var Logger
-     */
-    protected $logger;
-
-    /**
      * @var Cookie
      */
-    protected $cookie;
+    protected $cookieHelper;
+
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
+     * @var Tracking
+     */
+    protected $trackingHelper;
 
     /**
      * @var UuidGenerator
@@ -42,21 +48,24 @@ class UuidManagement
     protected $customerSender;
 
     /**
-     * @param Logger $logger
-     * @param Cookie $cookie
+     * @param Logger $loggerHelper
+     * @param Cookie $cookieHelper
+     * @param Tracking $trackingHelper
      * @param UuidGenerator $uuidGenerator
      * @param EventPublisher $eventPublisher
      * @param CustomerSender $customerSender
      */
     public function __construct(
-        Logger $logger,
-        Cookie $cookie,
+        Logger $loggerHelper,
+        Cookie $cookieHelper,
+        Tracking $trackingHelper,
         UuidGenerator $uuidGenerator,
         EventPublisher $eventPublisher,
         CustomerSender $customerSender
     ) {
-        $this->logger = $logger;
-        $this->cookie = $cookie;
+        $this->loggerHelper = $loggerHelper;
+        $this->cookieHelper = $cookieHelper;
+        $this->trackingHelper = $trackingHelper;
         $this->uuidGenerator = $uuidGenerator;
         $this->eventPublisher = $eventPublisher;
         $this->customerSender = $customerSender;
@@ -71,7 +80,7 @@ class UuidManagement
      */
     public function manageByEmail(string $email, int $storeId)
     {
-        $uuid = $this->cookie->getSnrsUuid();
+        $uuid = $this->cookieHelper->getSnrsUuid();
         if (!$uuid) {
             return;
         }
@@ -85,13 +94,13 @@ class UuidManagement
 
         // reset uuid via cookie
         try {
-            $this->cookie->setSnrsResetUuidCookie($emailUuid);
-            $this->cookie->setSnrsUuid($emailUuid);
+            $this->cookieHelper->setSnrsResetUuidCookie($emailUuid);
+            $this->cookieHelper->setSnrsUuid($emailUuid);
         } catch (InputException|FailureToSendException|CookieSizeLimitReachedException|NoSuchEntityException $e) {
-            $this->logger->getLogger()->error($e);
+            $this->loggerHelper->getLogger()->error($e);
         }
 
-        $identityHash = $this->cookie->getSnrsP('identityHash');
+        $identityHash = $this->cookieHelper->getSnrsP('identityHash');
         if ($identityHash && $identityHash != $this->hashString($email)) {
             // Different user, skip merge.
             return;
@@ -123,14 +132,14 @@ class UuidManagement
                 ])
             ];
 
-            if ($this->eventPublisher->isEventMessageQueueEnabled($storeId)) {
+            if ($this->trackingHelper->isEventMessageQueueEnabled($storeId)) {
                 $this->eventPublisher->publish(self::EVENT, $mergeRequest, $storeId);
             } else {
                 $this->customerSender->batchAddOrUpdateClients($mergeRequest, $storeId, self::EVENT);
             }
         } catch (\Exception $e) {
-            if (!$this->logger->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
-                $this->logger->getLogger()->error($e);
+            if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
+                $this->loggerHelper->getLogger()->error($e);
             }
         }
     }

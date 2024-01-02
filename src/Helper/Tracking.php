@@ -7,7 +7,6 @@ use InvalidArgumentException;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Store\Model\ScopeInterface;
-use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\Model\Client;
 use Synerise\Integration\Helper\Tracking\Context;
@@ -46,20 +45,17 @@ class Tracking
     private $uuidGenerator;
 
     /**
-     * @param LoggerInterface $logger
      * @param ScopeConfigInterface $scopeConfig
      * @param Cookie $cookieHelper
      * @param Context $contextHelper
      * @param UuidGenerator $uuidGenerator
      */
     public function __construct(
-        LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
         Cookie $cookieHelper,
         Context $contextHelper,
         UuidGenerator $uuidGenerator
     ) {
-        $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
         $this->cookieHelper = $cookieHelper;
         $this->contextHelper = $contextHelper;
@@ -114,7 +110,7 @@ class Tracking
      * @param int|null $storeId
      * @return bool
      */
-    protected function isEventMessageQueueEnabled(int $storeId = null): bool
+    public function isEventMessageQueueEnabled(int $storeId = null): bool
     {
         return $this->scopeConfig->isSetFlag(
             self::XML_PATH_QUEUE_ENABLED,
