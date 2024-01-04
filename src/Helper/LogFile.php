@@ -4,7 +4,7 @@ namespace Synerise\Integration\Helper;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\FileSystemException;
 
-class Log
+class LogFile
 {
     /**
      * @var DirectoryList
@@ -27,7 +27,7 @@ class Log
      * @return string
      * @throws FileSystemException
      */
-    public function getLogFileAbsolutePath(string $filename): string
+    public function getFileAbsolutePath(string $filename): string
     {
         return $this->getLogDirectoryPath() . DIRECTORY_SEPARATOR . $filename ;
     }
@@ -36,7 +36,7 @@ class Log
      * Get synerise log directory path
      *
      * @return string
-     * @throws \Magento\Framework\Exception\FileSystemException
+     * @throws FileSystemException
      */
     public function getLogDirectoryPath(): string
     {

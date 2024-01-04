@@ -5,8 +5,8 @@ namespace Synerise\Integration\Observer;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Synerise\ApiClient\ApiException as DefaultApiException;
-use Synerise\CatalogsApiClient\ApiException;
+use Synerise\ApiClient\ApiException;
+use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
@@ -81,10 +81,10 @@ class CatalogProductDeleteBefore implements ObserverInterface
         $product = $observer->getEvent()->getProduct();
 
         try {
-            $enabledCatalogStores = $this->synchronizationHelper->getEnabledStores();
+            $enabledStores = $this->synchronizationHelper->getEnabledStores();
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
-                if (in_array($storeId, $enabledCatalogStores)) {
+                if (in_array($storeId, $enabledStores)) {
 
                     $addItemRequest = $this->sender->prepareItemRequest(
                         $product,
@@ -103,7 +103,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
                 }
             }
         } catch (\Exception $e) {
-            if (!$e instanceof ApiException && !$e instanceof DefaultApiException) {
+            if (!$e instanceof CatalogsApiException && !$e instanceof ApiException) {
                 $this->loggerHelper->getLogger()->error($e);
             }
         }

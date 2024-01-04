@@ -155,7 +155,7 @@ class Bulk
         } catch (ApiException | CatalogApiException $e) {
             $message = $e->getMessage();
             $errorCode = $e->getCode();
-            if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() > 500) {
+            if ($e->getCode() == 0 || $e->getCode() == 401 || $e->getCode() == 403 || $e->getCode() > 500) {
                 $this->logger->error($e->getMessage());
                 $status = BulkOperationInterface::STATUS_TYPE_RETRIABLY_FAILED;
             } else {

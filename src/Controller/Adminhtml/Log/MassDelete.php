@@ -9,7 +9,7 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\NotFoundException;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Log;
+use Synerise\Integration\Helper\LogFile;
 
 class MassDelete extends Action implements HttpPostActionInterface
 {
@@ -19,9 +19,9 @@ class MassDelete extends Action implements HttpPostActionInterface
     public const ADMIN_RESOURCE = 'Synerise_Integration::log_delete';
 
     /**
-     * @var Log
+     * @var LogFile
      */
-    protected $logHelper;
+    protected $logFileHelper;
 
     /**
      * @var LoggerInterface
@@ -33,15 +33,15 @@ class MassDelete extends Action implements HttpPostActionInterface
      *
      * @param Context $context
      * @param LoggerInterface $logger
-     * @param Log $logHelper
+     * @param LogFile $logFileHelper
      */
     public function __construct(
         Context $context,
         LoggerInterface $logger,
-        Log $logHelper
+        LogFile $logFileHelper
     ) {
         $this->logger = $logger;
-        $this->logHelper = $logHelper;
+        $this->logFileHelper = $logFileHelper;
         parent::__construct($context);
     }
 
@@ -62,7 +62,7 @@ class MassDelete extends Action implements HttpPostActionInterface
         foreach ($fileNames as $fileName) {
             try {
                 // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                unlink($this->logHelper->getLogFileAbsolutePath($fileName));
+                unlink($this->logFileHelper->getFileAbsolutePath($fileName));
                 $deleted++;
             } catch (\Exception $e) {
                 $this->logger->error($e);

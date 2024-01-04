@@ -88,14 +88,14 @@ class ProductIsSalableChange implements ObserverInterface
         $eventName = $observer->getEvent()->getName();
 
         try {
-            $item = $observer->getData('item');
-            $sku = $item->getSku();
             $changedProducts = [];
 
             if ($eventName === 'sales_order_item_save_before') {
-                $this->products[$sku] = $item->getProduct();
+                $item = $observer->getData('item');
+                $this->products[$item->getSku()] = $item->getProduct();
             } elseif ($eventName === 'sales_order_item_save_after') {
-                if ($this->isSalableChanged($sku, $item->getStoreId())) {
+                $item = $observer->getData('item');
+                if ($this->isSalableChanged($item->getSku(), $item->getStoreId())) {
                     $changedProducts[] = $item->getProduct();
                 }
             } elseif ($eventName === 'sales_order_place_after') {

@@ -7,7 +7,7 @@ use Magento\Framework\App\Response\Http\FileFactory;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\ResultInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Log;
+use Synerise\Integration\Helper\LogFile;
 
 class Download extends System
 {
@@ -19,9 +19,9 @@ class Download extends System
     protected $fileFactory;
 
     /**
-     * @var Log
+     * @var LogFile
      */
-    protected $logHelper;
+    protected $logFileHelper;
 
     /**
      * @var LoggerInterface
@@ -31,17 +31,17 @@ class Download extends System
     /**
      * @param Context $context
      * @param FileFactory $fileFactory
-     * @param Log $logHelper
+     * @param LogFile $logFileHelper
      * @param LoggerInterface $logger
      */
     public function __construct(
         Context $context,
         FileFactory $fileFactory,
-        Log $logHelper,
+        LogFile $logFileHelper,
         LoggerInterface $logger
     ) {
         $this->fileFactory = $fileFactory;
-        $this->logHelper = $logHelper;
+        $this->logFileHelper = $logFileHelper;
         $this->logger = $logger;
 
         parent::__construct($context);
@@ -61,7 +61,7 @@ class Download extends System
                 $fileName,
                 [
                     'type'  => 'filename',
-                    'value' => $this->logHelper->getLogFileAbsolutePath($fileName)
+                    'value' => $this->logFileHelper->getFileAbsolutePath($fileName)
                 ]
             );
         } catch (\Exception $e) {

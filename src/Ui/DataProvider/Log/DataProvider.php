@@ -3,14 +3,14 @@ namespace Synerise\Integration\Ui\DataProvider\Log;
 
 use Magento\Framework\Api\SortOrder;
 use Magento\Ui\DataProvider\AbstractDataProvider;
-use Synerise\Integration\Helper\Log;
+use Synerise\Integration\Helper\LogFile;
 
 class DataProvider extends AbstractDataProvider
 {
     /**
-     * @var Log
+     * @var LogFile
      */
-    protected $logHelper;
+    protected $logFileHelper;
 
     /**
      * @var int
@@ -33,7 +33,7 @@ class DataProvider extends AbstractDataProvider
     protected $orderDirection = 'desc';
 
     /**
-     * @param Log $logHelper
+     * @param LogFile $logFileHelper
      * @param string $name
      * @param string $primaryFieldName
      * @param string $requestFieldName
@@ -41,14 +41,14 @@ class DataProvider extends AbstractDataProvider
      * @param array $data
      */
     public function __construct(
-        Log $logHelper,
+        LogFile $logFileHelper,
         $name,
         $primaryFieldName,
         $requestFieldName,
-        array $meta = [],
-        array $data = []
+        array   $meta = [],
+        array   $data = []
     ) {
-        $this->logHelper = $logHelper;
+        $this->logFileHelper = $logFileHelper;
 
         parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
     }
@@ -59,18 +59,18 @@ class DataProvider extends AbstractDataProvider
     public function getData(): array
     {
         $items = [];
-        $files = $this->getFiles($this->logHelper->getLogDirectoryPath(), $this->getScnadirSortOrder());
+        $files = $this->getFiles($this->logFileHelper->getLogDirectoryPath(), $this->getScnadirSortOrder());
 
         if ($this->getOrderField() == 'filesize') {
             if ($this->getOrderDirection() == 'ASD') {
                 usort($files, function ($fileName1, $fileName2) {
-                    return $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName1)) <=>
-                        $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName2));
+                    return $this->filesize($this->logFileHelper->getFileAbsolutePath($fileName1)) <=>
+                        $this->filesize($this->logFileHelper->getFileAbsolutePath($fileName2));
                 });
             } else {
                 usort($files, function ($fileName1, $fileName2) {
-                    return $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName2)) <=>
-                        $this->filesize($this->logHelper->getLogFileAbsolutePath($fileName1));
+                    return $this->filesize($this->logFileHelper->getFileAbsolutePath($fileName2)) <=>
+                        $this->filesize($this->logFileHelper->getFileAbsolutePath($fileName1));
                 });
             }
         }
@@ -78,7 +78,7 @@ class DataProvider extends AbstractDataProvider
         $filesBatch = array_slice($files, $this->getLimitOffset(), $this->getLimitSize());
 
         foreach ($filesBatch as $file) {
-            $fileAbsolutePath = $this->logHelper->getLogFileAbsolutePath($file);
+            $fileAbsolutePath = $this->logFileHelper->getFileAbsolutePath($file);
 
             $data = [
                 'name' => $file,
