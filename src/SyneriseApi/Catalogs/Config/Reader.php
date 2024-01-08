@@ -1,8 +1,6 @@
 <?php
 namespace Synerise\Integration\SyneriseApi\Catalogs\Config;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Config\ReaderInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
@@ -16,16 +14,6 @@ class Reader implements ReaderInterface
     public const CATALOG_NAME_FORMAT = 'store-%s';
 
     /**
-     * @var ScopeConfigInterface
-     */
-    protected $scopeConfig;
-
-    /**
-     * @var WriterInterface
-     */
-    protected $configWriter;
-
-    /**
      * @var Synchronization
      */
     protected $synchronization;
@@ -36,19 +24,13 @@ class Reader implements ReaderInterface
     private $catalog;
 
     /**
-     * @param $scopeConfig
-     * @param $configWriter
      * @param Synchronization $synchronization
      * @param Catalog $catalog
      */
     public function __construct(
-        $scopeConfig,
-        $configWriter,
         Synchronization $synchronization,
         Catalog $catalog
     ) {
-        $this->scopeConfig = $scopeConfig;
-        $this->configWriter = $configWriter;
         $this->synchronization = $synchronization;
         $this->catalog = $catalog;
     }
