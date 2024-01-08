@@ -94,13 +94,12 @@ class InstanceFactory
     ): array {
         $options = [
             'connect_timeout' => $timeout ?: $this->timeout,
-            'timeout' => $timeout ?: $this->timeout
+            'timeout' => $timeout ?: $this->timeout,
+            'headers' => []
         ];
 
-        if ($authorizationType) {
-            if ($authorizationType == Config::AUTHORIZATION_TYPE_BASIC) {
-                $options['headers']['Authorization'] = [ Config::AUTHORIZATION_TYPE_BASIC . " {$authorizationToken}" ];
-            }
+        if ($authorizationType && $authorizationType == Config::AUTHORIZATION_TYPE_BASIC) {
+            $options['headers']['Authorization'] = [ Config::AUTHORIZATION_TYPE_BASIC . " {$authorizationToken}" ];
         }
 
         if ($handlerStack) {
@@ -108,9 +107,7 @@ class InstanceFactory
         }
 
         if ($keepAlive) {
-            $options['headers'] = [
-                'Connection' => [ 'keep-alive' ]
-            ];
+            $options['headers']['Connection'] = [ 'keep-alive' ];
         }
 
         return $options;

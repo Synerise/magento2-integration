@@ -82,7 +82,7 @@ class Workspaces extends Value
         if (!empty($value)) {
             foreach ($value as $websiteId => $workspaceId) {
                 if (!isset($oldValue[$websiteId]) || $oldValue[$websiteId] != $workspaceId) {
-                    $this->saveLinkedConfig($websiteId, $workspaceId);
+                    $this->saveLinkedConfig($websiteId, (int) $workspaceId);
                 }
             }
         }
