@@ -83,10 +83,6 @@ class CustomerSaveAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if (in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
             return;
         }
@@ -99,6 +95,10 @@ class CustomerSaveAfter implements ObserverInterface
             /** @var Customer $customer */
             $customer = $observer->getCustomer();
             $storeId = $customer->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
                 $this->dataItemPublisher->publish(

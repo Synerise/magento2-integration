@@ -8,6 +8,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Model\Config\Source\Synchronization\Model;
+use Synerise\Integration\Model\Tracking\Config;
 
 class Synchronization
 {
@@ -72,7 +73,7 @@ class Synchronization
     public function isEventQueueEnabled(int $scopeId, string $scope = ScopeInterface::SCOPE_STORE): bool
     {
         return $this->scopeConfig->isSetFlag(
-            Tracking::XML_PATH_QUEUE_ENABLED,
+            Config::XML_PATH_QUEUE_ENABLED,
             $scope,
             $scopeId
         );

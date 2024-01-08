@@ -72,10 +72,6 @@ class CustomerLogin implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -84,6 +80,10 @@ class CustomerLogin implements ObserverInterface
             /** @var \Magento\Customer\Model\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
             $storeId = $customer->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             $this->uuidHelper->manageByEmail(
                 $customer->getEmail(),

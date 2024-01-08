@@ -79,10 +79,6 @@ class WishlistAddProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -96,6 +92,9 @@ class WishlistAddProduct implements ObserverInterface
 
             $product = $observer->getEvent()->getProduct();
             $storeId = $wishlist->getStore()->getId();
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             $params = $this->trackingHelper->prepareContextParams();
             $params['sku'] = $product->getSku();

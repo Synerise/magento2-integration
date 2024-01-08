@@ -78,10 +78,6 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
@@ -91,6 +87,12 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         /** @var Subscriber $subscriber */
         $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
+
+
+        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            return;
+        }
+
         try {
             if (!$context->isLoggedIn() && !$context->isAdminStore()) {
                 $this->uuidHelper->manageByEmail(

@@ -6,6 +6,7 @@ use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Config\ReaderInterface;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
+use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\CatalogsApiClient\Model\Bag;
 use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\SyneriseApi\Sender\Catalog;
@@ -62,8 +63,11 @@ class Reader implements ReaderInterface
     {
         $output = [];
         foreach ($this->synchronization->getEnabledStores() as $storeId) {
-            $catalog = $this->getOrAddCatalogByStoreId($storeId);
-            $output[$storeId] = $catalog ? $catalog->getId() : null;
+            if ($scope == $storeId) {
+                $catalog = $this->getOrAddCatalogByStoreId($storeId);
+                $output[$scope] = $catalog ? $catalog->getId() : null;
+                break;
+            }
         }
         return $output;
     }

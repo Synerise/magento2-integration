@@ -2,8 +2,6 @@
 
 namespace Synerise\Integration\SyneriseApi\Catalogs;
 
-use InvalidArgumentException;
-
 class Config
 {
     /**
@@ -25,12 +23,12 @@ class Config
     }
 
     /**
-     * Remove cache reinitialize data
+     * Remove cache for selected scope
      *
      * @return void
      */
-    public function reinitData()
+    public function resetByScopeId(int $scopeId)
     {
-        $this->dataStorage->reinitData();
+        $this->dataStorage->resetByScopeId($scopeId);
     }
 }

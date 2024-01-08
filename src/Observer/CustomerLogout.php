@@ -63,10 +63,6 @@ class CustomerLogout implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -74,6 +70,10 @@ class CustomerLogout implements ObserverInterface
         try {
             $customer = $observer->getEvent()->getCustomer();
             $storeId = $customer->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             $eventClientAction = new EventClientAction([
                 'event_salt' => $this->trackingHelper->generateEventSalt(),

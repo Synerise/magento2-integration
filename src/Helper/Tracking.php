@@ -4,30 +4,21 @@ namespace Synerise\Integration\Helper;
 
 use Exception;
 use InvalidArgumentException;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Quote\Model\Quote;
-use Magento\Store\Model\ScopeInterface;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\Model\Client;
 use Synerise\Integration\Helper\Tracking\Context;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
 use Synerise\Integration\Model\Config\Source\EventTracking\Events;
+use Synerise\Integration\Model\Tracking\Config;
 
 class Tracking
 {
-    public const XML_PATH_EVENT_TRACKING_ENABLED = 'synerise/event_tracking/enabled';
-
-    public const XML_PATH_EVENT_TRACKING_EVENTS = 'synerise/event_tracking/events';
-
-    public const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
-
-    public const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
-
     /**
-     * @var ScopeConfigInterface
+     * @var Config
      */
-    private $scopeConfig;
+    private $config;
 
     /**
      * @var Cookie
@@ -45,100 +36,60 @@ class Tracking
     private $uuidGenerator;
 
     /**
-     * @param ScopeConfigInterface $scopeConfig
+     * @param Config $config
      * @param Cookie $cookieHelper
      * @param Context $contextHelper
      * @param UuidGenerator $uuidGenerator
      */
     public function __construct(
-        ScopeConfigInterface $scopeConfig,
+        Config $config,
         Cookie $cookieHelper,
         Context $contextHelper,
         UuidGenerator $uuidGenerator
     ) {
-        $this->scopeConfig = $scopeConfig;
+        $this->config = $config;
         $this->cookieHelper = $cookieHelper;
         $this->contextHelper = $contextHelper;
         $this->uuidGenerator = $uuidGenerator;
     }
 
     /**
-     * Check if event should be tracked.
+     * Check if event tracking is enabled & event should be tracked
      *
      * @param string $event
-     * @param int|null $storeId
+     * @param int $storeId
      * @return bool
      */
-    public function isEventTrackingAvailable(string $event, ?int $storeId = null): bool
+    public function isEventTrackingAvailable(string $event, int $storeId): bool
     {
-        if (!$this->scopeConfig->isSetFlag(
-            self::XML_PATH_EVENT_TRACKING_ENABLED,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        )) {
-            return false;
-        }
-
-        $events = explode(',', $this->scopeConfig->getValue(
-            self::XML_PATH_EVENT_TRACKING_EVENTS,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        ));
-
-        return in_array($event, $events);
+        return $this->config->isEventTrackingEnabled($storeId, $event);
     }
 
     /**
-     * Check if event should be sent via Message Queue
+     * Check if event message queue is enabled & event should be sent via Message Queue
      *
      * @param string $event
-     * @param int|null $storeId
+     * @param int $storeId
      * @return bool
      */
-    public function isEventMessageQueueAvailable(string $event, int $storeId = null): bool
+    public function isEventMessageQueueAvailable(string $event, int $storeId): bool
     {
-        if (!$this->isEventMessageQueueEnabled($storeId)) {
-            return false;
-        }
-
-        return $this->isEventSelectedForMessageQueue($event, $storeId);
+        return $this->config->isEventMessageQueueEnabled($storeId, $event);
     }
 
     /**
-     * Check if message queue is enabled for events
+     * Check if event message queue is enabled
      *
-     * @param int|null $storeId
+     * @param int $storeId
      * @return bool
      */
-    public function isEventMessageQueueEnabled(int $storeId = null): bool
+    public function isEventMessageQueueEnabled(int $storeId): bool
     {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_QUEUE_ENABLED,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
+        return $this->config->isEventMessageQueueEnabled($storeId);
     }
 
     /**
-     * Check if event is selected to be sent via Message Queue
-     *
-     * @param string $event
-     * @param int|null $storeId
-     * @return bool
-     */
-    protected function isEventSelectedForMessageQueue(string $event, ?int $storeId = null): bool
-    {
-        $events = explode(',', $this->scopeConfig->getValue(
-            self::XML_PATH_QUEUE_EVENTS,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        ));
-
-        return in_array($event, $events);
-    }
-
-    /**
-     * Get client uuid from cookie
+     * Get client uuid from cookie if not in admin scope
      *
      * @return string|null
      */

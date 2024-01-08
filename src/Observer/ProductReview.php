@@ -106,11 +106,13 @@ class ProductReview implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         try {
+            $storeId = $this->storeManager->getStore()->getId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             if ($observer->getObject()) {
                 $this->review = $observer->getObject();
                 return;
@@ -128,8 +130,6 @@ class ProductReview implements ObserverInterface
             $client = ['uuid' => $this->trackingHelper->getClientUuid()];
 
             $customerId = $this->review->getCustomerId();
-            $storeId = $this->storeManager->getStore()->getId();
-
             if ($customerId) {
                 $client['custom_id'] = $customerId;
             }

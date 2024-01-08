@@ -73,10 +73,6 @@ class CustomerRegister implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -85,6 +81,10 @@ class CustomerRegister implements ObserverInterface
             /** @var \Magento\Customer\Model\Data\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
             $storeId = $customer->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             $this->uuidHelper->manageByEmail(
                 $customer->getEmail(),

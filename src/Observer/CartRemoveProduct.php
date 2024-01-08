@@ -71,10 +71,6 @@ class CartRemoveProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -83,6 +79,11 @@ class CartRemoveProduct implements ObserverInterface
             /** @var Quote\Item $quoteItem */
             $quoteItem = $observer->getQuoteItem();
             $storeId = $quoteItem->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             $product = $quoteItem->getProduct();
 
             if ($product->getParentProductId()) {

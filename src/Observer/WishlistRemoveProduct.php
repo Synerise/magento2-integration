@@ -88,10 +88,6 @@ class WishlistRemoveProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -101,6 +97,10 @@ class WishlistRemoveProduct implements ObserverInterface
             $item = $observer->getItem();
 
             $storeId = $item->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             /** @var Wishlist $wishlist */
             $wishlist = $this->wishlist->load($item->getWishlistId());

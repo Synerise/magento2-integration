@@ -3,7 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-namespace Synerise\Integration\SyneriseApi\Catalogs\Config;
+namespace Synerise\Integration\Model\Tracking\Config;
 
 use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Serialize\SerializerInterface;
@@ -52,7 +52,7 @@ class Data extends \Magento\Framework\Config\Data
         Reader $reader,
         CacheInterface $cache,
         SerializerInterface $serializer,
-        $cacheId = 'synerise_api_catalogs_config'
+        $cacheId = 'synerise_event_tracking_config'
     ) {
         $this->reader = $reader;
         $this->cache = $cache;
@@ -67,10 +67,10 @@ class Data extends \Magento\Framework\Config\Data
      * @param mixed $default
      * @return array|mixed|null
      */
-    public function get($path = null, $default = null)
+    public function getByScope($scope, $path = null, $default = null)
     {
-        $this->loadScopedData($path);
-        return parent::get($path, $default);
+        $this->loadScopedData($scope);
+        return parent::get($scope . '/' .$path, $default);
     }
 
     /**
@@ -93,18 +93,6 @@ class Data extends \Magento\Framework\Config\Data
             $this->merge($data);
             $this->loadedScopes[$scopeId] = true;
         }
-    }
-
-    /**
-     * Clear cache data
-     *
-     * @param int $scopeId
-     * @return void
-     */
-    public function resetByScopeId(int $scopeId)
-    {
-        $this->cache->remove($this->getScopedCacheId($scopeId));
-        unset($this->loadedScopes[$scopeId]);
     }
 
     /**

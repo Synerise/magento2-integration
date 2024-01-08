@@ -75,10 +75,6 @@ class CartStatus implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
@@ -87,6 +83,10 @@ class CartStatus implements ObserverInterface
             /** @var \Magento\Quote\Model\Quote $quote */
             $quote = $observer->getQuote();
             $storeId = $quote->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             if (!$this->trackingHelper->getClientUuid() && !$quote->getCustomerEmail()) {
                 return;

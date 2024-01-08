@@ -64,13 +64,13 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG)) {
-            return;
-        }
-
         /** @var Subscriber $subscriber */
         $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
+
+        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+            return;
+        }
 
         try {
             $createAClientInCrmRequest = new CreateaClientinCRMRequest([

@@ -73,7 +73,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG)) {
+        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
 
@@ -84,6 +84,10 @@ class CatalogProductDeleteBefore implements ObserverInterface
             $enabledStores = $this->synchronizationHelper->getEnabledStores();
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
+                if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                    continue;
+                }
+
                 if (in_array($storeId, $enabledStores)) {
 
                     $addItemRequest = $this->sender->prepareItemRequest(

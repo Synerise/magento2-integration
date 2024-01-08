@@ -82,10 +82,6 @@ class StockStatusChange implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if (!$this->moduleManager->isEnabled('Magento_InventoryCatalogApi')) {
             return;
         }
@@ -134,6 +130,10 @@ class StockStatusChange implements ObserverInterface
         $enabledStores = $this->synchronizationHelper->getEnabledStores();
         $storeIds = $product->getStoreIds();
         foreach ($storeIds as $storeId) {
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             if (in_array($storeId, $enabledStores)) {
                 $this->publisher->publish(
                     Sender::MODEL,

@@ -221,7 +221,7 @@ class Product extends AbstractSender implements SenderInterface
             );
         } catch (CatalogsApiException $e) {
             if ($e->getCode() == 404 || ($e->getCode() == 403 && $this->isStoreForbiddenException($e))) {
-                $this->catalogsConfig->reinitData();
+                $this->catalogsConfig->resetByScopeId($storeId);
                 $this->addItemsBatch(
                     $storeId,
                     $this->catalogsConfig->getCatalogId($storeId),

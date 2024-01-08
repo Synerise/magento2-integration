@@ -100,14 +100,14 @@ class OrderPlace implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         try {
             /** @var Order $order */
             $order = $observer->getEvent()->getOrder();
             $storeId = $order->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
 
             if (!$this->trackingHelper->getContext()->isAdminStore()) {
                 $this->uuidHelper->manageByEmail(

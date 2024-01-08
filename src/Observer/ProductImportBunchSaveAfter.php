@@ -61,14 +61,15 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     public function execute(Observer $observer)
     {
         try {
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-                return;
-            }
+
 
             $productsByStore = [];
             $bunch = $observer->getEvent()->getData('bunch');
             foreach ($bunch as $product) {
                 if (isset($product['entity_id']) && isset($product['store_id'])) {
+                    if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $product['store_id'])) {
+                        return;
+                    }
                     $productsByStore[$product['store_id']][] = $product['entity_id'];
                 }
             }

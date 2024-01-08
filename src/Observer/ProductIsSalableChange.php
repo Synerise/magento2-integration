@@ -77,10 +77,6 @@ class ProductIsSalableChange implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
@@ -159,6 +155,10 @@ class ProductIsSalableChange implements ObserverInterface
         $enabledStores = $this->synchronizationHelper->getEnabledStores();
         $storeIds = $product->getStoreIds();
         foreach ($storeIds as $storeId) {
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             if (in_array($storeId, $enabledStores)) {
                 $this->publisher->publish(
                     Sender::MODEL,

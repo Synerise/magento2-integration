@@ -33,15 +33,15 @@ class Code extends Template
 
     /**
      * @param Context $context
-     * @param Cookie $helper
+     * @param Cookie $cookie
      * @param array $data
      */
     public function __construct(
         Context $context,
-        Cookie $helper,
+        Cookie $cookie,
         array $data = []
     ) {
-        $this->helper = $helper;
+        $this->cookie = $cookie;
 
         parent::__construct($context, $data);
     }
@@ -91,7 +91,7 @@ class Code extends Template
         if ($this->isCustomScriptEnabled()) {
             $script = $this->getCustomTrackingScript();
             if ($script) {
-                return $this->_escaper->escapeJs($script);
+                return $script;
             }
         }
 
@@ -118,7 +118,7 @@ class Code extends Template
      *
      * @return string
      */
-    public function getTrackerKey(): string
+    public function getTrackerKey(): ?string
     {
         if (!isset($this->trackerKey)) {
             $this->trackerKey = $this->_scopeConfig->getValue(
@@ -164,7 +164,7 @@ class Code extends Template
     protected function getCookieDomain(): ?string
     {
         try {
-            return $this->_escaper->escapeHtml($this->helper->getCookieDomain());
+            return $this->_escaper->escapeHtml($this->cookie->getCookieDomain());
         } catch (NoSuchEntityException $e) {
             return null;
         }

@@ -62,10 +62,6 @@ class CatalogProductSaveAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT)) {
-            return;
-        }
-
         if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
             return;
         }
@@ -90,6 +86,10 @@ class CatalogProductSaveAfter implements ObserverInterface
         $storeIds = $product->getStoreIds();
         foreach ($storeIds as $storeId) {
             if (in_array($storeId, $enabledStores)) {
+
+                if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                    return;
+                }
 
                 $this->publisher->publish(
                     Sender::MODEL,
