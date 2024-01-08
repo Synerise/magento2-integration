@@ -5,8 +5,10 @@ namespace Synerise\Integration\Communication;
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\MessageQueue\DefaultValueProvider;
 use Magento\Framework\Phrase;
 use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\MessageQueue\Consumer\Data\AmqpScheduler;
 use Synerise\Integration\MessageQueue\Consumer\Data\Bulk;
 use Synerise\Integration\MessageQueue\Consumer\Data\MysqlScheduler;
 use Synerise\Integration\MessageQueue\Consumer\Event;
@@ -26,15 +28,25 @@ class Config implements ConfigInterface
     protected $topics = [];
 
     /**
+     * @var DefaultValueProvider
+     */
+    private $defaultValueProvider;
+
+    /**
      * @var Synchronization
      */
     protected $synchronization;
 
     /**
+     * @param DefaultValueProvider $defaultValueProvider
      * @param Synchronization $synchronization
      */
-    public function __construct(Synchronization $synchronization)
+    public function __construct(
+        DefaultValueProvider $defaultValueProvider,
+        Synchronization $synchronization
+    )
     {
+        $this->defaultValueProvider = $defaultValueProvider;
         $this->synchronization = $synchronization;
 
         $this->initData();
@@ -103,7 +115,7 @@ class Config implements ConfigInterface
             $topicName = Scheduler::TOPIC_NAME;
             $result[$topicName] = $this->getTopicConfig(
                 $topicName,
-                MysqlScheduler::class
+                $this->isAmqpConfigured() ? AmqpScheduler::class : MysqlScheduler::class
             );
 
             $topicName =  Item::TOPIC_NAME;
@@ -163,5 +175,15 @@ class Config implements ConfigInterface
                 ]
             ]
         ];
+    }
+
+    /**
+     * Check if AMQP is configured
+     *
+     * @return bool
+     */
+    protected function isAmqpConfigured(): bool
+    {
+        return $this->defaultValueProvider->getConnection() == 'amqp';
     }
 }

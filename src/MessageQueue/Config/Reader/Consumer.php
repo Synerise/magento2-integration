@@ -1,13 +1,10 @@
 <?php
 namespace Synerise\Integration\MessageQueue\Config\Reader;
 
-use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\Config\ReaderInterface;
 use Magento\Framework\MessageQueue\ConsumerInterface;
 use Magento\Framework\MessageQueue\DefaultValueProvider;
 use Synerise\Integration\Communication\Config;
-use Synerise\Integration\MessageQueue\Consumer\Data\AmqpScheduler;
-use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler;
 
 class Consumer implements ReaderInterface
 {
@@ -40,10 +37,6 @@ class Consumer implements ReaderInterface
     {
         $result = [];
         foreach ($this->config->getTopics() as $topicName => $topicConfig) {
-            if ($topicName == Scheduler::TOPIC_NAME && $this->isAmqpConfigured()) {
-                $topicConfig['handlers'][ConfigInterface::HANDLER_TYPE] = AmqpScheduler::class;
-            }
-
             $result[$topicName] = $this->getConsumerConfig($topicName, array_values($topicConfig['handlers']));
         }
         return $result;
@@ -79,15 +72,5 @@ class Consumer implements ReaderInterface
             'sleep' => $sleep,
             'onlySpawnWhenMessageAvailable' => $onlySpawnWhenMessageAvailable
         ];
-    }
-
-    /**
-     * Check if AMQP is configured
-     *
-     * @return bool
-     */
-    protected function isAmqpConfigured(): bool
-    {
-        return $this->defaultValueProvider->getConnection() == 'amqp';
     }
 }
