@@ -1,13 +1,13 @@
 <?php
 
-namespace Synerise\Integration\Cron\MessageQueue;
+namespace Synerise\Integration\Crons;
 
 use Magento\Framework\MessageQueue\MessageEncoder;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\MessageQueue\PublisherInterface;
 use Synerise\Integration\Model\ResourceModel\MessageQueue\Retry\CollectionFactory;
 
-class Retry
+class MessageQueueRetry
 {
     /**
      * @var LoggerInterface

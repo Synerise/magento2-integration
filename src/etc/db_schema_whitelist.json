@@ -63,5 +63,20 @@
         "constraint": {
             "PRIMARY": true
         }
+    },
+    "synerise_bulk": {
+        "column": {
+            "id": true,
+            "uuid": true,
+            "model": true,
+            "store_id": true,
+            "status": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "SYNERISE_BULK_UUID": true
+        }
     }
 }

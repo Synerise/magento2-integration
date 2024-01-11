@@ -43,14 +43,14 @@ class Reader implements ReaderInterface
 
         if ($this->synchronization->isEnabledStore($scope) && $this->isEventTrackingEnabled($scope)) {
             $this->addValue($output, Config::XML_PATH_EVENT_TRACKING_ENABLED, true);
-            foreach($this->getEventsSelectedForTracking($scope) as $event) {
-                $this->addValue($output,Config::XML_PATH_EVENT_TRACKING_EVENTS . '/' . $event, true);
+            foreach ($this->getEventsSelectedForTracking($scope) as $event) {
+                $this->addValue($output, Config::XML_PATH_EVENT_TRACKING_EVENTS . '/' . $event, true);
             }
 
             if ($this->isEventMessageQueueEnabled($scope)) {
-                $this->addValue($output,Config::XML_PATH_QUEUE_ENABLED, true);
-                foreach($this->getEventsSelectedForMessageQueue($scope) as $event) {
-                    $this->addValue($output,Config::XML_PATH_QUEUE_EVENTS . '/' . $event, true);
+                $this->addValue($output, Config::XML_PATH_QUEUE_ENABLED, true);
+                foreach ($this->getEventsSelectedForMessageQueue($scope) as $event) {
+                    $this->addValue($output, Config::XML_PATH_QUEUE_EVENTS . '/' . $event, true);
                 }
             }
         }
@@ -119,7 +119,7 @@ class Reader implements ReaderInterface
     }
 
     /**
-     * add config value as array to output
+     * Add config value as array to output
      *
      * @param array $output
      * @param string $path

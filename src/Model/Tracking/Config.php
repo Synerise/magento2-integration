@@ -12,7 +12,6 @@ class Config
 
     public const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
 
-
     /**
      * @var Config\Data
      */

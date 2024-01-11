@@ -5,6 +5,7 @@
  */
 namespace Synerise\Integration\Model\Tracking\Config;
 
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 
@@ -34,7 +35,7 @@ class Data extends \Magento\Framework\Config\Data
     private $serializer;
 
     /**
-     * Loaded scopes
+     * Loaded scopes array
      *
      * @var array
      */
@@ -46,28 +47,29 @@ class Data extends \Magento\Framework\Config\Data
      * @param Reader $reader
      * @param CacheInterface $cache
      * @param string $cacheId
-     * @param SerializerInterface $serializer
+     * @param SerializerInterface|null $serializer
      */
     public function __construct(
         Reader $reader,
         CacheInterface $cache,
-        SerializerInterface $serializer,
-        $cacheId = 'synerise_event_tracking_config'
+        $cacheId = 'synerise_event_tracking_config',
+        ?SerializerInterface $serializer = null
     ) {
         $this->reader = $reader;
         $this->cache = $cache;
         $this->cacheId = $cacheId;
-        $this->serializer = $serializer;
+        $this->serializer = $serializer ?: ObjectManager::getInstance()->get(SerializerInterface::class);
     }
 
     /**
      * Get config value by key
      *
-     * @param string $path
+     * @param string|int $scope
+     * @param string|null $path
      * @param mixed $default
      * @return array|mixed|null
      */
-    public function getByScope($scope, $path = null, $default = null)
+    public function getByScope($scope, string $path = null, $default = null)
     {
         $this->loadScopedData($scope);
         return parent::get($scope . '/' .$path, $default);
@@ -76,6 +78,7 @@ class Data extends \Magento\Framework\Config\Data
     /**
      * Load data for selected scope
      *
+     * @param int $scopeId
      * @return void
      */
     protected function loadScopedData(int $scopeId)

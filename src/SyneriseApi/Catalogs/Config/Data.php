@@ -5,6 +5,7 @@
  */
 namespace Synerise\Integration\SyneriseApi\Catalogs\Config;
 
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 
@@ -34,7 +35,7 @@ class Data extends \Magento\Framework\Config\Data
     private $serializer;
 
     /**
-     * Loaded scopes
+     * Loaded scopes array
      *
      * @var array
      */
@@ -46,18 +47,18 @@ class Data extends \Magento\Framework\Config\Data
      * @param Reader $reader
      * @param CacheInterface $cache
      * @param string $cacheId
-     * @param SerializerInterface $serializer
+     * @param SerializerInterface|null $serializer
      */
     public function __construct(
         Reader $reader,
         CacheInterface $cache,
-        SerializerInterface $serializer,
-        $cacheId = 'synerise_api_catalogs_config'
+        $cacheId = 'synerise_api_catalogs_config',
+        ?SerializerInterface $serializer = null
     ) {
         $this->reader = $reader;
         $this->cache = $cache;
         $this->cacheId = $cacheId;
-        $this->serializer = $serializer;
+        $this->serializer = $serializer ?: ObjectManager::getInstance()->get(SerializerInterface::class);
     }
 
     /**
@@ -76,6 +77,7 @@ class Data extends \Magento\Framework\Config\Data
     /**
      * Load data for selected scope
      *
+     * @param int $scopeId
      * @return void
      */
     protected function loadScopedData(int $scopeId)

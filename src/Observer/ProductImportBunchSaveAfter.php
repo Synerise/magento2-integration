@@ -61,8 +61,6 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     public function execute(Observer $observer)
     {
         try {
-
-
             $productsByStore = [];
             $bunch = $observer->getEvent()->getData('bunch');
             foreach ($bunch as $product) {

@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
     <group id="synerise">
-        <job name="synerise_queue_message_retry" instance="Synerise\Integration\Cron\MessageQueue\Retry" method="execute">
+        <job name="synerise_message_queue_retry" instance="Synerise\Integration\Cron\MessageQueueRetry" method="execute">
             <schedule>* * * * *</schedule>
+        </job>
+        <job name="synerise_bulk_cleanup" instance="Synerise\Integration\Cron\BulkCleanup" method="execute">
+            <schedule>0 * * * *</schedule>
         </job>
     </group>
 </config>

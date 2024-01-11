@@ -88,7 +88,6 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
 
-
         if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
             return;
         }

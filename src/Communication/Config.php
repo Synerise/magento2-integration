@@ -44,8 +44,7 @@ class Config implements ConfigInterface
     public function __construct(
         DefaultValueProvider $defaultValueProvider,
         Synchronization $synchronization
-    )
-    {
+    ) {
         $this->defaultValueProvider = $defaultValueProvider;
         $this->synchronization = $synchronization;
 
