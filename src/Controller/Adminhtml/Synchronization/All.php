@@ -8,11 +8,11 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
 use Synerise\Integration\Model\Config\Source\Synchronization\Model;
+use Synerise\Integration\Model\Synchronization\Config;
 
 class All extends Action implements HttpPostActionInterface
 {
@@ -37,7 +37,7 @@ class All extends Action implements HttpPostActionInterface
     protected $collectionFactoryProvider;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
     protected $synchronization;
 
@@ -46,14 +46,14 @@ class All extends Action implements HttpPostActionInterface
      * @param Publisher $publisher
      * @param Filter $filter
      * @param CollectionFactoryProvider $collectionFactoryProvider
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      */
     public function __construct(
         Context $context,
         Publisher $publisher,
         Filter $filter,
         CollectionFactoryProvider $collectionFactoryProvider,
-        Synchronization $synchronization
+        Config $synchronization
     ) {
         $this->publisher = $publisher;
         $this->filter = $filter;
@@ -79,7 +79,7 @@ class All extends Action implements HttpPostActionInterface
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
 
         try {
-            if (!$this->synchronization->isSynchronizationEnabled()) {
+            if (!$this->synchronization->isEnabled()) {
                 $this->messageManager->addErrorMessage(
                     __('Synchronization is disabled. Please review your configuration.')
                 );
@@ -90,7 +90,7 @@ class All extends Action implements HttpPostActionInterface
             $selectedModels = $this->getSelectedModels($this->getRequest()->getParam('selected'));
 
             foreach ($selectedModels as $model) {
-                if (!$this->synchronization->isEnabledModel($model)) {
+                if (!$this->synchronization->isModelEnabled($model)) {
                     $this->messageManager->addErrorMessage(
                         __('%1s are excluded from synchronization.', ucfirst($model))
                     );
@@ -100,7 +100,7 @@ class All extends Action implements HttpPostActionInterface
                 $storeIdsWithItems = [];
 
                 foreach ($selectedStoreIds as $storeId) {
-                    if ($this->synchronization->isEnabledStore($storeId)) {
+                    if ($this->synchronization->isStoreConfigured($storeId)) {
                         if ($this->storeHasItems($model, $storeId)) {
                             $storeIdsWithItems[] = $storeId;
                         }
@@ -185,6 +185,6 @@ class All extends Action implements HttpPostActionInterface
      */
     protected function getSelectedStoreIds(?int $scope): array
     {
-        return $scope ? [$scope] : $this->synchronization->getEnabledStores();
+        return $scope ? [$scope] : $this->synchronization->getConfiguredStores();
     }
 }

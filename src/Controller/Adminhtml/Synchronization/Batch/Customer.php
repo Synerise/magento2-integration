@@ -11,8 +11,8 @@ use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
 
 class Customer extends Action
@@ -43,7 +43,7 @@ class Customer extends Action
     protected $publisher;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
     protected $synchronization;
 
@@ -53,7 +53,7 @@ class Customer extends Action
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
      * @param Publisher $publisher
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      */
     public function __construct(
         Context $context,
@@ -61,7 +61,7 @@ class Customer extends Action
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,
-        Synchronization $synchronization
+        Config $synchronization
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
@@ -80,11 +80,11 @@ class Customer extends Action
      */
     public function execute()
     {
-        if (!$this->synchronization->isSynchronizationEnabled()) {
+        if (!$this->synchronization->isEnabled()) {
             $this->messageManager->addErrorMessage(
                 __('Synchronization is disabled. Please review your configuration.')
             );
-        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
+        } elseif (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             $this->messageManager->addErrorMessage(
                 __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
             );
@@ -92,7 +92,7 @@ class Customer extends Action
             try {
                 $storeIds = [];
                 $itemsCount = 0;
-                $enabledStoreIds = $this->synchronization->getEnabledStores();
+                $enabledStoreIds = $this->synchronization->getConfiguredStores();
 
                 foreach ($enabledStoreIds as $enabledStoreId) {
                     /** @var Collection $collection */
@@ -106,7 +106,7 @@ class Customer extends Action
                             $collection->getAllIds(),
                             $enabledStoreId,
                             null,
-                            $this->synchronization->getPageSize(Sender::MODEL)
+                            $this->synchronization->getLimit(Sender::MODEL)
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->count();

@@ -1,19 +1,17 @@
 <?php
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
 namespace Synerise\Integration\SyneriseApi\Catalogs\Config;
 
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 
-/**
- * Provides country postcodes configuration
- */
 class Data extends \Magento\Framework\Config\Data
 {
+    /**
+     * @inheirtDoc
+     */
+    protected $cacheTags = ['SYNERISE'];
+
     /**
      * @var Reader
      */
@@ -52,7 +50,7 @@ class Data extends \Magento\Framework\Config\Data
     public function __construct(
         Reader $reader,
         CacheInterface $cache,
-        $cacheId = 'synerise_api_catalogs_config',
+        $cacheId = 'synerise_config_api_catalogs',
         ?SerializerInterface $serializer = null
     ) {
         $this->reader = $reader;

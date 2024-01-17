@@ -12,13 +12,14 @@ use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
 use Synerise\Integration\Model\Config\Source\EventTracking\Events;
 use Synerise\Integration\Model\Tracking\Config;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 
 class Tracking
 {
     /**
-     * @var Config
+     * @var Config[]
      */
-    private $config;
+    private $config = [];
 
     /**
      * @var Cookie
@@ -36,21 +37,41 @@ class Tracking
     private $uuidGenerator;
 
     /**
-     * @param Config $config
+     * @var ConfigFactory
+     */
+    private $configFactory;
+
+    /**
+     * @param ConfigFactory $configFactory
      * @param Cookie $cookieHelper
      * @param Context $contextHelper
      * @param UuidGenerator $uuidGenerator
      */
     public function __construct(
-        Config $config,
+        ConfigFactory $configFactory,
         Cookie $cookieHelper,
         Context $contextHelper,
         UuidGenerator $uuidGenerator
     ) {
-        $this->config = $config;
+        $this->configFactory = $configFactory;
         $this->cookieHelper = $cookieHelper;
         $this->contextHelper = $contextHelper;
         $this->uuidGenerator = $uuidGenerator;
+    }
+
+    /**
+     * Get tracking config by store ID
+     *
+     * @param int $storeId
+     * @return Config
+     */
+    public function getConfig(int $storeId)
+    {
+        if (!isset($this->config[$storeId])) {
+            $this->config[$storeId] = $this->configFactory->create($storeId);
+        }
+
+        return $this->config[$storeId];
     }
 
     /**
@@ -62,7 +83,7 @@ class Tracking
      */
     public function isEventTrackingAvailable(string $event, int $storeId): bool
     {
-        return $this->config->isEventTrackingEnabled($storeId, $event);
+        return $this->getConfig($storeId)->isEventTrackingEnabled($event);
     }
 
     /**
@@ -74,7 +95,7 @@ class Tracking
      */
     public function isEventMessageQueueAvailable(string $event, int $storeId): bool
     {
-        return $this->config->isEventMessageQueueEnabled($storeId, $event);
+        return $this->getConfig($storeId)->isEventMessageQueueEnabled($event);
     }
 
     /**
@@ -85,7 +106,7 @@ class Tracking
      */
     public function isEventMessageQueueEnabled(int $storeId): bool
     {
-        return $this->config->isEventMessageQueueEnabled($storeId);
+        return $this->getConfig($storeId)->isEventMessageQueueEnabled();
     }
 
     /**

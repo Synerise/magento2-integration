@@ -5,11 +5,12 @@ namespace Synerise\Integration\MessageQueue\Consumer\Data;
 use Magento\Framework\Amqp\Config as AmqpConfig;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
+use Synerise\Integration\Model\Synchronization\Config;
 
 class AmqpScheduler extends AbstractScheduler
 {
@@ -19,29 +20,32 @@ class AmqpScheduler extends AbstractScheduler
     protected $amqpConfig;
 
     /**
+     * @param StoreManagerInterface $storeManager
      * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
      * @param EntityManager $entityManager
      * @param CollectionFactoryProvider $collectionFactoryProvider
      * @param Filter $filter
      * @param Publisher $publisher
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      * @param AmqpConfig $amqpConfig
      */
     public function __construct(
+        StoreManagerInterface $storeManager,
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
         CollectionFactoryProvider $collectionFactoryProvider,
         Filter $filter,
         Publisher $publisher,
-        Synchronization $synchronization,
+        Config $synchronization,
         AmqpConfig $amqpConfig
     ) {
 
         $this->amqpConfig = $amqpConfig;
 
         parent::__construct(
+            $storeManager,
             $logger,
             $serializer,
             $entityManager,

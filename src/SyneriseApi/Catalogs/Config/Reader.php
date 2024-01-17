@@ -6,7 +6,7 @@ use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\CatalogsApiClient\Model\Bag;
-use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Catalog;
 
 class Reader implements ReaderInterface
@@ -14,7 +14,7 @@ class Reader implements ReaderInterface
     public const CATALOG_NAME_FORMAT = 'store-%s';
 
     /**
-     * @var Synchronization
+     * @var Config
      */
     protected $synchronization;
 
@@ -24,11 +24,11 @@ class Reader implements ReaderInterface
     private $catalog;
 
     /**
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      * @param Catalog $catalog
      */
     public function __construct(
-        Synchronization $synchronization,
+        Config $synchronization,
         Catalog $catalog
     ) {
         $this->synchronization = $synchronization;
@@ -44,11 +44,13 @@ class Reader implements ReaderInterface
     public function read($scope = null): array
     {
         $output = [];
-        foreach ($this->synchronization->getEnabledStores() as $storeId) {
-            if ($scope == $storeId) {
-                $catalog = $this->getOrAddCatalogByStoreId($storeId);
-                $output[$scope] = $catalog ? $catalog->getId() : null;
-                break;
+        if ($this->synchronization->isModelEnabled('product')) {
+            foreach ($this->synchronization->getConfiguredStores() as $storeId) {
+                if ($scope == $storeId) {
+                    $catalog = $this->getOrAddCatalogByStoreId($storeId);
+                    $output[$scope] = $catalog ? $catalog->getId() : null;
+                    break;
+                }
             }
         }
         return $output;

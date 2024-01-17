@@ -17,17 +17,23 @@ use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Customer\Model\ResourceModel\Customer\Collection as CustomerCollection;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection as SubscriberCollection;
 use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product;
 use Zend_Db_Adapter_Exception;
 
 abstract class AbstractScheduler
 {
+    /**
+     * @var StoreManagerInterface
+     */
+    protected $storeManager;
+
     /**
      * @var LoggerInterface
      */
@@ -59,28 +65,31 @@ abstract class AbstractScheduler
     protected $publisher;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
     protected $synchronization;
 
     /**
+     * @param StoreManagerInterface $storeManager
      * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
      * @param EntityManager $entityManager
      * @param CollectionFactoryProvider $collectionFactoryProvider
      * @param Filter $filter
      * @param Publisher $publisher
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      */
     public function __construct(
+        StoreManagerInterface $storeManager,
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
         CollectionFactoryProvider $collectionFactoryProvider,
         Filter $filter,
         Publisher $publisher,
-        Synchronization $synchronization
+        Config $synchronization
     ) {
+        $this->storeManager = $storeManager;
         $this->logger = $logger;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
@@ -163,7 +172,7 @@ abstract class AbstractScheduler
         /** @var CustomerCollection|OrderCollection|ProductCollection|SubscriberCollection $collection */
         $collection = $this->filter->addStoreFilter($collectionFactory->create(), $data['store_id']);
 
-        $pageSize = $this->synchronization->getPageSize($data['model'], $data['store_id']);
+        $pageSize = $this->synchronization->getLimit($data['model']);
 
         $gt = 0;
         $lastId = $this->filter->getLastId($collection);
@@ -188,10 +197,21 @@ abstract class AbstractScheduler
                 $data['model'],
                 $ids,
                 $data['store_id'],
-                $data['model'] == Product::MODEL ?
-                    $this->synchronization->getWebsiteIdByStoreId($data['store_id']) : null
+                $data['model'] == Product::MODEL ? $this->getWebsiteIdByStoreId($data['store_id']) : null
             );
         }
+    }
+
+    /**
+     * Get website ID by store ID
+     *
+     * @param int $storeId
+     * @return int
+     * @throws NoSuchEntityException
+     */
+    public function getWebsiteIdByStoreId(int $storeId): int
+    {
+        return $this->storeManager->getStore($storeId)->getWebsiteId();
     }
 
     /**

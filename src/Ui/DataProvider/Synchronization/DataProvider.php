@@ -12,8 +12,8 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider as UiComponentDataProvider;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory as SubscriberCollectionFactory;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Config\Source\Synchronization\Model;
+use Synerise\Integration\Model\Synchronization\Config;
 
 class DataProvider extends UiComponentDataProvider
 {
@@ -23,7 +23,7 @@ class DataProvider extends UiComponentDataProvider
     protected $connection;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
     protected $synchronization;
 
@@ -53,7 +53,7 @@ class DataProvider extends UiComponentDataProvider
      * @param ReportingInterface $reporting
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param FilterBuilder $filterBuilder
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      * @param CustomerCollectionFactory $customerCollectionFactory
      * @param ProductCollectionFactory $productCollectionFactory
      * @param OrderCollectionFactory $orderCollectionFactory
@@ -70,7 +70,7 @@ class DataProvider extends UiComponentDataProvider
         ReportingInterface $reporting,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         FilterBuilder $filterBuilder,
-        Synchronization $synchronization,
+        Config $synchronization,
         CustomerCollectionFactory $customerCollectionFactory,
         ProductCollectionFactory $productCollectionFactory,
         OrderCollectionFactory $orderCollectionFactory,
@@ -112,7 +112,7 @@ class DataProvider extends UiComponentDataProvider
                 'name' => $modelName,
                 'sent' => $this->getSentCount($modelKey, $this->request->getParam('store')),
                 'total' => $this->getTotalCount($modelKey, $this->request->getParam('store')),
-                'enabled' => $this->synchronization->isEnabledModel($modelKey) ? 'Yes' : 'No'
+                'enabled' => $this->synchronization->isModelEnabled($modelKey) ? 'Yes' : 'No'
             ];
         }
 

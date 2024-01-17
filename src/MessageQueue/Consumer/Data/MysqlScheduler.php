@@ -7,11 +7,12 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\MysqlMq\Model\QueueManagement;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
+use Synerise\Integration\Model\Synchronization\Config;
 
 class MysqlScheduler extends AbstractScheduler
 {
@@ -21,28 +22,31 @@ class MysqlScheduler extends AbstractScheduler
     protected $connection;
 
     /**
+     * @param StoreManagerInterface $storeManager
      * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
      * @param EntityManager $entityManager
      * @param CollectionFactoryProvider $collectionFactoryProvider
      * @param Filter $filter
      * @param Publisher $publisher
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      * @param ResourceConnection $resource
      */
     public function __construct(
+        StoreManagerInterface $storeManager,
         LoggerInterface $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
         CollectionFactoryProvider $collectionFactoryProvider,
         Filter $filter,
         Publisher $publisher,
-        Synchronization $synchronization,
+        Config $synchronization,
         ResourceConnection $resource
     ) {
         $this->connection = $resource->getConnection();
 
         parent::__construct(
+            $storeManager,
             $logger,
             $serializer,
             $entityManager,

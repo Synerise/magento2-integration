@@ -5,9 +5,9 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\Integration\Helper\Logger;
-use \Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
@@ -20,9 +20,9 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     protected $loggerHelper;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
-    protected $synchronizationHelper;
+    protected $synchronization;
 
     /**
      * @var Tracking
@@ -36,18 +36,18 @@ class ProductImportBunchSaveAfter implements ObserverInterface
 
     /**
      * @param Logger $loggerHelper
-     * @param Synchronization $synchronizationHelper
+     * @param Config $synchronization
      * @param Tracking $trackingHelper
      * @param Publisher $publisher
      */
     public function __construct(
         Logger $loggerHelper,
-        Synchronization $synchronizationHelper,
+        Config $synchronization,
         Tracking $trackingHelper,
         Publisher $publisher
     ) {
         $this->loggerHelper = $loggerHelper;
-        $this->synchronizationHelper = $synchronizationHelper;
+        $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
     }
@@ -61,6 +61,10 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     public function execute(Observer $observer)
     {
         try {
+            if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
+                return;
+            }
+
             $productsByStore = [];
             $bunch = $observer->getEvent()->getData('bunch');
             foreach ($bunch as $product) {
@@ -72,7 +76,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
                 }
             }
 
-            $enabledStoreIds = $this->synchronizationHelper->getEnabledStores();
+            $enabledStoreIds = $this->synchronization->getConfiguredStores();
             foreach ($productsByStore as $storeId => $entityIds) {
                 if (in_array($storeId, $enabledStoreIds)) {
                     $this->publisher->schedule(Sender::MODEL, $entityIds, $storeId);

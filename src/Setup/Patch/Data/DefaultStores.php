@@ -6,7 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Synerise\Integration\Helper\Synchronization;
+use Synerise\Integration\Model\Synchronization\Config;
 
 class DefaultStores implements DataPatchInterface
 {
@@ -47,10 +47,10 @@ class DefaultStores implements DataPatchInterface
      */
     public function apply()
     {
-        if (!$this->scopeConfig->getValue(Synchronization::XML_PATH_SYNCHRONIZATION_STORES)) {
+        if (!$this->scopeConfig->getValue(Config::XML_PATH_SYNCHRONIZATION_STORES)) {
             $stores = $this->storeManager->getStores();
             $this->configWriter->save(
-                Synchronization::XML_PATH_SYNCHRONIZATION_STORES,
+                Config::XML_PATH_SYNCHRONIZATION_STORES,
                 implode(',', array_keys($stores))
             );
         }

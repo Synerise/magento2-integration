@@ -4,7 +4,6 @@ namespace Synerise\Integration\Model\Tracking\Config;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Config\ReaderInterface;
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Tracking\Config;
 
 class Reader implements ReaderInterface
@@ -15,17 +14,17 @@ class Reader implements ReaderInterface
     protected $scopeConfig;
 
     /**
-     * @var Synchronization
+     * @var \Synerise\Integration\Model\Synchronization\Config
      */
     protected $synchronization;
 
     /**
      * @param ScopeConfigInterface $scopeConfig
-     * @param Synchronization $synchronization
+     * @param \Synerise\Integration\Model\Synchronization\Config $synchronization
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        Synchronization $synchronization
+        \Synerise\Integration\Model\Synchronization\Config $synchronization
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->synchronization = $synchronization;
@@ -41,21 +40,24 @@ class Reader implements ReaderInterface
     {
         $output = [];
 
-        if ($this->synchronization->isEnabledStore($scope) && $this->isEventTrackingEnabled($scope)) {
-            $this->addValue($output, Config::XML_PATH_EVENT_TRACKING_ENABLED, true);
+        if ($this->synchronization->isStoreConfigured($scope) && $this->isEventTrackingEnabled($scope)) {
+            $output['enabled'] = true;
+            $output['events'] = [];
+
             foreach ($this->getEventsSelectedForTracking($scope) as $event) {
-                $this->addValue($output, Config::XML_PATH_EVENT_TRACKING_EVENTS . '/' . $event, true);
+                $output['events'][] = $event;
             }
 
             if ($this->isEventMessageQueueEnabled($scope)) {
-                $this->addValue($output, Config::XML_PATH_QUEUE_ENABLED, true);
+                $output['queue_enabled'] = true;
+                $output['queue_events'] = [];
                 foreach ($this->getEventsSelectedForMessageQueue($scope) as $event) {
-                    $this->addValue($output, Config::XML_PATH_QUEUE_EVENTS . '/' . $event, true);
+                    $output['queue_events'][] = $event;
                 }
             }
         }
 
-        return [$scope => $output];
+        return $output;
     }
 
     /**

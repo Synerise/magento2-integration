@@ -7,10 +7,10 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
@@ -33,9 +33,9 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $loggerHelper;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
-    protected $synchronizationHelper;
+    protected $synchronization;
 
     /**
      * @var Tracking
@@ -51,7 +51,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      * @param DataItemPublisher $dataItemPublisher
      * @param Sender $sender
      * @param Logger $loggerHelper
-     * @param Synchronization $synchronizationHelper
+     * @param Config $synchronization
      * @param Tracking $trackingHelper
      * @param UuidManagement $uuidHelper
      */
@@ -59,14 +59,14 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
         DataItemPublisher $dataItemPublisher,
         Sender $sender,
         Logger $loggerHelper,
-        Synchronization $synchronizationHelper,
+        Config $synchronization,
         Tracking $trackingHelper,
         UuidManagement $uuidHelper
     ) {
         $this->dataItemPublisher = $dataItemPublisher;
         $this->sender = $sender;
         $this->loggerHelper = $loggerHelper;
-        $this->synchronizationHelper = $synchronizationHelper;
+        $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
         $this->uuidHelper = $uuidHelper;
     }
@@ -78,7 +78,7 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             return;
         }
 

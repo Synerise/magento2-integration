@@ -10,8 +10,8 @@ use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Store\Model\ScopeInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Model\Config\Backend\Workspace;
+use Synerise\Integration\Model\Synchronization\Config;
 
 class ConfigMigration implements DataPatchInterface
 {
@@ -134,7 +134,7 @@ class ConfigMigration implements DataPatchInterface
 
         if (!empty($enabledModels)) {
             $this->configWriter->save(
-                Synchronization::XML_PATH_SYNCHRONIZATION_MODELS,
+                Config::XML_PATH_SYNCHRONIZATION_MODELS,
                 implode(',', $enabledModels)
             );
         }

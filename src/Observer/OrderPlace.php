@@ -8,11 +8,11 @@ use Magento\Sales\Model\Order;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
@@ -43,9 +43,9 @@ class OrderPlace implements ObserverInterface
     protected $customerSender;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
-    protected $synchronizationHelper;
+    protected $synchronization;
 
     /**
      * @var Logger
@@ -68,7 +68,7 @@ class OrderPlace implements ObserverInterface
      * @param OrderSender $orderSender
      * @param CustomerSender $customerSender
      * @param Logger $loggerHelper
-     * @param Synchronization $synchronizationHelper
+     * @param Config $synchronization
      * @param Tracking $trackingHelper
      * @param UuidManagement $uuidHelper
      */
@@ -78,7 +78,7 @@ class OrderPlace implements ObserverInterface
         OrderSender $orderSender,
         CustomerSender $customerSender,
         Logger $loggerHelper,
-        Synchronization $synchronizationHelper,
+        Config $synchronization,
         Tracking $trackingHelper,
         UuidManagement $uuidHelper
     ) {
@@ -87,7 +87,7 @@ class OrderPlace implements ObserverInterface
         $this->orderSender = $orderSender;
         $this->customerSender = $customerSender;
         $this->loggerHelper = $loggerHelper;
-        $this->synchronizationHelper = $synchronizationHelper;
+        $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
         $this->uuidHelper = $uuidHelper;
     }
@@ -116,7 +116,7 @@ class OrderPlace implements ObserverInterface
                 );
             }
 
-            if (!$this->synchronizationHelper->isEnabledModel(OrderSender::MODEL)) {
+            if (!$this->synchronization->isModelEnabled(OrderSender::MODEL)) {
                 return;
             }
 

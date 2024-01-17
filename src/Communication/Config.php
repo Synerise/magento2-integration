@@ -7,7 +7,7 @@ use Magento\Framework\Communication\ConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\MessageQueue\DefaultValueProvider;
 use Magento\Framework\Phrase;
-use Synerise\Integration\Helper\Synchronization;
+use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\MessageQueue\Consumer\Data\AmqpScheduler;
 use Synerise\Integration\MessageQueue\Consumer\Data\Bulk;
 use Synerise\Integration\MessageQueue\Consumer\Data\MysqlScheduler;
@@ -17,6 +17,7 @@ use Synerise\Integration\MessageQueue\Publisher\Data\All;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item;
 use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler;
+use Synerise\Integration\Model\Config\Source\Synchronization\Model;
 
 class Config implements ConfigInterface
 {
@@ -33,20 +34,20 @@ class Config implements ConfigInterface
     private $defaultValueProvider;
 
     /**
-     * @var Synchronization
+     * @var StoreManagerInterface
      */
-    protected $synchronization;
+    private $storeManager;
 
     /**
      * @param DefaultValueProvider $defaultValueProvider
-     * @param Synchronization $synchronization
+     * @param StoreManagerInterface $storeManager
      */
     public function __construct(
         DefaultValueProvider $defaultValueProvider,
-        Synchronization $synchronization
+        StoreManagerInterface $storeManager
     ) {
         $this->defaultValueProvider = $defaultValueProvider;
-        $this->synchronization = $synchronization;
+        $this->storeManager = $storeManager;
 
         $this->initData();
     }
@@ -89,58 +90,43 @@ class Config implements ConfigInterface
      */
     private function initData()
     {
-        $enabledModels = $this->synchronization->getEnabledModels();
-        $enabledStores = $this->synchronization->getEnabledStores();
-
         $result = [];
 
-        $isEventQueueEnabled = false;
-        foreach ($enabledStores as $enabledStore) {
-            if ($this->synchronization->isEventQueueEnabled($enabledStore)) {
-                $isEventQueueEnabled = true;
+        $topicName = Event::TOPIC_NAME;
+        $result[$topicName] = $this->getTopicConfig(
+            $topicName,
+            Event::class,
+            'string',
+        );
+
+        $topicName = Scheduler::TOPIC_NAME;
+        $result[$topicName] = $this->getTopicConfig(
+            $topicName,
+            $this->isAmqpConfigured() ? AmqpScheduler::class : MysqlScheduler::class
+        );
+
+        $topicName = Item::TOPIC_NAME;
+        $result[$topicName] = $this->getTopicConfig(
+            $topicName,
+            \Synerise\Integration\MessageQueue\Consumer\Data\Item::class,
+            \Synerise\Integration\MessageQueue\Message\Data\Item::class
+        );
+
+        $handlerType = Bulk::class;
+        foreach (array_keys(Model::OPTIONS) as $model) {
+            foreach ($this->storeManager->getStores() as $store) {
+                $topicName = AbstractBulk::getTopicName($model, Batch::TYPE, $store->getId());
+                $result[$topicName] = $this->getTopicConfig(
+                    $topicName,
+                    $handlerType
+                );
+
+                $topicName = AbstractBulk::getTopicName($model, All::TYPE, $store->getId());
+                $result[$topicName] = $this->getTopicConfig(
+                    $topicName,
+                    $handlerType
+                );
             }
-        }
-
-        if ($isEventQueueEnabled) {
-            $topicName = Event::TOPIC_NAME;
-            $result[$topicName] = $this->getTopicConfig(
-                $topicName,
-                Event::class,
-                'string',
-            );
-        }
-
-        if ($this->synchronization->isSynchronizationEnabled()) {
-            $topicName = Scheduler::TOPIC_NAME;
-            $result[$topicName] = $this->getTopicConfig(
-                $topicName,
-                $this->isAmqpConfigured() ? AmqpScheduler::class : MysqlScheduler::class
-            );
-
-            $topicName =  Item::TOPIC_NAME;
-            $result[$topicName] = $this->getTopicConfig(
-                $topicName,
-                \Synerise\Integration\MessageQueue\Consumer\Data\Item::class,
-                \Synerise\Integration\MessageQueue\Message\Data\Item::class
-            );
-
-            $handlerType = Bulk::class;
-            foreach ($enabledModels as $model) {
-                foreach ($enabledStores as $storeId) {
-                    $topicName = AbstractBulk::getTopicName($model, Batch::TYPE, $storeId);
-                    $result[$topicName] = $this->getTopicConfig(
-                        $topicName,
-                        $handlerType
-                    );
-
-                    $topicName = AbstractBulk::getTopicName($model, All::TYPE, $storeId);
-                    $result[$topicName] = $this->getTopicConfig(
-                        $topicName,
-                        $handlerType
-                    );
-                }
-            }
-
         }
 
         $this->topics = $result;

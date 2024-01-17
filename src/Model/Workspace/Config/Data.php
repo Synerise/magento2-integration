@@ -1,5 +1,5 @@
 <?php
-namespace Synerise\Integration\Model\Tracking\Config;
+namespace Synerise\Integration\Model\Workspace\Config;
 
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Config\CacheInterface;
@@ -40,24 +40,25 @@ class Data extends \Magento\Framework\Config\Data
     /**
      * @param Reader $reader
      * @param CacheInterface $cache
-     * @param integer $storeId
      * @param string $cacheId
      * @param SerializerInterface|null $serializer
+     * @param int|null $storeId
      */
     public function __construct(
         Reader $reader,
         CacheInterface $cache,
-        $storeId,
-        $cacheId = 'synerise_config_event_tracking',
-        ?SerializerInterface $serializer = null
+        $cacheId = 'synerise_config_workspace',
+        ?SerializerInterface $serializer = null,
+        $storeId = null
     ) {
         $this->storeId = $storeId;
+
         $this->reader = $reader;
         $this->cache = $cache;
-        $this->cacheId = $cacheId . '_' . $storeId;
+        $this->cacheId = $cacheId;
         $this->serializer = $serializer ?: ObjectManager::getInstance()->get(SerializerInterface::class);
 
-        parent::__construct($reader, $cache, $cacheId . '_' . $storeId, $serializer);
+        parent::__construct($reader, $cache, $cacheId, $serializer);
     }
 
     /**
@@ -69,12 +70,12 @@ class Data extends \Magento\Framework\Config\Data
     {
         $data = $this->cache->load($this->cacheId);
         if (false === $data) {
-            $data = $this->reader->read($this->storeId);
+            $data = $this->reader->read();
             $this->cache->save($this->serializer->serialize($data), $this->cacheId, $this->cacheTags);
         } else {
             $data = $this->serializer->unserialize($data);
         }
 
-        $this->merge($data);
+        $this->_data = $data[$this->storeId] ?? [];
     }
 }

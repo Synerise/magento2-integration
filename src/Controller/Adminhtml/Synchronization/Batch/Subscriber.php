@@ -8,13 +8,12 @@ use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Psr\Log\LoggerInterface;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class Subscriber extends Action implements HttpPostActionInterface
@@ -45,7 +44,7 @@ class Subscriber extends Action implements HttpPostActionInterface
     private $publisher;
 
     /**
-     * @var Synchronization
+     * @var Config
      */
     private $synchronization;
 
@@ -55,7 +54,7 @@ class Subscriber extends Action implements HttpPostActionInterface
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
      * @param Publisher $publisher
-     * @param Synchronization $synchronization
+     * @param Config $synchronization
      */
     public function __construct(
         Context $context,
@@ -63,7 +62,7 @@ class Subscriber extends Action implements HttpPostActionInterface
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,
-        Synchronization $synchronization
+        Config $synchronization
     ) {
         $this->logger = $logger;
         $this->filter = $filter;
@@ -82,11 +81,11 @@ class Subscriber extends Action implements HttpPostActionInterface
      */
     public function execute()
     {
-        if (!$this->synchronization->isSynchronizationEnabled()) {
+        if (!$this->synchronization->isEnabled()) {
             $this->messageManager->addErrorMessage(
                 __('Synchronization is disabled. Please review your configuration.')
             );
-        } elseif (!$this->synchronization->isEnabledModel(Sender::MODEL)) {
+        } elseif (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             $this->messageManager->addErrorMessage(
                 __('%1s are excluded from synchronization.', ucfirst(Sender::MODEL))
             );
@@ -97,7 +96,7 @@ class Subscriber extends Action implements HttpPostActionInterface
             } else {
                 $storeIds = [];
                 $itemsCount = 0;
-                $enabledStoreIds = $this->synchronization->getEnabledStores();
+                $enabledStoreIds = $this->synchronization->getConfiguredStores();
 
                 try {
                     /** @var Collection $collection */
@@ -116,7 +115,7 @@ class Subscriber extends Action implements HttpPostActionInterface
                                 $collection->getAllIds(),
                                 $enabledStoreId,
                                 null,
-                                $this->synchronization->getPageSize(Sender::MODEL)
+                                $this->synchronization->getLimit(Sender::MODEL)
                             );
                             $storeIds[] = $enabledStoreId;
                             $itemsCount += $collection->getSize();

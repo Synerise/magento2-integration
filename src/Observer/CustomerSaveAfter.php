@@ -8,9 +8,9 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Synchronization;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
 
 class CustomerSaveAfter implements ObserverInterface
@@ -22,9 +22,9 @@ class CustomerSaveAfter implements ObserverInterface
     ];
 
     /**
-     * @var Synchronization
+     * @var Config
      */
-    protected $synchronizationHelper;
+    protected $synchronization;
 
     /**
      * @var Logger
@@ -52,7 +52,7 @@ class CustomerSaveAfter implements ObserverInterface
     protected $dataItemPublisher;
 
     /**
-     * @param Synchronization $synchronizationHelper
+     * @param Config $synchronization
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
      * @param Http $request
@@ -60,14 +60,14 @@ class CustomerSaveAfter implements ObserverInterface
      * @param Sender $sender
      */
     public function __construct(
-        Synchronization $synchronizationHelper,
+        Config $synchronization,
         Logger $loggerHelper,
         Tracking $trackingHelper,
         Http $request,
         DataItemPublisher $dataItemPublisher,
         Sender $sender
     ) {
-        $this->synchronizationHelper = $synchronizationHelper;
+        $this->synchronization = $synchronization;
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
         $this->request = $request;
@@ -87,7 +87,7 @@ class CustomerSaveAfter implements ObserverInterface
             return;
         }
 
-        if (!$this->synchronizationHelper->isEnabledModel(Sender::MODEL)) {
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             return;
         }
 
