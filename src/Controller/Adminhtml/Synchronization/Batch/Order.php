@@ -104,9 +104,7 @@ class Order extends Action
                         $this->publisher->schedule(
                             Sender::MODEL,
                             $collection->getAllIds(),
-                            $enabledStoreId,
-                            null,
-                            $this->synchronization->getLimit(Sender::MODEL)
+                            $enabledStoreId
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();

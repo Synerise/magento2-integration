@@ -115,8 +115,7 @@ class Product extends Action
                             Sender::MODEL,
                             $collection->getAllIds(),
                             $enabledStoreId,
-                            $this->getWebsiteIdByStoreId($enabledStoreId),
-                            $this->synchronization->getLimit(Sender::MODEL)
+                            $this->getWebsiteIdByStoreId($enabledStoreId)
                         );
                         $storeIds[] = $enabledStoreId;
                         $itemsCount += $collection->getSize();

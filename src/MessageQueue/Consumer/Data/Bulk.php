@@ -24,6 +24,7 @@ use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk as BulkPublisher;
 use Synerise\Integration\Model\MessageQueue\Retry;
+use Synerise\Integration\Model\Synchronization\Config as SynchronizationConfig;
 use Synerise\Integration\SyneriseApi\SenderFactory;
 use Zend_Db_Adapter_Exception;
 
@@ -67,6 +68,11 @@ class Bulk
     private $senderFactory;
 
     /**
+     * @var SynchronizationConfig
+     */
+    private $synchronization;
+
+    /**
      * @var Filter
      */
     private $filter;
@@ -79,6 +85,7 @@ class Bulk
      * @param MessageEncoder $messageEncoder
      * @param CollectionFactoryProvider $collectionFactoryProvider
      * @param SenderFactory $senderFactory
+     * @param SynchronizationConfig $synchronization
      * @param Filter $filter
      */
     public function __construct(
@@ -89,6 +96,7 @@ class Bulk
         MessageEncoder $messageEncoder,
         CollectionFactoryProvider $collectionFactoryProvider,
         SenderFactory $senderFactory,
+        SynchronizationConfig $synchronization,
         Filter $filter
     ) {
         $this->logger = $logger;
@@ -98,6 +106,7 @@ class Bulk
         $this->messageEncoder = $messageEncoder;
         $this->collectionFactoryProvider = $collectionFactoryProvider;
         $this->senderFactory = $senderFactory;
+        $this->synchronization = $synchronization;
         $this->filter = $filter;
     }
 
@@ -112,24 +121,27 @@ class Bulk
     protected function execute(array $data)
     {
         $sender = $this->senderFactory->get($data['model']);
-
-        $collection = $this->filter->filterByEntityIds(
-            $this->collectionFactoryProvider->get($data['model'])->create(),
-            $data['entity_ids'],
-            $data['store_id'],
-            self::MAX_PAGE_SIZE
-        );
-
         $attributes = $sender->getAttributesToSelect($data['store_id']);
-        if (!empty($attributes)) {
-            $collection->addAttributeToSelect($attributes);
-        }
+        $pageSize = $this->synchronization->getLimit($data['model']);
 
-        $sender->sendItems(
-            $collection,
-            $data['store_id'],
-            $data['website_id'] ?: null
-        );
+        foreach (array_chunk($data['entity_ids'], $pageSize) as $ids) {
+            $collection = $this->filter->filterByEntityIds(
+                $this->collectionFactoryProvider->get($data['model'])->create(),
+                $ids,
+                $data['store_id'],
+                self::MAX_PAGE_SIZE
+            );
+
+            if (!empty($attributes)) {
+                $collection->addAttributeToSelect($attributes);
+            }
+
+            $sender->sendItems(
+                $collection,
+                $data['store_id'],
+                $data['website_id'] ?: null
+            );
+        }
     }
 
     /**

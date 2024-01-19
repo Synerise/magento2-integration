@@ -8,7 +8,9 @@ use Magento\Framework\Serialize\SerializerInterface;
 class Data extends \Magento\Framework\Config\Data
 {
     /**
-     * @inheirtDoc
+     * Additional cache tags
+     *
+     * @var array
      */
     protected $cacheTags = ['SYNERISE'];
 

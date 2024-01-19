@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Crons;
+namespace Synerise\Integration\Cron;
 
 use Magento\Framework\MessageQueue\MessageEncoder;
 use Psr\Log\LoggerInterface;
@@ -55,7 +55,7 @@ class MessageQueueRetry
     public function execute()
     {
         $collection = $this->collectionFactory->create()
-            ->addFieldToFilter('created_at', ['lt' => 'NOW() - INTERVAL 5 MINUTE'])
+            ->addFieldToFilter('created_at', ['lt' => new \Zend_Db_Expr('NOW() - INTERVAL 5 MINUTE')])
             ->setPageSize(500);
 
         if ($collection->getSize()) {

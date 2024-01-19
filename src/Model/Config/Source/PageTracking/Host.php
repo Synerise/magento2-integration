@@ -14,11 +14,11 @@ class Host implements OptionSourceInterface
         return [
             [
                 'value' => 'web.snrbox.com',
-                'label' => 'azure'
+                'label' => 'Microsoft Azure'
             ],
             [
                 'value' => 'web.geb.snrbox.com',
-                'label' => 'gcp'
+                'label' => 'Google Cloud Platform'
             ]
         ];
     }

@@ -62,6 +62,11 @@
             </argument>
         </arguments>
     </type>
+    <type name="Synerise\Integration\MessageQueue\Publisher\Data\All">
+        <arguments>
+            <argument name="bulkManagement" xsi:type="object">Synerise\Integration\MessageQueue\BulkManagement</argument>
+        </arguments>
+    </type>
     <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
         <arguments>
             <argument name="collections" xsi:type="array">

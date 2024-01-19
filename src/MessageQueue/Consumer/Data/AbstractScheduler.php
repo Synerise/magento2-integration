@@ -172,23 +172,23 @@ abstract class AbstractScheduler
         /** @var CustomerCollection|OrderCollection|ProductCollection|SubscriberCollection $collection */
         $collection = $this->filter->addStoreFilter($collectionFactory->create(), $data['store_id']);
 
-        $pageSize = $this->synchronization->getLimit($data['model']);
-
         $gt = 0;
         $lastId = $this->filter->getLastId($collection);
         if (!$lastId) {
             return;
         }
 
-        $ids = [];
+        $offset = 0;
+        $limit = 100;
         while ($gt < $lastId) {
-            $curIds = $collection->getAllIds($pageSize, $gt);
+            $curIds = $collection->getAllIds($limit, $offset);
             if (!count($curIds)) {
                 break;
             }
 
             $ids[] = $curIds;
-            $gt = (int) end($curIds);
+            $gt = (int)end($curIds);
+            $offset += $limit;
         }
 
         if (!empty($ids)) {

@@ -106,6 +106,6 @@ class Config
      */
     public function getLimit(string $model): int
     {
-        return $this->dataStorage->get('limit/' . $model, 25);
+        return $this->dataStorage->get('limit/' . $model, 50);
     }
 }
