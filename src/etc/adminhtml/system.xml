@@ -33,7 +33,7 @@
                     <label>Enabled</label>
                     <config_path>synerise/synchronization/stores</config_path>
                     <source_model>Magento\Store\Model\System\Store</source_model>
-                    <comment><![CDATA[Deselect store views to exclude their data from synchronization.]]></comment>
+                    <comment><![CDATA[Deselect store views to exclude them from event tracking and data synchronization.]]></comment>
                 </field>
             </group>
         </section>
@@ -42,14 +42,17 @@
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_attributes</resource>
             <group id="models" translate="label" sortOrder="20" showInDefault="1">
-                <label>Message Queues</label>
+                <label>Synchronization</label>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
-                    <label>Synchronization enabled</label>
+                    <label>Enabled</label>
                     <config_path>synerise/synchronization/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        <model>Synerise\Integration\Model\Config\Backend\Synchronization\Enabled\Comment</model>
+                    </comment>
                 </field>
                 <field id="models" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
-                    <label>Enabled models</label>
+                    <label>Models</label>
                     <config_path>synerise/synchronization/models</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Synchronization\Model</source_model>
                     <comment><![CDATA[Deselect models to exclude them from synchronization.]]></comment>
@@ -61,6 +64,7 @@
                     <label>Max items per request</label>
                     <config_path>synerise/product/limit</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
                 </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
@@ -80,6 +84,7 @@
                     <label>Max items per request</label>
                     <config_path>synerise/customer/limit</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
                 </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
@@ -94,6 +99,7 @@
                     <label>Max items per request</label>
                     <config_path>synerise/order/limit</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
                 </field>
             </group>
             <group id="subscriber" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -102,6 +108,7 @@
                     <label>Max items per request</label>
                     <config_path>synerise/subscriber/limit</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
                 </field>
             </group>
         </section>
