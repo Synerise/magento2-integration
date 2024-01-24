@@ -130,7 +130,7 @@ class OrderPlace implements ObserverInterface
             } else {
                 $this->orderSender->sendItems([$order], $storeId);
                 if ($guestCustomerRequest) {
-                    $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
+                    $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);
                 }
             }
         } catch (\Exception $e) {

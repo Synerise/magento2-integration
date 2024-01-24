@@ -175,7 +175,7 @@ class ProductReview implements ObserverInterface
                 $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $customEventRequest, $storeId);
-                $this->customerSender->batchAddOrUpdateClients($guestCustomerRequest, $storeId);
+                $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);
             }
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {
