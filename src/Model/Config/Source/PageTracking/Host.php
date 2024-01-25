@@ -2,22 +2,24 @@
 
 namespace Synerise\Integration\Model\Config\Source\PageTracking;
 
+use Magento\Framework\Data\OptionSourceInterface;
 
-class Host implements \Magento\Framework\Data\OptionSourceInterface
+class Host implements OptionSourceInterface
 {
-    public function toOptionArray()
+    /**
+     * @inheritDoc
+     */
+    public function toOptionArray(): array
     {
         return [
             [
                 'value' => 'web.snrbox.com',
-                'label' => 'azure'
+                'label' => 'Microsoft Azure'
             ],
             [
                 'value' => 'web.geb.snrbox.com',
-                'label' => 'gcp'
+                'label' => 'Google Cloud Platform'
             ]
         ];
-
-
     }
 }

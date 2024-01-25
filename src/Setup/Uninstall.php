@@ -9,16 +9,13 @@ use Magento\Framework\Setup\UninstallInterface;
 use Magento\Config\Model\ResourceModel\Config\Data;
 use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory;
 
-
 /**
  * @codeCoverageIgnore
  */
 class Uninstall implements UninstallInterface
 {
-    const TABLES = [
+    public const TABLES = [
         'synerise_workspace',
-        'synerise_cron_status',
-        'synerise_cron_queue',
         'synerise_sync_subscriber',
         'synerise_sync_order',
         'synerise_sync_customer',
@@ -29,6 +26,7 @@ class Uninstall implements UninstallInterface
      * @var CollectionFactory
      */
     protected $collectionFactory;
+
     /**
      * @var Data
      */
@@ -41,13 +39,14 @@ class Uninstall implements UninstallInterface
     public function __construct(
         CollectionFactory $collectionFactory,
         Data $configResource
-    )
-    {
+    ) {
         $this->collectionFactory = $collectionFactory;
         $this->configResource    = $configResource;
     }
 
     /**
+     * Uninstall
+     *
      * @param SchemaSetupInterface $setup
      * @param ModuleContextInterface $context
      * @throws \Exception
@@ -59,7 +58,6 @@ class Uninstall implements UninstallInterface
                 $setup->getConnection()->dropTable($table);
             }
         }
- /// synerise/product/cron_enabled
         $collection = $this->collectionFactory->create()
             ->addPathFilter('synerise');
         foreach ($collection as $config) {
@@ -68,6 +66,8 @@ class Uninstall implements UninstallInterface
     }
 
     /**
+     * Delete config
+     *
      * @param AbstractModel $config
      * @throws \Exception
      */

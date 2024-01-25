@@ -4,6 +4,7 @@ namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Backend\App\Action;
+use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\View\Result\PageFactory;
 
 class NewAction extends Action
@@ -11,7 +12,7 @@ class NewAction extends Action
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
      * @var PageFactory
@@ -34,8 +35,7 @@ class NewAction extends Action
     /**
      * Edit Workspace
      *
-     * @return \Magento\Framework\Controller\ResultInterface
-     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @return ResultInterface
      */
     public function execute()
     {

@@ -1,22 +1,26 @@
-<?php /** @var $this Synerise\Integration\Block\Adminhtml\Form\Field\Workspaces */ ?>
+<?php
+// phpcs:ignoreFile
+/** @var $block Synerise\Integration\Block\Adminhtml\Form\Field\Workspaces */
+?>
+
 <div class="admin__control-table-wrapper">
     <table class="admin__control-table" id="synerise_workspace_workspace_map">
         <thead>
         <tr>
-            <th><?php echo __('Website') ?></th>
-            <th><?php echo __('Workspace') ?></th>
+            <th><?= __('Website') ?></th>
+            <th><?= __('Workspace') ?></th>
         </tr>
         </thead>
         <tbody>
-            <?php foreach($this->getRows() as $row): ?>
-            <tr id="<?php echo $row['id']; ?>">
-                <td class="value"><?php echo $row['name']; ?></td>
+            <?php foreach ($block->getRows() as $row): ?>
+            <tr id="<?= $row['id']; ?>">
+                <td class="value"><?= $row['name']; ?></td>
                 <td>
-                    <select id="synerise_workspace_id" name="groups[websites][fields][map][value][<?php echo $row['id']; ?>]" class=" select admin__control-select">
+                    <select id="synerise_workspace_id" name="groups[websites][fields][map][value][<?= $row['id']; ?>]" class=" select admin__control-select">
                         <option value="" style="display:block"></option>
-                    <?php foreach($this->getWorkspaces() as $workspace): ?>
+                    <?php foreach ($block->getWorkspaces() as $workspace): ?>
                         <?php $isSelected = ($row['value'] == $workspace->getId()); ?>
-                        <option value="<?php echo $workspace->getId(); ?>" <?php if($isSelected): ?> selected="selected"<?php endif;?>><?php echo $workspace->getName(); ?></option>
+                        <option value="<?= $workspace->getId(); ?>" <?php if ($isSelected): ?> selected="selected"<?php endif;?>><?= $workspace->getName(); ?></option>
                     <?php endforeach; ?>
                     </select>
                 </td>

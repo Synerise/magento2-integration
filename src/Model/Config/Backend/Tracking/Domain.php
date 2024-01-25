@@ -2,19 +2,30 @@
 
 namespace Synerise\Integration\Model\Config\Backend\Tracking;
 
-class Domain extends \Magento\Framework\App\Config\Value
+use Exception;
+use Magento\Framework\App\Config\Value;
+use Magento\Framework\Validator\ValidateException;
+use Magento\Store\Model\Store;
+
+class Domain extends Value
 {
+    /**
+     * Validate domain
+     *
+     * @return Domain
+     * @throws ValidateException
+     */
     public function beforeSave()
     {
-        if(!$this->isValueChanged() || !$this->getValue()) {
+        if (!$this->isValueChanged() || !$this->getValue()) {
             return parent::beforeSave();
         }
 
         $baseUrlDomain = $this->getBaseUrlDomain();
-        $valueTrimmed = preg_replace('/^(http(s)?:\/\/)?((www)?\.)/','', $this->getValue());
+        $valueTrimmed = preg_replace('/^(http(s)?:\/\/)?((www)?\.)/', '', $this->getValue());
 
-        if (!$baseUrlDomain || strpos($baseUrlDomain, $valueTrimmed) === false){
-            throw new \Exception(sprintf('Domain should be a substring of base url (%s)', $baseUrlDomain));
+        if (!$baseUrlDomain || strpos($baseUrlDomain, $valueTrimmed) === false) {
+            throw new ValidateException(sprintf('Domain should be a substring of base url (%s)', $baseUrlDomain));
         }
 
         $this->setValue(".$valueTrimmed");
@@ -22,15 +33,21 @@ class Domain extends \Magento\Framework\App\Config\Value
         return parent::beforeSave();
     }
 
-    private function getBaseUrlDomain()
+    /**
+     * Get base url domain
+     *
+     * @return string|null
+     */
+    private function getBaseUrlDomain(): ?string
     {
         $baseUrl = $this->_config->getValue(
-            \Magento\Store\Model\Store::XML_PATH_UNSECURE_BASE_LINK_URL,
+            Store::XML_PATH_UNSECURE_BASE_LINK_URL,
             $this->getScope(),
             $this->getScopeId()
         );
 
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         $parsedUrl = parse_url($baseUrl);
-        return isset($parsedUrl['host']) ? $parsedUrl['host'] : null;
+        return $parsedUrl['host'] ?? null;
     }
 }

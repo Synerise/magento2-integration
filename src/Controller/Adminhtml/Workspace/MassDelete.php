@@ -7,18 +7,18 @@ use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Ui\Component\MassAction\Filter;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
-
 
 class MassDelete extends Action implements HttpPostActionInterface
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace_delete';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace_delete';
 
     /**
      * @var CollectionFactory
@@ -51,6 +51,8 @@ class MassDelete extends Action implements HttpPostActionInterface
      * Workspace delete action
      *
      * @return Redirect
+     * @throws NotFoundException
+     * @throws LocalizedException
      */
     public function execute(): Redirect
     {

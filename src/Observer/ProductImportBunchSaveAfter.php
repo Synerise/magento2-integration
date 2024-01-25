@@ -2,92 +2,88 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
 {
-    const EVENT = 'catalog_product_import_bunch_save_after';
+    public const EVENT = 'catalog_product_import_bunch_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
+     * @var Config
+     */
+    protected $synchronization;
+
+    /**
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var Publisher
      */
-    private $productRepository;
+    protected $publisher;
 
     /**
-     * @var \Magento\Framework\Api\FilterBuilder
+     * @param Logger $loggerHelper
+     * @param Config $synchronization
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
      */
-    private $filterBuilder;
-
-    /**
-     * @var \Magento\Framework\Api\Search\FilterGroup
-     */
-    private $filterGroup;
-
-    /**
-     * @var \Magento\Framework\Api\SearchCriteriaInterface
-     */
-    private $searchCriteria;
-
-    /**
-     * @var SyncProduct
-     */
-    private $syncProduct;
-
     public function __construct(
-        SyncProduct $syncProduct,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Framework\Api\FilterBuilder $filterBuilder,
-        \Magento\Framework\Api\Search\FilterGroup $filterGroup,
-        \Magento\Framework\Api\SearchCriteriaInterface $criteria
+        Logger $loggerHelper,
+        Config $synchronization,
+        Tracking $trackingHelper,
+        Publisher $publisher
     ) {
-        $this->syncProduct = $syncProduct;
+        $this->loggerHelper = $loggerHelper;
+        $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
-        $this->productRepository = $productRepository;
-        $this->filterBuilder = $filterBuilder;
-        $this->filterGroup = $filterGroup;
-        $this->searchCriteria = $criteria;
-    }
-
-    public function execute(\Magento\Framework\Event\Observer $observer)
-    {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
-            return;
-        }
-
-        $bunch = $observer->getBunch();
-
-        $bunchLimit = 500;
-        $chunkBunches = array_chunk($bunch, $bunchLimit);
-
-        foreach ($chunkBunches as $chunk) {
-            $products = $this->getProductsBySkuInBunch($chunk);
-            $this->syncProduct->addItemsToQueue($products);
-        }
+        $this->publisher = $publisher;
     }
 
     /**
-     * @param array $bunch
-     * @return array
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
      */
-    public function getProductsBySkuInBunch(array $bunch)
+    public function execute(Observer $observer)
     {
-        $this->filterGroup->setFilters([
-            $this->filterBuilder
-                ->setField('sku')
-                ->setConditionType('in')
-                ->setValue(array_unique(array_column($bunch, 'sku')))
-                ->create()
-        ]);
+        try {
+            if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
+                return;
+            }
 
-        $this->searchCriteria->setFilterGroups([$this->filterGroup]);
-        $products = $this->productRepository->getList($this->searchCriteria);
-        return $products->getItems();
+            $productsByStore = [];
+            $bunch = $observer->getEvent()->getData('bunch');
+            foreach ($bunch as $product) {
+                if (isset($product['entity_id']) && isset($product['store_id'])) {
+                    if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $product['store_id'])) {
+                        return;
+                    }
+                    $productsByStore[$product['store_id']][] = $product['entity_id'];
+                }
+            }
+
+            $enabledStoreIds = $this->synchronization->getConfiguredStores();
+            foreach ($productsByStore as $storeId => $entityIds) {
+                if (in_array($storeId, $enabledStoreIds)) {
+                    $this->publisher->schedule(Sender::MODEL, $entityIds, $storeId);
+                }
+            }
+        } catch (\Exception $e) {
+            $this->loggerHelper->getLogger()->error($e);
+        }
     }
 }

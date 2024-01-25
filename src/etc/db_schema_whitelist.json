@@ -1,0 +1,82 @@
+{
+    "synerise_sync_customer": {
+        "column": {
+            "customer_id": true,
+            "store_id": true,
+            "synerise_updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "synerise_sync_order": {
+        "column": {
+            "order_id": true,
+            "synerise_updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "synerise_sync_product": {
+        "column": {
+            "product_id": true,
+            "store_id": true,
+            "synerise_updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "synerise_sync_subscriber": {
+        "column": {
+            "subscriber_id": true,
+            "synerise_updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "synerise_workspace": {
+        "column": {
+            "id": true,
+            "name": true,
+            "api_key": true,
+            "uuid": true,
+            "guid": true,
+            "missing_permissions": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "SYNERISE_WORKSPACE_UUID": true
+        }
+    },
+    "synerise_queue_message_retry": {
+        "column": {
+            "id": true,
+            "topic_name": true,
+            "body": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "synerise_bulk": {
+        "column": {
+            "id": true,
+            "uuid": true,
+            "model": true,
+            "store_id": true,
+            "status": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "SYNERISE_BULK_UUID": true
+        }
+    }
+}

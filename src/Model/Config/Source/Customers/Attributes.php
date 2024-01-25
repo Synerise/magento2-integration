@@ -2,19 +2,20 @@
 
 namespace Synerise\Integration\Model\Config\Source\Customers;
 
-use \Magento\Customer\Model\ResourceModel\Attribute\CollectionFactory;
-use \Magento\Framework\Data\OptionSourceInterface;
+use Magento\Customer\Model\ResourceModel\Attribute\CollectionFactory;
+use Magento\Framework\Data\OptionSourceInterface;
 
 class Attributes implements OptionSourceInterface
 {
-    const REQUIRED = [
+    public const XML_PATH_CUSTOMER_ATTRIBUTES = 'synerise/customer/attributes';
+    public const REQUIRED = [
         'email',
         'entity_id',
         'firstname',
         'lastname'
     ];
 
-    const EXCLUDED = [
+    public const EXCLUDED = [
         'password_hash'
     ];
 

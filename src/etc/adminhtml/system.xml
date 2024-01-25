@@ -32,55 +32,9 @@
                 <field id="enabled" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
                     <label>Enabled</label>
                     <config_path>synerise/synchronization/stores</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Synchronization\Store</backend_model>
                     <source_model>Magento\Store\Model\System\Store</source_model>
-                    <comment><![CDATA[Deselect store views to exclude their data from synchronization.]]></comment>
+                    <comment><![CDATA[Deselect store views to exclude them from event tracking and data synchronization.]]></comment>
                 </field>
-            </group>
-        </section>
-        <section id="synerise_sync" translate="label" sortOrder="3" showInDefault="1">
-            <label>Synchronization</label>
-            <tab>synerise</tab>
-            <resource>Synerise_Integration::configuration_synchronization</resource>
-            <group id="cron_status" translate="label" sortOrder="20" showInDefault="1">
-                <label>Full Synchronization</label>
-                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
-                    <label>Enabled</label>
-                    <config_path>synerise/cron_status/enabled</config_path>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment><![CDATA[Before enabling, verify the data configuration to make sure it contains all models & attributes you want to include.]]></comment>
-                </field>
-                <field id="expr" translate="label" type="text" sortOrder="2" showInDefault="1">
-                    <label>Cron expression</label>
-                    <config_path>synerise/cron_status/expr</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Cron\Status</backend_model>
-                </field>
-                <field id="page_size" translate="label" type="text" sortOrder="2" showInDefault="1">
-                    <label>Page size</label>
-                    <config_path>synerise/cron_status/page_size</config_path>
-                    <validate>integer validate-greater-than-zero</validate>
-                </field>
-                <comment><![CDATA[This process will send all the data collected prior to its start. To resend all the items or the items created since the integration, go to Marketing > Synerise > Dashboard.]]></comment>
-            </group>
-            <group id="cron_queue" translate="label" sortOrder="20" showInDefault="1">
-                <label>Updates Synchronization</label>
-                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
-                    <label>Enabled</label>
-                    <config_path>synerise/cron_queue/enabled</config_path>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment><![CDATA[Before enabling, verify the data configuration to make sure it contains all models & attributes you want to include.]]></comment>
-                </field>
-                <field id="expr" translate="label" type="text" sortOrder="2" showInDefault="1">
-                    <label>Cron expression</label>
-                    <config_path>synerise/cron_queue/expr</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Cron\Queue</backend_model>
-                </field>
-                <field id="page_size" translate="label" type="text" sortOrder="2" showInDefault="1">
-                    <label>Page size</label>
-                    <config_path>synerise/cron_queue/page_size</config_path>
-                    <validate>integer validate-greater-than-zero</validate>
-                </field>
-                <comment><![CDATA[This process will send the data that has recently changed. It is based on items queue & the data will be send in the background.]]></comment>
             </group>
         </section>
         <section id="synerise_data" translate="label" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -88,22 +42,35 @@
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_attributes</resource>
             <group id="models" translate="label" sortOrder="20" showInDefault="1">
-                <label>Models</label>
-                <field id="models" type="multiselect" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
+                <label>Synchronization</label>
+                <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="1" showInDefault="1">
                     <label>Enabled</label>
+                    <config_path>synerise/synchronization/enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        <model>Synerise\Integration\Model\Config\Backend\Synchronization\Enabled\Comment</model>
+                    </comment>
+                </field>
+                <field id="models" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1">
+                    <label>Models</label>
                     <config_path>synerise/synchronization/models</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Synchronization\Model</backend_model>
                     <source_model>Synerise\Integration\Model\Config\Source\Synchronization\Model</source_model>
                     <comment><![CDATA[Deselect models to exclude them from synchronization.]]></comment>
                 </field>
             </group>
             <group id="product" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Products</label>
+                <field id="limit" translate="label" type="select" sortOrder="2" showInDefault="1">
+                    <label>Max items per request</label>
+                    <config_path>synerise/product/limit</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
+                </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
                     <config_path>synerise/product/attributes</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes</source_model>
-                    <comment>The changes of attribute selection will apply only to products which haven’t been sent to Synerise yet. To apply the changes to all products go to Marketing > Synerise > Dashboard and use Resend all items option.</comment>
+                    <comment>The changes of attribute selection will apply only to products which haven’t been sent to Synerise yet. To apply the changes to all products schedule full synchronization for all affected scopes.</comment>
                 </field>
                 <field id="labels" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1">
                     <label>Labels as values</label>
@@ -113,11 +80,35 @@
             </group>
             <group id="customer" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Customers</label>
+                <field id="limit" translate="label" type="select" sortOrder="2" showInDefault="1">
+                    <label>Max items per request</label>
+                    <config_path>synerise/customer/limit</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
+                </field>
                 <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
                     <config_path>synerise/customer/attributes</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Customers\Attributes</source_model>
-                    <comment>The changes of attribute selection will apply only for customers who haven’t been sent to Synerise yet. To apply the changes to all customers go to Marketing > Synerise > Dashboard and use Resend all items option.</comment>
+                    <comment>The changes of attribute selection will apply only for customers who haven’t been sent to Synerise yet. To apply the changes to all customers schedule full synchronization for all affected scopes.</comment>
+                </field>
+            </group>
+            <group id="order" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Orders</label>
+                <field id="limit" translate="label" type="select" sortOrder="2" showInDefault="1">
+                    <label>Max items per request</label>
+                    <config_path>synerise/order/limit</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
+                </field>
+            </group>
+            <group id="subscriber" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Subscribers</label>
+                <field id="limit" translate="label" type="select" sortOrder="2" showInDefault="1">
+                    <label>Max items per request</label>
+                    <config_path>synerise/subscriber/limit</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
+                    <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
                 </field>
             </group>
         </section>
@@ -192,7 +183,7 @@
             <resource>Synerise_Integration::configuration_event_tracking</resource>
             <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Events</label>
-                <comment>Events either provide data for live tracking of customer actions or for background updates synchronization. In general it is recommended keep all events enabled, unless you intend to provide some types of data in an alternative way.</comment>
+                <comment><![CDATA[Tracking customer actions & data changes.]]></comment>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enabled</label>
                     <config_path>synerise/event_tracking/enabled</config_path>
@@ -207,32 +198,21 @@
                     <label>Include Tracking Params</label>
                     <config_path>synerise/event_tracking/include_params</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment><![CDATA[Additional params collected by tracker can optionally be included in cart & transaction events.]]></comment>
+                    <comment><![CDATA[Additional params from _snrs_params cookie can optionally be included in cart & transaction events.]]></comment>
                 </field>
             </group>
-        </section>
-        <section id="synerise_queue" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>Message Queues</label>
-            <tab>synerise</tab>
-            <resource>Synerise_Integration::configuration_queue</resource>
-            <group id="setup" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="message_queue" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Message Queues</label>
-                <comment>Message Queues can be used instead of live events sending</comment>
+                <comment>Queue up events for improved user experience.</comment>
                 <field id="enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Send by queue</label>
+                    <label>Enabled</label>
                     <config_path>synerise/queue/enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="connection" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Connection</label>
-                    <comment>Before switching to amqp, please make sure it is defined in env.php. Refer to Magento Message Queues documentation for more details. Remember to run setup:upgrade comment afterwards.</comment>
-                    <config_path>synerise/queue/connection</config_path>
-                    <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Connection</source_model>
                 </field>
                 <field id="events" type="multiselect" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Events to send by queue</label>
                     <config_path>synerise/queue/events</config_path>
-                    <source_model>Synerise\Integration\Model\Config\Source\Queue\Events</source_model>
+                    <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Events</source_model>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>

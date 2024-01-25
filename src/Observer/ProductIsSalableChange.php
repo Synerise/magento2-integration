@@ -3,16 +3,31 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Synerise\Integration\Helper\DataStorage;
+use Magento\Store\Model\StoreManagerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductIsSalableChange implements ObserverInterface
 {
     public const EVENT = 'product_is_salable_change';
+
+    /**
+     * @var mixed
+     */
+    protected $products;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    protected $storeManager;
 
     /**
      * @var ProductRepositoryInterface
@@ -20,9 +35,14 @@ class ProductIsSalableChange implements ObserverInterface
     private $productRepository;
 
     /**
-     * @var DataStorage
+     * @var Logger
      */
-    protected $data;
+    protected $loggerHelper;
+
+    /**
+     * @var Config
+     */
+    protected $synchronization;
 
     /**
      * @var Tracking
@@ -30,25 +50,43 @@ class ProductIsSalableChange implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var SyncProduct
+     * @var Publisher
      */
-    protected $syncProduct;
+    protected $publisher;
 
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param ProductRepositoryInterface $productRepository
+     * @param Logger $loggerHelper
+     * @param Config $synchronization
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     */
     public function __construct(
+        StoreManagerInterface $storeManager,
         ProductRepositoryInterface $productRepository,
-        DataStorage $data,
+        Logger $loggerHelper,
+        Config $synchronization,
         Tracking $trackingHelper,
-        SyncProduct $syncProduct
+        Publisher $publisher
     ) {
+        $this->storeManager = $storeManager;
         $this->productRepository = $productRepository;
-        $this->data = $data;
+        $this->loggerHelper = $loggerHelper;
+        $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
-        $this->syncProduct = $syncProduct;
+        $this->publisher = $publisher;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * Observe potential saleability change
+     *
+     * @param Observer $observer
+     * @return void
+     */
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             return;
         }
 
@@ -56,44 +94,100 @@ class ProductIsSalableChange implements ObserverInterface
 
         try {
             $changedProducts = [];
+
             if ($eventName === 'sales_order_item_save_before') {
-                $salesOrderItem = $observer->getData('item');
-                $this->data->setData($salesOrderItem->getSku(), $salesOrderItem->getProduct());
+                $item = $observer->getData('item');
+                $this->products[$item->getSku()] = $item->getProduct();
             } elseif ($eventName === 'sales_order_item_save_after') {
-                $salesOrderItem = $observer->getData('item');
-                $product = $this->productRepository->get($salesOrderItem->getSku(), false, $salesOrderItem->getStoreId(), true);
-                $productFromDataStorage = $this->data->getAndUnsetData($salesOrderItem->getSku());
-                if ($productFromDataStorage &&
-                    $product->getData('is_salable') !== $productFromDataStorage->getData('is_salable')) {
-                    $changedProducts[] = $product;
+                $item = $observer->getData('item');
+                if ($this->isSalableChanged($item->getSku(), $item->getStoreId())) {
+                    $changedProducts[] = $item->getProduct();
                 }
             } elseif ($eventName === 'sales_order_place_after') {
                 $order = $observer->getData('order');
-                $orderItems = $order->getAllItems();
-                foreach ($orderItems as $orderItem) {
-                    $product = $orderItem->getProduct();
-                    $isSalable = $product->getIsSalable();
-                    if (!$isSalable) {
-                        $changedProducts[] = $product;
+                foreach ($order->getAllItems() as $item) {
+                    $product = $item->getProduct();
+                    if (!$product->getIsSalable()) {
+                        $changedProducts[] = $item->getProduct();
                     }
                 }
             }
 
             if (!empty($changedProducts)) {
                 try {
-                    $this->syncProduct->addItemsToQueue(
-                        $changedProducts
-                    );
+                    foreach ($changedProducts as $changedProduct) {
+                        $this->publishForEachStore($changedProduct);
+                    }
                 } catch (\Exception $e) {
-                    $this->trackingHelper->getLogger()->error($e);
+                    $this->loggerHelper->getLogger()->error($e);
                 }
             }
         } catch (NoSuchEntityException $e) {
-            if (!$this->trackingHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
-                $this->trackingHelper->getLogger()->warning($e->getMessage());
+            if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                $this->loggerHelper->getLogger()->warning($e->getMessage());
             }
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            $this->loggerHelper->getLogger()->error($e);
         }
+    }
+
+    /**
+     * Compare product is_salable attribute before and after order was saved
+     *
+     * @param string $sku
+     * @param int $storeId
+     * @return bool
+     * @throws NoSuchEntityException
+     */
+    protected function isSalableChanged(string $sku, int $storeId): bool
+    {
+        if (!isset($this->products[$sku])) {
+            return false;
+        }
+
+        $productBeforeSave = $this->products[$sku];
+        $productAfterSave = $this->productRepository->get($sku, false, $storeId, true);
+        unset($this->products[$sku]);
+
+        return $productAfterSave->getData('is_salable') !== $productBeforeSave->getData('is_salable');
+    }
+
+    /**
+     * Publish product on synchronization queue for each store
+     *
+     * @param Product $product
+     * @return void
+     * @throws NoSuchEntityException
+     */
+    protected function publishForEachStore(Product $product)
+    {
+        $enabledStores = $this->synchronization->getConfiguredStores();
+        $storeIds = $product->getStoreIds();
+        foreach ($storeIds as $storeId) {
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
+            if (in_array($storeId, $enabledStores)) {
+                $this->publisher->publish(
+                    Sender::MODEL,
+                    $product->getEntityId(),
+                    $product->getStoreId(),
+                    $this->getWebsiteIdByStoreId($product->getStoreId())
+                );
+            }
+        }
+    }
+
+    /**
+     * Get website ID by store ID
+     *
+     * @param int $storeId
+     * @return int
+     * @throws NoSuchEntityException
+     */
+    public function getWebsiteIdByStoreId(int $storeId): int
+    {
+        return $this->storeManager->getStore($storeId)->getWebsiteId();
     }
 }

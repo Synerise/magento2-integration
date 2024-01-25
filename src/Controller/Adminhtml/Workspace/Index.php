@@ -2,24 +2,42 @@
 
 namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
-class Index extends \Magento\Backend\App\Action
+use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\View\Result\Page;
+use Magento\Framework\View\Result\PageFactory;
+
+class Index extends Action
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
 
+    /**
+     * @var PageFactory
+     */
     protected $resultPageFactory;
 
+    /**
+     * @param Context $context
+     * @param PageFactory $resultPageFactory
+     */
     public function __construct(
-        \Magento\Backend\App\Action\Context $context,
-        \Magento\Framework\View\Result\PageFactory $resultPageFactory
-    )
-    {
+        Context $context,
+        PageFactory $resultPageFactory
+    ) {
         parent::__construct($context);
         $this->resultPageFactory = $resultPageFactory;
     }
 
+    /**
+     * Workspace Index Action
+     *
+     * @return ResponseInterface|ResultInterface|Page
+     */
     public function execute()
     {
         $resultPage = $this->resultPageFactory->create();
@@ -28,6 +46,4 @@ class Index extends \Magento\Backend\App\Action
 
         return $resultPage;
     }
-
-
 }

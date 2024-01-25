@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Model\Config\Backend;
 
+use Exception;
 use Magento\Config\Model\Config\Factory as ConfigFactory;
 use Magento\Framework\App\Cache\TypeListInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -30,6 +31,18 @@ class Workspaces extends Value
      */
     protected $configFactory;
 
+    /**
+     * @param Context $context
+     * @param Registry $registry
+     * @param ScopeConfigInterface $config
+     * @param TypeListInterface $cacheTypeList
+     * @param SerializerInterface $serializer
+     * @param WebsiteCollectionFactory $websiteCollectionFactory
+     * @param ConfigFactory $configFactory
+     * @param AbstractResource|null $resource
+     * @param AbstractDb|null $resourceCollection
+     * @param array $data
+     */
     public function __construct(
         Context $context,
         Registry $registry,
@@ -49,6 +62,12 @@ class Workspaces extends Value
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
+    /**
+     * Saved linked config before save
+     *
+     * @return void
+     * @throws Exception
+     */
     public function beforeSave()
     {
         /** @var array $value */
@@ -61,9 +80,9 @@ class Workspaces extends Value
         $oldValue = $encodedOldValue ? $this->serializer->unserialize($encodedOldValue) : [];
 
         if (!empty($value)) {
-            foreach($value as $websiteId => $workspaceId) {
+            foreach ($value as $websiteId => $workspaceId) {
                 if (!isset($oldValue[$websiteId]) || $oldValue[$websiteId] != $workspaceId) {
-                    $this->saveLinkedConfig($websiteId, $workspaceId);
+                    $this->saveLinkedConfig($websiteId, (int) $workspaceId);
                 }
             }
         }
@@ -78,12 +97,11 @@ class Workspaces extends Value
      */
     protected function _afterLoad()
     {
-        /** @var string $value */
         $value = $this->getValue();
         $decodedValue = $value ? $this->serializer->unserialize($value) : [];
 
         $websites = $this->websiteCollectionFactory->create();
-        foreach($websites as $website) {
+        foreach ($websites as $website) {
             if (!isset($decodedValue[$website->getId()])) {
                 $decodedValue[$website->getId()] = [''];
             }
@@ -92,7 +110,15 @@ class Workspaces extends Value
         $this->setValue(!empty($decodedValue) ? $decodedValue : null);
     }
 
-    protected function saveLinkedConfig($websiteId, $workspaceId)
+    /**
+     * Save workspace id for each website (config path: synerise/workspace/id)
+     *
+     * @param int $websiteId
+     * @param int $workspaceId
+     * @return void
+     * @throws Exception
+     */
+    protected function saveLinkedConfig(int $websiteId, int $workspaceId)
     {
         $configData = [
             'section' => 'synerise_workspace',
@@ -109,8 +135,6 @@ class Workspaces extends Value
             ],
         ];
 
-        /** @var \Magento\Config\Model\Config $configModel */
-        $configModel = $this->configFactory->create(['data' => $configData]);
-        $configModel->save();
+        $this->configFactory->create(['data' => $configData])->save();
     }
 }

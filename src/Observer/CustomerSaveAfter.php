@@ -2,36 +2,34 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Customer\Model\Customer;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
 
 class CustomerSaveAfter implements ObserverInterface
 {
-    const EVENT = 'customer_save_after';
+    public const EVENT = 'customer_save_after';
 
-    const EXCLUDED_PATHS = [
+    public const EXCLUDED_PATHS = [
         '/newsletter/manage/save/'
     ];
 
     /**
-     * @var Api
+     * @var Config
      */
-    protected $apiHelper;
+    protected $synchronization;
 
     /**
-     * @var Customer
+     * @var Logger
      */
-    protected $customerHelper;
+    protected $loggerHelper;
 
     /**
      * @var Tracking
@@ -39,82 +37,82 @@ class CustomerSaveAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var QueueResourceModel
-     */
-    protected $queueResourceModel;
-
-    /**
      * @var Http
      */
     private $request;
 
     /**
-     * @var Queue
+     * @var Sender
      */
-    protected $queueHelper;
+    protected $sender;
 
     /**
-     * @var Event
+     * @var DataItemPublisher
      */
-    protected $eventHelper;
+    protected $dataItemPublisher;
 
+    /**
+     * @param Config $synchronization
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param Http $request
+     * @param DataItemPublisher $dataItemPublisher
+     * @param Sender $sender
+     */
     public function __construct(
-        Api $apiHelper,
+        Config $synchronization,
+        Logger $loggerHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper,
-        QueueResourceModel $queueResourceModel,
         Http $request,
-        Queue $queueHelper,
-        Event $eventHelper
+        DataItemPublisher $dataItemPublisher,
+        Sender $sender
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->synchronization = $synchronization;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
-        $this->queueResourceModel = $queueResourceModel;
         $this->request = $request;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->sender = $sender;
     }
 
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
-            return;
-        }
-
         if (in_array($this->request->getPathInfo(), self::EXCLUDED_PATHS)) {
             return;
         }
 
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
+            return;
+        }
+
         try {
+            /** @var Customer $customer */
             $customer = $observer->getCustomer();
             $storeId = $customer->getStoreId();
-            $customerParams = $this->customerHelper->preapreAdditionalParams($customer);
-            $createClientInCRMRequest = new CreateaClientinCRMRequest($customerParams);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
-            } else {
-                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createClientInCRMRequest, $storeId);
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
             }
-        } catch (ApiException $e) {
-            $this->addItemToQueue($observer->getCustomer());
-        } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
-            $this->addItemToQueue($observer->getCustomer());
-        }
-    }
 
-    protected function addItemToQueue(\Magento\Customer\Model\Customer $customer)
-    {
-        try {
-            $this->queueResourceModel->addItem(
-                'customer',
-                $customer->getStoreId(),
-                $customer->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->dataItemPublisher->publish(
+                    Sender::MODEL,
+                    (int) $customer->getEntityId(),
+                    $storeId
+                );
+            } else {
+                $this->sender->sendItems([$customer], $storeId);
+            }
+        } catch (\Exception $e) {
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }

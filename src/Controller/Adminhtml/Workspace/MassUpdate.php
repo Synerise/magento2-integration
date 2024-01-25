@@ -12,19 +12,20 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Ui\Component\MassAction\Filter;
+use Synerise\ApiClient\Api\ApiKeyControllerApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
-use Synerise\Integration\Helper\Api;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
-
+use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory;
 
 class MassUpdate extends Action implements HttpPostActionInterface
 {
     /**
      * Authorization level
      */
-    const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::workspace';
 
     /**
      * @var CollectionFactory
@@ -35,10 +36,16 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @var Filter
      */
     protected $filter;
+
     /**
-     * @var Api
+     * @var ConfigFactory
      */
-    protected $apiHelper;
+    private $configFactory;
+
+    /**
+     * @var InstanceFactory
+     */
+    private $apiInstanceFactory;
 
     /**
      * Constructor
@@ -46,17 +53,20 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @param Context $context
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
-     * @param Api $apiHelper
+     * @param ConfigFactory $configFactory
+     * @param InstanceFactory $apiInstanceFactory
      */
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        Api $apiHelper
+        ConfigFactory $configFactory,
+        InstanceFactory $apiInstanceFactory
     ) {
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->apiHelper = $apiHelper;
+        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
 
         parent::__construct($context);
     }
@@ -65,8 +75,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * Workspace delete action
      *
      * @return Redirect
-     * @throws NotFoundException
-     * @throws LocalizedException
+     * @throws NotFoundException|LocalizedException
      */
     public function execute(): Redirect
     {
@@ -95,11 +104,12 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
-     * @param $workspace
-     * @throws ValidatorException
-     * @throws ApiException
+     * Update
+     *
+     * @param Workspace $workspace
+     * @throws ApiException|ValidatorException
      */
-    protected function update($workspace)
+    protected function update(Workspace $workspace)
     {
         $permissionCheck = $this->checkPermissions($workspace->getApiKey());
         $missingPermissions = [];
@@ -117,17 +127,40 @@ class MassUpdate extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Check permissions
+     *
      * @param string $apiKey
      * @param string $scope
-     * @param null $scopeId
+     * @param int|null $scopeId
      * @return ApiKeyPermissionCheckResponse
-     * @throws ValidatorException
-     * @throws ApiException
+     * @throws ApiException|ValidatorException
      */
-    protected function checkPermissions($apiKey, $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeId = null)  {
-        $token = $this->apiHelper->getJwt($scope, $scopeId, null, $apiKey);
-
-        return $this->apiHelper->getApiKeyApiInstance($scope, $scopeId, $token)
+    protected function checkPermissions(
+        string $apiKey,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?int $scopeId = null
+    ): ApiKeyPermissionCheckResponse {
+        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
+    }
+
+    /**
+     * Create API key instance
+     *
+     * @param string $apiKey
+     * @param string $scope
+     * @param int|null $scopeId
+     * @return ApiKeyControllerApi
+     * @throws ApiException|ValidatorException
+     */
+    protected function createApiKeyInstance(
+        string $apiKey,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?int $scopeId = null
+    ): ApiKeyControllerApi {
+        return $this->apiInstanceFactory->createApiInstance(
+            'apiKey',
+            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
+        );
     }
 }

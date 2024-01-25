@@ -2,28 +2,29 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Module\Manager;
 use Magento\InventoryConfiguration\Model\GetLegacyStockItem;
 use Magento\Sales\Model\Order;
+use Magento\Store\Model\StoreManagerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class StockStatusChange implements ObserverInterface
 {
-    const EVENT = 'stock_status_change';
+    public const EVENT = 'stock_status_change';
 
     /**
-     * @var Tracking
+     * @var StoreManagerInterface
      */
-    protected $trackingHelper;
-
-    /**
-     * @var SyncProduct
-     */
-    protected $syncProduct;
+    protected $storeManager;
 
     /**
      * @var ObjectManagerInterface
@@ -35,25 +36,66 @@ class StockStatusChange implements ObserverInterface
      */
     protected $moduleManager;
 
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
+     * @var Config
+     */
+    protected $synchronization;
+
+    /**
+     * @var Tracking
+     */
+    protected $trackingHelper;
+
+    /**
+     * @var Publisher
+     */
+    protected $publisher;
+
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param Manager $moduleManager
+     * @param ObjectManagerInterface $objectManager
+     * @param Logger $loggerHelper
+     * @param Config $synchronization
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     */
     public function __construct(
-        SyncProduct $syncProduct,
-        Tracking $trackingHelper,
+        StoreManagerInterface $storeManager,
         Manager $moduleManager,
-        ObjectManagerInterface $objectManager
+        ObjectManagerInterface $objectManager,
+        Logger $loggerHelper,
+        Config $synchronization,
+        Tracking $trackingHelper,
+        Publisher $publisher
     ) {
-        $this->syncProduct = $syncProduct;
-        $this->trackingHelper = $trackingHelper;
+        $this->storeManager = $storeManager;
         $this->objectManager = $objectManager;
         $this->moduleManager = $moduleManager;
+        $this->loggerHelper = $loggerHelper;
+        $this->synchronization = $synchronization;
+        $this->trackingHelper = $trackingHelper;
+        $this->publisher = $publisher;
     }
 
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->moduleManager->isEnabled('Magento_InventoryCatalogApi')) {
             return;
         }
 
-        if (!$this->moduleManager->isEnabled('Magento_InventoryCatalogApi')) {
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             return;
         }
 
@@ -77,13 +119,50 @@ class StockStatusChange implements ObserverInterface
                         continue;
                     }
 
-                    $this->syncProduct->addItemsToQueue([
-                        $item->getProduct()
-                    ]);
+                    $this->publishForEachStore($item->getProduct());
                 } catch (\Exception $e) {
-                    $this->trackingHelper->getLogger()->error($e);
+                    $this->loggerHelper->getLogger()->error($e);
                 }
             }
         }
+    }
+
+    /**
+     * Publish for each store
+     *
+     * @param Product $product
+     * @return void
+     * @throws NoSuchEntityException
+     */
+    protected function publishForEachStore(Product $product)
+    {
+        $enabledStores = $this->synchronization->getConfiguredStores();
+        $storeIds = $product->getStoreIds();
+        foreach ($storeIds as $storeId) {
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
+            if (in_array($storeId, $enabledStores)) {
+                $this->publisher->publish(
+                    Sender::MODEL,
+                    $product->getEntityId(),
+                    $product->getStoreId(),
+                    $this->getWebsiteIdByStoreId($product->getStoreId())
+                );
+            }
+        }
+    }
+
+    /**
+     * Get website ID by store ID
+     *
+     * @param int $storeId
+     * @return int
+     * @throws NoSuchEntityException
+     */
+    public function getWebsiteIdByStoreId(int $storeId): int
+    {
+        return $this->storeManager->getStore($storeId)->getWebsiteId();
     }
 }

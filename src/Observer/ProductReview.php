@@ -3,22 +3,25 @@
 namespace Synerise\Integration\Observer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Review\Model\Rating\Option\VoteFactory;
+use Magento\Review\Model\Review;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\ApiClient\Model\CustomeventRequest;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\DataStorage;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\SyneriseApi\Sender\Event;
+use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
 class ProductReview implements ObserverInterface
 {
-    const EVENT = 'product_review_save_after';
+    public const EVENT = 'product_review_save_after';
+
+    public const CUSTOMER_UPDATE = 'customer_update_product_review';
 
     /**
      * @var ProductRepositoryInterface
@@ -36,19 +39,9 @@ class ProductReview implements ObserverInterface
     protected $storeManager;
 
     /**
-     * @var DataStorage
+     * @var Logger
      */
-    protected $data;
-
-    /**
-     * @var Api
-     */
-    protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
+    protected $loggerHelper;
 
     /**
      * @var Tracking
@@ -56,47 +49,70 @@ class ProductReview implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var \Magento\Review\Model\Review
+     * @var Review
      */
     protected $review;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $sender;
 
+    /**
+     * @var CustomerSender
+     */
+    private $customerSender;
+
+    /**
+     * @param ProductRepositoryInterface $productRepository
+     * @param VoteFactory $voteFactory
+     * @param StoreManagerInterface $storeManager
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     * @param Event $sender
+     * @param CustomerSender $customerSender
+     */
     public function __construct(
         ProductRepositoryInterface $productRepository,
         VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
-        Api $apiHelper,
-        Customer $customerHelper,
+        Logger $loggerHelper,
         Tracking $trackingHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        Publisher $publisher,
+        Event $sender,
+        CustomerSender $customerSender
     ) {
         $this->productRepository = $productRepository;
         $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
-        $this->apiHelper = $apiHelper;
-        $this->customerHelper = $customerHelper;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
+        $this->customerSender = $customerSender;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
-            return;
-        }
-
         try {
+            $storeId = $this->storeManager->getStore()->getId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             if ($observer->getObject()) {
                 $this->review = $observer->getObject();
                 return;
@@ -114,20 +130,14 @@ class ProductReview implements ObserverInterface
             $client = ['uuid' => $this->trackingHelper->getClientUuid()];
 
             $customerId = $this->review->getCustomerId();
-            $storeId = $this->storeManager->getStore()->getId();
-
             if ($customerId) {
                 $client['custom_id'] = $customerId;
             }
-
-            $params = [
-                'sku' => $product->getSku(),
-                'nickname' => $this->review->getNickname(),
-                'title' => $this->review->getTitle(),
-                'detail' => $this->review->getDetail(),
-                'source' => $this->trackingHelper->getSource(),
-                'applicationName' => $this->trackingHelper->getApplicationName()
-            ];
+            $params = $this->trackingHelper->prepareContextParams();
+            $params['sku'] = $product->getSku();
+            $params['nickname'] = $this->review->getNickname();
+            $params['title'] = $this->review->getTitle();
+            $params['detail'] = $this->review->getDetail();
 
             $votesCollection = $this->voteFactory->create()->getResourceCollection()
                 ->setReviewFilter($this->review->getReviewId())
@@ -148,28 +158,29 @@ class ProductReview implements ObserverInterface
 
             $customEventRequest = new CustomeventRequest([
                 'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getCurrentTime(),
+                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
                 'action' => 'product.addReview',
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $client,
                 'params' => $params
             ]);
 
-            $createAClientInCrmRequest = new CreateaClientinCRMRequest([
+            $guestCustomerRequest = new CreateaClientinCRMRequest([
                 'uuid' => $this->trackingHelper->getClientUuid(),
                 'display_name' => $this->review->getNickname()
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $customEventRequest, $storeId);
-                $this->queueHelper->publishEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
+                $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $customEventRequest, $storeId);
-                $this->eventHelper->sendEvent('ADD_OR_UPDATE_CLIENT', $createAClientInCrmRequest, $storeId);
+                $this->sender->send(self::EVENT, $customEventRequest, $storeId);
+                $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }

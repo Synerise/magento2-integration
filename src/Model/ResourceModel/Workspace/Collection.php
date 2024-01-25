@@ -1,10 +1,23 @@
 <?php
 namespace Synerise\Integration\Model\ResourceModel\Workspace;
 
-class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection
+use Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection;
+
+class Collection extends AbstractCollection
 {
+    /**
+     * @var string
+     */
     protected $_idFieldName = 'id';
+
+    /**
+     * @var string
+     */
     protected $_eventPrefix = 'synerise_integration_workspace_collection';
+
+    /**
+     * @var string
+     */
     protected $_eventObject = 'synerise_integration_workspace_collection';
 
     /**
@@ -14,7 +27,9 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
      */
     protected function _construct()
     {
-        $this->_init('Synerise\Integration\Model\Workspace', 'Synerise\Integration\Model\ResourceModel\Workspace');
+        $this->_init(
+            \Synerise\Integration\Model\Workspace::class,
+            \Synerise\Integration\Model\ResourceModel\Workspace::class
+        );
     }
-
 }

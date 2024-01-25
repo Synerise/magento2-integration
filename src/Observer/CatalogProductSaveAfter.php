@@ -5,12 +5,32 @@ namespace Synerise\Integration\Observer;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Store\Model\StoreManagerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Synchronization\Product as SyncProduct;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
+use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class CatalogProductSaveAfter implements ObserverInterface
 {
-    const EVENT = 'catalog_product_save_after';
+    public const EVENT = 'catalog_product_save_after';
+
+    /**
+     * @var StoreManagerInterface
+     */
+    protected $storeManager;
+
+    /**
+     * @var Config
+     */
+    protected $synchronization;
+
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
 
     /**
      * @var Tracking
@@ -18,31 +38,87 @@ class CatalogProductSaveAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var SyncProduct
+     * @var Publisher
      */
-    private $syncProduct;
+    protected $publisher;
 
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param Config $synchronization
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     */
     public function __construct(
-        SyncProduct $syncProduct,
-        Tracking $trackingHelper
+        StoreManagerInterface $storeManager,
+        Config $synchronization,
+        Logger $loggerHelper,
+        Tracking $trackingHelper,
+        Publisher $publisher
     ) {
-        $this->syncProduct = $syncProduct;
+        $this->storeManager = $storeManager;
+        $this->synchronization = $synchronization;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->publisher = $publisher;
     }
 
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             return;
         }
 
-        /** @var Product $product */
-        $product = $observer->getEvent()->getProduct();
-
         try {
-            $this->syncProduct->addItemsToQueue([$product]);
+            $this->publishForEachStore($observer->getEvent()->getProduct());
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            $this->loggerHelper->getLogger()->error($e);
         }
+    }
+
+    /**
+     * Publish message for each store
+     *
+     * @param Product $product
+     * @return void
+     * @throws NoSuchEntityException
+     */
+    protected function publishForEachStore(Product $product)
+    {
+        $enabledStores = $this->synchronization->getConfiguredStores();
+        $storeIds = $product->getStoreIds();
+        foreach ($storeIds as $storeId) {
+            if (in_array($storeId, $enabledStores)) {
+
+                if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                    return;
+                }
+
+                $this->publisher->publish(
+                    Sender::MODEL,
+                    (int) $product->getEntityId(),
+                    (int) $storeId,
+                    $this->getWebsiteIdByStoreId($storeId)
+                );
+            }
+        }
+    }
+
+    /**
+     * Get website ID by store ID
+     *
+     * @param int $storeId
+     * @return int
+     * @throws NoSuchEntityException
+     */
+    public function getWebsiteIdByStoreId(int $storeId): int
+    {
+        return $this->storeManager->getStore($storeId)->getWebsiteId();
     }
 }

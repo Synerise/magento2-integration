@@ -2,66 +2,91 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Publisher\Event;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
 {
-    const EVENT = 'newsletter_subscriber_save_after';
+    public const EVENT = 'newsletter_subscriber_delete_after';
+
+    public const EVENT_FOR_CONFIG = 'newsletter_subscriber_save_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var Event
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var SubscriberSender
      */
-    protected $eventHelper;
+    protected $sender;
 
+    /**
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param Event $publisher
+     * @param SubscriberSender $sender
+     */
     public function __construct(
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        Logger $loggerHelper,
+        Tracking $trackingHelper,
+        Event $publisher,
+        SubscriberSender $sender
     ) {
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        /** @var Subscriber $subscriber */
+        $subscriber = $observer->getEvent()->getDataObject();
+        $storeId = $subscriber->getStoreId();
+
+        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
             return;
         }
-
-        $event = $observer->getEvent();
-
-        /** @var Subscriber $subscriber */
-        $subscriber = $event->getDataObject();
-        $storeId = $subscriber->getStoreId();
 
         try {
             $createAClientInCrmRequest = new CreateaClientinCRMRequest([
                 'email' => $subscriber->getSubscriberEmail(),
-                'agreements' => ['email' =>  0]
+                'agreements' => ['email' => 0]
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $createAClientInCrmRequest, $storeId);
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                $this->publisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId);
+                $this->sender->deleteItem($createAClientInCrmRequest, $storeId, $subscriber->getId());
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }

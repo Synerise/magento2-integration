@@ -2,53 +2,74 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Helper\Cart;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
 class CartQtyUpdate implements ObserverInterface
 {
-    const EVENT = 'checkout_cart_update_items_after';
+    public const EVENT = 'checkout_cart_update_items_after';
 
     /**
-     * @var \Synerise\Integration\Helper\Catalog
+     * @var Cart
      */
-    protected $catalogHelper;
+    protected $cartHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var EventPublisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var EventSender
      */
-    protected $eventHelper;
+    protected $sender;
 
+    /**
+     * @param Cart $cartHelper
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param EventPublisher $publisher
+     * @param EventSender $sender
+     */
     public function __construct(
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventHelper
+        Cart $cartHelper,
+        Logger $loggerHelper,
+        Tracking $trackingHelper,
+        EventPublisher $publisher,
+        EventSender $sender
     ) {
-        $this->catalogHelper = $catalogHelper;
+        $this->cartHelper = $cartHelper;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
-            return;
-        }
-
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
 
@@ -57,29 +78,34 @@ class CartQtyUpdate implements ObserverInterface
             $quote = $observer->getCart()->getQuote();
             $storeId = $quote->getStoreId();
 
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             if (!$this->trackingHelper->getClientUuid() && !$quote->getCustomerEmail()) {
                 return;
             }
 
             $quote->collectTotals();
 
-            if (!$this->trackingHelper->hasItemDataChanges($quote)) {
+            if (!$this->cartHelper->hasItemDataChanges($quote)) {
                 // quote save won't be triggered, send event.
-                $cartStatusEvent = $this->eventHelper->prepareCartStatusEvent(
+                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
                     $quote,
                     (float) $quote->getSubtotal(),
                     (int) $quote->getItemsQty()
                 );
 
-                if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                    $this->queueHelper->publishEvent(self::EVENT, $cartStatusEvent, $storeId);
+                if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                    $this->publisher->publish(self::EVENT, $cartStatusEvent, $storeId);
                 } else {
-                    $this->eventHelper->sendEvent(self::EVENT, $cartStatusEvent, $storeId);
+                    $this->sender->send(self::EVENT, $cartStatusEvent, $storeId);
                 }
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }

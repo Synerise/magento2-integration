@@ -2,61 +2,76 @@
 
 namespace Synerise\Integration\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Quote\Model\Quote;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
+use Synerise\Integration\Helper\Cart;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
 class CartAddProduct implements ObserverInterface
 {
-    const EVENT = 'checkout_cart_add_product_complete';
+    public const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var \Synerise\Integration\Helper\Api
+     * @var Cart
      */
-    protected $apiHelper;
+    protected $cartHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Catalog
+     * @var Logger
      */
-    protected $catalogHelper;
+    protected $loggerHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Tracking
+     * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var \Synerise\Integration\Helper\Queue
+     * @var EventPublisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
-     * @var \Synerise\Integration\Helper\Event
+     * @var EventSender
      */
-    protected $eventsHelper;
+    protected $sender;
 
+    /**
+     * @param Cart $cartHelper
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param EventPublisher $publisher
+     * @param EventSender $sender
+     */
     public function __construct(
-        \Synerise\Integration\Helper\Api $apiHelper,
-        \Synerise\Integration\Helper\Catalog $catalogHelper,
-        \Synerise\Integration\Helper\Tracking $trackingHelper,
-        \Synerise\Integration\Helper\Queue $queueHelper,
-        \Synerise\Integration\Helper\Event $eventsHelper
+        Cart $cartHelper,
+        Logger $loggerHelper,
+        Tracking $trackingHelper,
+        EventPublisher $publisher,
+        EventSender $sender
     ) {
-        $this->apiHelper = $apiHelper;
-        $this->catalogHelper = $catalogHelper;
+        $this->cartHelper = $cartHelper;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventsHelper = $eventsHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
+    public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
-            return;
-        }
-
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
 
@@ -64,6 +79,11 @@ class CartAddProduct implements ObserverInterface
             /** @var Quote\Item $quoteItem */
             $quoteItem = $observer->getQuoteItem();
             $storeId = $quoteItem->getStoreId();
+
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             $product = $quoteItem->getProduct();
 
             if ($product->getParentProductId()) {
@@ -75,33 +95,33 @@ class CartAddProduct implements ObserverInterface
             }
 
             $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
-            $params = $this->catalogHelper->prepareParamsFromQuoteProduct($product);
+            $params = array_merge(
+                $this->trackingHelper->prepareContextParams(),
+                $this->cartHelper->prepareParamsFromQuoteProduct($product)
+            );
 
-            $params["source"] = $this->trackingHelper->getSource();
-            $params["applicationName"] = $this->trackingHelper->getApplicationName();
-            $params["storeId"] = $this->trackingHelper->getStoreId();
-            $params["storeUrl"] = $this->trackingHelper->getStoreBaseUrl();
-
-            if($this->trackingHelper->shouldIncludeParams($this->trackingHelper->getStoreId()) && $this->trackingHelper->getCookieParams()) {
-                $params['snrs_params'] = $this->trackingHelper->getCookieParams();
+            $cookieParams = $this->cartHelper->getCookieParams();
+            if ($cookieParams) {
+                $params['snrs_params'] = $cookieParams;
             }
 
             $eventClientAction = new ClientaddedproducttocartRequest([
                 'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getCurrentTime(),
+                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
                 'client' => $client,
                 'params' => $params
             ]);
 
-            if ($this->queueHelper->isQueueAvailable()) {
-                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventsHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }

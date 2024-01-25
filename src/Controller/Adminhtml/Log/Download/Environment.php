@@ -6,6 +6,9 @@ use Magento\Backend\Controller\Adminhtml\System;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\App\Response\Http\FileFactory;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Module\ModuleList;
@@ -13,9 +16,9 @@ use Synerise\Integration\Helper\Version;
 
 class Environment extends System
 {
-    const ADMIN_RESOURCE = 'Synerise_Integration::log_download';
+    public const ADMIN_RESOURCE = 'Synerise_Integration::log_download';
 
-    const FILENAME = 'environment.log';
+    public const FILENAME = 'environment.log';
 
     /**
      * @var FileFactory
@@ -47,6 +50,15 @@ class Environment extends System
      */
     private $version;
 
+    /**
+     * @param Context $context
+     * @param ProductMetadataInterface $productMetadata
+     * @param FileFactory $fileFactory
+     * @param Filesystem $filesystem
+     * @param Filesystem\DirectoryList $directoryList
+     * @param ModuleList $moduleList
+     * @param Version $version
+     */
     public function __construct(
         Context $context,
         ProductMetadataInterface $productMetadata,
@@ -66,10 +78,16 @@ class Environment extends System
         parent::__construct($context);
     }
 
+    /**
+     * Execute
+     *
+     * @return ResponseInterface|ResultInterface
+     * @throws NotFoundException|FileSystemException
+     */
     public function execute()
     {
         $moduleList = $this->moduleList->getAll();
-        foreach($moduleList as &$module) {
+        foreach ($moduleList as &$module) {
             $codeVersion = $this->version->getMagentoModuleVersion($module['name']);
             $module['code_version'] = $codeVersion;
         }
@@ -98,7 +116,13 @@ class Environment extends System
         }
     }
 
-    protected function getFilePath()
+    /**
+     * Get log file path
+     *
+     * @return string
+     * @throws FileSystemException
+     */
+    protected function getFilePath(): string
     {
         return $this->directoryList->getPath(DirectoryList::TMP) . DIRECTORY_SEPARATOR . self::FILENAME ;
     }

@@ -6,25 +6,21 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\EventClientAction;
-use Synerise\Integration\Helper\Api;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\SyneriseApi\Sender\Event;
+use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
 class CustomerLogout implements ObserverInterface
 {
-    const EVENT = 'customer_logout';
+    public const EVENT = 'customer_logout';
 
     /**
-     * @var Api
+     * @var Logger
      */
-    protected $apiHelper;
-
-    /**
-     * @var Customer
-     */
-    protected $customerHelper;
+    protected $loggerHelper;
 
     /**
      * @var Tracking
@@ -32,36 +28,42 @@ class CustomerLogout implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var Queue
+     * @var Publisher
      */
-    protected $queueHelper;
+    protected $publisher;
 
     /**
      * @var Event
      */
-    protected $eventHelper;
+    protected $sender;
 
+    /**
+     * @param Logger $loggerHelper
+     * @param Tracking $trackingHelper
+     * @param Publisher $publisher
+     * @param EventSender $sender
+     */
     public function __construct(
-        Api $apiHelper,
+        Logger $loggerHelper,
         Tracking $trackingHelper,
-        Customer $customerHelper,
-        Queue $queueHelper,
-        Event $eventHelper
+        EventPublisher $publisher,
+        EventSender $sender
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
-        $this->customerHelper = $customerHelper;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->publisher = $publisher;
+        $this->sender = $sender;
     }
 
+    /**
+     * Execute
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isLiveEventTrackingEnabled(self::EVENT)) {
-            return;
-        }
-
-        if ($this->trackingHelper->isAdminStore()) {
+        if ($this->trackingHelper->getContext()->isAdminStore()) {
             return;
         }
 
@@ -69,30 +71,30 @@ class CustomerLogout implements ObserverInterface
             $customer = $observer->getEvent()->getCustomer();
             $storeId = $customer->getStoreId();
 
+            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+                return;
+            }
+
             $eventClientAction = new EventClientAction([
                 'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getCurrentTime(),
+                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
                 'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->customerHelper->prepareIdentityParams(
+                'client' => $this->trackingHelper->prepareClientDataFromCustomer(
                     $customer,
-                    $this->trackingHelper->generateUuidByEmail($customer->getEmail())
+                    $this->trackingHelper->getClientUuid()
                 ),
-                'params' => [
-                    'source' => $this->trackingHelper->getSource(),
-                    'applicationName' => $this->trackingHelper->getApplicationName(),
-                    'storeId' => $this->trackingHelper->getStoreId(),
-                    'storeUrl' => $this->trackingHelper->getStoreBaseUrl()
-                ]
+                'params' => $this->trackingHelper->prepareContextParams()
             ]);
 
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $eventClientAction, $storeId);
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
-                $this->eventHelper->sendEvent(self::EVENT, $eventClientAction, $storeId);
+                $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
-        } catch (ApiException $e) {
         } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }

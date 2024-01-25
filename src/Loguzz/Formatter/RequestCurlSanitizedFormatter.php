@@ -7,13 +7,24 @@ use Psr\Http\Message\RequestInterface;
 
 class RequestCurlSanitizedFormatter extends RequestCurlFormatter
 {
+    /**
+     * Parse data
+     *
+     * @param RequestInterface $request
+     * @param array $options
+     * @return array
+     */
     protected function parseData(RequestInterface $request, array $options): array
     {
         $data = parent::parseData($request, $options);
         if (isset($data['headers']['Authorization'])) {
             $authorizationString = $data['headers']['Authorization'];
             if ($authorizationString) {
-                $data['headers']['Authorization'] = preg_replace('/(Basic |Bearer )(.*)/', '$1{TOKEN}', $authorizationString);
+                $data['headers']['Authorization'] = preg_replace(
+                    '/(Basic |Bearer )(.*)/',
+                    '$1{TOKEN}',
+                    $authorizationString
+                );
             }
         }
 

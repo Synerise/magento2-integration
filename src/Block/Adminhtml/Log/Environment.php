@@ -5,8 +5,14 @@ use Magento\Framework\View\Element\Template;
 
 class Environment extends Template
 {
-    public function getDownloadEnvironmentLogUrl()
+
+    /**
+     * Get url to download environment log
+     *
+     * @return string
+     */
+    public function getDownloadEnvironmentLogUrl(): string
     {
-        return $this->getUrl('*/*/download_environment');
+        return $this->_escaper->escapeUrl($this->getUrl('*/*/download_environment'));
     }
 }

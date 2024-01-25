@@ -17,6 +17,10 @@ class Version
      */
     private $readFactory;
 
+    /**
+     * @param ComponentRegistrarInterface $componentRegistrar
+     * @param ReadFactory $readFactory
+     */
     public function __construct(
         ComponentRegistrarInterface $componentRegistrar,
         ReadFactory $readFactory
@@ -26,6 +30,12 @@ class Version
         $this->readFactory = $readFactory;
     }
 
+    /**
+     * Get current module version
+     *
+     * @param string $moduleName
+     * @return string
+     */
     public function getMagentoModuleVersion(string $moduleName): string
     {
         try {

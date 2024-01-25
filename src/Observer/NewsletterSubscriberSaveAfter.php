@@ -4,28 +4,38 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Customer;
-use Synerise\Integration\Helper\Event;
-use Synerise\Integration\Helper\Queue;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\ResourceModel\Cron\Queue as QueueResourceModel;
+use Synerise\Integration\Helper\Tracking\UuidManagement;
+use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
+use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
-    const EVENT = 'newsletter_subscriber_save_after';
+    public const EVENT = 'newsletter_subscriber_save_after';
 
     /**
-     * @var QueueResourceModel
+     * @var DataItemPublisher
      */
-    protected $queueResourceModel;
+    protected $dataItemPublisher;
 
     /**
-     * @var Customer
+     * @var Sender
      */
-    protected $customerHelper;
+    protected $sender;
+
+    /**
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
+     * @var Config
+     */
+    protected $synchronization;
 
     /**
      * @var Tracking
@@ -33,75 +43,76 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var Queue
+     * @var UuidManagement
      */
-    protected $queueHelper;
+    protected $uuidHelper;
 
     /**
-     * @var Event
+     * @param DataItemPublisher $dataItemPublisher
+     * @param Sender $sender
+     * @param Logger $loggerHelper
+     * @param Config $synchronization
+     * @param Tracking $trackingHelper
+     * @param UuidManagement $uuidHelper
      */
-    protected $eventHelper;
-
     public function __construct(
-        Customer $customerHelper,
+        DataItemPublisher $dataItemPublisher,
+        Sender $sender,
+        Logger $loggerHelper,
+        Config $synchronization,
         Tracking $trackingHelper,
-        QueueResourceModel $queueResourceModel,
-        Queue $queueHelper,
-        Event $eventHelper
+        UuidManagement $uuidHelper
     ) {
-        $this->customerHelper = $customerHelper;
+        $this->dataItemPublisher = $dataItemPublisher;
+        $this->sender = $sender;
+        $this->loggerHelper = $loggerHelper;
+        $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
-        $this->queueResourceModel = $queueResourceModel;
-        $this->queueHelper = $queueHelper;
-        $this->eventHelper = $eventHelper;
+        $this->uuidHelper = $uuidHelper;
     }
 
     /**
+     * Execute
+     *
      * @param Observer $observer
      */
     public function execute(Observer $observer)
     {
-        if (!$this->trackingHelper->isEventTrackingEnabled(self::EVENT)) {
+        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
             return;
         }
 
-        $event = $observer->getEvent();
+        $context = $this->trackingHelper->getContext();
+
         /** @var Subscriber $subscriber */
-        $subscriber = $event->getDataObject();
+        $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
-        try {
-            if (!$this->trackingHelper->isLoggedIn()) {
-                $this->trackingHelper->manageClientUuid($subscriber->getEmail());
-            }
 
-            $createAClientInCrmRequest = $this->customerHelper->prepareRequestFromSubscription($subscriber);
-
-            if ($this->queueHelper->isQueueAvailable(self::EVENT, $storeId)) {
-                $this->queueHelper->publishEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
-            } else {
-                $this->eventHelper->sendEvent(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
-            }
-        } catch (ApiException $e) {
-            $this->addItemToQueue($subscriber);
-        } catch (\Exception $e) {
-            $this->trackingHelper->getLogger()->error($e);
-            $this->addItemToQueue($subscriber);
+        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            return;
         }
-    }
 
-    /**
-     * @param $subscriber
-     */
-    protected function addItemToQueue($subscriber)
-    {
         try {
-            $this->queueResourceModel->addItem(
-                'subscriber',
-                $subscriber->getStoreId(),
-                $subscriber->getId()
-            );
-        } catch (LocalizedException $e) {
-            $this->trackingHelper->getLogger()->error($e);
+            if (!$context->isLoggedIn() && !$context->isAdminStore()) {
+                $this->uuidHelper->manageByEmail(
+                    $subscriber->getEmail(),
+                    $this->trackingHelper->getContext()->getStoreId()
+                );
+            }
+
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->dataItemPublisher->publish(
+                    Sender::MODEL,
+                    $subscriber->getId(),
+                    $storeId
+                );
+            } else {
+                $this->sender->sendItems([$subscriber], $storeId);
+            }
+        } catch (\Exception $e) {
+            if (!$e instanceof ApiException) {
+                $this->loggerHelper->getLogger()->error($e);
+            }
         }
     }
 }
