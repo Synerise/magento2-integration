@@ -133,9 +133,9 @@ class ConfigMigration implements DataPatchInterface
             } elseif ($config->getPath() == Workspace::XML_PATH_API_KEY &&
                 $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
                 $configToDelete[] = $config;
-            } elseif($config->getPath() == 'synerise/synchronization/enabled') {
+            } elseif ($config->getPath() == 'synerise/synchronization/enabled') {
                 $synchronizationEnabled = true;
-            } elseif($config->getPath() == 'synerise/cron_queue/enabled') {
+            } elseif ($config->getPath() == 'synerise/cron_queue/enabled') {
                 $cronQueueEnabled = $config->getValue();
             }
         }
