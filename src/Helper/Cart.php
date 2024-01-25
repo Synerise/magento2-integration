@@ -3,6 +3,7 @@
 namespace Synerise\Integration\Helper;
 
 use Exception;
+use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -36,18 +37,26 @@ class Cart
     protected $trackingHelper;
 
     /**
+     * @var Data
+     */
+    protected $taxHelper;
+
+    /**
      * @param StoreManagerInterface $storeManager
+     * @param Data $taxHelper
      * @param Cookie $cookieHelper
      * @param Image $imageHelper
      * @param Tracking $trackingHelper
      */
     public function __construct(
         StoreManagerInterface $storeManager,
+        Data $taxHelper,
         Cookie $cookieHelper,
         Image $imageHelper,
         Tracking $trackingHelper
     ) {
         $this->storeManager = $storeManager;
+        $this->taxHelper = $taxHelper;
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
@@ -100,11 +109,11 @@ class Cart
             "sku" => $sku,
             "name" => $product->getName(),
             "regularUnitPrice" => [
-                "amount" => (float) $product->getPrice(),
+                "amount" => $this->taxHelper->getTaxPrice($product, $product->getFinalPrice(), true),
                 "currency" => $this->getCurrencyCode()
             ],
             "finalUnitPrice" => [
-                "amount" => (float) $product->getFinalPrice(),
+                "amount" => $this->taxHelper->getTaxPrice($product, $product->getFinalPrice(), true),
                 "currency" => $this->getCurrencyCode()
             ],
             "productUrl" => $product->getUrlInStore(),
@@ -117,7 +126,7 @@ class Cart
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => (float) $product->getSpecialPrice(),
+                "amount" => $this->taxHelper->getTaxPrice($product, $product->getSpecialPrice(), true),
                 "currency" => $this->getCurrencyCode()
             ];
         }

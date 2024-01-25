@@ -87,12 +87,13 @@ class CartQtyUpdate implements ObserverInterface
             }
 
             $quote->collectTotals();
+            $totals = $quote->getTotals();
 
             if (!$this->cartHelper->hasItemDataChanges($quote)) {
                 // quote save won't be triggered, send event.
                 $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
                     $quote,
-                    (float) $quote->getSubtotal(),
+                    isset($totals['subtotal']) ? (double) $totals['subtotal']->getValue() : $quote->getSubtotal(),
                     (int) $quote->getItemsQty()
                 );
 
