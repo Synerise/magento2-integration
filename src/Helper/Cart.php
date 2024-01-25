@@ -65,7 +65,7 @@ class Cart
     public function prepareCartStatusEvent(Quote $quote, float $totalAmount, float $totalQuantity): CustomeventRequest
     {
         $params = $this->trackingHelper->prepareContextParams();
-        $params['products'] = $this->prepareProductsFromQuote($quote);
+        $params['products'] = $totalQuantity ? $this->prepareProductsFromQuote($quote) : [];
         $params['totalAmount'] = $totalAmount;
         $params['totalQuantity'] = $totalQuantity;
 

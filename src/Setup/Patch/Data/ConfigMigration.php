@@ -19,7 +19,9 @@ class ConfigMigration implements DataPatchInterface
         'synerise/product/cron_enabled',
         'synerise/customer/cron_enabled',
         'synerise/order/cron_enabled',
-        'synerise/subscriber/cron_enabled'
+        'synerise/subscriber/cron_enabled',
+        'synerise/cron_status/enabled',
+        'synerise/cron_queue/enabled'
     ];
 
     /**
@@ -116,6 +118,8 @@ class ConfigMigration implements DataPatchInterface
         $collection = $this->configCollectionFactory->create()
             ->addPathFilter('synerise');
 
+        $cronQueueEnabled = $synchronizationEnabled = false;
+
         foreach ($collection as $config) {
             if (in_array($config->getPath(), self::CONFIG_PATHS_TO_DELETE)) {
                 $configToDelete[] = $config;
@@ -129,6 +133,10 @@ class ConfigMigration implements DataPatchInterface
             } elseif ($config->getPath() == Workspace::XML_PATH_API_KEY &&
                 $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
                 $configToDelete[] = $config;
+            } elseif($config->getPath() == 'synerise/synchronization/enabled') {
+                $synchronizationEnabled = true;
+            } elseif($config->getPath() == 'synerise/cron_queue/enabled') {
+                $cronQueueEnabled = $config->getValue();
             }
         }
 
@@ -143,6 +151,13 @@ class ConfigMigration implements DataPatchInterface
             foreach ($configToDelete as $config) {
                 $this->deleteConfig($config);
             }
+        }
+
+        if ($cronQueueEnabled && !$synchronizationEnabled) {
+            $this->configWriter->save(
+                'synerise/synchronization/enabled',
+                1
+            );
         }
     }
 
