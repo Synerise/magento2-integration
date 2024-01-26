@@ -3,6 +3,7 @@
 namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Exception;
+use Magento\Catalog\Helper\Data;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -46,6 +47,11 @@ class Order extends AbstractSender implements SenderInterface
     protected $ruleRepository;
 
     /**
+     * @var Data
+     */
+    protected $taxHelper;
+
+    /**
      * @var Category
      */
     protected $categoryHelper;
@@ -74,6 +80,7 @@ class Order extends AbstractSender implements SenderInterface
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param ResourceConnection $resource
      * @param RuleRepositoryInterface $ruleRepository
+     * @param Data $taxHelper
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      * @param Category $categoryHelper
@@ -87,18 +94,20 @@ class Order extends AbstractSender implements SenderInterface
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ResourceConnection $resource,
         RuleRepositoryInterface $ruleRepository,
+        Data $taxHelper,
         ConfigFactory $configFactory,
-        InstanceFactory  $apiInstanceFactory,
+        InstanceFactory $apiInstanceFactory,
         Category $categoryHelper,
         Cookie $cookieHelper,
-        Image  $imageHelper,
+        Image $imageHelper,
         Logger $loggerHelper,
-        Tracking  $trackingHelper,
-        UuidGenerator  $uuidGenerator
+        Tracking $trackingHelper,
+        UuidGenerator $uuidGenerator
     ) {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->resource = $resource;
         $this->ruleRepository = $ruleRepository;
+        $this->taxHelper = $taxHelper;
         $this->categoryHelper = $categoryHelper;
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
@@ -260,7 +269,7 @@ class Order extends AbstractSender implements SenderInterface
                 $context->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                 $context->getCurrentTime(),
             'revenue' => [
-                "amount" => (float) $order->getSubTotal(),
+                "amount" => (float) $order->getSubtotalInclTax(),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'value' => [
@@ -302,12 +311,15 @@ class Order extends AbstractSender implements SenderInterface
         $product = $item->getProduct();
 
         $regularPrice = [
-            "amount" => (float) $item->getOriginalPrice(),
+            "amount" => $this->taxHelper->getTaxPrice($product, $item->getOriginalPrice(), true),
             "currency" => $currency
         ];
 
         $finalUnitPrice = [
-            "amount" => (float) $item->getPrice() - ((float) $item->getDiscountAmount() / $item->getQtyOrdered()),
+            "amount" => round(
+                ($item->getRowTotal() + $item->getTaxAmount() - $item->getDiscountAmount()) /
+                $item->getQtyOrdered(), 2
+            ),
             "currency" => $currency
         ];
 

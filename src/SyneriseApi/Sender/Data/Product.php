@@ -5,8 +5,10 @@ namespace Synerise\Integration\SyneriseApi\Sender\Data;
 use InvalidArgumentException;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Catalog\Pricing\Price\FinalPrice;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
@@ -88,6 +90,11 @@ class Product extends AbstractSender implements SenderInterface
     protected $stockRegistry;
 
     /**
+     * @var Data
+     */
+    protected $taxHelper;
+
+    /**
      * @var Config
      */
     protected $catalogsConfig;
@@ -115,6 +122,7 @@ class Product extends AbstractSender implements SenderInterface
      * @param ProductRepositoryInterface $productRepository
      * @param Configurable $configurable
      * @param ResourceConnection $resource
+     * @param Data $taxHelper
      * @param StockRegistry $stockRegistry
      * @param Config $catalogsConfig
      * @param Category $categoryHelper
@@ -130,6 +138,7 @@ class Product extends AbstractSender implements SenderInterface
         ProductRepositoryInterface $productRepository,
         Configurable $configurable,
         ResourceConnection $resource,
+        Data $taxHelper,
         StockRegistry $stockRegistry,
         Config $catalogsConfig,
         Category $categoryHelper,
@@ -143,6 +152,7 @@ class Product extends AbstractSender implements SenderInterface
         $this->configurable = $configurable;
         $this->connection = $resource->getConnection();
         $this->stockRegistry = $stockRegistry;
+        $this->taxHelper = $taxHelper;
         $this->catalogsConfig = $catalogsConfig;
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
@@ -304,7 +314,7 @@ class Product extends AbstractSender implements SenderInterface
             }
         }
 
-        $value['price'] = $product->getPrice();
+        $value['price'] = $this->taxHelper->getTaxPrice($product, $product->getPrice(), true);
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 
