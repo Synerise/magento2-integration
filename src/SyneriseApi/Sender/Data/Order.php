@@ -274,7 +274,7 @@ class Order extends AbstractSender implements SenderInterface
                 $context->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                 $context->getCurrentTime(),
             'revenue' => [
-                "amount" => (float) $order->getSubtotalInclTax(),
+                "amount" => $this->getOrderSubtotal($order, $order->getStoreId()),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'value' => [
@@ -455,5 +455,21 @@ class Order extends AbstractSender implements SenderInterface
     public function getAttributesToSelect(int $storeId): array
     {
         return[];
+    }
+
+    /**
+     * Get order subtotal including tax if enabled by config
+     *
+     * @param OrderModel $order
+     * @param int $storeId
+     * @return float
+     */
+    public function getOrderSubtotal(OrderModel $order, int $storeId): float
+    {
+        if ($this->priceHelper->calculateTax($storeId)) {
+            return (float) $order->getSubtotalInclTax();
+        } else {
+            return (float) $order->getSubtotal();
+        }
     }
 }
