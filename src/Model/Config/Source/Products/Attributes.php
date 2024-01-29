@@ -11,7 +11,8 @@ class Attributes implements OptionSourceInterface
         'sku',
         'price',
         'image',
-        'visibility'
+        'visibility',
+        'tax_class_id'
     ];
     public const XML_PATH_PRODUCT_ATTRIBUTES = 'synerise/product/attributes';
 

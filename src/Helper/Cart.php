@@ -11,6 +11,7 @@ use Magento\Quote\Model\Quote\Item;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\Helper\Tracking\Cookie;
 
 class Cart
@@ -36,18 +37,26 @@ class Cart
     protected $trackingHelper;
 
     /**
+     * @var Price
+     */
+    protected $priceHelper;
+
+    /**
      * @param StoreManagerInterface $storeManager
+     * @param Price $priceHelper
      * @param Cookie $cookieHelper
      * @param Image $imageHelper
      * @param Tracking $trackingHelper
      */
     public function __construct(
         StoreManagerInterface $storeManager,
+        Price $priceHelper,
         Cookie $cookieHelper,
         Image $imageHelper,
         Tracking $trackingHelper
     ) {
         $this->storeManager = $storeManager;
+        $this->priceHelper = $priceHelper;
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
@@ -88,10 +97,12 @@ class Cart
      * Prepare products data from quote item product object
      *
      * @param Product $product
+     * @param int|null $storeId
      * @return array
-     * @throws Exception
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
-    public function prepareParamsFromQuoteProduct(Product $product): array
+    public function prepareParamsFromQuoteProduct(Product $product, ?int $storeId = null): array
     {
         $sku = $product->getData('sku');
         $skuVariant = $product->getSku();
@@ -100,11 +111,11 @@ class Cart
             "sku" => $sku,
             "name" => $product->getName(),
             "regularUnitPrice" => [
-                "amount" => (float) $product->getPrice(),
+                "amount" => $this->priceHelper->getPrice($product, $product->getPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ],
             "finalUnitPrice" => [
-                "amount" => (float) $product->getFinalPrice(),
+                "amount" => $this->priceHelper->getPrice($product, $product->getFinalPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ],
             "productUrl" => $product->getUrlInStore(),
@@ -117,7 +128,7 @@ class Cart
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => (float) $product->getSpecialPrice(),
+                "amount" => $this->priceHelper->getPrice($product, $product->getSpecialPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ];
         }
@@ -204,5 +215,22 @@ class Cart
     public function getCookieParams(): array
     {
         return ($this->cookieHelper->shouldIncludeSnrsParams()) ? $this->cookieHelper->getSnrsParams() : [];
+    }
+
+    /**
+     * Get quote subtotal including tax if enabled by config
+     *
+     * @param Quote $quote
+     * @param int $storeId
+     * @return float
+     */
+    public function getQuoteSubtotal(Quote $quote, int $storeId): float
+    {
+        if ($this->priceHelper->calculateTax($storeId)) {
+            $totals = $quote->getTotals();
+            return isset($totals['subtotal']) ? (float) $totals['subtotal']->getValue() : $quote->getSubtotal();
+        } else {
+            return $quote->getSubtotal();
+        }
     }
 }

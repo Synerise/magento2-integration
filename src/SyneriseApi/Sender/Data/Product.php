@@ -25,6 +25,7 @@ use Synerise\CatalogsApiClient\Model\AddItem;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Product\Category;
 use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\SyneriseApi\Catalogs\Config;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
@@ -103,6 +104,11 @@ class Product extends AbstractSender implements SenderInterface
     protected $imageHelper;
 
     /**
+     * @var Price
+     */
+    protected $priceHelper;
+
+    /**
      * @var IsProductSalableInterface|null
      */
     protected $isProductSalable;
@@ -120,6 +126,7 @@ class Product extends AbstractSender implements SenderInterface
      * @param Category $categoryHelper
      * @param Image $imageHelper
      * @param Logger $loggerHelper
+     * @param Price $priceHelper
      * @param IsProductSalableInterface|null $isProductSalable
      */
     public function __construct(
@@ -135,6 +142,7 @@ class Product extends AbstractSender implements SenderInterface
         Category $categoryHelper,
         Image $imageHelper,
         Logger $loggerHelper,
+        Price $priceHelper,
         ?IsProductSalableInterface $isProductSalable = null
     ) {
         $this->scopeConfig = $scopeConfig;
@@ -146,6 +154,7 @@ class Product extends AbstractSender implements SenderInterface
         $this->catalogsConfig = $catalogsConfig;
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
+        $this->priceHelper = $priceHelper;
         $this->isProductSalable = $isProductSalable;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
@@ -304,7 +313,7 @@ class Product extends AbstractSender implements SenderInterface
             }
         }
 
-        $value['price'] = $product->getPrice();
+        $value['price'] = $this->priceHelper->getPrice($product, $product->getPrice(), $product->getStoreId());
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 

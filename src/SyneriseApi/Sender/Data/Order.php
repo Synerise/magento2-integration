@@ -3,9 +3,9 @@
 namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Exception;
+use Magento\Catalog\Helper\Data;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order as OrderModel;
@@ -17,6 +17,7 @@ use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Product\Category;
 use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
@@ -46,6 +47,11 @@ class Order extends AbstractSender implements SenderInterface
     protected $ruleRepository;
 
     /**
+     * @var Data
+     */
+    protected $taxHelper;
+
+    /**
      * @var Category
      */
     protected $categoryHelper;
@@ -59,6 +65,11 @@ class Order extends AbstractSender implements SenderInterface
      * @var Image
      */
     protected $imageHelper;
+
+    /**
+     * @var Price
+     */
+    protected $priceHelper;
 
     /**
      * @var Tracking
@@ -80,6 +91,7 @@ class Order extends AbstractSender implements SenderInterface
      * @param Cookie $cookieHelper
      * @param Image $imageHelper
      * @param Logger $loggerHelper
+     * @param Price $priceHelper
      * @param Tracking $trackingHelper
      * @param UuidGenerator $uuidGenerator
      */
@@ -88,17 +100,19 @@ class Order extends AbstractSender implements SenderInterface
         ResourceConnection $resource,
         RuleRepositoryInterface $ruleRepository,
         ConfigFactory $configFactory,
-        InstanceFactory  $apiInstanceFactory,
+        InstanceFactory $apiInstanceFactory,
         Category $categoryHelper,
         Cookie $cookieHelper,
-        Image  $imageHelper,
+        Image $imageHelper,
         Logger $loggerHelper,
-        Tracking  $trackingHelper,
-        UuidGenerator  $uuidGenerator
+        Price $priceHelper,
+        Tracking $trackingHelper,
+        UuidGenerator $uuidGenerator
     ) {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->resource = $resource;
         $this->ruleRepository = $ruleRepository;
+        $this->priceHelper = $priceHelper;
         $this->categoryHelper = $categoryHelper;
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
@@ -260,7 +274,7 @@ class Order extends AbstractSender implements SenderInterface
                 $context->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                 $context->getCurrentTime(),
             'revenue' => [
-                "amount" => (float) $order->getSubTotal(),
+                "amount" => $this->getOrderSubtotal($order, $order->getStoreId()),
                 "currency" => $order->getOrderCurrencyCode()
             ],
             'value' => [
@@ -302,12 +316,12 @@ class Order extends AbstractSender implements SenderInterface
         $product = $item->getProduct();
 
         $regularPrice = [
-            "amount" => (float) $item->getOriginalPrice(),
+            "amount" => $this->priceHelper->getPrice($product, $item->getOriginalPrice(), $storeId),
             "currency" => $currency
         ];
 
         $finalUnitPrice = [
-            "amount" => (float) $item->getPrice() - ((float) $item->getDiscountAmount() / $item->getQtyOrdered()),
+            "amount" => $this->priceHelper->getFinalUnitPrice($item, $storeId),
             "currency" => $currency
         ];
 
@@ -441,5 +455,21 @@ class Order extends AbstractSender implements SenderInterface
     public function getAttributesToSelect(int $storeId): array
     {
         return[];
+    }
+
+    /**
+     * Get order subtotal including tax if enabled by config
+     *
+     * @param OrderModel $order
+     * @param int $storeId
+     * @return float
+     */
+    public function getOrderSubtotal(OrderModel $order, int $storeId): float
+    {
+        if ($this->priceHelper->calculateTax($storeId)) {
+            return (float) $order->getSubtotalInclTax();
+        } else {
+            return (float) $order->getSubtotal();
+        }
     }
 }

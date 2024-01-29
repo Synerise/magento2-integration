@@ -97,7 +97,7 @@ class CartAddProduct implements ObserverInterface
             $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
             $params = array_merge(
                 $this->trackingHelper->prepareContextParams(),
-                $this->cartHelper->prepareParamsFromQuoteProduct($product)
+                $this->cartHelper->prepareParamsFromQuoteProduct($product, $storeId)
             );
 
             $cookieParams = $this->cartHelper->getCookieParams();
