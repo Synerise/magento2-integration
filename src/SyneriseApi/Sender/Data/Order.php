@@ -6,7 +6,6 @@ use Exception;
 use Magento\Catalog\Helper\Data;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order as OrderModel;
@@ -18,6 +17,7 @@ use Synerise\ApiClient\Model\CreateatransactionRequest;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Product\Category;
 use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
@@ -67,6 +67,11 @@ class Order extends AbstractSender implements SenderInterface
     protected $imageHelper;
 
     /**
+     * @var Price
+     */
+    protected $priceHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
@@ -80,13 +85,13 @@ class Order extends AbstractSender implements SenderInterface
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param ResourceConnection $resource
      * @param RuleRepositoryInterface $ruleRepository
-     * @param Data $taxHelper
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      * @param Category $categoryHelper
      * @param Cookie $cookieHelper
      * @param Image $imageHelper
      * @param Logger $loggerHelper
+     * @param Price $priceHelper
      * @param Tracking $trackingHelper
      * @param UuidGenerator $uuidGenerator
      */
@@ -94,20 +99,20 @@ class Order extends AbstractSender implements SenderInterface
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ResourceConnection $resource,
         RuleRepositoryInterface $ruleRepository,
-        Data $taxHelper,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
         Category $categoryHelper,
         Cookie $cookieHelper,
         Image $imageHelper,
         Logger $loggerHelper,
+        Price $priceHelper,
         Tracking $trackingHelper,
         UuidGenerator $uuidGenerator
     ) {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->resource = $resource;
         $this->ruleRepository = $ruleRepository;
-        $this->taxHelper = $taxHelper;
+        $this->priceHelper = $priceHelper;
         $this->categoryHelper = $categoryHelper;
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
@@ -311,15 +316,12 @@ class Order extends AbstractSender implements SenderInterface
         $product = $item->getProduct();
 
         $regularPrice = [
-            "amount" => $this->taxHelper->getTaxPrice($product, $item->getOriginalPrice(), true),
+            "amount" => $this->priceHelper->getProductPrice($product, $item->getOriginalPrice(), $storeId),
             "currency" => $currency
         ];
 
         $finalUnitPrice = [
-            "amount" => round(
-                ($item->getRowTotal() + $item->getTaxAmount() - $item->getDiscountAmount()) /
-                $item->getQtyOrdered(), 2
-            ),
+            "amount" => $this->priceHelper->getFinalUnitPrice($item, $storeId),
             "currency" => $currency
         ];
 

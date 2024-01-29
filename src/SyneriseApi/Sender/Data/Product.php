@@ -8,7 +8,6 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
-use Magento\Catalog\Pricing\Price\FinalPrice;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
@@ -27,6 +26,7 @@ use Synerise\CatalogsApiClient\Model\AddItem;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Product\Category;
 use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\SyneriseApi\Catalogs\Config;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
@@ -110,6 +110,11 @@ class Product extends AbstractSender implements SenderInterface
     protected $imageHelper;
 
     /**
+     * @var Price
+     */
+    protected $priceHelper;
+
+    /**
      * @var IsProductSalableInterface|null
      */
     protected $isProductSalable;
@@ -122,12 +127,12 @@ class Product extends AbstractSender implements SenderInterface
      * @param ProductRepositoryInterface $productRepository
      * @param Configurable $configurable
      * @param ResourceConnection $resource
-     * @param Data $taxHelper
      * @param StockRegistry $stockRegistry
      * @param Config $catalogsConfig
      * @param Category $categoryHelper
      * @param Image $imageHelper
      * @param Logger $loggerHelper
+     * @param Price $priceHelper
      * @param IsProductSalableInterface|null $isProductSalable
      */
     public function __construct(
@@ -138,12 +143,12 @@ class Product extends AbstractSender implements SenderInterface
         ProductRepositoryInterface $productRepository,
         Configurable $configurable,
         ResourceConnection $resource,
-        Data $taxHelper,
         StockRegistry $stockRegistry,
         Config $catalogsConfig,
         Category $categoryHelper,
         Image $imageHelper,
         Logger $loggerHelper,
+        Price $priceHelper,
         ?IsProductSalableInterface $isProductSalable = null
     ) {
         $this->scopeConfig = $scopeConfig;
@@ -152,10 +157,10 @@ class Product extends AbstractSender implements SenderInterface
         $this->configurable = $configurable;
         $this->connection = $resource->getConnection();
         $this->stockRegistry = $stockRegistry;
-        $this->taxHelper = $taxHelper;
         $this->catalogsConfig = $catalogsConfig;
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
+        $this->priceHelper = $priceHelper;
         $this->isProductSalable = $isProductSalable;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
@@ -314,7 +319,7 @@ class Product extends AbstractSender implements SenderInterface
             }
         }
 
-        $value['price'] = $this->taxHelper->getTaxPrice($product, $product->getPrice(), true);
+        $value['price'] = $this->priceHelper->getProductPrice($product, $product->getPrice(), $product->getStoreId());
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 

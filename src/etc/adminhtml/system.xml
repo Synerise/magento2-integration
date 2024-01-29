@@ -72,6 +72,11 @@
                     <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes</source_model>
                     <comment>The changes of attribute selection will apply only to products which haven’t been sent to Synerise yet. To apply the changes to all products schedule full synchronization for all affected scopes.</comment>
                 </field>
+                <field id="price_includes_tax" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1">
+                    <label>Calculate tax</label>
+                    <config_path>synerise/product/calculate_tax</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <field id="labels" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1">
                     <label>Labels as values</label>
                     <config_path>synerise/product/labels_enabled</config_path>

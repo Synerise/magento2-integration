@@ -84,8 +84,6 @@ class CartStatus implements ObserverInterface
             $quote = $observer->getQuote();
             $storeId = $quote->getStoreId();
 
-            $totals = $quote->getTotals();
-
             if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
                 return;
             }
@@ -99,7 +97,7 @@ class CartStatus implements ObserverInterface
             if ($this->cartHelper->hasItemDataChanges($quote)) {
                 $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
                     $quote,
-                    isset($totals['subtotal']) ? (double) $totals['subtotal']->getValue() : $quote->getSubtotal(),
+                    $this->cartHelper->getQuoteSubtotal($quote, $storeId),
                     (int) $quote->getItemsQty()
                 );
             } elseif ($quote->dataHasChangedFor('reserved_order_id')) {

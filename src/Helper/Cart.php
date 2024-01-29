@@ -3,7 +3,6 @@
 namespace Synerise\Integration\Helper;
 
 use Exception;
-use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -12,6 +11,7 @@ use Magento\Quote\Model\Quote\Item;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Product\Image;
+use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\Helper\Tracking\Cookie;
 
 class Cart
@@ -37,26 +37,26 @@ class Cart
     protected $trackingHelper;
 
     /**
-     * @var Data
+     * @var Price
      */
-    protected $taxHelper;
+    protected $priceHelper;
 
     /**
      * @param StoreManagerInterface $storeManager
-     * @param Data $taxHelper
+     * @param Price $priceHelper
      * @param Cookie $cookieHelper
      * @param Image $imageHelper
      * @param Tracking $trackingHelper
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        Data $taxHelper,
+        Price $priceHelper,
         Cookie $cookieHelper,
         Image $imageHelper,
         Tracking $trackingHelper
     ) {
         $this->storeManager = $storeManager;
-        $this->taxHelper = $taxHelper;
+        $this->priceHelper = $priceHelper;
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
         $this->trackingHelper = $trackingHelper;
@@ -97,10 +97,12 @@ class Cart
      * Prepare products data from quote item product object
      *
      * @param Product $product
+     * @param int|null $storeId
      * @return array
-     * @throws Exception
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
-    public function prepareParamsFromQuoteProduct(Product $product): array
+    public function prepareParamsFromQuoteProduct(Product $product, ?int $storeId = null): array
     {
         $sku = $product->getData('sku');
         $skuVariant = $product->getSku();
@@ -109,11 +111,11 @@ class Cart
             "sku" => $sku,
             "name" => $product->getName(),
             "regularUnitPrice" => [
-                "amount" => $this->taxHelper->getTaxPrice($product, $product->getFinalPrice(), true),
+                "amount" => $this->priceHelper->getProductPrice($product, $product->getPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ],
             "finalUnitPrice" => [
-                "amount" => $this->taxHelper->getTaxPrice($product, $product->getFinalPrice(), true),
+                "amount" => $this->priceHelper->getProductPrice($product, $product->getFinalPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ],
             "productUrl" => $product->getUrlInStore(),
@@ -126,7 +128,7 @@ class Cart
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => $this->taxHelper->getTaxPrice($product, $product->getSpecialPrice(), true),
+                "amount" => $this->priceHelper->getProductPrice($product, $product->getSpecialPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ];
         }
@@ -213,5 +215,15 @@ class Cart
     public function getCookieParams(): array
     {
         return ($this->cookieHelper->shouldIncludeSnrsParams()) ? $this->cookieHelper->getSnrsParams() : [];
+    }
+
+    public function getQuoteSubtotal($quote, $storeId)
+    {
+        if ($this->priceHelper->calculateTax($storeId)) {
+            $totals = $quote->getTotals();
+            return isset($totals['subtotal']) ? (double) $totals['subtotal']->getValue() : $quote->getSubtotal();
+        } else {
+            return  $quote->getSubtotal();
+        }
     }
 }
