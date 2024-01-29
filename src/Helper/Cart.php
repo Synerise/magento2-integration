@@ -111,11 +111,11 @@ class Cart
             "sku" => $sku,
             "name" => $product->getName(),
             "regularUnitPrice" => [
-                "amount" => $this->priceHelper->getProductPrice($product, $product->getPrice(), $storeId),
+                "amount" => $this->priceHelper->getPrice($product, $product->getPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ],
             "finalUnitPrice" => [
-                "amount" => $this->priceHelper->getProductPrice($product, $product->getFinalPrice(), $storeId),
+                "amount" => $this->priceHelper->getPrice($product, $product->getFinalPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ],
             "productUrl" => $product->getUrlInStore(),
@@ -128,7 +128,7 @@ class Cart
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => $this->priceHelper->getProductPrice($product, $product->getSpecialPrice(), $storeId),
+                "amount" => $this->priceHelper->getPrice($product, $product->getSpecialPrice(), $storeId),
                 "currency" => $this->getCurrencyCode()
             ];
         }
@@ -217,13 +217,20 @@ class Cart
         return ($this->cookieHelper->shouldIncludeSnrsParams()) ? $this->cookieHelper->getSnrsParams() : [];
     }
 
-    public function getQuoteSubtotal($quote, $storeId)
+    /**
+     * Get quote subtotal including tax if enabled by config
+     *
+     * @param Quote $quote
+     * @param int $storeId
+     * @return float
+     */
+    public function getQuoteSubtotal(Quote $quote, int $storeId): float
     {
         if ($this->priceHelper->calculateTax($storeId)) {
             $totals = $quote->getTotals();
-            return isset($totals['subtotal']) ? (double) $totals['subtotal']->getValue() : $quote->getSubtotal();
+            return isset($totals['subtotal']) ? (float) $totals['subtotal']->getValue() : $quote->getSubtotal();
         } else {
-            return  $quote->getSubtotal();
+            return $quote->getSubtotal();
         }
     }
 }

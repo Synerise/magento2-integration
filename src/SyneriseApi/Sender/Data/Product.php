@@ -5,7 +5,6 @@ namespace Synerise\Integration\SyneriseApi\Sender\Data;
 use InvalidArgumentException;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
@@ -88,11 +87,6 @@ class Product extends AbstractSender implements SenderInterface
      * @var StockRegistry
      */
     protected $stockRegistry;
-
-    /**
-     * @var Data
-     */
-    protected $taxHelper;
 
     /**
      * @var Config
@@ -319,7 +313,7 @@ class Product extends AbstractSender implements SenderInterface
             }
         }
 
-        $value['price'] = $this->priceHelper->getProductPrice($product, $product->getPrice(), $product->getStoreId());
+        $value['price'] = $this->priceHelper->getPrice($product, $product->getPrice(), $product->getStoreId());
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 

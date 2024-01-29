@@ -316,7 +316,7 @@ class Order extends AbstractSender implements SenderInterface
         $product = $item->getProduct();
 
         $regularPrice = [
-            "amount" => $this->priceHelper->getProductPrice($product, $item->getOriginalPrice(), $storeId),
+            "amount" => $this->priceHelper->getPrice($product, $item->getOriginalPrice(), $storeId),
             "currency" => $currency
         ];
 
