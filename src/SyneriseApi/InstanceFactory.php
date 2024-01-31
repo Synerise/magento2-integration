@@ -3,7 +3,9 @@
 namespace Synerise\Integration\SyneriseApi;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\HandlerStack;
+use Magento\Framework\Exception\ValidatorException;
+use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Model\WorkspaceInterface;
 use Synerise\ApiClient\Api\ApiKeyControllerApi;
 use Synerise\ApiClient\Api\AuthenticationControllerApi;
 use Synerise\ApiClient\Api\DefaultApi;
@@ -46,70 +48,90 @@ class InstanceFactory
     protected $timeout = 2.5;
 
     /**
+     * @var AuthenticatorFactory
+     */
+    protected $authenticatorFactory;
+
+    /**
+     * @param AuthenticatorFactory $authenticatorFactory
+     */
+    public function __construct(AuthenticatorFactory $authenticatorFactory)
+    {
+        $this->authenticatorFactory = $authenticatorFactory;
+    }
+
+    /**
      * Create API instance by type
      *
      * @param string $type
-     * @param Config $config
+     * @param Config $apiConfig
+     * @param WorkspaceInterface|null $workspace
      * @return mixed
+     * @throws ApiException
+     * @throws ValidatorException
      */
-    public function createApiInstance(string $type, Config $config)
+    public function createApiInstance(string $type, Config $apiConfig, ?WorkspaceInterface $workspace = null)
     {
         $class = self::API_CLASSES[$type];
-        $configurationClass = self::API_CONFIGURATION_CLASSES[$type];
-
         return new $class(
-            new Client($this->getGuzzleClientOptions(
-                $config->getTimeout() ?: $this->timeout,
-                $config->getAuthorizationType(),
-                $config->getAuthorizationToken(),
-                $config->getHandlerStack(),
-                $config->isKeepAliveEnabled(),
-            )),
-            clone $configurationClass::getDefaultConfiguration()
-                ->setUserAgent($config->getUserAgent())
-                ->setHost(sprintf(self::API_PATH_FORMATS[$type], $config->getApiHost()))
-                ->setAccessToken(
-                    $config->getAuthorizationType() == Config::AUTHORIZATION_TYPE_BEARER ?
-                        $config->getAuthorizationToken() : null
-                )
+            new Client($this->getGuzzleClientOptions($apiConfig, $workspace)),
+            $this->getInstanceConfig($type, $apiConfig)
         );
     }
 
     /**
      * Get Guzzle client options
      *
-     * @param float|null $timeout
-     * @param string|null $authorizationType
-     * @param string|null $authorizationToken
-     * @param HandlerStack|null $handlerStack
-     * @param bool|null $keepAlive
+     * @param Config $apiConfig
+     * @param WorkspaceInterface|null $workspace
      * @return array
+     * @throws ValidatorException
+     * @throws ApiException
      */
-    private function getGuzzleClientOptions(
-        ?float $timeout = null,
-        ?string $authorizationType = null,
-        ?string $authorizationToken = null,
-        ?HandlerStack $handlerStack = null,
-        ?bool $keepAlive = false
-    ): array {
+    private function getGuzzleClientOptions(Config $apiConfig, ?WorkspaceInterface $workspace = null): array
+    {
         $options = [
-            'connect_timeout' => $timeout ?: $this->timeout,
-            'timeout' => $timeout ?: $this->timeout,
+            'connect_timeout' => $apiConfig->getTimeout() ?: $this->timeout,
+            'timeout' => $apiConfig->getTimeout() ?: $this->timeout,
             'headers' => []
         ];
 
-        if ($authorizationType && $authorizationType == Config::AUTHORIZATION_TYPE_BASIC) {
-            $options['headers']['Authorization'] = [ Config::AUTHORIZATION_TYPE_BASIC . " {$authorizationToken}" ];
+        if ($workspace) {
+            if ($apiConfig->getAuthorizationType() == Config::AUTHORIZATION_TYPE_BEARER) {
+                $token = $this->authenticatorFactory->create($apiConfig)->getAccessToken($workspace->getApiKey());
+                $authorization = Config::AUTHORIZATION_TYPE_BEARER . " {$token}";
+
+            } else {
+                $token = base64_encode("{$workspace->getGuid()}:{$workspace->getApiKey()}");
+                $authorization = Config::AUTHORIZATION_TYPE_BASIC . " {$token}";
+            }
+
+            $options['headers']['Authorization'] = [ $authorization ];
+
+            if ($apiConfig->getHandlerStack()) {
+                $options['handler'] = $apiConfig->getHandlerStack();
+            }
         }
 
-        if ($handlerStack) {
-            $options['handler'] = $handlerStack;
-        }
-
-        if ($keepAlive) {
+        if ($apiConfig->isKeepAliveEnabled()) {
             $options['headers']['Connection'] = [ 'keep-alive' ];
         }
 
         return $options;
+    }
+
+    /**
+     * Get Instance Configuration
+     *
+     * @param string $type
+     * @param Config $apiConfig
+     * @return \Synerise\ApiClient\Configuration|\Synerise\CatalogsApiClient\Configuration
+     */
+    private function getInstanceConfig(string $type, Config $apiConfig)
+    {
+        $configurationClass = self::API_CONFIGURATION_CLASSES[$type];
+        return clone $configurationClass::getDefaultConfiguration()
+            ->setUserAgent($apiConfig->getUserAgent())
+            ->setHost(sprintf(self::API_PATH_FORMATS[$type], $apiConfig->getApiHost()));
     }
 }

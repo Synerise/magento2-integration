@@ -2,13 +2,16 @@
 
 namespace Synerise\Integration\SyneriseApi;
 
+use GuzzleHttp\Client;
 use Magento\Framework\Exception\ValidatorException;
 use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Api\AuthenticationControllerApi;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Configuration;
 use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+use Synerise\Integration\SyneriseApi\Config as ApiConfig;
 
-class Authentication
+class Authenticator
 {
     /**
      * @var LoggerInterface
@@ -16,35 +19,34 @@ class Authentication
     private $logger;
 
     /**
-     * @var InstanceFactory
+     * @var ApiConfig
      */
-    private $instanceFactory;
+    private $apiConfig;
 
     /**
      * @param LoggerInterface $logger
-     * @param InstanceFactory $instanceFactory
+     * @param ApiConfig $apiConfig
      */
     public function __construct(
         LoggerInterface $logger,
-        InstanceFactory $instanceFactory
+        ApiConfig $apiConfig
     ) {
         $this->logger = $logger;
-        $this->instanceFactory = $instanceFactory;
+        $this->apiConfig = $apiConfig;
     }
 
     /**
-     * Get JWT
+     * Get JWT by profile login request
      *
      * @param string $apiKey
-     * @param Config $config
      * @return string
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function getJwt(string $apiKey, Config $config): string
+    public function getAccessToken(string $apiKey): string
     {
         try {
-            $tokenResponse = $this->getAuthenticationApiInstance($config)->profileLoginUsingPOST(
+            $tokenResponse = $this->createAuthenticationApiInstance()->profileLoginUsingPOST(
                 new BusinessProfileAuthenticationRequest(['api_key' => $apiKey])
             );
 
@@ -69,16 +71,21 @@ class Authentication
     }
 
     /**
-     * Get Authentication API instance
+     * Create Authentication API instance
      *
-     * @param Config $config
      * @return AuthenticationControllerApi
      */
-    public function getAuthenticationApiInstance(Config $config): AuthenticationControllerApi
+    public function createAuthenticationApiInstance(): AuthenticationControllerApi
     {
-        return $this->instanceFactory->createApiInstance(
-            'authentication',
-            $config
+        return new AuthenticationControllerApi(
+            new Client([
+                'connect_timeout' => $this->apiConfig->getTimeout(),
+                'timeout' => $this->apiConfig->getTimeout(),
+                'headers' => $this->apiConfig->isKeepAliveEnabled() ? ['Connection' => [ 'keep-alive' ]] : []
+            ]),
+            clone Configuration::getDefaultConfiguration()
+                ->setUserAgent($this->apiConfig->getUserAgent())
+                ->setHost(sprintf('%s/v4', $this->apiConfig->getApiHost()))
         );
     }
 }

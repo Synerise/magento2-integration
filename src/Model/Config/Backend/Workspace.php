@@ -106,7 +106,7 @@ class Workspace extends Value
                 $response = $this->getTrackerApiInstance(
                     $this->getScope(),
                     $this->getScopeId(),
-                    $workspace->getApiKey()
+                    $workspace
                 )->getOrCreateByDomain(new TrackingCodeCreationByDomainRequest([
                     'domain' => $this->getConfigDomain() ?? $this->getBaseUrlDomain()
                 ]));
@@ -210,16 +210,17 @@ class Workspace extends Value
      *
      * @param string $scope
      * @param int $scopeId
-     * @param string $apiKey
+     * @param WorkspaceModel $workspace
      * @return TrackerControllerApi
      * @throws ApiException
      * @throws ValidatorException
      */
-    private function getTrackerApiInstance(string $scope, int $scopeId, string $apiKey): TrackerControllerApi
+    private function getTrackerApiInstance(string $scope, int $scopeId, WorkspaceModel $workspace): TrackerControllerApi
     {
         return $this->apiInstanceFactory->createApiInstance(
             'tracker',
-            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
+            $this->configFactory->create($scopeId, $scope),
+            $workspace
         );
     }
 }

@@ -14,7 +14,7 @@ use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Model\Workspace\Validator;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 
-class Workspace extends AbstractModel
+class Workspace extends AbstractModel implements WorkspaceInterface
 {
     public const XML_PATH_WORKSPACE_MAP = 'synerise/workspace/map';
 
@@ -110,6 +110,17 @@ class Workspace extends AbstractModel
             $uuid = (string) Uuid::uuid5(Uuid::NAMESPACE_OID, $apiKey);
             $this->setData('uuid', $uuid);
         }
+    }
+
+    /**
+     * Check if API key is set
+     *
+     * @return bool
+     */
+    public function isApiKeySet()
+    {
+        $apiKey = $this->getApiKey();
+        return $apiKey !== null && trim($apiKey) !== '';
     }
 
     /**

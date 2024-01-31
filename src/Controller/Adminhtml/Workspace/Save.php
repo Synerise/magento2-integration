@@ -60,22 +60,22 @@ class Save extends Action
         $resultRedirect = $this->resultRedirectFactory->create();
 
         if ($data) {
-            /** @var Workspace $model */
-            $model = $this->_objectManager->create(Workspace::class);
+            /** @var Workspace $workspace */
+            $workspace = $this->_objectManager->create(Workspace::class);
             $id = $this->getRequest()->getParam('id');
             if ($id) {
-                $model->load($id);
+                $workspace->load($id);
             }
 
             if (isset($data['api_key'])) {
                 $apiKey = $data['api_key'];
-                $model->setApiKey($apiKey);
+                $workspace->setApiKey($apiKey);
 
                 if (isset($data['guid'])) {
-                    $model->setGuid($data['guid']);
+                    $workspace->setGuid($data['guid']);
                 }
             } else {
-                $apiKey = $model->getApiKey();
+                $apiKey = $workspace->getApiKey();
             }
 
             try {
@@ -84,7 +84,7 @@ class Save extends Action
                     throw new LocalizedException(__('Missing api key'));
                 }
 
-                $permissionCheck = $this->checkPermissions($apiKey);
+                $permissionCheck = $this->checkPermissions($workspace);
                 $missingPermissions = [];
                 $permissions = $permissionCheck->getPermissions();
                 foreach ($permissions as $permission => $isSet) {
@@ -93,7 +93,7 @@ class Save extends Action
                     }
                 }
 
-                $model
+                $workspace
                     ->setName($permissionCheck->getBusinessProfileName())
                     ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
                     ->save();
@@ -101,7 +101,7 @@ class Save extends Action
                 $this->messageManager->addSuccess(__('You saved this Workspace.'));
                 $this->_objectManager->get(\Magento\Backend\Model\Session::class)->setFormData(false);
                 if ($this->getRequest()->getParam('back')) {
-                    return $resultRedirect->setPath('*/*/edit', ['id' => $model->getId(), '_current' => true]);
+                    return $resultRedirect->setPath('*/*/edit', ['id' => $workspace->getId(), '_current' => true]);
                 }
                 return $resultRedirect->setPath('*/*/');
             } catch (\Magento\Framework\Exception\LocalizedException $e) {
@@ -121,40 +121,39 @@ class Save extends Action
     /**
      * Check permissions
      *
-     * @param string $apiKey
+     * @param Workspace $workspace
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyPermissionCheckResponse
-     * @throws ApiException
-     * @throws ValidatorException
+     * @throws ApiException|ValidatorException
      */
     protected function checkPermissions(
-        string $apiKey,
+        Workspace $workspace,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
     ): ApiKeyPermissionCheckResponse {
-        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
+        return $this->createApiKeyInstance($workspace, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 
     /**
      * Create API key instance
      *
-     * @param string $apiKey
+     * @param Workspace $workspace
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyControllerApi
-     * @throws ApiException
-     * @throws ValidatorException
+     * @throws ApiException|ValidatorException
      */
     protected function createApiKeyInstance(
-        string $apiKey,
+        Workspace $workspace,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
     ): ApiKeyControllerApi {
         return $this->apiInstanceFactory->createApiInstance(
             'apiKey',
-            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
+            $this->configFactory->create($scopeId, $scope),
+            $workspace
         );
     }
 }

@@ -7,7 +7,7 @@ use Magento\Framework\Validator\AbstractValidator;
 use Ramsey\Uuid\Uuid;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Model\Workspace;
-use Synerise\Integration\SyneriseApi\Authentication;
+use Synerise\Integration\SyneriseApi\AuthenticatorFactory;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 
 class Validator extends AbstractValidator
@@ -19,19 +19,19 @@ class Validator extends AbstractValidator
     private $configFactory;
 
     /**
-     * @var Authentication
+     * @var AuthenticatorFactory
      */
-    private $authentication;
+    private $authenticatorFactory;
 
     /**
-     * @param Authentication $authentication
+     * @param AuthenticatorFactory $authenticatorFactory
      * @param ConfigFactory $configFactory
      */
     public function __construct(
-        Authentication $authentication,
+        AuthenticatorFactory $authenticatorFactory,
         ConfigFactory $configFactory
     ) {
-        $this->authentication = $authentication;
+        $this->authenticatorFactory = $authenticatorFactory;
         $this->configFactory = $configFactory;
     }
 
@@ -51,10 +51,8 @@ class Validator extends AbstractValidator
             $messages['invalid_api_key_format'] = 'Invalid api key format';
         } else {
             try {
-                $this->authentication->getJwt(
-                    $apiKey,
-                    $this->configFactory->createMinimalConfig()
-                );
+                $this->authenticatorFactory->create($this->configFactory->create())
+                    ->getAccessToken($apiKey);
             } catch (ValidatorException $e) {
                 $messages['invalid_api_key'] = $e->getMessage();
             }

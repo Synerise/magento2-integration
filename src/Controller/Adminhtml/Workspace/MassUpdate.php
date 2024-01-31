@@ -111,7 +111,7 @@ class MassUpdate extends Action implements HttpPostActionInterface
      */
     protected function update(Workspace $workspace)
     {
-        $permissionCheck = $this->checkPermissions($workspace->getApiKey());
+        $permissionCheck = $this->checkPermissions($workspace);
         $missingPermissions = [];
         $permissions = $permissionCheck->getPermissions();
         foreach ($permissions as $permission => $isSet) {
@@ -129,38 +129,39 @@ class MassUpdate extends Action implements HttpPostActionInterface
     /**
      * Check permissions
      *
-     * @param string $apiKey
+     * @param Workspace $workspace
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyPermissionCheckResponse
      * @throws ApiException|ValidatorException
      */
     protected function checkPermissions(
-        string $apiKey,
+        Workspace $workspace,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
     ): ApiKeyPermissionCheckResponse {
-        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
+        return $this->createApiKeyInstance($workspace, $scope, $scopeId)
             ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
     }
 
     /**
      * Create API key instance
      *
-     * @param string $apiKey
+     * @param Workspace $workspace
      * @param string $scope
      * @param int|null $scopeId
      * @return ApiKeyControllerApi
      * @throws ApiException|ValidatorException
      */
     protected function createApiKeyInstance(
-        string $apiKey,
+        Workspace $workspace,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?int $scopeId = null
     ): ApiKeyControllerApi {
         return $this->apiInstanceFactory->createApiInstance(
             'apiKey',
-            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
+            $this->configFactory->create($scopeId, $scope),
+            $workspace
         );
     }
 }

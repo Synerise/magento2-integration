@@ -54,7 +54,6 @@ class Config
      * @param string $userAgent
      * @param float|null $timeout
      * @param string|null $authorizationType
-     * @param string|null $authorizationToken
      * @param HandlerStack|null $handlerStack
      * @param bool|null $keepAlive
      */
@@ -63,15 +62,13 @@ class Config
         string $userAgent,
         ?float $timeout = null,
         ?string $authorizationType = null,
-        ?string $authorizationToken = null,
         ?HandlerStack $handlerStack = null,
         ?bool $keepAlive = false
     ) {
         $this->apiHost = $apiHost;
         $this->userAgent = $userAgent;
-        $this->timeout = $timeout;
+        $this->timeout = $timeout ?: 2.5;
         $this->authorizationType = $authorizationType;
-        $this->authorizationToken = $authorizationToken;
         $this->handlerStack = $handlerStack;
         $this->keepAlive = $keepAlive;
     }
@@ -114,16 +111,6 @@ class Config
     public function getAuthorizationType(): ?string
     {
         return $this->authorizationType;
-    }
-
-    /**
-     * Get authorization token
-     *
-     * @return string|null
-     */
-    public function getAuthorizationToken(): ?string
-    {
-        return $this->authorizationToken;
     }
 
     /**

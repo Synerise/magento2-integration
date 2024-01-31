@@ -3,8 +3,9 @@
 namespace Synerise\Integration\Model\Workspace;
 
 use Synerise\Integration\Model\Workspace\Config\DataFactory;
+use Synerise\Integration\Model\WorkspaceInterface;
 
-class Config
+class Config implements WorkspaceInterface
 {
     /**
      * @var Config\Data
