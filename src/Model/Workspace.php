@@ -1,18 +1,14 @@
 <?php
 namespace Synerise\Integration\Model;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Data\Collection\AbstractDb;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Model\AbstractModel;
 use Magento\Framework\Model\Context;
 use Magento\Framework\Model\ResourceModel\AbstractResource;
 use Magento\Framework\Registry;
-use Magento\Store\Model\ScopeInterface;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Model\Workspace\Validator;
-use Synerise\Integration\SyneriseApi\ConfigFactory;
 
 class Workspace extends AbstractModel implements WorkspaceInterface
 {
@@ -37,6 +33,13 @@ class Workspace extends AbstractModel implements WorkspaceInterface
     ];
 
     /**
+     * Prefix of model events names
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'synerise_workspace';
+
+    /**
      * @var EncryptorInterface
      */
     protected $encryptor;
@@ -47,22 +50,10 @@ class Workspace extends AbstractModel implements WorkspaceInterface
     protected $validator;
 
     /**
-     * @var ScopeConfigInterface
-     */
-    protected $scopeConfig;
-
-    /**
-     * @var WriterInterface
-     */
-    protected $configWriter;
-
-    /**
      * @param Context $context
      * @param Registry $registry
      * @param EncryptorInterface $encryptor
      * @param Validator $validator
-     * @param ScopeConfigInterface $scopeConfig
-     * @param WriterInterface $configWriter
      * @param AbstractResource|null $resource
      * @param AbstractDb|null $resourceCollection
      * @param array $data
@@ -72,16 +63,12 @@ class Workspace extends AbstractModel implements WorkspaceInterface
         Registry $registry,
         EncryptorInterface $encryptor,
         Validator $validator,
-        ScopeConfigInterface $scopeConfig,
-        WriterInterface $configWriter,
         AbstractResource $resource = null,
         AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->encryptor = $encryptor;
         $this->validator = $validator;
-        $this->scopeConfig = $scopeConfig;
-        $this->configWriter = $configWriter;
 
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
     }
@@ -168,54 +155,5 @@ class Workspace extends AbstractModel implements WorkspaceInterface
     protected function _getValidationRulesBeforeSave()
     {
         return $this->validator;
-    }
-
-    /**
-     * Save linked config
-     *
-     * @return Workspace
-     */
-    public function afterSave()
-    {
-        $workspaceMapString = $this->scopeConfig->getValue(self::XML_PATH_WORKSPACE_MAP);
-        if ($workspaceMapString) {
-            $workspaceMap = json_decode($workspaceMapString);
-            foreach ($workspaceMap as $websiteId => $workspaceId) {
-                if ($this->getId() == $workspaceId) {
-                    $this->configWriter->save(
-                        ConfigFactory::XML_PATH_API_KEY,
-                        $this->getApiKey(),
-                        ScopeInterface::SCOPE_WEBSITES,
-                        $websiteId
-                    );
-
-                    $this->configWriter->save(
-                        ConfigFactory::XML_PATH_API_KEY,
-                        $this->getData('api_key'),
-                        ScopeInterface::SCOPE_WEBSITES,
-                        $websiteId
-                    );
-
-                    $guid = $this->getGuid();
-                    if ($guid) {
-                        $this->configWriter->save(
-                            \Synerise\Integration\Model\Config\Backend\Workspace::XML_PATH_API_BASIC_TOKEN,
-                            $this->encryptor->encrypt(base64_encode("{$guid}:{$this->getApiKey()}")),
-                            ScopeInterface::SCOPE_WEBSITES,
-                            $websiteId
-                        );
-                    } else {
-                        $this->configWriter->delete(
-                            \Synerise\Integration\Model\Config\Backend\Workspace::XML_PATH_API_BASIC_TOKEN,
-                            ScopeInterface::SCOPE_WEBSITES,
-                            $websiteId
-                        );
-                    }
-                }
-            }
-
-        }
-
-        return parent::afterSave();
     }
 }

@@ -10,12 +10,6 @@
             <resource>Synerise_Integration::configuration_workspace</resource>
             <group id="websites" translate="label" sortOrder="10" showInDefault="1">
                 <label>Websites</label>
-                <field id="id" type="select" translate="label" sortOrder="20">
-                    <label>Select</label>
-                    <config_path>synerise/workspace/id</config_path>
-                    <backend_model>Synerise\Integration\Model\Config\Backend\Workspace</backend_model>
-                    <source_model>Synerise\Integration\Model\Config\Source\Workspace</source_model>
-                </field>
                 <field id="map" translate="label" sortOrder="1" showInDefault="1">
                     <label>Mapping</label>
                     <config_path>synerise/workspace/map</config_path>
