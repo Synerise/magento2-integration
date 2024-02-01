@@ -10,6 +10,8 @@ class Config
 
     public const AUTHORIZATION_TYPE_BEARER = 'Bearer';
 
+    public const AUTHORIZATION_TYPE_NONE = 'None';
+
     public const MODE_LIVE = 'live';
 
     public const MODE_SCHEDULE = 'schedule';
@@ -101,6 +103,24 @@ class Config
     public function getTimeout(): ?float
     {
         return $this->timeout;
+    }
+
+    /**
+     * Set Authorization type
+     *
+     * @param string $type
+     * @return void
+     */
+    public function setAuthorizationType(string $type)
+    {
+        if ($type != self::AUTHORIZATION_TYPE_BASIC &&
+            $type != self::AUTHORIZATION_TYPE_BEARER &&
+            $type != self::AUTHORIZATION_TYPE_NONE
+        ) {
+            throw new \InvalidArgumentException('Invalid authorization type');
+        }
+
+        $this->authorizationType = $type;
     }
 
     /**

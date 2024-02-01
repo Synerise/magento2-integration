@@ -18,8 +18,6 @@ class ConfigFactory
 {
     public const XML_PATH_API_HOST = 'synerise/api/host';
 
-    public const XML_PATH_API_KEY = 'synerise/api/key';
-
     public const XML_PATH_API_LOGGER_ENABLED = 'synerise/api/logger_enabled';
 
     public const XML_PATH_API_KEEP_ALIVE_ENABLED = 'synerise/api/keep_alive_enabled';
@@ -66,7 +64,7 @@ class ConfigFactory
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
         TranslitUrl $translitUrl,
-        StoreManagerInterface $storeManager,
+        StoreManagerInterface $storeManager
     ) {
         $this->translitUrl = $translitUrl;
         $this->storeManager = $storeManager;
