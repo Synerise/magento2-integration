@@ -18,9 +18,30 @@ interface WorkspaceInterface
     public function getApiKey();
 
     /**
+     * Get API host
+     *
+     * @return string
+     */
+    public function getApiHost(): string;
+
+    /**
+     * Get tracker host
+     *
+     * @return string
+     */
+    public function getTrackerHost(): string;
+
+    /**
      * Get GUID
      *
      * @return string|null
      */
     public function getGuid(): ?string;
+
+    /**
+     * Check if basic auth is enablled
+     *
+     * @return bool
+     */
+    public function isBasicAuthEnabled(): bool;
 }

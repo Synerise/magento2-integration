@@ -55,7 +55,7 @@ class Save extends Generic implements ButtonProviderInterface
                                     'actionName' => 'save',
                                     'params' => [
                                         true, [
-                                            'back' => 'add',
+                                            'back' => 'new',
                                         ],
                                     ],
                                 ],

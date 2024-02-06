@@ -37,14 +37,33 @@
             </item>
         </argument>
     </dataSource>
-    <fieldset name="credentials">
+    <fieldset name="api">
         <argument name="data" xsi:type="array">
             <item name="config" xsi:type="array">
                 <item name="collapsible" xsi:type="boolean">false</item>
-                <item name="label" xsi:type="string" translate="true">Credentials</item>
-                <item name="sortOrder" xsi:type="number">20</item>
+                <item name="label" xsi:type="string" translate="true">API</item>
+                <item name="sortOrder" xsi:type="number">10</item>
             </item>
         </argument>
+        <field name="environment" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="source" xsi:type="string">environment</item>
+                </item>
+            </argument>
+            <settings>
+                <dataType>integer</dataType>
+                <label translate="true">Environment</label>
+                <dataScope>environment</dataScope>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options class="Synerise\Integration\Model\Config\Source\Environment"/>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
         <field name="api_key">
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
@@ -61,6 +80,34 @@
                 </item>
             </argument>
         </field>
+    </fieldset>
+    <fieldset name="basic_auth">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="collapsible" xsi:type="boolean">false</item>
+                <item name="label" xsi:type="string" translate="true">Basic Authenticaiton</item>
+                <item name="sortOrder" xsi:type="number">20</item>
+            </item>
+        </argument>
+        <field name="basic_auth_enabled" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="source" xsi:type="string">basic_auth_enabled</item>
+                </item>
+            </argument>
+            <settings>
+                <dataType>integer</dataType>
+                <label translate="true">Enable</label>
+                <dataScope>basic_auth_enabled</dataScope>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
         <field name="guid">
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
@@ -73,6 +120,5 @@
                 </item>
             </argument>
         </field>
-
     </fieldset>
 </form>

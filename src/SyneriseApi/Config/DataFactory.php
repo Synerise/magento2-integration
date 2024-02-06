@@ -1,10 +1,10 @@
 <?php
 
-namespace Synerise\Integration\SyneriseApi;
+namespace Synerise\Integration\SyneriseApi\Config;
 
 use Magento\Framework\ObjectManagerInterface;
 
-class ConfigFactory
+class DataFactory
 {
     /**
      * Object Manager instance
@@ -27,10 +27,10 @@ class ConfigFactory
      * Create tracking config for given store ID
      *
      * @param int $storeId
-     * @return Config
+     * @return Data
      */
-    public function create(int $storeId = 0): Config
+    public function create(int $storeId): Data
     {
-        return $this->objectManager->create(Config::class, ['storeId' => $storeId]);
+        return $this->objectManager->create(Data::class, ['storeId' => $storeId]);
     }
 }

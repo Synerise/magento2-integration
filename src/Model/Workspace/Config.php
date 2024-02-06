@@ -57,4 +57,34 @@ class Config implements WorkspaceInterface
     {
         return $this->dataStorage->get('guid');
     }
+
+    /**
+     * Get API host
+     *
+     * @return string
+     */
+    public function getApiHost(): string
+    {
+        return $this->dataStorage->get('apiHost');
+    }
+
+    /**
+     * Get tracker host
+     *
+     * @return string
+     */
+    public function getTrackerHost(): string
+    {
+        return $this->dataStorage->get('trackerHost');
+    }
+
+    /**
+     * Check if basic auth is enabled
+     *
+     * @return bool
+     */
+    public function isBasicAuthEnabled(): bool
+    {
+        return $this->dataStorage->get('isBasicAuthEnabled');
+    }
 }

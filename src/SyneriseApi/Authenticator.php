@@ -9,6 +9,7 @@ use Synerise\ApiClient\Api\AuthenticationControllerApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Configuration;
 use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+use Synerise\Integration\Model\WorkspaceInterface;
 use Synerise\Integration\SyneriseApi\Config as ApiConfig;
 
 class Authenticator
@@ -24,15 +25,23 @@ class Authenticator
     private $apiConfig;
 
     /**
+     * @var WorkspaceInterface
+     */
+    private $workspace;
+
+    /**
      * @param LoggerInterface $logger
      * @param ApiConfig $apiConfig
+     * @param WorkspaceInterface $workspace
      */
     public function __construct(
         LoggerInterface $logger,
-        ApiConfig $apiConfig
+        ApiConfig $apiConfig,
+        WorkspaceInterface $workspace
     ) {
         $this->logger = $logger;
         $this->apiConfig = $apiConfig;
+        $this->workspace = $workspace;
     }
 
     /**
@@ -62,7 +71,7 @@ class Authenticator
             if ($e->getCode() === 401) {
                 throw new ValidatorException(
                     __('Workspace login failed. 
-                    Please make sure this a valid api key of type `workspace` and try again.')
+                    Please make sure this is a valid api key of type `workspace` and try again.')
                 );
             }
 
@@ -85,7 +94,7 @@ class Authenticator
             ]),
             clone Configuration::getDefaultConfiguration()
                 ->setUserAgent($this->apiConfig->getUserAgent())
-                ->setHost(sprintf('%s/v4', $this->apiConfig->getApiHost()))
+                ->setHost(sprintf('%s/v4', $this->workspace->getApiHost()))
         );
     }
 }

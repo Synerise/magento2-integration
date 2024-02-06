@@ -8,8 +8,19 @@ use Magento\Framework\Model\Context;
 use Magento\Framework\Model\ResourceModel\AbstractResource;
 use Magento\Framework\Registry;
 use Ramsey\Uuid\Uuid;
+use Synerise\Integration\Model\Config\Source\Environment;
 use Synerise\Integration\Model\Workspace\Validator;
 
+/**
+ * @method Workspace setBasicAuthEnabled(int $value)
+ * @method int getBasicAuthEnabled()
+ * @method Workspace setEnvironment(int $environment)
+ * @method int getEnvironment()
+ * @method Workspace setName(string $name)
+ * @method string getName()
+ * @method Workspace setMissingPermissions(string $permissions)
+ * @method string getMissingPermissions()
+ */
 class Workspace extends AbstractModel implements WorkspaceInterface
 {
     public const XML_PATH_WORKSPACE_MAP = 'synerise/workspace/map';
@@ -87,9 +98,9 @@ class Workspace extends AbstractModel implements WorkspaceInterface
      * Set API key
      *
      * @param string $apiKey
-     * @return void
+     * @return Workspace
      */
-    public function setApiKey(string $apiKey)
+    public function setApiKey(string $apiKey): Workspace
     {
         // don't save value, if an obscured value was received. This indicates that data was not changed.
         if (!empty($apiKey) && !preg_match('/^\*+$/', $apiKey)) {
@@ -97,6 +108,8 @@ class Workspace extends AbstractModel implements WorkspaceInterface
             $uuid = (string) Uuid::uuid5(Uuid::NAMESPACE_OID, $apiKey);
             $this->setData('uuid', $uuid);
         }
+
+        return $this;
     }
 
     /**
@@ -104,7 +117,7 @@ class Workspace extends AbstractModel implements WorkspaceInterface
      *
      * @return bool
      */
-    public function isApiKeySet()
+    public function isApiKeySet(): bool
     {
         $apiKey = $this->getApiKey();
         return $apiKey !== null && trim($apiKey) !== '';
@@ -115,7 +128,7 @@ class Workspace extends AbstractModel implements WorkspaceInterface
      *
      * @return string|null
      */
-    public function getApiKey()
+    public function getApiKey(): ?string
     {
         $value = $this->getData('api_key');
         if (!empty($value) && !preg_match('/^\*+$/', $value)) {
@@ -128,11 +141,11 @@ class Workspace extends AbstractModel implements WorkspaceInterface
      * Set GUID
      *
      * @param string|null $guid
-     * @return void
+     * @return Workspace
      */
-    public function setGuid(?string $guid)
+    public function setGuid(?string $guid): Workspace
     {
-        $this->setData('guid', !empty($guid) ? $this->encryptor->encrypt($guid) : null);
+        return $this->setData('guid', !empty($guid) ? $this->encryptor->encrypt($guid) : null);
     }
 
     /**
@@ -155,5 +168,35 @@ class Workspace extends AbstractModel implements WorkspaceInterface
     protected function _getValidationRulesBeforeSave()
     {
         return $this->validator;
+    }
+
+    /**
+     * Get API host
+     *
+     * @return string
+     */
+    public function getApiHost(): string
+    {
+        return Environment::API_HOST[$this->getEnvironment()];
+    }
+
+    /**
+     * Get tracker host
+     *
+     * @return string
+     */
+    public function getTrackerHost(): string
+    {
+        return Environment::TRACKER_HOST[$this->getEnvironment()];
+    }
+
+    /**
+     * Check if basic auth is enabled
+     *
+     * @return bool
+     */
+    public function isBasicAuthEnabled(): bool
+    {
+        return (bool) $this->getBasicAuthEnabled();
     }
 }

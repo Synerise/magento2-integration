@@ -79,6 +79,6 @@
         <observer name = "synerise_workspace_mapping_changed" instance = "Synerise\Integration\Observer\UpdateTrackerKey" />
     </event>
     <event name="synerise_workspace_save_after">
-        <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\UpdateTrackerKey" />
+        <observer name="synerise_workspace_save_after" instance="Synerise\Integration\Observer\UpdateTrackerKey" />
     </event>
 </config>

@@ -4,15 +4,11 @@ namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Exception\ValidatorException;
-use Synerise\ApiClient\Api\ApiKeyControllerApi;
-use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Workspace;
-use Synerise\Integration\SyneriseApi\ConfigFactory;
-use Synerise\Integration\SyneriseApi\InstanceFactory;
+use Synerise\Integration\Model\Workspace\Validator;
 
 class Save extends Action
 {
@@ -22,27 +18,27 @@ class Save extends Action
     public const ADMIN_RESOURCE = 'Synerise_Integration::workspace_add';
 
     /**
-     * @var ConfigFactory
+     * @var Logger
      */
-    private $configFactory;
+    private $logger;
 
     /**
-     * @var InstanceFactory
+     * @var Validator
      */
-    private $apiInstanceFactory;
+    private $validator;
 
     /**
      * @param Context $context
-     * @param ConfigFactory $configFactory
-     * @param InstanceFactory $apiInstanceFactory
+     * @param Logger $logger
+     * @param Validator $validator
      */
     public function __construct(
         Action\Context $context,
-        ConfigFactory $configFactory,
-        InstanceFactory $apiInstanceFactory
+        Logger $logger,
+        Validator $validator
     ) {
-        $this->configFactory = $configFactory;
-        $this->apiInstanceFactory = $apiInstanceFactory;
+        $this->logger = $logger;
+        $this->validator = $validator;
 
         parent::__construct($context);
     }
@@ -50,13 +46,11 @@ class Save extends Action
     /**
      * Save action
      *
-     * @return \Magento\Framework\Controller\ResultInterface
-     * @throws LocalizedException
+     * @return Redirect
      */
-    public function execute()
+    public function execute(): Redirect
     {
         $data = $this->getRequest()->getPostValue();
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultRedirectFactory->create();
 
         if ($data) {
@@ -67,93 +61,55 @@ class Save extends Action
                 $workspace->load($id);
             }
 
-            if (isset($data['api_key'])) {
-                $apiKey = $data['api_key'];
-                $workspace->setApiKey($apiKey);
+            $workspace
+                ->setApiKey($data['api_key'])
+                ->setEnvironment($data['environment'])
+                ->setBasicAuthEnabled($data['basic_auth_enabled']);
 
-                if (isset($data['guid'])) {
-                    $workspace->setGuid($data['guid']);
+            if (isset($data['guid'])) {
+                $workspace->setGuid($data['guid']);
+            }
+
+            if (!$this->validator->isValid($workspace)) {
+                foreach ($this->validator->getMessages() as $message) {
+                    $this->messageManager->addErrorMessage($message);
                 }
             } else {
-                $apiKey = $workspace->getApiKey();
-            }
-
-            try {
-
-                if (!$apiKey) {
-                    throw new LocalizedException(__('Missing api key'));
-                }
-
-                $permissionCheck = $this->checkPermissions($workspace);
-                $missingPermissions = [];
-                $permissions = $permissionCheck->getPermissions();
-                foreach ($permissions as $permission => $isSet) {
-                    if (!$isSet) {
-                        $missingPermissions[] = $permission;
+                try {
+                    $permissionCheck = $this->validator->checkPermissions($workspace);
+                    $missingPermissions = [];
+                    foreach ($permissionCheck->getPermissions() as $permission => $isSet) {
+                        if (!$isSet) {
+                            $missingPermissions[] = $permission;
+                        }
                     }
-                }
 
-                $workspace
-                    ->setName($permissionCheck->getBusinessProfileName())
-                    ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
-                    ->save();
+                    $workspace
+                        ->setName($permissionCheck->getBusinessProfileName())
+                        ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
+                        ->save();
 
-                $this->messageManager->addSuccess(__('You saved this Workspace.'));
-                $this->_objectManager->get(\Magento\Backend\Model\Session::class)->setFormData(false);
-                if ($this->getRequest()->getParam('back')) {
-                    return $resultRedirect->setPath('*/*/edit', ['id' => $workspace->getId(), '_current' => true]);
+                    $this->messageManager->addSuccessMessage(__('You saved this Workspace.'));
+                    if ($this->getRequest()->getParam('back') == 'edit') {
+                        return $resultRedirect->setPath('*/*/edit', ['id' => $workspace->getId(), '_current' => true]);
+                    }
+                    if ($this->getRequest()->getParam('back') == 'new') {
+                        return $resultRedirect->setPath('*/*/new');
+                    }
+                    return $resultRedirect->setPath('*/*/');
+                } catch (ValidatorException $e) {
+                    $this->logger->getLogger()->error($e->getMessage());
+                    $this->messageManager->addErrorMessage($e->getMessage());
+                } catch (\Exception $e) {
+                    $this->logger->getLogger()->error($e->getMessage());
+                    $this->messageManager->addExceptionMessage(
+                        $e,
+                        __('Something went wrong while saving the Workspace.')
+                    );
                 }
-                return $resultRedirect->setPath('*/*/');
-            } catch (\Magento\Framework\Exception\LocalizedException $e) {
-                $this->messageManager->addError($e->getMessage());
-            } catch (\RuntimeException $e) {
-                $this->messageManager->addError($e->getMessage());
-            } catch (\Exception $e) {
-                $this->messageManager->addException($e, __('Something went wrong while saving the Workspace.'));
             }
-
-            $this->_getSession()->setFormData($data);
             return $resultRedirect->setPath('*/*/edit', ['id' => $this->getRequest()->getParam('id')]);
         }
         return $resultRedirect->setPath('*/*/');
-    }
-
-    /**
-     * Check permissions
-     *
-     * @param Workspace $workspace
-     * @param string $scope
-     * @param int|null $scopeId
-     * @return ApiKeyPermissionCheckResponse
-     * @throws ApiException|ValidatorException
-     */
-    protected function checkPermissions(
-        Workspace $workspace,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        ?int $scopeId = null
-    ): ApiKeyPermissionCheckResponse {
-        return $this->createApiKeyInstance($workspace, $scope, $scopeId)
-            ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
-    }
-
-    /**
-     * Create API key instance
-     *
-     * @param Workspace $workspace
-     * @param string $scope
-     * @param int|null $scopeId
-     * @return ApiKeyControllerApi
-     * @throws ApiException|ValidatorException
-     */
-    protected function createApiKeyInstance(
-        Workspace $workspace,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        ?int $scopeId = null
-    ): ApiKeyControllerApi {
-        return $this->apiInstanceFactory->createApiInstance(
-            'apiKey',
-            $this->configFactory->create($scopeId, $scope),
-            $workspace
-        );
     }
 }

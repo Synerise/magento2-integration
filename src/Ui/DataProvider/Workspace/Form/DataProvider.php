@@ -57,7 +57,9 @@ class DataProvider extends AbstractDataProvider
 
         $workspace = $this->getCurrentWorkspace();
         if ($workspace->getId()) {
+            $this->loadedData[$workspace->getId()]['environment'] = $workspace->getEnvironment();
             $this->loadedData[$workspace->getId()]['api_key'] = $workspace->getApiKey();
+            $this->loadedData[$workspace->getId()]['basic_auth_enabled'] = $workspace->getBasicAuthEnabled();
             $this->loadedData[$workspace->getId()]['guid'] = $workspace->getGuid();
         }
 

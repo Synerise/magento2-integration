@@ -39,6 +39,10 @@ class Edit extends Action
      */
     public function execute()
     {
+        if (!$this->getRequest()->getParam('id')) {
+            return $this->resultRedirectFactory->create()->setPath('*/*/new');
+        }
+
         $resultPage = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
         $resultPage->getConfig()->getTitle()->prepend(__('Edit Workspace'));
         return $resultPage;

@@ -129,7 +129,7 @@ class UpdateTrackerKey implements ObserverInterface
     {
         $domain = $this->config->getValue(
             Cookie::XML_PATH_PAGE_TRACKING_DOMAIN,
-            ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORES,
             $storeId
         );
 
@@ -146,7 +146,7 @@ class UpdateTrackerKey implements ObserverInterface
     {
         $baseUrl = $this->config->getValue(
             Store::XML_PATH_UNSECURE_BASE_LINK_URL,
-            ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORES,
             $storeId
         );
 
@@ -182,7 +182,13 @@ class UpdateTrackerKey implements ObserverInterface
                 $this->configWriter->save(
                     Code::XML_PATH_PAGE_TRACKING_KEY,
                     $this->getTrackerKey($workspace, $storeId),
-                    ScopeInterface::SCOPE_STORE,
+                    ScopeInterface::SCOPE_STORES,
+                    $storeId
+                );
+                $this->configWriter->save(
+                    Code::XML_PATH_PAGE_TRACKING_HOST,
+                    $workspace->getTrackerHost(),
+                    ScopeInterface::SCOPE_STORES,
                     $storeId
                 );
             }
@@ -190,7 +196,7 @@ class UpdateTrackerKey implements ObserverInterface
             foreach ($storeIds as $storeId) {
                 $this->configWriter->delete(
                     Code::XML_PATH_PAGE_TRACKING_KEY,
-                    ScopeInterface::SCOPE_STORE,
+                    ScopeInterface::SCOPE_STORES,
                     $storeId
                 );
             }

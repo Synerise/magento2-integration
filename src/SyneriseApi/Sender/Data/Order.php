@@ -21,6 +21,7 @@ use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
+use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -87,6 +88,7 @@ class Order extends AbstractSender implements SenderInterface
      * @param RuleRepositoryInterface $ruleRepository
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
+     * @param WorkspaceConfigFactory $workspaceConfigFactory
      * @param Category $categoryHelper
      * @param Cookie $cookieHelper
      * @param Image $imageHelper
@@ -101,6 +103,7 @@ class Order extends AbstractSender implements SenderInterface
         RuleRepositoryInterface $ruleRepository,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
+        WorkspaceConfigFactory $workspaceConfigFactory,
         Category $categoryHelper,
         Cookie $cookieHelper,
         Image $imageHelper,
@@ -119,7 +122,7 @@ class Order extends AbstractSender implements SenderInterface
         $this->trackingHelper = $trackingHelper;
         $this->uuidGenerator = $uuidGenerator;
 
-        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
 
     /**

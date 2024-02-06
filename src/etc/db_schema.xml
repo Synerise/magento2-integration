@@ -70,9 +70,11 @@
            comment="Synerise Workspace">
         <column xsi:type="int" name="id" unsigned="true" nullable="false" identity="true" comment="Workspace ID"/>
         <column xsi:type="varchar" name="name" length="100" nullable="false" comment="Workspace Name"/>
-        <column xsi:type="varchar" name="api_key" length="100"  nullable="false" comment="Workspace Api Key"/>
-        <column xsi:type="varchar" name="uuid" length="36"  nullable="false" comment="Workspace Uuid"/>
-        <column xsi:type="varchar" name="guid" length="100"  nullable="true" comment="Workspace Guid"/>
+        <column xsi:type="varchar" name="api_key" length="100" nullable="false" comment="Workspace Api Key"/>
+        <column xsi:type="boolean" name="environment" nullable="false" comment="Workspace Environment"/>
+        <column xsi:type="varchar" name="uuid" length="36" nullable="false" comment="Workspace Uuid"/>
+        <column xsi:type="boolean" name="basic_auth_enabled" nullable="false" comment="Basic Auth Enabled"/>
+        <column xsi:type="varchar" name="guid" length="100" nullable="true" comment="Workspace Guid"/>
         <column xsi:type="varchar" name="missing_permissions" length="255" comment="Workspace Missing Permissions"/>
         <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
         <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>

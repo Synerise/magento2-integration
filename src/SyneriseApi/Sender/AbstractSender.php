@@ -11,7 +11,7 @@ use Synerise\Integration\Model\Workspace\Config as WorkspaceConfig;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Config as ApiConfig;
 use Synerise\Integration\SyneriseApi\ConfigFactory as ApiConfigFactory;
-use Synerise\Integration\SyneriseApi\InstanceFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory as ApiInstanceFactory;
 
 abstract class AbstractSender
 {
@@ -28,7 +28,7 @@ abstract class AbstractSender
     protected $apiConfigFactory;
 
     /**
-     * @var InstanceFactory
+     * @var ApiInstanceFactory
      */
     protected $apiInstanceFactory;
 
@@ -50,13 +50,13 @@ abstract class AbstractSender
     /**
      * @param Logger $logger
      * @param ApiConfigFactory $apiConfigFactory
-     * @param InstanceFactory $apiInstanceFactory
+     * @param ApiInstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
      */
     public function __construct(
-        Logger $logger,
-        ApiConfigFactory $apiConfigFactory,
-        InstanceFactory $apiInstanceFactory,
+        Logger                 $logger,
+        ApiConfigFactory       $apiConfigFactory,
+        ApiInstanceFactory     $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory
     ) {
         $this->loggerHelper = $logger;
@@ -153,8 +153,6 @@ abstract class AbstractSender
      *
      * @param int $storeId
      * @return ApiConfig
-     * @throws ApiException
-     * @throws ValidatorException
      */
     public function getApiConfig(int $storeId): ApiConfig
     {

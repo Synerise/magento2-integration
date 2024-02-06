@@ -3,7 +3,7 @@
 namespace Synerise\Integration\SyneriseApi;
 
 use Magento\Framework\ObjectManagerInterface;
-use Synerise\Integration\SyneriseApi\Config as ApiConfig;
+use Synerise\Integration\Model\WorkspaceInterface;
 
 class AuthenticatorFactory
 {
@@ -27,11 +27,15 @@ class AuthenticatorFactory
     /**
      * Create authenticator with api config
      *
-     * @param ApiConfig $apiConfig
+     * @param ConfigInterface $apiConfig
+     * @param WorkspaceInterface $workspace
      * @return Authenticator
      */
-    public function create(ApiConfig $apiConfig): Authenticator
+    public function create(ConfigInterface $apiConfig, WorkspaceInterface $workspace): Authenticator
     {
-        return $this->objectManager->create(Authenticator::class, ['apiConfig' => $apiConfig]);
+        return $this->objectManager->create(Authenticator::class, [
+            'apiConfig' => $apiConfig,
+            'workspace' => $workspace
+        ]);
     }
 }
