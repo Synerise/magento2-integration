@@ -1,29 +1,15 @@
 <?php
 namespace Synerise\Integration\Ui\DataProvider\Workspace\Form;
 
-use Magento\Framework\App\ObjectManager;
-use Magento\Framework\App\RequestInterface;
-use Magento\Framework\Session\SessionManagerInterface;
 use Magento\Ui\DataProvider\AbstractDataProvider;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
-use Synerise\Integration\Model\Workspace;
 
 class DataProvider extends AbstractDataProvider
 {
     /**
      * @var mixed
      */
-    protected $session;
-
-    /**
-     * @var mixed
-     */
     protected $loadedData;
-
-    /**
-     * @var mixed
-     */
-    protected $request;
 
     /**
      * @param string $name
@@ -41,7 +27,6 @@ class DataProvider extends AbstractDataProvider
         array $meta = [],
         array $data = []
     ) {
-        $this->request = $request ?? ObjectManager::getInstance()->get(RequestInterface::class);
         $this->collection = $workspaceCollectionFactory->create();
         parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
     }
@@ -55,8 +40,7 @@ class DataProvider extends AbstractDataProvider
             return $this->loadedData;
         }
 
-        $workspace = $this->getCurrentWorkspace();
-        if ($workspace->getId()) {
+        foreach ($this->getCollection() as $workspace) {
             $this->loadedData[$workspace->getId()]['environment'] = $workspace->getEnvironment();
             $this->loadedData[$workspace->getId()]['api_key'] = $workspace->getApiKey();
             $this->loadedData[$workspace->getId()]['basic_auth_enabled'] = $workspace->getBasicAuthEnabled();
@@ -64,59 +48,5 @@ class DataProvider extends AbstractDataProvider
         }
 
         return $this->loadedData;
-    }
-
-    /**
-     * Get current workspace
-     *
-     * @return Workspace
-     */
-    private function getCurrentWorkspace(): Workspace
-    {
-        $workspace = ObjectManager::getInstance()->create(Workspace::class);
-        $workspaceId = $this->getWorkspaceId();
-        if ($workspaceId) {
-            $workspace->load($workspaceId);
-        }
-
-        return $workspace;
-    }
-
-    /**
-     * Ger workspace id from params
-     *
-     * @return int
-     */
-    private function getWorkspaceId(): int
-    {
-        return (int) $this->request->getParam($this->getRequestFieldName());
-    }
-
-    /**
-     * Get session manager
-     *
-     * @return SessionManagerInterface
-     */
-    protected function getSession(): SessionManagerInterface
-    {
-        if ($this->session === null) {
-            $this->session = ObjectManager::getInstance()->get(SessionManagerInterface::class);
-        }
-        return $this->session;
-    }
-
-    /**
-     * Get config data
-     *
-     * @return mixed
-     */
-    public function getConfigData()
-    {
-        $config = parent::getConfigData();
-        $id = (int) $this->request->getParam($this->getRequestFieldName());
-        if ($id) {
-            $config['submit_url'] .= 'id/' . (int) $this->request->getParam($this->getRequestFieldName()) . '/';
-        }
-        return $config;
     }
 }

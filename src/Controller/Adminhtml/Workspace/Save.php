@@ -5,6 +5,7 @@ namespace Synerise\Integration\Controller\Adminhtml\Workspace;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Redirect;
+use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Workspace;
@@ -98,8 +99,9 @@ class Save extends Action
                     }
                     return $resultRedirect->setPath('*/*/');
                 } catch (ValidatorException $e) {
-                    $this->logger->getLogger()->error($e->getMessage());
                     $this->messageManager->addErrorMessage($e->getMessage());
+                } catch (AlreadyExistsException $e) {
+                    $this->messageManager->addErrorMessage('Workspace with this API key is already defined.');
                 } catch (\Exception $e) {
                     $this->logger->getLogger()->error($e->getMessage());
                     $this->messageManager->addExceptionMessage(

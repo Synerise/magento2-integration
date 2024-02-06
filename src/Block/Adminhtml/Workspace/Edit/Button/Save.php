@@ -24,7 +24,7 @@ class Save extends Generic implements ButtonProviderInterface
                             [
                                 'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                 'actionName' => 'save',
-                                'params' => [false],
+                                'params' => [false, $this->context->getRequest()->getParams()]
                             ],
                         ],
                     ],
@@ -42,6 +42,7 @@ class Save extends Generic implements ButtonProviderInterface
      */
     protected function getOptions()
     {
+        $params = $this->context->getRequest()->getParams();
         return [
             [
                 'id_hard' => 'save_and_new',
@@ -53,11 +54,7 @@ class Save extends Generic implements ButtonProviderInterface
                                 [
                                     'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                     'actionName' => 'save',
-                                    'params' => [
-                                        true, [
-                                            'back' => 'new',
-                                        ],
-                                    ],
+                                    'params' => [true, array_merge($params, ['back' => 'new'])]
                                 ],
                             ],
                         ],
@@ -74,7 +71,7 @@ class Save extends Generic implements ButtonProviderInterface
                                 [
                                     'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                     'actionName' => 'save',
-                                    'params' => [true],
+                                    'params' => [true, $params]
                                 ],
                             ],
                         ],
