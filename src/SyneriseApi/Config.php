@@ -2,88 +2,42 @@
 
 namespace Synerise\Integration\SyneriseApi;
 
-use GuzzleHttp\HandlerStack;
+use Synerise\Integration\SyneriseApi\Config\Data;
+use Synerise\Integration\SyneriseApi\Config\DataFactory;
 
-class Config
+class Config implements ConfigInterface
 {
-    public const AUTHORIZATION_TYPE_BASIC = 'Basic';
+    /**
+     * @var Data
+     */
+    protected $dataStorage;
 
-    public const AUTHORIZATION_TYPE_BEARER = 'Bearer';
-
-    public const MODE_LIVE = 'live';
-
-    public const MODE_SCHEDULE = 'schedule';
+    /**
+     * @var int
+     */
+    protected $storeId;
 
     /**
      * @var string
      */
-    private $apiHost;
+    private $mode;
 
     /**
-     * @var string
+     * @var float
      */
-    private $userAgent;
+    private $timeout = 2.5;
 
     /**
-     * @var float|null
+     * @param DataFactory $dataFactory
+     * @param int $storeId
      */
-    private $timeout;
-
-    /**
-     * @var string|null
-     */
-    private $authorizationType;
-
-    /**
-     * @var string|null
-     */
-    private $authorizationToken;
-
-    /**
-     * @var HandlerStack|null
-     */
-    private $handlerStack;
-
-    /**
-     * @var bool|null
-     */
-    private $keepAlive;
-
-    /**
-     * @param string $apiHost
-     * @param string $userAgent
-     * @param float|null $timeout
-     * @param string|null $authorizationType
-     * @param string|null $authorizationToken
-     * @param HandlerStack|null $handlerStack
-     * @param bool|null $keepAlive
-     */
-    public function __construct(
-        string $apiHost,
-        string $userAgent,
-        ?float $timeout = null,
-        ?string $authorizationType = null,
-        ?string $authorizationToken = null,
-        ?HandlerStack $handlerStack = null,
-        ?bool $keepAlive = false
-    ) {
-        $this->apiHost = $apiHost;
-        $this->userAgent = $userAgent;
-        $this->timeout = $timeout;
-        $this->authorizationType = $authorizationType;
-        $this->authorizationToken = $authorizationToken;
-        $this->handlerStack = $handlerStack;
-        $this->keepAlive = $keepAlive;
-    }
-
-    /**
-     * Get API hosts
-     *
-     * @return string
-     */
-    public function getApiHost(): string
+    public function __construct(DataFactory $dataFactory, int $storeId)
     {
-        return $this->apiHost;
+        $this->dataStorage = $dataFactory->create($storeId);
+        $this->storeId = $storeId;
+
+        // phpcs:ignore
+        $this->mode = isset($_SERVER['REQUEST_METHOD']) ? ConfigInterface::MODE_LIVE : ConfigInterface::MODE_SCHEDULE;
     }
 
     /**
@@ -93,56 +47,41 @@ class Config
      */
     public function getUserAgent(): string
     {
-        return $this->userAgent;
+        return $this->dataStorage->get('userAgent');
     }
 
     /**
      * Get timeout
      *
-     * @return float|null
+     * @return float
      */
-    public function getTimeout(): ?float
+    public function getTimeout(): float
     {
+        if ($this->mode == ConfigInterface::MODE_LIVE) {
+            return $this->dataStorage->get('liveRequestTimeout', $this->timeout);
+        } elseif ($this->mode == ConfigInterface::MODE_SCHEDULE) {
+            return $this->dataStorage->get('scheduledRequestTimeout', $this->timeout);
+        }
         return $this->timeout;
-    }
-
-    /**
-     * Get authorization type
-     *
-     * @return string|null
-     */
-    public function getAuthorizationType(): ?string
-    {
-        return $this->authorizationType;
-    }
-
-    /**
-     * Get authorization token
-     *
-     * @return string|null
-     */
-    public function getAuthorizationToken(): ?string
-    {
-        return $this->authorizationToken;
-    }
-
-    /**
-     * Get handler stack
-     *
-     * @return HandlerStack|null
-     */
-    public function getHandlerStack(): ?HandlerStack
-    {
-        return $this->handlerStack;
     }
 
     /**
      * Check if keep alive is enabled
      *
-     * @return bool|null
+     * @return bool
      */
-    public function isKeepAliveEnabled(): ?bool
+    public function isKeepAliveEnabled(): bool
     {
-        return $this->keepAlive;
+        return $this->dataStorage->get('isKeepAliveEnabled', false);
+    }
+
+    /**
+     * Check if request logging is enabled
+     *
+     * @return bool
+     */
+    public function isLoggerEnabled(): bool
+    {
+        return $this->dataStorage->get('isLoggerEnabled', false);
     }
 }

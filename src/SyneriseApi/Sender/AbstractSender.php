@@ -7,9 +7,11 @@ use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\SyneriseApi\Config;
-use Synerise\Integration\SyneriseApi\ConfigFactory;
-use Synerise\Integration\SyneriseApi\InstanceFactory;
+use Synerise\Integration\Model\Workspace\Config as WorkspaceConfig;
+use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
+use Synerise\Integration\SyneriseApi\Config as ApiConfig;
+use Synerise\Integration\SyneriseApi\ConfigFactory as ApiConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory as ApiInstanceFactory;
 
 abstract class AbstractSender
 {
@@ -21,17 +23,22 @@ abstract class AbstractSender
     protected $loggerHelper;
 
     /**
-     * @var ConfigFactory
+     * @var ApiConfigFactory
      */
-    protected $configFactory;
+    protected $apiConfigFactory;
 
     /**
-     * @var InstanceFactory
+     * @var ApiInstanceFactory
      */
     protected $apiInstanceFactory;
 
     /**
-     * @var Config[]
+     * @var WorkspaceConfigFactory
+     */
+    protected $workspaceConfigFactory;
+
+    /**
+     * @var ApiConfig[]
      */
     protected $config;
 
@@ -42,17 +49,20 @@ abstract class AbstractSender
 
     /**
      * @param Logger $logger
-     * @param ConfigFactory $configFactory
-     * @param InstanceFactory $apiInstanceFactory
+     * @param ApiConfigFactory $apiConfigFactory
+     * @param ApiInstanceFactory $apiInstanceFactory
+     * @param WorkspaceConfigFactory $workspaceConfigFactory
      */
     public function __construct(
         Logger $logger,
-        ConfigFactory $configFactory,
-        InstanceFactory $apiInstanceFactory
+        ApiConfigFactory $apiConfigFactory,
+        ApiInstanceFactory $apiInstanceFactory,
+        WorkspaceConfigFactory $workspaceConfigFactory
     ) {
         $this->loggerHelper = $logger;
+        $this->apiConfigFactory = $apiConfigFactory;
         $this->apiInstanceFactory = $apiInstanceFactory;
-        $this->configFactory = $configFactory;
+        $this->workspaceConfigFactory = $workspaceConfigFactory;
     }
 
     /**
@@ -114,7 +124,6 @@ abstract class AbstractSender
      */
     protected function clearCachedInstances(int $storeId)
     {
-        $this->config[$storeId] = [];
         $this->instances[$storeId] = [];
     }
 
@@ -132,25 +141,38 @@ abstract class AbstractSender
         if (!isset($this->instances[$storeId][$type])) {
             $this->instances[$storeId][$type] = $this->apiInstanceFactory->createApiInstance(
                 $type,
-                $this->getConfig($storeId)
+                $this->getApiConfig($storeId),
+                $this->getWorkspaceConfig($storeId)
             );
         }
         return $this->instances[$storeId][$type];
     }
 
     /**
-     * Get config
+     * Get Api config
      *
      * @param int $storeId
-     * @return Config
-     * @throws ApiException
-     * @throws ValidatorException
+     * @return ApiConfig
      */
-    public function getConfig(int $storeId): Config
+    public function getApiConfig(int $storeId): ApiConfig
     {
-        if (!isset($this->config[$storeId])) {
-            $this->config[$storeId] = $this->configFactory->createConfig($storeId);
+        if (!isset($this->config['api'][$storeId])) {
+            $this->config['api'][$storeId] = $this->apiConfigFactory->create($storeId);
         }
-        return $this->config[$storeId];
+        return $this->config['api'][$storeId];
+    }
+
+    /**
+     * Get workspace config
+     *
+     * @param int $storeId
+     * @return WorkspaceConfig
+     */
+    public function getWorkspaceConfig(int $storeId): WorkspaceConfig
+    {
+        if (!isset($this->config['workspace'][$storeId])) {
+            $this->config['workspace'][$storeId] = $this->workspaceConfigFactory->create($storeId);
+        }
+        return $this->config['workspace'][$storeId];
     }
 }

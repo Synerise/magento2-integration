@@ -18,6 +18,7 @@ use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
+use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
@@ -57,6 +58,7 @@ class Customer extends AbstractSender implements SenderInterface
      * @param Logger $loggerHelper
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
+     * @param WorkspaceConfigFactory $workspaceConfigFactory
      */
     public function __construct(
         AddressRepositoryInterface $addressRepository,
@@ -64,13 +66,14 @@ class Customer extends AbstractSender implements SenderInterface
         ResourceConnection $resource,
         Logger $loggerHelper,
         ConfigFactory $configFactory,
-        InstanceFactory $apiInstanceFactory
+        InstanceFactory $apiInstanceFactory,
+        WorkspaceConfigFactory $workspaceConfigFactory
     ) {
         $this->addressRepository = $addressRepository;
         $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
 
-        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
 
     /**

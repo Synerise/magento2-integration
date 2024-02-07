@@ -6,19 +6,13 @@ use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
-use Magento\Framework\Exception\ValidatorException;
 use Magento\Ui\Component\MassAction\Filter;
-use Synerise\ApiClient\Api\ApiKeyControllerApi;
-use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\ResourceModel\Workspace\CollectionFactory;
-use Synerise\Integration\SyneriseApi\ConfigFactory;
-use Synerise\Integration\SyneriseApi\InstanceFactory;
+use Synerise\Integration\Model\Workspace\Validator;
 
 class MassUpdate extends Action implements HttpPostActionInterface
 {
@@ -38,14 +32,9 @@ class MassUpdate extends Action implements HttpPostActionInterface
     protected $filter;
 
     /**
-     * @var ConfigFactory
+     * @var Validator
      */
-    private $configFactory;
-
-    /**
-     * @var InstanceFactory
-     */
-    private $apiInstanceFactory;
+    private $validator;
 
     /**
      * Constructor
@@ -53,20 +42,17 @@ class MassUpdate extends Action implements HttpPostActionInterface
      * @param Context $context
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
-     * @param ConfigFactory $configFactory
-     * @param InstanceFactory $apiInstanceFactory
+     * @param Validator $validator
      */
     public function __construct(
         Context $context,
         Filter $filter,
         CollectionFactory $collectionFactory,
-        ConfigFactory $configFactory,
-        InstanceFactory $apiInstanceFactory
+        Validator $validator
     ) {
         $this->filter = $filter;
         $this->collectionFactory = $collectionFactory;
-        $this->configFactory = $configFactory;
-        $this->apiInstanceFactory = $apiInstanceFactory;
+        $this->validator = $validator;
 
         parent::__construct($context);
     }
@@ -88,9 +74,20 @@ class MassUpdate extends Action implements HttpPostActionInterface
         /** @var Workspace $workspace */
         foreach ($collection->getItems() as $workspace) {
             try {
-                $this->update($workspace);
+                $permissionCheck = $this->validator->checkPermissions($workspace);
+                $missingPermissions = [];
+                foreach ($permissionCheck->getPermissions() as $permission => $isSet) {
+                    if (!$isSet) {
+                        $missingPermissions[] = $permission;
+                    }
+                }
+
+                $workspace
+                    ->setName($permissionCheck->getBusinessProfileName())
+                    ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
+                    ->save();
             } catch (\Exception $e) {
-                $this->messageManager->addError(__($e->getMessage()));
+                $this->messageManager->addErrorMessage(__($e->getMessage()));
             }
             $updated++;
         }
@@ -101,66 +98,5 @@ class MassUpdate extends Action implements HttpPostActionInterface
             );
         }
         return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('*/*/index');
-    }
-
-    /**
-     * Update
-     *
-     * @param Workspace $workspace
-     * @throws ApiException|ValidatorException
-     */
-    protected function update(Workspace $workspace)
-    {
-        $permissionCheck = $this->checkPermissions($workspace->getApiKey());
-        $missingPermissions = [];
-        $permissions = $permissionCheck->getPermissions();
-        foreach ($permissions as $permission => $isSet) {
-            if (!$isSet) {
-                $missingPermissions[] = $permission;
-            }
-        }
-
-        $workspace
-            ->setName($permissionCheck->getBusinessProfileName())
-            ->setMissingPermissions(implode(PHP_EOL, $missingPermissions))
-            ->save();
-    }
-
-    /**
-     * Check permissions
-     *
-     * @param string $apiKey
-     * @param string $scope
-     * @param int|null $scopeId
-     * @return ApiKeyPermissionCheckResponse
-     * @throws ApiException|ValidatorException
-     */
-    protected function checkPermissions(
-        string $apiKey,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        ?int $scopeId = null
-    ): ApiKeyPermissionCheckResponse {
-        return $this->createApiKeyInstance($apiKey, $scope, $scopeId)
-            ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
-    }
-
-    /**
-     * Create API key instance
-     *
-     * @param string $apiKey
-     * @param string $scope
-     * @param int|null $scopeId
-     * @return ApiKeyControllerApi
-     * @throws ApiException|ValidatorException
-     */
-    protected function createApiKeyInstance(
-        string $apiKey,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        ?int $scopeId = null
-    ): ApiKeyControllerApi {
-        return $this->apiInstanceFactory->createApiInstance(
-            'apiKey',
-            $this->configFactory->createConfigWithApiKey($apiKey, $scopeId, $scope)
-        );
     }
 }

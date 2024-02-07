@@ -1,20 +1,27 @@
 <?php
 namespace Synerise\Integration\Model;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Data\Collection\AbstractDb;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Model\AbstractModel;
 use Magento\Framework\Model\Context;
 use Magento\Framework\Model\ResourceModel\AbstractResource;
 use Magento\Framework\Registry;
-use Magento\Store\Model\ScopeInterface;
 use Ramsey\Uuid\Uuid;
+use Synerise\Integration\Model\Config\Source\Environment;
 use Synerise\Integration\Model\Workspace\Validator;
-use Synerise\Integration\SyneriseApi\ConfigFactory;
 
-class Workspace extends AbstractModel
+/**
+ * @method Workspace setBasicAuthEnabled(int $value)
+ * @method int getBasicAuthEnabled()
+ * @method Workspace setEnvironment(int $environment)
+ * @method int getEnvironment()
+ * @method Workspace setName(string $name)
+ * @method string getName()
+ * @method Workspace setMissingPermissions(string $permissions)
+ * @method string getMissingPermissions()
+ */
+class Workspace extends AbstractModel implements WorkspaceInterface
 {
     public const XML_PATH_WORKSPACE_MAP = 'synerise/workspace/map';
 
@@ -37,6 +44,13 @@ class Workspace extends AbstractModel
     ];
 
     /**
+     * Prefix of model events names
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'synerise_workspace';
+
+    /**
      * @var EncryptorInterface
      */
     protected $encryptor;
@@ -47,22 +61,10 @@ class Workspace extends AbstractModel
     protected $validator;
 
     /**
-     * @var ScopeConfigInterface
-     */
-    protected $scopeConfig;
-
-    /**
-     * @var WriterInterface
-     */
-    protected $configWriter;
-
-    /**
      * @param Context $context
      * @param Registry $registry
      * @param EncryptorInterface $encryptor
      * @param Validator $validator
-     * @param ScopeConfigInterface $scopeConfig
-     * @param WriterInterface $configWriter
      * @param AbstractResource|null $resource
      * @param AbstractDb|null $resourceCollection
      * @param array $data
@@ -72,16 +74,12 @@ class Workspace extends AbstractModel
         Registry $registry,
         EncryptorInterface $encryptor,
         Validator $validator,
-        ScopeConfigInterface $scopeConfig,
-        WriterInterface $configWriter,
         AbstractResource $resource = null,
         AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->encryptor = $encryptor;
         $this->validator = $validator;
-        $this->scopeConfig = $scopeConfig;
-        $this->configWriter = $configWriter;
 
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
     }
@@ -100,9 +98,9 @@ class Workspace extends AbstractModel
      * Set API key
      *
      * @param string $apiKey
-     * @return void
+     * @return Workspace
      */
-    public function setApiKey(string $apiKey)
+    public function setApiKey(string $apiKey): Workspace
     {
         // don't save value, if an obscured value was received. This indicates that data was not changed.
         if (!empty($apiKey) && !preg_match('/^\*+$/', $apiKey)) {
@@ -110,6 +108,19 @@ class Workspace extends AbstractModel
             $uuid = (string) Uuid::uuid5(Uuid::NAMESPACE_OID, $apiKey);
             $this->setData('uuid', $uuid);
         }
+
+        return $this;
+    }
+
+    /**
+     * Check if API key is set
+     *
+     * @return bool
+     */
+    public function isApiKeySet(): bool
+    {
+        $apiKey = $this->getApiKey();
+        return $apiKey !== null && trim($apiKey) !== '';
     }
 
     /**
@@ -117,7 +128,7 @@ class Workspace extends AbstractModel
      *
      * @return string|null
      */
-    public function getApiKey()
+    public function getApiKey(): ?string
     {
         $value = $this->getData('api_key');
         if (!empty($value) && !preg_match('/^\*+$/', $value)) {
@@ -130,11 +141,11 @@ class Workspace extends AbstractModel
      * Set GUID
      *
      * @param string|null $guid
-     * @return void
+     * @return Workspace
      */
-    public function setGuid(?string $guid)
+    public function setGuid(?string $guid): Workspace
     {
-        $this->setData('guid', !empty($guid) ? $this->encryptor->encrypt($guid) : null);
+        return $this->setData('guid', !empty($guid) ? $this->encryptor->encrypt($guid) : null);
     }
 
     /**
@@ -160,51 +171,32 @@ class Workspace extends AbstractModel
     }
 
     /**
-     * Save linked config
+     * Get API host
      *
-     * @return Workspace
+     * @return string
      */
-    public function afterSave()
+    public function getApiHost(): string
     {
-        $workspaceMapString = $this->scopeConfig->getValue(self::XML_PATH_WORKSPACE_MAP);
-        if ($workspaceMapString) {
-            $workspaceMap = json_decode($workspaceMapString);
-            foreach ($workspaceMap as $websiteId => $workspaceId) {
-                if ($this->getId() == $workspaceId) {
-                    $this->configWriter->save(
-                        ConfigFactory::XML_PATH_API_KEY,
-                        $this->getApiKey(),
-                        ScopeInterface::SCOPE_WEBSITES,
-                        $websiteId
-                    );
+        return Environment::API_HOST[$this->getEnvironment()];
+    }
 
-                    $this->configWriter->save(
-                        ConfigFactory::XML_PATH_API_KEY,
-                        $this->getData('api_key'),
-                        ScopeInterface::SCOPE_WEBSITES,
-                        $websiteId
-                    );
+    /**
+     * Get tracker host
+     *
+     * @return string
+     */
+    public function getTrackerHost(): string
+    {
+        return Environment::TRACKER_HOST[$this->getEnvironment()];
+    }
 
-                    $guid = $this->getGuid();
-                    if ($guid) {
-                        $this->configWriter->save(
-                            \Synerise\Integration\Model\Config\Backend\Workspace::XML_PATH_API_BASIC_TOKEN,
-                            $this->encryptor->encrypt(base64_encode("{$guid}:{$this->getApiKey()}")),
-                            ScopeInterface::SCOPE_WEBSITES,
-                            $websiteId
-                        );
-                    } else {
-                        $this->configWriter->delete(
-                            \Synerise\Integration\Model\Config\Backend\Workspace::XML_PATH_API_BASIC_TOKEN,
-                            ScopeInterface::SCOPE_WEBSITES,
-                            $websiteId
-                        );
-                    }
-                }
-            }
-
-        }
-
-        return parent::afterSave();
+    /**
+     * Check if basic auth is enabled
+     *
+     * @return bool
+     */
+    public function isBasicAuthEnabled(): bool
+    {
+        return (bool) $this->getBasicAuthEnabled();
     }
 }

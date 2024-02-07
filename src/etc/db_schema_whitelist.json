@@ -46,7 +46,9 @@
             "guid": true,
             "missing_permissions": true,
             "created_at": true,
-            "updated_at": true
+            "updated_at": true,
+            "environment": true,
+            "basic_auth_enabled": true
         },
         "constraint": {
             "PRIMARY": true,

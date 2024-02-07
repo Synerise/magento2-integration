@@ -13,6 +13,7 @@ use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
+use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -42,6 +43,7 @@ class Subscriber extends AbstractSender implements SenderInterface
      * @param ResourceConnection $resource
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
+     * @param WorkspaceConfigFactory $workspaceConfigFactory
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
      * @param UuidGenerator $uuidGenerator
@@ -50,6 +52,7 @@ class Subscriber extends AbstractSender implements SenderInterface
         ResourceConnection $resource,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
+        WorkspaceConfigFactory $workspaceConfigFactory,
         Logger $loggerHelper,
         Tracking $trackingHelper,
         UuidGenerator $uuidGenerator
@@ -58,7 +61,7 @@ class Subscriber extends AbstractSender implements SenderInterface
         $this->trackingHelper = $trackingHelper;
         $this->uuidGenerator = $uuidGenerator;
 
-        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
 
     /**

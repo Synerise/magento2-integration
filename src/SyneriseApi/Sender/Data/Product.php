@@ -26,6 +26,7 @@ use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Product\Category;
 use Synerise\Integration\Helper\Product\Image;
 use Synerise\Integration\Helper\Product\Price;
+use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Catalogs\Config;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
@@ -116,6 +117,7 @@ class Product extends AbstractSender implements SenderInterface
     /**
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
+     * @param WorkspaceConfigFactory $workspaceConfigFactory
      * @param ScopeConfigInterface $scopeConfig
      * @param StoreManagerInterface $storeManager
      * @param ProductRepositoryInterface $productRepository
@@ -132,6 +134,7 @@ class Product extends AbstractSender implements SenderInterface
     public function __construct(
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
+        WorkspaceConfigFactory $workspaceConfigFactory,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
         ProductRepositoryInterface $productRepository,
@@ -157,7 +160,7 @@ class Product extends AbstractSender implements SenderInterface
         $this->priceHelper = $priceHelper;
         $this->isProductSalable = $isProductSalable;
 
-        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
 
     /**

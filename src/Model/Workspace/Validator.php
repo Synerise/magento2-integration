@@ -5,34 +5,44 @@ namespace Synerise\Integration\Model\Workspace;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Validator\AbstractValidator;
 use Ramsey\Uuid\Uuid;
+use Synerise\ApiClient\Api\ApiKeyControllerApi;
 use Synerise\ApiClient\ApiException;
+use Synerise\ApiClient\Model\ApiKeyPermissionCheckResponse;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Workspace;
-use Synerise\Integration\SyneriseApi\Authentication;
-use Synerise\Integration\SyneriseApi\ConfigFactory;
+use Synerise\Integration\SyneriseApi\ConfigFactory as ApiConfigFactory;
+use Synerise\Integration\SyneriseApi\InstanceFactory as ApiInstanceFactory;
 
 class Validator extends AbstractValidator
 {
-
     /**
-     * @var ConfigFactory
+     * @var ApiInstanceFactory
      */
-    private $configFactory;
+    private $apiInstanceFactory;
 
     /**
-     * @var Authentication
+     * @var ApiConfigFactory
      */
-    private $authentication;
+    private $apiConfigFactory;
 
     /**
-     * @param Authentication $authentication
-     * @param ConfigFactory $configFactory
+     * @var Logger
+     */
+    private $logger;
+
+    /**
+     * @param ApiInstanceFactory $apiInstanceFactory
+     * @param ApiConfigFactory $apiConfigFactory
+     * @param Logger $logger
      */
     public function __construct(
-        Authentication $authentication,
-        ConfigFactory $configFactory
+        ApiInstanceFactory $apiInstanceFactory,
+        ApiConfigFactory $apiConfigFactory,
+        Logger $logger
     ) {
-        $this->authentication = $authentication;
-        $this->configFactory = $configFactory;
+        $this->apiInstanceFactory = $apiInstanceFactory;
+        $this->apiConfigFactory = $apiConfigFactory;
+        $this->logger = $logger;
     }
 
     /**
@@ -40,24 +50,13 @@ class Validator extends AbstractValidator
      *
      * @param Workspace $workspace
      * @return bool
-     * @throws ApiException
      */
     public function isValid($workspace): bool
     {
         $messages = [];
 
-        $apiKey = $workspace->getApiKey();
-        if (!Uuid::isValid($apiKey)) {
+        if (!Uuid::isValid($workspace->getApiKey())) {
             $messages['invalid_api_key_format'] = 'Invalid api key format';
-        } else {
-            try {
-                $this->authentication->getJwt(
-                    $apiKey,
-                    $this->configFactory->createMinimalConfig()
-                );
-            } catch (ValidatorException $e) {
-                $messages['invalid_api_key'] = $e->getMessage();
-            }
         }
 
         $guid = $workspace->getGuid();
@@ -68,5 +67,51 @@ class Validator extends AbstractValidator
         $this->_addMessages($messages);
 
         return empty($messages);
+    }
+
+    /**
+     * Check permissions
+     *
+     * @param Workspace $workspace
+     * @return ApiKeyPermissionCheckResponse
+     * @throws ApiException|ValidatorException
+     */
+    public function checkPermissions(Workspace $workspace): ApiKeyPermissionCheckResponse
+    {
+
+        try {
+            return $this->createApiKeyInstance($workspace)
+                ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
+        } catch (ApiException $e) {
+            $this->logger->getLogger()->error(
+                'Synerise Api request failed',
+                [
+                    'exception' => preg_replace('/ response:.*/s', '', $e->getMessage()),
+                    'response_body' => preg_replace('/\n/s', '', (string) $e->getResponseBody())
+                ]
+            );
+            if ($e->getCode() === 401) {
+                throw new ValidatorException(__('Basic authentication failed. 
+                    Please make sure this is a valid GUID and try again.'));
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * Create API key instance
+     *
+     * @param Workspace $workspace
+     * @return ApiKeyControllerApi
+     * @throws ApiException|ValidatorException
+     */
+    protected function createApiKeyInstance(Workspace $workspace): ApiKeyControllerApi
+    {
+        return $this->apiInstanceFactory->createApiInstance(
+            'apiKey',
+            $this->apiConfigFactory->create(),
+            $workspace
+        );
     }
 }
