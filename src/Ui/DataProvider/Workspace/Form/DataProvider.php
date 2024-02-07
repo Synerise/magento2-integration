@@ -41,6 +41,7 @@ class DataProvider extends AbstractDataProvider
         }
 
         foreach ($this->getCollection() as $workspace) {
+            $this->loadedData[$workspace->getId()]['id'] = $workspace->getId();
             $this->loadedData[$workspace->getId()]['environment'] = $workspace->getEnvironment();
             $this->loadedData[$workspace->getId()]['api_key'] = $workspace->getApiKey();
             $this->loadedData[$workspace->getId()]['basic_auth_enabled'] = $workspace->getBasicAuthEnabled();
