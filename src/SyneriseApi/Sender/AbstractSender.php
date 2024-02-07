@@ -54,9 +54,9 @@ abstract class AbstractSender
      * @param WorkspaceConfigFactory $workspaceConfigFactory
      */
     public function __construct(
-        Logger                 $logger,
-        ApiConfigFactory       $apiConfigFactory,
-        ApiInstanceFactory     $apiInstanceFactory,
+        Logger $logger,
+        ApiConfigFactory $apiConfigFactory,
+        ApiInstanceFactory $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory
     ) {
         $this->loggerHelper = $logger;

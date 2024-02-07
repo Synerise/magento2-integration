@@ -24,7 +24,6 @@ class Save extends Generic implements ButtonProviderInterface
                             [
                                 'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                 'actionName' => 'save',
-//                                'params' => [false, $this->context->getRequest()->getParams()]
                                 'params' => [false]
                             ],
                         ],
