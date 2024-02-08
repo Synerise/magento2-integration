@@ -6,6 +6,7 @@ use Magento\Catalog\Model\ResourceModel\Product\Website\Link;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventoryCatalogApi\Model\GetProductIdsBySkusInterface;
+use Magento\InventoryIndexer\Model\Queue\UpdateIndexSalabilityStatus;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
@@ -15,7 +16,7 @@ use Synerise\Integration\Model\Tracking\Config as TrackingConfig;
 use Synerise\Integration\Model\Tracking\ConfigFactory as TrackingConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
-class UpdateIndexSalabilityStatus
+class ProductIsSalableChange
 {
     public const EVENT = 'product_is_salable_change';
 
