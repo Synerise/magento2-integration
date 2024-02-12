@@ -116,7 +116,7 @@ class Tracking
      */
     public function getClientUuid(): ?string
     {
-        if ($this->getContext()->isAdminStore()) {
+        if (!$this->getContext()->isFrontend()) {
             return null;
         }
 
