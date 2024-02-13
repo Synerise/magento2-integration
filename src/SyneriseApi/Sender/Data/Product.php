@@ -15,7 +15,6 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\ValidatorException;
-use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
@@ -110,11 +109,6 @@ class Product extends AbstractSender implements SenderInterface
     protected $priceHelper;
 
     /**
-     * @var IsProductSalableInterface|null
-     */
-    protected $isProductSalable;
-
-    /**
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
@@ -129,7 +123,6 @@ class Product extends AbstractSender implements SenderInterface
      * @param Image $imageHelper
      * @param Logger $loggerHelper
      * @param Price $priceHelper
-     * @param IsProductSalableInterface|null $isProductSalable
      */
     public function __construct(
         ConfigFactory $configFactory,
@@ -145,8 +138,7 @@ class Product extends AbstractSender implements SenderInterface
         Category $categoryHelper,
         Image $imageHelper,
         Logger $loggerHelper,
-        Price $priceHelper,
-        ?IsProductSalableInterface $isProductSalable = null
+        Price $priceHelper
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
@@ -158,7 +150,6 @@ class Product extends AbstractSender implements SenderInterface
         $this->categoryHelper = $categoryHelper;
         $this->imageHelper = $imageHelper;
         $this->priceHelper = $priceHelper;
-        $this->isProductSalable = $isProductSalable;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
@@ -337,11 +328,7 @@ class Product extends AbstractSender implements SenderInterface
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
-
-        if ($this->isProductSalable) {
-            $isSalable = $this->isProductSalable->execute($product->getSku(), $stockStatus->getStockId());
-            $value['is_salable'] = (int) ($isSalable && $product->getStatus() == 1 && (int) $value['stock_status']);
-        }
+        $value['is_salable'] = $product->isSalable();
 
         return new AddItem([
             'item_key' => $value['itemId'],
