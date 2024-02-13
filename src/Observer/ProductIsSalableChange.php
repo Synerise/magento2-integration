@@ -2,192 +2,182 @@
 
 namespace Synerise\Integration\Observer;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Product;
-use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Website\Link;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\InventoryCatalogApi\Model\GetProductIdsBySkusInterface;
+use Magento\InventoryIndexer\Model\Queue\UpdateIndexSalabilityStatus;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
-use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\Model\Config\Source\Debug\Exclude;
+use Synerise\Integration\Model\Synchronization\Config as SynchronizationConfig;
+use Synerise\Integration\Model\Tracking\Config as TrackingConfig;
+use Synerise\Integration\Model\Tracking\ConfigFactory as TrackingConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
-class ProductIsSalableChange implements ObserverInterface
+class ProductIsSalableChange
 {
     public const EVENT = 'product_is_salable_change';
 
     /**
-     * @var mixed
-     */
-    protected $products;
-
-    /**
      * @var StoreManagerInterface
      */
-    protected $storeManager;
+    private $storeManager;
 
     /**
-     * @var ProductRepositoryInterface
+     * @var Link
      */
-    private $productRepository;
+    private $productWebsiteLink;
 
     /**
-     * @var Logger
+     * @var GetProductIdsBySkusInterface
      */
-    protected $loggerHelper;
+    private $getProductIdsBySkus;
 
     /**
-     * @var Config
+     * @var TrackingConfigFactory
      */
-    protected $synchronization;
+    private $trackingConfigFactory;
 
     /**
-     * @var Tracking
+     * @var SynchronizationConfig
      */
-    protected $trackingHelper;
+    private $synchronizationConfig;
 
     /**
      * @var Publisher
      */
-    protected $publisher;
+    private $publisher;
+
+    /**
+     * @var Logger
+     */
+    private $loggerHelper;
+
+    /**
+     * @var TrackingConfig[]
+     */
+    private $config;
+
+    /**
+     * @var int[]
+     */
+    private $storeIds;
 
     /**
      * @param StoreManagerInterface $storeManager
-     * @param ProductRepositoryInterface $productRepository
-     * @param Logger $loggerHelper
-     * @param Config $synchronization
-     * @param Tracking $trackingHelper
+     * @param Link $productWebsiteLink
+     * @param GetProductIdsBySkusInterface $getProductIdsBySkus
+     * @param TrackingConfigFactory $trackingConfigFactory
+     * @param SynchronizationConfig $synchronizationConfig
      * @param Publisher $publisher
+     * @param Logger $loggerHelper
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        ProductRepositoryInterface $productRepository,
-        Logger $loggerHelper,
-        Config $synchronization,
-        Tracking $trackingHelper,
-        Publisher $publisher
+        Link $productWebsiteLink,
+        GetProductIdsBySkusInterface $getProductIdsBySkus,
+        TrackingConfigFactory $trackingConfigFactory,
+        SynchronizationConfig $synchronizationConfig,
+        Publisher $publisher,
+        Logger $loggerHelper
     ) {
         $this->storeManager = $storeManager;
-        $this->productRepository = $productRepository;
-        $this->loggerHelper = $loggerHelper;
-        $this->synchronization = $synchronization;
-        $this->trackingHelper = $trackingHelper;
+        $this->productWebsiteLink = $productWebsiteLink;
+        $this->getProductIdsBySkus = $getProductIdsBySkus;
+        $this->trackingConfigFactory = $trackingConfigFactory;
+        $this->synchronizationConfig = $synchronizationConfig;
         $this->publisher = $publisher;
+        $this->loggerHelper = $loggerHelper;
     }
 
     /**
-     * Observe potential saleability change
+     * Add Products to update queue
      *
-     * @param Observer $observer
-     * @return void
-     */
-    public function execute(Observer $observer)
-    {
-        if (!$this->synchronization->isModelEnabled(Sender::MODEL)) {
-            return;
-        }
-
-        $eventName = $observer->getEvent()->getName();
-
-        try {
-            $changedProducts = [];
-
-            if ($eventName === 'sales_order_item_save_before') {
-                $item = $observer->getData('item');
-                $this->products[$item->getSku()] = $item->getProduct();
-            } elseif ($eventName === 'sales_order_item_save_after') {
-                $item = $observer->getData('item');
-                if ($this->isSalableChanged($item->getSku(), $item->getStoreId())) {
-                    $changedProducts[] = $item->getProduct();
-                }
-            } elseif ($eventName === 'sales_order_place_after') {
-                $order = $observer->getData('order');
-                foreach ($order->getAllItems() as $item) {
-                    $product = $item->getProduct();
-                    if (!$product->getIsSalable()) {
-                        $changedProducts[] = $item->getProduct();
-                    }
-                }
-            }
-
-            if (!empty($changedProducts)) {
-                try {
-                    foreach ($changedProducts as $changedProduct) {
-                        $this->publishForEachStore($changedProduct);
-                    }
-                } catch (\Exception $e) {
-                    $this->loggerHelper->getLogger()->error($e);
-                }
-            }
-        } catch (NoSuchEntityException $e) {
-            if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
-                $this->loggerHelper->getLogger()->warning($e->getMessage());
-            }
-        } catch (\Exception $e) {
-            $this->loggerHelper->getLogger()->error($e);
-        }
-    }
-
-    /**
-     * Compare product is_salable attribute before and after order was saved
+     * @param UpdateIndexSalabilityStatus $subject
+     * @param array $skusAffected
      *
-     * @param string $sku
-     * @param int $storeId
-     * @return bool
-     * @throws NoSuchEntityException
+     * @return array
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function isSalableChanged(string $sku, int $storeId): bool
+    public function afterExecute(UpdateIndexSalabilityStatus $subject, array $skusAffected)
     {
-        if (!isset($this->products[$sku])) {
-            return false;
+        if (!$this->synchronizationConfig->isModelEnabled(Sender::MODEL)) {
+            return $skusAffected;
         }
 
-        $productBeforeSave = $this->products[$sku];
-        $productAfterSave = $this->productRepository->get($sku, false, $storeId, true);
-        unset($this->products[$sku]);
+        if ($skus = array_keys($skusAffected)) {
+            try {
+                foreach ($this->getProductIdsBySkus->execute($skus) as $productId) {
+                    $this->publishForEachStore($productId);
+                }
+            } catch (NoSuchEntityException $e) {
+                if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                    $this->loggerHelper->getLogger()->warning($e->getMessage());
+                }
+            }
+        }
 
-        return $productAfterSave->getData('is_salable') !== $productBeforeSave->getData('is_salable');
+        return $skusAffected;
     }
 
     /**
      * Publish product on synchronization queue for each store
      *
-     * @param Product $product
+     * @param int $productId
      * @return void
-     * @throws NoSuchEntityException
      */
-    protected function publishForEachStore(Product $product)
+    protected function publishForEachStore(int $productId)
     {
-        $enabledStores = $this->synchronization->getConfiguredStores();
-        $storeIds = $product->getStoreIds();
-        foreach ($storeIds as $storeId) {
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
-                return;
-            }
+        foreach ($this->productWebsiteLink->getWebsiteIdsByProductId($productId) as $websiteId) {
+            try {
+                foreach ($this->getStoreIds($websiteId) as $storeId) {
+                    if (!$this->getTrackingConfig($storeId)->isEventTrackingEnabled(self::EVENT)) {
+                        return;
+                    }
 
-            if (in_array($storeId, $enabledStores)) {
-                $this->publisher->publish(
-                    Sender::MODEL,
-                    $product->getEntityId(),
-                    $product->getStoreId(),
-                    $this->getWebsiteIdByStoreId($product->getStoreId())
-                );
+                    if ($this->synchronizationConfig->isStoreConfigured($storeId)) {
+                        $this->publisher->publish(Sender::MODEL, $productId, $storeId, $websiteId);
+                    }
+                }
+            } catch (NoSuchEntityException $e) {
+                if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
+                    $this->loggerHelper->getLogger()->warning($e->getMessage());
+                }
+            } catch (\Exception $e) {
+                $this->loggerHelper->getLogger()->error($e);
             }
         }
     }
 
     /**
-     * Get website ID by store ID
+     * Get all sore ids where product is presented
+     *
+     * @param int $websiteId
+     * @return array
+     * @throws LocalizedException|NoSuchEntityException
+     */
+    public function getStoreIds(int $websiteId): array
+    {
+        if (!isset($this->storeIds[$websiteId])) {
+            $this->storeIds[$websiteId] = $this->storeManager->getWebsite($websiteId)->getStoreIds();
+        }
+        return $this->storeIds[$websiteId];
+    }
+
+    /**
+     * Get tracking config by store ID
      *
      * @param int $storeId
-     * @return int
-     * @throws NoSuchEntityException
+     * @return TrackingConfig
      */
-    public function getWebsiteIdByStoreId(int $storeId): int
+    public function getTrackingConfig(int $storeId): TrackingConfig
     {
-        return $this->storeManager->getStore($storeId)->getWebsiteId();
+        if (!isset($this->config[$storeId])) {
+            $this->config[$storeId] = $this->trackingConfigFactory->create($storeId);
+        }
+
+        return $this->config[$storeId];
     }
 }

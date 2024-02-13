@@ -73,6 +73,9 @@
             <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace</argument>
         </arguments>
     </virtualType>
+    <type name="Magento\InventoryIndexer\Model\Queue\UpdateIndexSalabilityStatus">
+        <plugin name="synerise_update_index_salability_status" type="Synerise\Integration\Observer\ProductIsSalableChange" />
+    </type>
     <virtualType name="Synerise\Integration\Model\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
             <argument name="handlers" xsi:type="array">
