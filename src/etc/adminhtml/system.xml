@@ -187,6 +187,9 @@
                     <label>Events</label>
                     <config_path>synerise/event_tracking/events</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\EventTracking\Events</source_model>
+                    <comment>
+                        <model>Synerise\Integration\Model\Config\Backend\EventTracking\Events\Comment</model>
+                    </comment>
                 </field>
                 <field id="include_params" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Include Tracking Params</label>
