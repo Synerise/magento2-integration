@@ -6,6 +6,8 @@ use DateTime;
 use Magento\Backend\Model\Auth\Session as BackedSession;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\ScopeResolverInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
@@ -17,6 +19,11 @@ class Context
     protected const FORMAT_ISO_8601 = 'Y-m-d\TH:i:s.v\Z';
 
     protected const APPLICATION_NAME = 'magento2';
+
+    /**
+     * @var State
+     */
+    protected $state;
 
     /**
      * @var ScopeResolverInterface
@@ -44,6 +51,7 @@ class Context
     protected $loggerHelper;
 
     /**
+     * @param State $state
      * @param BackedSession $backendSession
      * @param ScopeResolverInterface $scopeResolver
      * @param StoreManagerInterface $storeManager
@@ -51,12 +59,14 @@ class Context
      * @param Logger $loggerHelper
      */
     public function __construct(
+        State $state,
         BackedSession $backendSession,
         ScopeResolverInterface $scopeResolver,
         StoreManagerInterface $storeManager,
         CustomerSession $customerSession,
         Logger $loggerHelper
     ) {
+        $this->state = $state;
         $this->backendSession = $backendSession;
         $this->storeManager = $storeManager;
         $this->customerSession = $customerSession;
@@ -138,6 +148,21 @@ class Context
             return null;
         }
     }
+
+    /**
+     * Check if current area is frontend
+     *
+     * @return bool
+     */
+    public function isFrontend(): bool
+    {
+        try {
+            return $this->state->getAreaCode() == 'frontend';
+        } catch (LocalizedException $e) {
+            return false;
+        }
+    }
+
 
     /**
      * Check is request use default scope

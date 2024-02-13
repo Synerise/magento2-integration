@@ -5,6 +5,7 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
@@ -21,6 +22,11 @@ class OrderPlace implements ObserverInterface
     public const EVENT = 'sales_order_place_after';
 
     public const CUSTOMER_UPDATE = 'customer_update_guest_order';
+
+    /**
+     * @var CollectionFactory
+     */
+    protected $collectionFactory;
 
     /**
      * @var DataItemPublisher
@@ -63,6 +69,7 @@ class OrderPlace implements ObserverInterface
     protected $uuidHelper;
 
     /**
+     * @param CollectionFactory $collectionFactory
      * @param DataItemPublisher $dataItemPublisher
      * @param EventPublisher $eventPublisher
      * @param OrderSender $orderSender
@@ -73,6 +80,7 @@ class OrderPlace implements ObserverInterface
      * @param UuidManagement $uuidHelper
      */
     public function __construct(
+        CollectionFactory $collectionFactory,
         DataItemPublisher $dataItemPublisher,
         EventPublisher $eventPublisher,
         OrderSender $orderSender,
@@ -82,6 +90,7 @@ class OrderPlace implements ObserverInterface
         Tracking $trackingHelper,
         UuidManagement $uuidHelper
     ) {
+        $this->collectionFactory = $collectionFactory;
         $this->dataItemPublisher = $dataItemPublisher;
         $this->eventPublisher = $eventPublisher;
         $this->orderSender = $orderSender;
@@ -103,33 +112,29 @@ class OrderPlace implements ObserverInterface
         try {
             /** @var Order $order */
             $order = $observer->getEvent()->getOrder();
-            $storeId = $order->getStoreId();
+            if (!$storeId = $this->getOrderStoreId($order)) {
+                return;
+            }
 
             if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
                 return;
             }
 
-            if (!$this->trackingHelper->getContext()->isAdminStore()) {
+            if ($this->trackingHelper->getContext()->isFrontend() && $order->getCustomerEmail()) {
                 $this->uuidHelper->manageByEmail(
                     $order->getCustomerEmail(),
-                    $this->trackingHelper->getContext()->getStoreId()
+                    $storeId
                 );
             }
 
-            if (!$this->synchronization->isModelEnabled(OrderSender::MODEL)) {
-                return;
+            if ($this->synchronization->isModelEnabled(OrderSender::MODEL)) {
+                $this->dataItemPublisher->publish(OrderSender::MODEL, $order->getId(), $storeId);
             }
 
-            $guestCustomerRequest = $this->prepareGuestCustomerRequest($order);
-
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
-                $this->dataItemPublisher->publish(OrderSender::MODEL, $order->getId(), $order->getStoreId());
-                if ($guestCustomerRequest) {
+            if ($guestCustomerRequest = $this->prepareGuestCustomerRequest($order)) {
+                if ($this->trackingHelper->isEventMessageQueueEnabled($storeId)) {
                     $this->eventPublisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
-                }
-            } else {
-                $this->orderSender->sendItems([$order], $storeId);
-                if ($guestCustomerRequest) {
+                } else {
                     $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);
                 }
             }
@@ -148,7 +153,7 @@ class OrderPlace implements ObserverInterface
      */
     protected function prepareGuestCustomerRequest(Order $order): ?CreateaClientinCRMRequest
     {
-        if (!$order->getCustomerIsGuest()) {
+        if (!$order->getCustomerIsGuest() || !$order->getCustomerEmail()) {
             return null;
         }
 
@@ -166,5 +171,25 @@ class OrderPlace implements ObserverInterface
             'first_name' => $order->getCustomerFirstname(),
             'last_name' => $order->getCustomerLastname()
         ]);
+    }
+
+    /**
+     * Get store ID from order
+     *
+     * @param Order $order
+     * @return int|null
+     */
+    protected function getOrderStoreId(Order $order): ?int
+    {
+        if ($storeId = $order->getStoreId()) {
+            return $storeId;
+        }
+
+        $storeIds = $this->collectionFactory->create()
+            ->addFieldToFilter('entity_id', $order->getEntityId())
+            ->addFieldToSelect('store_id')
+            ->getColumnValues('store_id');
+
+        return $storeIds[0] ?? null;
     }
 }
