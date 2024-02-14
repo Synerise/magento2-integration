@@ -163,7 +163,6 @@ class Context
         }
     }
 
-
     /**
      * Check is request use default scope
      *

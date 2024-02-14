@@ -76,6 +76,9 @@
     <type name="Magento\InventoryIndexer\Model\Queue\UpdateIndexSalabilityStatus">
         <plugin name="synerise_update_index_salability_status" type="Synerise\Integration\Observer\ProductIsSalableChange" />
     </type>
+    <type name="Magento\CatalogInventory\Model\Indexer\Stock">
+        <plugin name="cache_cleaner_after_reindex" type="Synerise\Integration\Observer\IndexerStock" />
+    </type>
     <virtualType name="Synerise\Integration\Model\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
             <argument name="handlers" xsi:type="array">

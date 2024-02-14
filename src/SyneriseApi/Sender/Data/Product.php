@@ -328,7 +328,7 @@ class Product extends AbstractSender implements SenderInterface
 
         $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
         $value['stock_status'] = $stockStatus['is_in_stock'];
-        $value['is_salable'] = $product->isSalable();
+        $value['is_salable'] = $product->getIsSalable();
 
         return new AddItem([
             'item_key' => $value['itemId'],
