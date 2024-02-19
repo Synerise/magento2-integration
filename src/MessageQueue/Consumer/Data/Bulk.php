@@ -219,7 +219,7 @@ class Bulk
             }
         }
 
-        if (!$isRetryScheduled) {
+        if (!$isRetryScheduled && $operation->getBulkUuid()) {
             $operation->setStatus($status ?? BulkOperationInterface::STATUS_TYPE_COMPLETE)
                 ->setSerializedData($this->serializer->serialize($data))
                 ->setErrorCode($errorCode ?? null)
