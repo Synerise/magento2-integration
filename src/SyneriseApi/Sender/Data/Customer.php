@@ -128,7 +128,7 @@ class Customer extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response_body' => $body]);
+                $this->loggerHelper->warning('Request partially accepted', ['response_body' => $body]);
             }
         } catch (ApiException $e) {
             $shouldLogException = true;

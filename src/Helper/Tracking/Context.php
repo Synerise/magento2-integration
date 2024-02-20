@@ -128,7 +128,7 @@ class Context
             $store = $this->storeManager->getStore($storeId);
             return $store ? $store->getBaseUrl() : null;
         } catch (NoSuchEntityException $e) {
-            $this->loggerHelper->getLogger()->warning($e);
+            $this->loggerHelper->warning($e);
             return null;
         }
     }
@@ -144,7 +144,7 @@ class Context
             $store = $this->storeManager->getStore();
             return $store ? $store->getId() : null;
         } catch (NoSuchEntityException $e) {
-            $this->loggerHelper->getLogger()->warning($e);
+            $this->loggerHelper->warning($e);
             return null;
         }
     }

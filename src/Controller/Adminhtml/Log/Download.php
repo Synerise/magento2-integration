@@ -6,8 +6,8 @@ use Magento\Backend\Controller\Adminhtml\System;
 use Magento\Framework\App\Response\Http\FileFactory;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\ResultInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\LogFile;
+use Synerise\Integration\Helper\Logger;
 
 class Download extends System
 {
@@ -24,7 +24,7 @@ class Download extends System
     protected $logFileHelper;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -32,13 +32,13 @@ class Download extends System
      * @param Context $context
      * @param FileFactory $fileFactory
      * @param LogFile $logFileHelper
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      */
     public function __construct(
         Context $context,
         FileFactory $fileFactory,
         LogFile $logFileHelper,
-        LoggerInterface $logger
+        Logger $logger
     ) {
         $this->fileFactory = $fileFactory;
         $this->logFileHelper = $logFileHelper;

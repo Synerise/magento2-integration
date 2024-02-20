@@ -93,7 +93,7 @@ class CustomerLogout implements ObserverInterface
             }
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {
-                $this->loggerHelper->getLogger()->error($e);
+                $this->loggerHelper->error($e);
             }
         }
     }

@@ -4,18 +4,18 @@ namespace Synerise\Integration\SyneriseApi;
 
 use GuzzleHttp\Client;
 use Magento\Framework\Exception\ValidatorException;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\Api\AuthenticationControllerApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Configuration;
 use Synerise\ApiClient\Model\BusinessProfileAuthenticationRequest;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\WorkspaceInterface;
 use Synerise\Integration\SyneriseApi\Config as ApiConfig;
 
 class Authenticator
 {
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     private $logger;
 
@@ -30,12 +30,12 @@ class Authenticator
     private $workspace;
 
     /**
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param ApiConfig $apiConfig
      * @param WorkspaceInterface $workspace
      */
     public function __construct(
-        LoggerInterface $logger,
+        Logger $logger,
         ApiConfig $apiConfig,
         WorkspaceInterface $workspace
     ) {

@@ -6,7 +6,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Psr\Log\LoggerInterface;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 
-class Logger
+class Logger implements LoggerInterface
 {
     /**
      * @var LoggerInterface
@@ -53,5 +53,77 @@ class Logger
         ));
 
         return in_array($exception, $exclusions);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function emergency($message, array $context = [])
+    {
+        return $this->getLogger()->emergency($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function alert($message, array $context = [])
+    {
+        return $this->getLogger()->alert($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function critical($message, array $context = [])
+    {
+        return $this->getLogger()->critical($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function error($message, array $context = [])
+    {
+        return $this->getLogger()->error($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function warning($message, array $context = [])
+    {
+        return $this->getLogger()->warning($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function notice($message, array $context = [])
+    {
+        return $this->getLogger()->notice($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function info($message, array $context = [])
+    {
+        return $this->getLogger()->info($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function debug($message, array $context = [])
+    {
+        return $this->getLogger()->debug($message, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function log($level, $message, array $context = [])
+    {
+        return $this->getLogger()->log($level, $message, $context);
     }
 }

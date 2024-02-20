@@ -107,7 +107,7 @@ abstract class AbstractSender
      */
     protected function logApiException(Exception $e)
     {
-        $this->loggerHelper->getLogger()->error(
+        $this->loggerHelper->error(
             'Synerise Api request failed',
             [
                 'exception' => preg_replace('/ response:.*/s', '', $e->getMessage()),

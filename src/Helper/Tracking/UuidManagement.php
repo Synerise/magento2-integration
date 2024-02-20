@@ -97,7 +97,7 @@ class UuidManagement
             $this->cookieHelper->setSnrsResetUuidCookie($emailUuid);
             $this->cookieHelper->setSnrsUuid($emailUuid);
         } catch (InputException|FailureToSendException|CookieSizeLimitReachedException|NoSuchEntityException $e) {
-            $this->loggerHelper->getLogger()->error($e);
+            $this->loggerHelper->error($e);
         }
 
         $identityHash = $this->cookieHelper->getSnrsP('identityHash');
@@ -139,7 +139,7 @@ class UuidManagement
             }
         } catch (\Exception $e) {
             if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_CLIENT_MERGE_FAIL)) {
-                $this->loggerHelper->getLogger()->error($e);
+                $this->loggerHelper->error($e);
             }
         }
     }

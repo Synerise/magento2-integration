@@ -103,7 +103,7 @@ class Save extends Action
                 } catch (AlreadyExistsException $e) {
                     $this->messageManager->addErrorMessage('Workspace with this API key is already defined.');
                 } catch (\Exception $e) {
-                    $this->logger->getLogger()->error($e->getMessage());
+                    $this->logger->error($e->getMessage());
                     $this->messageManager->addExceptionMessage(
                         $e,
                         __('Something went wrong while saving the Workspace.')

@@ -16,10 +16,10 @@ use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\MessageQueue\MessageEncoder;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Serialize\SerializerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Communication\Config;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\AbstractBulk as BulkPublisher;
@@ -33,7 +33,7 @@ class Bulk
     public const MAX_PAGE_SIZE = 100;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -78,7 +78,7 @@ class Bulk
     private $filter;
 
     /**
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param ObjectManagerInterface $objectManager
      * @param EntityManager $entityManager
      * @param SerializerInterface $serializer
@@ -89,7 +89,7 @@ class Bulk
      * @param Filter $filter
      */
     public function __construct(
-        LoggerInterface $logger,
+        Logger $logger,
         ObjectManagerInterface $objectManager,
         EntityManager $entityManager,
         SerializerInterface $serializer,

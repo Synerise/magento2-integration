@@ -10,7 +10,7 @@ use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
@@ -23,7 +23,7 @@ class Customer extends Action
     public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_customer';
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -49,7 +49,7 @@ class Customer extends Action
 
     /**
      * @param Context $context
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
      * @param Publisher $publisher
@@ -57,7 +57,7 @@ class Customer extends Action
      */
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
+        Logger $logger,
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,

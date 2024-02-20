@@ -14,10 +14,10 @@ use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\MessageQueue\MessageEncoder;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Serialize\Serializer\Json;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Communication\Config;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\Model\MessageQueue\Retry;
@@ -38,7 +38,7 @@ class Event
     public const TOPIC_NAME = 'synerise.queue.events';
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -83,7 +83,7 @@ class Event
     private $dataItemPublisher;
 
     /**
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param ObjectManagerInterface $objectManager
      * @param MessageEncoder $messageEncoder
      * @param Json $json
@@ -94,7 +94,7 @@ class Event
      * @param DataItemPublisher $dataItemPublisher
      */
     public function __construct(
-        LoggerInterface $logger,
+        Logger $logger,
         ObjectManagerInterface $objectManager,
         MessageEncoder $messageEncoder,
         Json $json,

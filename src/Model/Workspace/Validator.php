@@ -83,7 +83,7 @@ class Validator extends AbstractValidator
             return $this->createApiKeyInstance($workspace)
                 ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);
         } catch (ApiException $e) {
-            $this->logger->getLogger()->error(
+            $this->logger->error(
                 'Synerise Api request failed',
                 [
                     'exception' => preg_replace('/ response:.*/s', '', $e->getMessage()),
