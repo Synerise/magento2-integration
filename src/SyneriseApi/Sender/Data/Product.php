@@ -259,7 +259,7 @@ class Product extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response' => $body]);
+                $this->loggerHelper->warning('Request partially accepted', ['response' => $body]);
             }
         } catch (CatalogsApiException $e) {
             $this->logApiException($e);
@@ -438,7 +438,7 @@ class Product extends AbstractSender implements SenderInterface
 
             $stockData = $stockStatus->getStockItem();
         } catch (\Exception $exception) {
-            $this->loggerHelper->getLogger()->error($exception);
+            $this->loggerHelper->error($exception);
         }
         return $stockData;
     }
@@ -456,7 +456,7 @@ class Product extends AbstractSender implements SenderInterface
             return $this->productRepository->getById($productId, false, $storeId);
         } catch (NoSuchEntityException $exception) {
             if ($this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
-                $this->loggerHelper->getLogger()->warning($exception->getMessage());
+                $this->loggerHelper->warning($exception->getMessage());
             }
         }
 

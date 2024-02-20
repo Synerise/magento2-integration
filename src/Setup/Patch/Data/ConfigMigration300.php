@@ -134,7 +134,7 @@ class ConfigMigration300 implements DataPatchInterface
                 }
                 $this->deleteConfig($value);
             } catch (LocalizedException $e) {
-                $this->logger->getLogger()->error($e);
+                $this->logger->error($e);
             }
         }
     }

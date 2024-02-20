@@ -8,8 +8,8 @@ use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\NotFoundException;
-use Psr\Log\LoggerInterface;
 use Synerise\Integration\Helper\LogFile;
+use Synerise\Integration\Helper\Logger;
 
 class MassDelete extends Action implements HttpPostActionInterface
 {
@@ -24,7 +24,7 @@ class MassDelete extends Action implements HttpPostActionInterface
     protected $logFileHelper;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -32,12 +32,12 @@ class MassDelete extends Action implements HttpPostActionInterface
      * Constructor
      *
      * @param Context $context
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param LogFile $logFileHelper
      */
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
+        Logger $logger,
         LogFile $logFileHelper
     ) {
         $this->logger = $logger;

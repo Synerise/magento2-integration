@@ -183,7 +183,7 @@ class Order extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response' => $body]);
+                $this->loggerHelper->warning('Request partially accepted', ['response' => $body]);
             }
         } catch (ApiException $e) {
             $this->logApiException($e);
@@ -237,7 +237,7 @@ class Order extends AbstractSender implements SenderInterface
             }
 
             if (!$item->getProduct() && $this->isSent($order->getEntityId())) {
-                $this->loggerHelper->getLogger()->warning(
+                $this->loggerHelper->warning(
                     sprintf('Product not found & order %s already sent, skip update', $order->getIncrementId())
                 );
 
@@ -408,7 +408,7 @@ class Order extends AbstractSender implements SenderInterface
                 $rules[] = $rule->getName();
             }
         } catch (Exception $e) {
-            $this->loggerHelper->getLogger()->error($e);
+            $this->loggerHelper->error($e);
         }
 
         return $rules;

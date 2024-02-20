@@ -114,7 +114,7 @@ class ProductIsSalableChange
                 }
             } catch (NoSuchEntityException $e) {
                 if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
-                    $this->loggerHelper->getLogger()->warning($e->getMessage());
+                    $this->loggerHelper->warning($e->getMessage());
                 }
             }
         }
@@ -143,10 +143,10 @@ class ProductIsSalableChange
                 }
             } catch (NoSuchEntityException $e) {
                 if (!$this->loggerHelper->isExcludedFromLogging(Exclude::EXCEPTION_PRODUCT_NOT_FOUND)) {
-                    $this->loggerHelper->getLogger()->warning($e->getMessage());
+                    $this->loggerHelper->warning($e->getMessage());
                 }
             } catch (\Exception $e) {
-                $this->loggerHelper->getLogger()->error($e);
+                $this->loggerHelper->error($e);
             }
         }
     }

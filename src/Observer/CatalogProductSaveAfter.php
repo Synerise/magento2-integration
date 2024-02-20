@@ -78,7 +78,7 @@ class CatalogProductSaveAfter implements ObserverInterface
         try {
             $this->publishForEachStore($observer->getEvent()->getProduct());
         } catch (\Exception $e) {
-            $this->loggerHelper->getLogger()->error($e);
+            $this->loggerHelper->error($e);
         }
     }
 

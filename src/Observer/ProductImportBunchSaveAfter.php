@@ -83,7 +83,7 @@ class ProductImportBunchSaveAfter implements ObserverInterface
                 }
             }
         } catch (\Exception $e) {
-            $this->loggerHelper->getLogger()->error($e);
+            $this->loggerHelper->error($e);
         }
     }
 }

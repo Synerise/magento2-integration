@@ -7,7 +7,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Filter\TranslitUrl;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 
 class Reader implements ReaderInterface
 {
@@ -30,7 +30,7 @@ class Reader implements ReaderInterface
     private $storeManager;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     private $logger;
 
@@ -40,13 +40,13 @@ class Reader implements ReaderInterface
     private $scopeConfig;
 
     /**
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param ScopeConfigInterface $scopeConfig
      * @param TranslitUrl $translitUrl
      * @param StoreManagerInterface $storeManager
      */
     public function __construct(
-        LoggerInterface $logger,
+        Logger $logger,
         ScopeConfigInterface $scopeConfig,
         TranslitUrl $translitUrl,
         StoreManagerInterface $storeManager
