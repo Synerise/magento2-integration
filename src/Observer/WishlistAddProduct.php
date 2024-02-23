@@ -5,11 +5,9 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Product\Category;
+use Synerise\Integration\SyneriseApi\Mapper\WishlistAddProduct as Mapper;
 use Synerise\Integration\SyneriseApi\Sender\Event;
-use Synerise\Integration\Helper\Product\Image;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Helper\Tracking;
 
@@ -18,24 +16,19 @@ class WishlistAddProduct implements ObserverInterface
     public const EVENT = 'wishlist_add_product';
 
     /**
+     * @var Logger
+     */
+    protected $loggerHelper;
+
+    /**
      * @var Tracking
      */
     protected $trackingHelper;
 
     /**
-     * @var Category
+     * @var Mapper
      */
-    protected $categoryHelper;
-
-    /**
-     * @var Image
-     */
-    protected $imageHelper;
-
-    /**
-     * @var Logger
-     */
-    protected $loggerHelper;
+    protected $mapper;
 
     /**
      * @var Publisher
@@ -48,25 +41,22 @@ class WishlistAddProduct implements ObserverInterface
     protected $sender;
 
     /**
-     * @param Category $categoryHelper
-     * @param Image $imageHelper
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
+     * @param Mapper $mapper
      * @param Publisher $publisher
      * @param Event $sender
      */
     public function __construct(
-        Category $categoryHelper,
-        Image $imageHelper,
         Logger $loggerHelper,
         Tracking $trackingHelper,
+        Mapper $mapper,
         Publisher $publisher,
         Event $sender
     ) {
-        $this->categoryHelper = $categoryHelper;
-        $this->imageHelper = $imageHelper;
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->mapper = $mapper;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
@@ -90,45 +80,16 @@ class WishlistAddProduct implements ObserverInterface
                 return;
             }
 
-            $product = $observer->getEvent()->getProduct();
             $storeId = $wishlist->getStore()->getId();
             if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
                 return;
             }
 
-            $params = $this->trackingHelper->prepareContextParams();
-            $params['sku'] = $product->getSku();
-            $params['name'] = $product->getName();
-            $params['productUrl'] = $product->getUrlInStore();
-
-            $categoryIds = $product->getCategoryIds();
-            if ($categoryIds) {
-                $params['categories'] = [];
-                foreach ($categoryIds as $categoryId) {
-                    $params['categories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
-                }
-
-                if ($product->getCategoryId()) {
-                    $category = $this->categoryHelper->getFormattedCategoryPath($product->getCategoryId());
-                    if ($category) {
-                        $params['category'] = $category;
-                    }
-                }
-            }
-
-            if ($product->getImage()) {
-                $params['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
-            }
-
-            $eventClientAction = new EventClientAction([
-                'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => new \Synerise\ApiClient\Model\Client([
-                    'custom_id' => $wishlist->getCustomerId()
-                ]),
-                'params' => $params
-            ]);
+            $eventClientAction = $this->mapper->prepareRequest(
+                self::EVENT,
+                $wishlist,
+                $observer->getEvent()->getProduct()
+            );
 
             if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
                 $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);

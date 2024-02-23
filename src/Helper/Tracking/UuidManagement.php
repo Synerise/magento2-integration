@@ -6,11 +6,11 @@ use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException;
 use Magento\Framework\Stdlib\Cookie\FailureToSendException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
+use Synerise\Integration\SyneriseApi\Mapper\CustomerMerge;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
 class UuidManagement
@@ -38,6 +38,11 @@ class UuidManagement
     protected $uuidGenerator;
 
     /**
+     * @var CustomerMerge
+     */
+    protected $customerMerge;
+
+    /**
      * @var EventPublisher
      */
     protected $eventPublisher;
@@ -52,6 +57,7 @@ class UuidManagement
      * @param Cookie $cookieHelper
      * @param Tracking $trackingHelper
      * @param UuidGenerator $uuidGenerator
+     * @param CustomerMerge $customerMerge
      * @param EventPublisher $eventPublisher
      * @param CustomerSender $customerSender
      */
@@ -60,6 +66,7 @@ class UuidManagement
         Cookie $cookieHelper,
         Tracking $trackingHelper,
         UuidGenerator $uuidGenerator,
+        CustomerMerge $customerMerge,
         EventPublisher $eventPublisher,
         CustomerSender $customerSender
     ) {
@@ -67,6 +74,7 @@ class UuidManagement
         $this->cookieHelper = $cookieHelper;
         $this->trackingHelper = $trackingHelper;
         $this->uuidGenerator = $uuidGenerator;
+        $this->customerMerge = $customerMerge;
         $this->eventPublisher = $eventPublisher;
         $this->customerSender = $customerSender;
     }
@@ -121,16 +129,7 @@ class UuidManagement
     protected function mergeUuids(string $email, string $emailUuid, string $uuid, int $storeId)
     {
         try {
-            $mergeRequest = [
-                new CreateaClientinCRMRequest([
-                    'email' => $email,
-                    'uuid' => $emailUuid
-                ]),
-                new CreateaClientinCRMRequest([
-                    'email' => $email,
-                    'uuid' => $uuid
-                ])
-            ];
+            $mergeRequest = $this->customerMerge->prepareRequest($email, $uuid, $emailUuid);
 
             if ($this->trackingHelper->isEventMessageQueueEnabled($storeId)) {
                 $this->eventPublisher->publish(self::EVENT, $mergeRequest, $storeId);
