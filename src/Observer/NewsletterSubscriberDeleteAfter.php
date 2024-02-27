@@ -10,6 +10,7 @@ use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event;
+use Synerise\Integration\SyneriseApi\Mapper\SubscriberAdd;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 
 class NewsletterSubscriberDeleteAfter implements ObserverInterface
@@ -37,21 +38,28 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
      * @var SubscriberSender
      */
     protected $sender;
+    /**
+     * @var SubscriberAdd
+     */
+    protected $subscriberAdd;
 
     /**
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
+     * @param SubscriberAdd $subscriberAdd
      * @param Event $publisher
      * @param SubscriberSender $sender
      */
     public function __construct(
         Logger $loggerHelper,
         Tracking $trackingHelper,
+        SubscriberAdd $subscriberAdd,
         Event $publisher,
         SubscriberSender $sender
     ) {
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->subscriberAdd = $subscriberAdd;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
@@ -73,10 +81,7 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
         }
 
         try {
-            $createAClientInCrmRequest = new CreateaClientinCRMRequest([
-                'email' => $subscriber->getSubscriberEmail(),
-                'agreements' => ['email' => 0]
-            ]);
+            $createAClientInCrmRequest = $this->subscriberAdd->prepareRequest($subscriber, true);
 
             if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
                 $this->publisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());

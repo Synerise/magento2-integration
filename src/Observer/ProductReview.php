@@ -2,16 +2,17 @@
 
 namespace Synerise\Integration\Observer;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Magento\Review\Model\Rating\Option\VoteFactory;
+use Magento\Framework\Exception\InvalidArgumentException;
+use Magento\Framework\Exception\NotFoundException;
 use Magento\Review\Model\Review;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\SyneriseApi\Mapper\CustomerAdd;
+use Synerise\Integration\SyneriseApi\Mapper\ReviewProduct;
 use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
@@ -24,14 +25,9 @@ class ProductReview implements ObserverInterface
     public const CUSTOMER_UPDATE = 'customer_update_product_review';
 
     /**
-     * @var ProductRepositoryInterface
+     * @var Review|null
      */
-    private $productRepository;
-
-    /**
-     * @var VoteFactory
-     */
-    protected $voteFactory;
+    protected $review = null;
 
     /**
      * @var StoreManagerInterface
@@ -49,9 +45,14 @@ class ProductReview implements ObserverInterface
     protected $trackingHelper;
 
     /**
-     * @var Review
+     * @var ReviewProduct
      */
-    protected $review;
+    protected $reviewProduct;
+
+    /**
+     * @var CustomerAdd
+     */
+    private $customerAdd;
 
     /**
      * @var Publisher
@@ -69,30 +70,30 @@ class ProductReview implements ObserverInterface
     private $customerSender;
 
     /**
-     * @param ProductRepositoryInterface $productRepository
-     * @param VoteFactory $voteFactory
      * @param StoreManagerInterface $storeManager
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
+     * @param ReviewProduct $reviewProduct
+     * @param CustomerAdd $customerAdd
      * @param Publisher $publisher
      * @param Event $sender
      * @param CustomerSender $customerSender
      */
     public function __construct(
-        ProductRepositoryInterface $productRepository,
-        VoteFactory $voteFactory,
         StoreManagerInterface $storeManager,
         Logger $loggerHelper,
         Tracking $trackingHelper,
+        ReviewProduct $reviewProduct,
+        CustomerAdd $customerAdd,
         Publisher $publisher,
         Event $sender,
         CustomerSender $customerSender
     ) {
-        $this->productRepository = $productRepository;
-        $this->voteFactory = $voteFactory;
         $this->storeManager = $storeManager;
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->reviewProduct = $reviewProduct;
+        $this->customerAdd = $customerAdd;
         $this->publisher = $publisher;
         $this->sender = $sender;
         $this->customerSender = $customerSender;
@@ -107,8 +108,11 @@ class ProductReview implements ObserverInterface
     public function execute(Observer $observer)
     {
         try {
-            $storeId = $this->storeManager->getStore()->getId();
+            if (!$this->trackingHelper->getContext()->isFrontend()) {
+                return;
+            }
 
+            $storeId = $this->storeManager->getStore()->getId();
             if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
                 return;
             }
@@ -122,61 +126,30 @@ class ProductReview implements ObserverInterface
                 return;
             }
 
-            $product = $this->productRepository->getById($this->review->getEntityPkValue());
-            if (!$product) {
-                return;
-            }
+            $uuid = $this->trackingHelper->getClientUuid();
 
-            $client = ['uuid' => $this->trackingHelper->getClientUuid()];
+            $customEventRequest = $this->reviewProduct->prepareRequest(
+                self::EVENT,
+                $this->review,
+                $storeId,
+                $uuid
+            );
 
-            $customerId = $this->review->getCustomerId();
-            if ($customerId) {
-                $client['custom_id'] = $customerId;
-            }
-            $params = $this->trackingHelper->prepareContextParams();
-            $params['sku'] = $product->getSku();
-            $params['nickname'] = $this->review->getNickname();
-            $params['title'] = $this->review->getTitle();
-            $params['detail'] = $this->review->getDetail();
-
-            $votesCollection = $this->voteFactory->create()->getResourceCollection()
-                ->setReviewFilter($this->review->getReviewId())
-                ->setStoreFilter($this->storeManager->getStore()->getId())
-                ->addRatingInfo($this->storeManager->getStore()->getId())
-                ->load();
-
-            if (count($votesCollection)) {
-                $params['ratings'] = [];
-                foreach ($votesCollection as $vote) {
-                    $params['ratings'][] = [
-                        'rating_code' => $vote->getRatingCode(),
-                        'percent' => $vote->getPercent(),
-                        'value' => $vote->getValue()
-                    ];
-                }
-            }
-
-            $customEventRequest = new CustomeventRequest([
-                'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
-                'action' => 'product.addReview',
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $client,
-                'params' => $params
-            ]);
-
-            $guestCustomerRequest = new CreateaClientinCRMRequest([
-                'uuid' => $this->trackingHelper->getClientUuid(),
-                'display_name' => $this->review->getNickname()
-            ]);
+            $guestCustomerRequest = $uuid ? $this->customerAdd->prepareRequestFromReview($this->review, $uuid) : null;
 
             if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
                 $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
-                $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
+                if ($guestCustomerRequest) {
+                    $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
+                }
             } else {
                 $this->sender->send(self::EVENT, $customEventRequest, $storeId);
-                $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);
+                if ($guestCustomerRequest) {
+                    $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);
+                }
             }
+        } catch (NotFoundException|InvalidArgumentException $e) {
+            return;
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {
                 $this->loggerHelper->error($e);

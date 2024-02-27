@@ -4,10 +4,12 @@ namespace Synerise\Integration\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Quote\Model\Quote;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Helper\Cart;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\SyneriseApi\Mapper\CartStatus as Mapper;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
@@ -16,9 +18,9 @@ class CartQtyUpdate implements ObserverInterface
     public const EVENT = 'checkout_cart_update_items_after';
 
     /**
-     * @var Cart
+     * @var Cookie
      */
-    protected $cartHelper;
+    protected $cookieHelper;
 
     /**
      * @var Logger
@@ -31,6 +33,11 @@ class CartQtyUpdate implements ObserverInterface
     protected $trackingHelper;
 
     /**
+     * @var Mapper
+     */
+    protected $mapper;
+
+    /**
      * @var EventPublisher
      */
     protected $publisher;
@@ -41,22 +48,25 @@ class CartQtyUpdate implements ObserverInterface
     protected $sender;
 
     /**
-     * @param Cart $cartHelper
+     * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
+     * @param Mapper $mapper
      * @param EventPublisher $publisher
      * @param EventSender $sender
      */
     public function __construct(
-        Cart $cartHelper,
+        Cookie $cookieHelper,
         Logger $loggerHelper,
         Tracking $trackingHelper,
+        Mapper $mapper,
         EventPublisher $publisher,
         EventSender $sender
     ) {
-        $this->cartHelper = $cartHelper;
+        $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->mapper = $mapper;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
@@ -82,18 +92,19 @@ class CartQtyUpdate implements ObserverInterface
                 return;
             }
 
-            if (!$this->trackingHelper->getClientUuid() && !$quote->getCustomerEmail()) {
+            $uuid = $this->trackingHelper->getClientUuid();
+            if (!$uuid && !$quote->getCustomerEmail()) {
                 return;
             }
 
             $quote->collectTotals();
 
-            if (!$this->cartHelper->hasItemDataChanges($quote)) {
+            if (!$this->hasItemDataChanges($quote)) {
                 // quote save won't be triggered, send event.
-                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
+                $cartStatusEvent = $this->mapper->prepareRequest(
                     $quote,
-                    $this->cartHelper->getQuoteSubtotal($quote, $storeId),
-                    (int) $quote->getItemsQty()
+                    $uuid,
+                    $this->cookieHelper->shouldIncludeSnrsParams() ? $this->cookieHelper->getSnrsParams() : []
                 );
 
                 if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
@@ -107,5 +118,16 @@ class CartQtyUpdate implements ObserverInterface
                 $this->loggerHelper->error($e);
             }
         }
+    }
+
+    /**
+     * Check if cart was actually updated
+     *
+     * @param Quote $quote
+     * @return bool
+     */
+    public function hasItemDataChanges(Quote $quote): bool
+    {
+        return ($quote->dataHasChangedFor('subtotal') || $quote->dataHasChangedFor('items_qty'));
     }
 }

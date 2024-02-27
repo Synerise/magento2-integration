@@ -19,6 +19,7 @@ use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
+use Synerise\Integration\SyneriseApi\Mapper\CustomerAdd;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
@@ -30,11 +31,6 @@ class Customer extends AbstractSender implements SenderInterface
 
     public const ENTITY_ID = 'entity_id';
 
-    public const MAPPING_GENDER = [
-        1 => InBodyClientSex::MALE,
-        2 => InBodyClientSex::FEMALE,
-        3 => InBodyClientSex::NOT_SPECIFIED
-    ];
 
     /**
      * @var AddressRepositoryInterface
@@ -52,26 +48,28 @@ class Customer extends AbstractSender implements SenderInterface
     protected $resource;
 
     /**
-     * @param AddressRepositoryInterface $addressRepository
-     * @param ScopeConfigInterface $scopeConfig
+     * @var CustomerAdd
+     */
+    protected $customerAdd;
+
+    /**
      * @param ResourceConnection $resource
      * @param Logger $loggerHelper
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
+     * @param CustomerAdd $customerAdd
      */
     public function __construct(
-        AddressRepositoryInterface $addressRepository,
-        ScopeConfigInterface $scopeConfig,
         ResourceConnection $resource,
         Logger $loggerHelper,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
-        WorkspaceConfigFactory $workspaceConfigFactory
+        WorkspaceConfigFactory $workspaceConfigFactory,
+        CustomerAdd $customerAdd
     ) {
-        $this->addressRepository = $addressRepository;
-        $this->scopeConfig = $scopeConfig;
         $this->resource = $resource;
+        $this->customerAdd = $customerAdd;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
@@ -87,12 +85,11 @@ class Customer extends AbstractSender implements SenderInterface
      */
     public function sendItems($collection, int $storeId, ?int $websiteId = null)
     {
-        {
-            $createAClientInCrmRequests = [];
-            $ids = [];
+        $createAClientInCrmRequests = [];
+        $ids = [];
 
         foreach ($collection as $customer) {
-            $createAClientInCrmRequests[] = new CreateaClientinCRMRequest($this->prepareParams($customer, $storeId));
+            $createAClientInCrmRequests[] = $this->customerAdd->prepareRequest($customer, $storeId);
             $ids[] = $customer->getEntityId();
         }
 
@@ -102,8 +99,6 @@ class Customer extends AbstractSender implements SenderInterface
                 $storeId
             );
             $this->markCustomersAsSent($ids, $storeId);
-        }
-
         }
     }
 
@@ -159,125 +154,14 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
-     * Prepare customer params
-     *
-     * @param Customer|\Magento\Customer\Model\Data\Customer $customer
-     * @param int|null $storeId
-     * @return array
-     */
-    public function prepareParams($customer, ?int $storeId = null): array
-    {
-        $params = [
-            'custom_id' => $customer->getId(),
-            'email' => $customer->getEmail(),
-            'first_name' => $customer->getFirstname(),
-            'last_name' => $customer->getLastname()
-        ];
-
-        if (is_a($customer, \Magento\Customer\Model\Data\Customer::class)) {
-            /** @var \Magento\Customer\Model\Data\Customer $customer */
-            $data = $customer->__toArray();
-        } else {
-            /** @var \Magento\Customer\Model\Customer $customer */
-            $data = (array) $customer->getData();
-        }
-
-        $selectedAttributes = $this->getEnabledAttributes($storeId);
-        foreach ($selectedAttributes as $attribute) {
-            if (!isset($data[$attribute])) {
-                continue;
-            }
-
-            switch ($attribute) {
-                case 'default_billing':
-                    $defaultAddress = $this->getAddressIfAvailable($this->valOrNull($data['default_billing']));
-                    if ($defaultAddress) {
-                        $params['phone'] = $this->valOrNull($defaultAddress->getTelephone());
-                        $params['city'] = $this->valOrNull($defaultAddress->getCity());
-                        $street = $defaultAddress->getStreet();
-                        $params['address'] = $this->valOrNull(is_array($street) ? implode(' ', $street) : $street);
-                        $params['zip_code'] = $this->valOrNull($defaultAddress->getPostcode());
-                        $params['province'] = $this->valOrNull($defaultAddress->getRegion()->getRegion());
-                        $params['country_code'] = $this->valOrNull($defaultAddress->getCountryId());
-                        $params['company'] = $this->valOrNull($defaultAddress->getCompany());
-                    }
-                    break;
-                case 'dob':
-                    $params['birth_date'] = !empty($data['dob']) ? substr($data['dob'], 0, 10) : null;
-                    break;
-                case 'gender':
-                    $params['sex'] = self::MAPPING_GENDER[$data['gender']] ?? null;
-                    break;
-                case 'display_name':
-                case 'avatar_url':
-                    $params[$attribute] = $this->valOrNull($data[$attribute]);
-                    break;
-                default:
-                    if (!empty($data[$attribute])) {
-                        $params['attributes'][$attribute] = $data[$attribute];
-                    }
-            }
-        }
-
-        return $params;
-    }
-
-    /**
-     * Get enabled attributes
-     *
-     * @param int|null $storeId
-     * @return array|false|string[]
-     */
-    public function getEnabledAttributes(?int $storeId = null)
-    {
-        $attributes = $this->scopeConfig->getValue(
-            Attributes::XML_PATH_CUSTOMER_ATTRIBUTES,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
-
-        return $attributes ? explode(',', $attributes) : [];
-    }
-
-    /**
      * @inheritDoc
      */
     public function getAttributesToSelect(int $storeId): array
     {
         return array_merge(
-            $this->getEnabledAttributes($storeId),
+            $this->customerAdd->getEnabledAttributes($storeId),
             Attributes::REQUIRED
         );
-    }
-
-    /**
-     * Get address if available
-     *
-     * @param int $addressId
-     * @return AddressInterface|null
-     */
-    protected function getAddressIfAvailable(int $addressId): ?AddressInterface
-    {
-        try {
-            return $addressId ? $this->addressRepository->getById($addressId) : null;
-        } catch (LocalizedException $e) {
-            return null;
-        }
-    }
-
-    /**
-     * Return value or null
-     *
-     * @param string|null $val
-     * @return string|null
-     */
-    protected function valOrNull(?string $val): ?string
-    {
-        if (empty($val)) {
-            return null;
-        }
-
-        return empty(trim($val)) ? null : $val;
     }
 
     /**

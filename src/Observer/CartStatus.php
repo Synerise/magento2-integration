@@ -6,10 +6,11 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequestParams;
-use Synerise\Integration\Helper\Cart;
+use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\SyneriseApi\Mapper\CartStatus as Mapper;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
 class CartStatus implements ObserverInterface
@@ -22,9 +23,9 @@ class CartStatus implements ObserverInterface
     protected $previousParams = null;
 
     /**
-     * @var Cart
+     * @var Cookie
      */
-    protected $cartHelper;
+    protected $cookieHelper;
 
     /**
      * @var Logger
@@ -37,6 +38,11 @@ class CartStatus implements ObserverInterface
     protected $trackingHelper;
 
     /**
+     * @var Mapper
+     */
+    protected $mapper;
+
+    /**
      * @var EventPublisher
      */
     protected $publisher;
@@ -47,22 +53,25 @@ class CartStatus implements ObserverInterface
     protected $sender;
 
     /**
-     * @param Cart $cartHelper
+     * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
+     * @param Mapper $mapper
      * @param EventPublisher $publisher
      * @param EventSender $sender
      */
     public function __construct(
-        Cart $cartHelper,
+        Cookie $cookieHelper,
         Logger $loggerHelper,
         Tracking $trackingHelper,
+        Mapper $mapper,
         EventPublisher $publisher,
         EventSender $sender
     ) {
-        $this->cartHelper = $cartHelper;
+        $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
+        $this->mapper = $mapper;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
@@ -88,34 +97,28 @@ class CartStatus implements ObserverInterface
                 return;
             }
 
-            if (!$this->trackingHelper->getClientUuid() && !$quote->getCustomerEmail()) {
+            $uuid = $this->trackingHelper->getClientUuid();
+            if (!$uuid && !$quote->getCustomerEmail()) {
                 return;
             }
 
-            $cartStatusEvent = null;
+            $cartStatusEvent = $this->mapper->prepareRequest(
+                $quote,
+                $uuid,
+                $this->cookieHelper->shouldIncludeSnrsParams() ? $this->cookieHelper->getSnrsParams() : [],
+                $quote->dataHasChangedFor('reserved_order_id')
+            );
 
-            if ($this->cartHelper->hasItemDataChanges($quote)) {
-                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent(
-                    $quote,
-                    $this->cartHelper->getQuoteSubtotal($quote, $storeId),
-                    (int) $quote->getItemsQty()
-                );
-            } elseif ($quote->dataHasChangedFor('reserved_order_id')) {
-                $cartStatusEvent = $this->cartHelper->prepareCartStatusEvent($quote, 0, 0);
+            if ($this->previousParams && $this->previousParams === $cartStatusEvent->getParams()) {
+                return;
             }
 
-            if ($cartStatusEvent) {
-                if ($this->previousParams && $this->previousParams === $cartStatusEvent->getParams()) {
-                    return;
-                }
-
-                if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
-                    $this->publisher->publish(self::EVENT, $cartStatusEvent, $storeId);
-                } else {
-                    $this->sender->send(self::EVENT, $cartStatusEvent, $storeId);
-                }
-                $this->previousParams = $cartStatusEvent->getParams();
+            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+                $this->publisher->publish(self::EVENT, $cartStatusEvent, $storeId);
+            } else {
+                $this->sender->send(self::EVENT, $cartStatusEvent, $storeId);
             }
+            $this->previousParams = $cartStatusEvent->getParams();
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {
                 $this->loggerHelper->error($e);

@@ -6,11 +6,12 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Quote\Model\Quote;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\ClientaddedproducttocartRequest;
-use Synerise\Integration\Helper\Cart;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\Context;
+use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\SyneriseApi\Mapper\CartAddRemove;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
 class CartAddProduct implements ObserverInterface
@@ -18,9 +19,14 @@ class CartAddProduct implements ObserverInterface
     public const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var Cart
+     * @var Context
      */
-    protected $cartHelper;
+    protected $contextHelper;
+
+    /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
 
     /**
      * @var Logger
@@ -33,6 +39,11 @@ class CartAddProduct implements ObserverInterface
     protected $trackingHelper;
 
     /**
+     * @var CartAddRemove
+     */
+    protected $mapper;
+
+    /**
      * @var EventPublisher
      */
     protected $publisher;
@@ -43,20 +54,26 @@ class CartAddProduct implements ObserverInterface
     protected $sender;
 
     /**
-     * @param Cart $cartHelper
+     * @param CartAddRemove $mapper
+     * @param Context $contextHelper
+     * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
      * @param Tracking $trackingHelper
      * @param EventPublisher $publisher
      * @param EventSender $sender
      */
     public function __construct(
-        Cart $cartHelper,
+        CartAddRemove $mapper,
+        Context $contextHelper,
+        Cookie $cookieHelper,
         Logger $loggerHelper,
         Tracking $trackingHelper,
         EventPublisher $publisher,
         EventSender $sender
     ) {
-        $this->cartHelper = $cartHelper;
+        $this->mapper = $mapper;
+        $this->contextHelper = $contextHelper;
+        $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
         $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
@@ -71,7 +88,7 @@ class CartAddProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if ($this->trackingHelper->getContext()->isAdminStore()) {
+        if (!$this->contextHelper->isFrontend()) {
             return;
         }
 
@@ -84,34 +101,21 @@ class CartAddProduct implements ObserverInterface
                 return;
             }
 
-            $product = $quoteItem->getProduct();
-
-            if ($product->getParentProductId()) {
+            if ($quoteItem->getProduct()->getParentProductId()) {
                 return;
             }
 
-            if (!$this->trackingHelper->getClientUuid() && !$quoteItem->getQuote()->getCustomerEmail()) {
+            $uuid = $this->trackingHelper->getClientUuid();
+            if (!$uuid && !$quoteItem->getQuote()->getCustomerEmail()) {
                 return;
             }
 
-            $client = $this->trackingHelper->prepareClientDataFromQuote($quoteItem->getQuote());
-            $params = array_merge(
-                $this->trackingHelper->prepareContextParams(),
-                $this->cartHelper->prepareParamsFromQuoteProduct($product, $storeId)
+            $eventClientAction = $this->mapper->prepareRequest(
+                self::EVENT,
+                $quoteItem,
+                $uuid,
+                $this->cookieHelper->shouldIncludeSnrsParams() ? $this->cookieHelper->getSnrsParams() : []
             );
-
-            $cookieParams = $this->cartHelper->getCookieParams();
-            if ($cookieParams) {
-                $params['snrs_params'] = $cookieParams;
-            }
-
-            $eventClientAction = new ClientaddedproducttocartRequest([
-                'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $client,
-                'params' => $params
-            ]);
 
             if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
                 $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);

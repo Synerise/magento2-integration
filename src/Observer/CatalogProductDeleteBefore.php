@@ -13,6 +13,7 @@ use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Mapper\CatalogAddItem;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class CatalogProductDeleteBefore implements ObserverInterface
@@ -42,6 +43,11 @@ class CatalogProductDeleteBefore implements ObserverInterface
     protected $trackingHelper;
 
     /**
+     * @var CatalogAddItem
+     */
+    protected $catalogAddItem;
+
+    /**
      * @var Publisher
      */
     protected $publisher;
@@ -56,6 +62,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
      * @param Logger $loggerHelper
      * @param Config $synchronization
      * @param Tracking $trackingHelper
+     * @param CatalogAddItem $catalogAddItem
      * @param Publisher $publisher
      * @param Sender $sender
      */
@@ -64,6 +71,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
         Logger $loggerHelper,
         Config $synchronization,
         Tracking $trackingHelper,
+        CatalogAddItem $catalogAddItem,
         Publisher $publisher,
         Sender $sender
     ) {
@@ -71,6 +79,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
         $this->loggerHelper = $loggerHelper;
         $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
+        $this->catalogAddItem = $catalogAddItem;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
@@ -99,15 +108,11 @@ class CatalogProductDeleteBefore implements ObserverInterface
                 }
 
                 if (in_array($storeId, $enabledStores)) {
-
-                    $addItemRequest = $this->sender->prepareItemRequest(
+                    $addItemRequest = $this->catalogAddItem->prepareRequest(
                         $product,
-                        $this->getWebsiteIdByStoreId($storeId)
+                        $this->getWebsiteIdByStoreId($storeId),
+                        1
                     );
-
-                    $value = $addItemRequest->getValue();
-                    $value['deleted'] = 1;
-                    $addItemRequest->setValue($value);
 
                     if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
                         $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());

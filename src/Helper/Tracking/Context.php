@@ -3,6 +3,8 @@
 namespace Synerise\Integration\Helper\Tracking;
 
 use DateTime;
+use Exception;
+use InvalidArgumentException;
 use Magento\Backend\Model\Auth\Session as BackedSession;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\ScopeResolverInterface;
@@ -12,7 +14,9 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Mobile_Detect;
+use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Model\Config\Source\EventTracking\Events;
 
 class Context
 {
@@ -72,6 +76,47 @@ class Context
         $this->customerSession = $customerSession;
         $this->scopeResolver = $scopeResolver;
         $this->loggerHelper = $loggerHelper;
+    }
+
+    /**
+     * Get event label
+     *
+     * @param string $event
+     * @return string
+     * @throws Exception
+     */
+    public function getEventLabel(string $event): string
+    {
+        if (!Events::OPTIONS[$event]) {
+            throw new InvalidArgumentException('Invalid event');
+        }
+
+        return Events::OPTIONS[$event];
+    }
+
+    /**
+     * Generate an uuid to be used as event salt
+     *
+     * @return string
+     */
+    public function generateEventSalt(): string
+    {
+        return (string) Uuid::uuid4();
+    }
+
+    /**
+     * Get an array of context params
+     *
+     * @return array
+     */
+    public function prepareContextParams(): array
+    {
+        return [
+            'source' => $this->getSource(),
+            'applicationName' => $this->getApplicationName(),
+            'storeId' => $this->getStoreId(),
+            'storeUrl' => $this->getStoreBaseUrl()
+        ];
     }
 
     /**
@@ -150,6 +195,19 @@ class Context
     }
 
     /**
+     * Get currency code of current store
+     *
+     * @param int|null $storeId
+     * @return string
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     */
+    public function getCurrencyCode(?int $storeId = null): string
+    {
+        return $this->storeManager->getStore($storeId)->getCurrentCurrency()->getCode();
+    }
+
+    /**
      * Check if current area is frontend
      *
      * @return bool
@@ -192,4 +250,5 @@ class Context
     {
         return $this->customerSession->isLoggedIn();
     }
+
 }

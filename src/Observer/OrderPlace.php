@@ -14,6 +14,7 @@ use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\SyneriseApi\Mapper\CustomerAdd;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
@@ -49,6 +50,11 @@ class OrderPlace implements ObserverInterface
     protected $customerSender;
 
     /**
+     * @var CustomerAdd
+     */
+    protected $customerAdd;
+
+    /**
      * @var Config
      */
     protected $synchronization;
@@ -74,6 +80,7 @@ class OrderPlace implements ObserverInterface
      * @param EventPublisher $eventPublisher
      * @param OrderSender $orderSender
      * @param CustomerSender $customerSender
+     * @param CustomerAdd $customerAdd
      * @param Logger $loggerHelper
      * @param Config $synchronization
      * @param Tracking $trackingHelper
@@ -85,6 +92,7 @@ class OrderPlace implements ObserverInterface
         EventPublisher $eventPublisher,
         OrderSender $orderSender,
         CustomerSender $customerSender,
+        CustomerAdd $customerAdd,
         Logger $loggerHelper,
         Config $synchronization,
         Tracking $trackingHelper,
@@ -95,6 +103,7 @@ class OrderPlace implements ObserverInterface
         $this->eventPublisher = $eventPublisher;
         $this->orderSender = $orderSender;
         $this->customerSender = $customerSender;
+        $this->customerAdd = $customerAdd;
         $this->loggerHelper = $loggerHelper;
         $this->synchronization = $synchronization;
         $this->trackingHelper = $trackingHelper;
@@ -131,7 +140,12 @@ class OrderPlace implements ObserverInterface
                 $this->dataItemPublisher->publish(OrderSender::MODEL, $order->getId(), $storeId);
             }
 
-            if ($guestCustomerRequest = $this->prepareGuestCustomerRequest($order)) {
+            if ($order->getCustomerIsGuest() && $order->getCustomerEmail()) {
+                $guestCustomerRequest = $this->customerAdd->prepareRequestFromOrder(
+                    $order,
+                    $this->trackingHelper->getClientUuid()
+                );
+
                 if ($this->trackingHelper->isEventMessageQueueEnabled($storeId)) {
                     $this->eventPublisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
                 } else {
@@ -143,34 +157,6 @@ class OrderPlace implements ObserverInterface
                 $this->loggerHelper->error($e);
             }
         }
-    }
-
-    /**
-     * Prepare guest customer request
-     *
-     * @param Order $order
-     * @return CreateaClientinCRMRequest|null
-     */
-    protected function prepareGuestCustomerRequest(Order $order): ?CreateaClientinCRMRequest
-    {
-        if (!$order->getCustomerIsGuest() || !$order->getCustomerEmail()) {
-            return null;
-        }
-
-        $shippingAddress = $order->getShippingAddress();
-
-        $phone = null;
-        if ($shippingAddress) {
-            $phone = $shippingAddress->getTelephone();
-        }
-
-        return new CreateaClientinCRMRequest([
-            'email' => $order->getCustomerEmail(),
-            'uuid' => $this->trackingHelper->getClientUuid(),
-            'phone' => $phone,
-            'first_name' => $order->getCustomerFirstname(),
-            'last_name' => $order->getCustomerLastname()
-        ]);
     }
 
     /**
