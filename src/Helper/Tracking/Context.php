@@ -5,13 +5,8 @@ namespace Synerise\Integration\Helper\Tracking;
 use DateTime;
 use Exception;
 use InvalidArgumentException;
-use Magento\Backend\Model\Auth\Session as BackedSession;
-use Magento\Customer\Model\Session as CustomerSession;
-use Magento\Framework\App\ScopeResolverInterface;
-use Magento\Framework\App\State;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Mobile_Detect;
 use Ramsey\Uuid\Uuid;
@@ -25,29 +20,9 @@ class Context
     protected const APPLICATION_NAME = 'magento2';
 
     /**
-     * @var State
-     */
-    protected $state;
-
-    /**
-     * @var ScopeResolverInterface
-     */
-    protected $scopeResolver;
-
-    /**
      * @var StoreManagerInterface
      */
     protected $storeManager;
-
-    /**
-     * @var CustomerSession
-     */
-    protected $customerSession;
-
-    /**
-     * @var BackedSession
-     */
-    protected $backendSession;
 
     /**
      * @var Logger
@@ -55,26 +30,14 @@ class Context
     protected $loggerHelper;
 
     /**
-     * @param State $state
-     * @param BackedSession $backendSession
-     * @param ScopeResolverInterface $scopeResolver
      * @param StoreManagerInterface $storeManager
-     * @param CustomerSession $customerSession
      * @param Logger $loggerHelper
      */
     public function __construct(
-        State $state,
-        BackedSession $backendSession,
-        ScopeResolverInterface $scopeResolver,
         StoreManagerInterface $storeManager,
-        CustomerSession $customerSession,
         Logger $loggerHelper
     ) {
-        $this->state = $state;
-        $this->backendSession = $backendSession;
         $this->storeManager = $storeManager;
-        $this->customerSession = $customerSession;
-        $this->scopeResolver = $scopeResolver;
         $this->loggerHelper = $loggerHelper;
     }
 
@@ -206,49 +169,4 @@ class Context
     {
         return $this->storeManager->getStore($storeId)->getCurrentCurrency()->getCode();
     }
-
-    /**
-     * Check if current area is frontend
-     *
-     * @return bool
-     */
-    public function isFrontend(): bool
-    {
-        try {
-            return $this->state->getAreaCode() == 'frontend';
-        } catch (LocalizedException $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Check is request use default scope
-     *
-     * @return bool
-     */
-    public function isAdminStore(): bool
-    {
-        return $this->isAdminLoggedIn() || $this->scopeResolver->getScope()->getCode() == Store::ADMIN_CODE;
-    }
-
-    /**
-     * Check if user is logged in
-     *
-     * @return bool
-     */
-    public function isAdminLoggedIn(): bool
-    {
-        return $this->backendSession->getUser() && $this->backendSession->getUser()->getId();
-    }
-
-    /**
-     * Check if customer is logged in
-     *
-     * @return bool
-     */
-    public function isLoggedIn(): bool
-    {
-        return $this->customerSession->isLoggedIn();
-    }
-
 }

@@ -6,14 +6,20 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking\State;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\WishlistAddProduct as Mapper;
 use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
-use Synerise\Integration\Helper\Tracking;
 
 class WishlistAddProduct implements ObserverInterface
 {
     public const EVENT = 'wishlist_add_product';
+
+    /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
 
     /**
      * @var Logger
@@ -21,9 +27,9 @@ class WishlistAddProduct implements ObserverInterface
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var State
      */
-    protected $trackingHelper;
+    protected $stateHelper;
 
     /**
      * @var Mapper
@@ -41,21 +47,24 @@ class WishlistAddProduct implements ObserverInterface
     protected $sender;
 
     /**
+     * @param ConfigFactory $configFactory
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
+     * @param State $stateHelper
      * @param Mapper $mapper
      * @param Publisher $publisher
      * @param Event $sender
      */
     public function __construct(
+        ConfigFactory $configFactory,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
+        State $stateHelper,
         Mapper $mapper,
         Publisher $publisher,
         Event $sender
     ) {
+        $this->configFactory = $configFactory;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->stateHelper = $stateHelper;
         $this->mapper = $mapper;
         $this->publisher = $publisher;
         $this->sender = $sender;
@@ -69,7 +78,7 @@ class WishlistAddProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if ($this->trackingHelper->getContext()->isAdminStore()) {
+        if ($this->stateHelper->isAdminStore()) {
             return;
         }
 
@@ -81,7 +90,8 @@ class WishlistAddProduct implements ObserverInterface
             }
 
             $storeId = $wishlist->getStore()->getId();
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
@@ -91,7 +101,7 @@ class WishlistAddProduct implements ObserverInterface
                 $observer->getEvent()->getProduct()
             );
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);

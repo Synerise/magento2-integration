@@ -7,13 +7,14 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Helper\Tracking\State;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\CustomerAdd;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
@@ -40,11 +41,6 @@ class OrderPlace implements ObserverInterface
     protected $eventPublisher;
 
     /**
-     * @var OrderSender
-     */
-    protected $orderSender;
-
-    /**
      * @var CustomerSender
      */
     protected $customerSender;
@@ -60,14 +56,24 @@ class OrderPlace implements ObserverInterface
     protected $synchronization;
 
     /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var State
      */
-    protected $trackingHelper;
+    protected $stateHelper;
 
     /**
      * @var UuidManagement
@@ -78,35 +84,38 @@ class OrderPlace implements ObserverInterface
      * @param CollectionFactory $collectionFactory
      * @param DataItemPublisher $dataItemPublisher
      * @param EventPublisher $eventPublisher
-     * @param OrderSender $orderSender
      * @param CustomerSender $customerSender
      * @param CustomerAdd $customerAdd
+     * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
+     * @param State $stateHelper
+     * @param ConfigFactory $configFactory
      * @param Config $synchronization
-     * @param Tracking $trackingHelper
      * @param UuidManagement $uuidHelper
      */
     public function __construct(
         CollectionFactory $collectionFactory,
         DataItemPublisher $dataItemPublisher,
         EventPublisher $eventPublisher,
-        OrderSender $orderSender,
         CustomerSender $customerSender,
         CustomerAdd $customerAdd,
+        Cookie $cookieHelper,
         Logger $loggerHelper,
+        State $stateHelper,
+        ConfigFactory $configFactory,
         Config $synchronization,
-        Tracking $trackingHelper,
         UuidManagement $uuidHelper
     ) {
         $this->collectionFactory = $collectionFactory;
         $this->dataItemPublisher = $dataItemPublisher;
         $this->eventPublisher = $eventPublisher;
-        $this->orderSender = $orderSender;
         $this->customerSender = $customerSender;
         $this->customerAdd = $customerAdd;
+        $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
+        $this->stateHelper = $stateHelper;
+        $this->configFactory = $configFactory;
         $this->synchronization = $synchronization;
-        $this->trackingHelper = $trackingHelper;
         $this->uuidHelper = $uuidHelper;
     }
 
@@ -125,11 +134,12 @@ class OrderPlace implements ObserverInterface
                 return;
             }
 
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
-            if ($this->trackingHelper->getContext()->isFrontend() && $order->getCustomerEmail()) {
+            if ($this->stateHelper->isFrontend() && $order->getCustomerEmail()) {
                 $this->uuidHelper->manageByEmail(
                     $order->getCustomerEmail(),
                     $storeId
@@ -143,10 +153,10 @@ class OrderPlace implements ObserverInterface
             if ($order->getCustomerIsGuest() && $order->getCustomerEmail()) {
                 $guestCustomerRequest = $this->customerAdd->prepareRequestFromOrder(
                     $order,
-                    $this->trackingHelper->getClientUuid()
+                    $this->cookieHelper->getSnrsUuid()
                 );
 
-                if ($this->trackingHelper->isEventMessageQueueEnabled($storeId)) {
+                if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                     $this->eventPublisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);
                 } else {
                     $this->customerSender->batchAddOrUpdateClients([$guestCustomerRequest], $storeId);

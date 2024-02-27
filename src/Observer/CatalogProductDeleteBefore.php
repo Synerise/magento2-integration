@@ -10,9 +10,9 @@ use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\CatalogAddItem;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
@@ -28,6 +28,11 @@ class CatalogProductDeleteBefore implements ObserverInterface
     protected $storeManager;
 
     /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
@@ -36,11 +41,6 @@ class CatalogProductDeleteBefore implements ObserverInterface
      * @var Config
      */
     protected $synchronization;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var CatalogAddItem
@@ -59,26 +59,26 @@ class CatalogProductDeleteBefore implements ObserverInterface
 
     /**
      * @param StoreManagerInterface $storeManager
+     * @param ConfigFactory $configFactory
      * @param Logger $loggerHelper
      * @param Config $synchronization
-     * @param Tracking $trackingHelper
      * @param CatalogAddItem $catalogAddItem
      * @param Publisher $publisher
      * @param Sender $sender
      */
     public function __construct(
         StoreManagerInterface $storeManager,
+        ConfigFactory $configFactory,
         Logger $loggerHelper,
         Config $synchronization,
-        Tracking $trackingHelper,
         CatalogAddItem $catalogAddItem,
         Publisher $publisher,
         Sender $sender
     ) {
         $this->storeManager = $storeManager;
+        $this->configFactory = $configFactory;
         $this->loggerHelper = $loggerHelper;
         $this->synchronization = $synchronization;
-        $this->trackingHelper = $trackingHelper;
         $this->catalogAddItem = $catalogAddItem;
         $this->publisher = $publisher;
         $this->sender = $sender;
@@ -103,8 +103,9 @@ class CatalogProductDeleteBefore implements ObserverInterface
             $enabledStores = $this->synchronization->getConfiguredStores();
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
-                if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
-                    continue;
+                $config = $this->configFactory->create($storeId);
+                if (!$config->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
+                    return;
                 }
 
                 if (in_array($storeId, $enabledStores)) {
@@ -114,7 +115,7 @@ class CatalogProductDeleteBefore implements ObserverInterface
                         1
                     );
 
-                    if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+                    if ($config->isEventMessageQueueEnabled(self::EVENT_FOR_CONFIG)) {
                         $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());
                     } else {
                         $this->sender->deleteItem($addItemRequest, $storeId, $product->getEntityId());

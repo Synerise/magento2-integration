@@ -6,10 +6,9 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\SubscriberAdd;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 
@@ -20,14 +19,14 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     public const EVENT_FOR_CONFIG = 'newsletter_subscriber_save_after';
 
     /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var Event
@@ -44,21 +43,21 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
     protected $subscriberAdd;
 
     /**
+     * @param ConfigFactory $configFactory
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
      * @param SubscriberAdd $subscriberAdd
      * @param Event $publisher
      * @param SubscriberSender $sender
      */
     public function __construct(
+        ConfigFactory $configFactory,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
         SubscriberAdd $subscriberAdd,
         Event $publisher,
         SubscriberSender $sender
     ) {
+        $this->configFactory = $configFactory;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
         $this->subscriberAdd = $subscriberAdd;
         $this->publisher = $publisher;
         $this->sender = $sender;
@@ -76,14 +75,15 @@ class NewsletterSubscriberDeleteAfter implements ObserverInterface
         $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
 
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+        $config = $this->configFactory->create($storeId);
+        if (!$config->isEventTrackingEnabled(self::EVENT_FOR_CONFIG)) {
             return;
         }
 
         try {
             $createAClientInCrmRequest = $this->subscriberAdd->prepareRequest($subscriber, true);
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT_FOR_CONFIG, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT_FOR_CONFIG)) {
                 $this->publisher->publish(self::EVENT, $createAClientInCrmRequest, $storeId, $subscriber->getId());
             } else {
                 $this->sender->deleteItem($createAClientInCrmRequest, $storeId, $subscriber->getId());

@@ -7,10 +7,10 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Quote\Model\Quote;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Helper\Tracking\Context;
 use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Helper\Tracking\State;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\CartAddRemove;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
@@ -19,9 +19,9 @@ class CartAddProduct implements ObserverInterface
     public const EVENT = 'checkout_cart_add_product_complete';
 
     /**
-     * @var Context
+     * @var ConfigFactory
      */
-    protected $contextHelper;
+    protected $configFactory;
 
     /**
      * @var Cookie
@@ -34,9 +34,9 @@ class CartAddProduct implements ObserverInterface
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var State
      */
-    protected $trackingHelper;
+    protected $stateHelper;
 
     /**
      * @var CartAddRemove
@@ -55,27 +55,27 @@ class CartAddProduct implements ObserverInterface
 
     /**
      * @param CartAddRemove $mapper
-     * @param Context $contextHelper
+     * @param ConfigFactory $configFactory
      * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
+     * @param State $stateHelper
      * @param EventPublisher $publisher
      * @param EventSender $sender
      */
     public function __construct(
         CartAddRemove $mapper,
-        Context $contextHelper,
+        ConfigFactory $configFactory,
         Cookie $cookieHelper,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
+        State $stateHelper,
         EventPublisher $publisher,
         EventSender $sender
     ) {
         $this->mapper = $mapper;
-        $this->contextHelper = $contextHelper;
+        $this->configFactory = $configFactory;
         $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->stateHelper = $stateHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;
     }
@@ -88,7 +88,7 @@ class CartAddProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if (!$this->contextHelper->isFrontend()) {
+        if ($this->stateHelper->isAdminStore()) {
             return;
         }
 
@@ -97,7 +97,8 @@ class CartAddProduct implements ObserverInterface
             $quoteItem = $observer->getQuoteItem();
             $storeId = $quoteItem->getStoreId();
 
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
@@ -105,7 +106,7 @@ class CartAddProduct implements ObserverInterface
                 return;
             }
 
-            $uuid = $this->trackingHelper->getClientUuid();
+            $uuid = $this->cookieHelper->getSnrsUuid();
             if (!$uuid && !$quoteItem->getQuote()->getCustomerEmail()) {
                 return;
             }
@@ -114,10 +115,10 @@ class CartAddProduct implements ObserverInterface
                 self::EVENT,
                 $quoteItem,
                 $uuid,
-                $this->cookieHelper->shouldIncludeSnrsParams() ? $this->cookieHelper->getSnrsParams() : []
+                $this->cookieHelper->shouldIncludeSnrsParams($storeId) ? $this->cookieHelper->getSnrsParams() : []
             );
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);

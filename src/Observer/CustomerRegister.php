@@ -5,14 +5,15 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Helper\Tracking\State;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
-use Synerise\Integration\Model\Config\Source\Debug\Exclude;
-use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
+use Synerise\Integration\SyneriseApi\Mapper\CustomerEvent;
+use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
 class CustomerRegister implements ObserverInterface
@@ -20,14 +21,29 @@ class CustomerRegister implements ObserverInterface
     public const EVENT = 'customer_register_success';
 
     /**
+     * @var CustomerEvent
+     */
+    protected $customerEvent;
+
+    /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var State
      */
-    protected $trackingHelper;
+    protected $stateHelper;
 
     /**
      * @var UuidManagement
@@ -45,21 +61,30 @@ class CustomerRegister implements ObserverInterface
     protected $sender;
 
     /**
+     * @param CustomerEvent $customerEvent
+     * @param ConfigFactory $configFactory
+     * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
+     * @param State $stateHelper
      * @param UuidManagement $uuidHelper
      * @param Publisher $publisher
      * @param EventSender $sender
      */
     public function __construct(
+        CustomerEvent $customerEvent,
+        ConfigFactory $configFactory,
+        Cookie $cookieHelper,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
+        State $stateHelper,
         UuidManagement $uuidHelper,
         EventPublisher $publisher,
         EventSender $sender
     ) {
+        $this->customerEvent = $customerEvent;
+        $this->configFactory = $configFactory;
+        $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->stateHelper = $stateHelper;
         $this->uuidHelper = $uuidHelper;
         $this->publisher = $publisher;
         $this->sender = $sender;
@@ -73,36 +98,32 @@ class CustomerRegister implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if ($this->trackingHelper->getContext()->isAdminStore()) {
+        if ($this->stateHelper->isAdminStore()) {
             return;
         }
 
         try {
-            /** @var \Magento\Customer\Model\Data\Customer $customer */
+            /** @var \Magento\Customer\Model\Customer $customer */
             $customer = $observer->getEvent()->getCustomer();
             $storeId = $customer->getStoreId();
 
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
             $this->uuidHelper->manageByEmail(
                 $customer->getEmail(),
-                $this->trackingHelper->getContext()->getStoreId()
+                $storeId
             );
 
-            $eventClientAction = new EventClientAction([
-                'event_salt' => $this->trackingHelper->generateEventSalt(),
-                'time' => $this->trackingHelper->getContext()->getCurrentTime(),
-                'label' => $this->trackingHelper->getEventLabel(self::EVENT),
-                'client' => $this->trackingHelper->prepareClientDataFromCustomer(
-                    $customer,
-                    $this->trackingHelper->getClientUuid()
-                ),
-                'params' => $this->trackingHelper->prepareContextParams()
-            ]);
+            $eventClientAction = $this->customerEvent->prepareRequest(
+                self::EVENT,
+                $customer,
+                $this->cookieHelper->getSnrsUuid()
+            );
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->publisher->publish(self::EVENT, $eventClientAction, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);

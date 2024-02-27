@@ -7,9 +7,9 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException;
 use Magento\Framework\Stdlib\Cookie\FailureToSendException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\CustomerMerge;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
@@ -28,9 +28,9 @@ class UuidManagement
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var ConfigFactory
      */
-    protected $trackingHelper;
+    protected $configFactory;
 
     /**
      * @var UuidGenerator
@@ -55,7 +55,7 @@ class UuidManagement
     /**
      * @param Logger $loggerHelper
      * @param Cookie $cookieHelper
-     * @param Tracking $trackingHelper
+     * @param ConfigFactory $configFactory
      * @param UuidGenerator $uuidGenerator
      * @param CustomerMerge $customerMerge
      * @param EventPublisher $eventPublisher
@@ -64,7 +64,7 @@ class UuidManagement
     public function __construct(
         Logger $loggerHelper,
         Cookie $cookieHelper,
-        Tracking $trackingHelper,
+        ConfigFactory $configFactory,
         UuidGenerator $uuidGenerator,
         CustomerMerge $customerMerge,
         EventPublisher $eventPublisher,
@@ -72,7 +72,7 @@ class UuidManagement
     ) {
         $this->loggerHelper = $loggerHelper;
         $this->cookieHelper = $cookieHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->configFactory = $configFactory;
         $this->uuidGenerator = $uuidGenerator;
         $this->customerMerge = $customerMerge;
         $this->eventPublisher = $eventPublisher;
@@ -131,7 +131,8 @@ class UuidManagement
         try {
             $mergeRequest = $this->customerMerge->prepareRequest($email, $uuid, $emailUuid);
 
-            if ($this->trackingHelper->isEventMessageQueueEnabled($storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->eventPublisher->publish(self::EVENT, $mergeRequest, $storeId);
             } else {
                 $this->customerSender->batchAddOrUpdateClients($mergeRequest, $storeId, self::EVENT);

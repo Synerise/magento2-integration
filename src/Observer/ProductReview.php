@@ -9,14 +9,15 @@ use Magento\Framework\Exception\NotFoundException;
 use Magento\Review\Model\Review;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Helper\Tracking\State;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\CustomerAdd;
 use Synerise\Integration\SyneriseApi\Mapper\ReviewProduct;
 use Synerise\Integration\SyneriseApi\Sender\Event;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\MessageQueue\Publisher\Event as Publisher;
-use Synerise\Integration\Helper\Tracking;
 
 class ProductReview implements ObserverInterface
 {
@@ -35,14 +36,24 @@ class ProductReview implements ObserverInterface
     protected $storeManager;
 
     /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var State
      */
-    protected $trackingHelper;
+    protected $stateHelper;
 
     /**
      * @var ReviewProduct
@@ -71,8 +82,10 @@ class ProductReview implements ObserverInterface
 
     /**
      * @param StoreManagerInterface $storeManager
+     * @param ConfigFactory $configFactory
+     * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
+     * @param State $stateHelper
      * @param ReviewProduct $reviewProduct
      * @param CustomerAdd $customerAdd
      * @param Publisher $publisher
@@ -81,8 +94,10 @@ class ProductReview implements ObserverInterface
      */
     public function __construct(
         StoreManagerInterface $storeManager,
+        ConfigFactory $configFactory,
+        Cookie $cookieHelper,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
+        State $stateHelper,
         ReviewProduct $reviewProduct,
         CustomerAdd $customerAdd,
         Publisher $publisher,
@@ -90,8 +105,10 @@ class ProductReview implements ObserverInterface
         CustomerSender $customerSender
     ) {
         $this->storeManager = $storeManager;
+        $this->configFactory = $configFactory;
+        $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->stateHelper = $stateHelper;
         $this->reviewProduct = $reviewProduct;
         $this->customerAdd = $customerAdd;
         $this->publisher = $publisher;
@@ -108,12 +125,13 @@ class ProductReview implements ObserverInterface
     public function execute(Observer $observer)
     {
         try {
-            if (!$this->trackingHelper->getContext()->isFrontend()) {
+            if (!$this->stateHelper->isFrontend()) {
                 return;
             }
 
             $storeId = $this->storeManager->getStore()->getId();
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
@@ -126,8 +144,7 @@ class ProductReview implements ObserverInterface
                 return;
             }
 
-            $uuid = $this->trackingHelper->getClientUuid();
-
+            $uuid = $this->cookieHelper->getSnrsUuid();
             $customEventRequest = $this->reviewProduct->prepareRequest(
                 self::EVENT,
                 $this->review,
@@ -137,7 +154,7 @@ class ProductReview implements ObserverInterface
 
             $guestCustomerRequest = $uuid ? $this->customerAdd->prepareRequestFromReview($this->review, $uuid) : null;
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->publisher->publish(self::EVENT, $customEventRequest, $storeId);
                 if ($guestCustomerRequest) {
                     $this->publisher->publish(self::CUSTOMER_UPDATE, $guestCustomerRequest, $storeId);

@@ -5,9 +5,9 @@ namespace Synerise\Integration\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
 
 class ProductImportBunchSaveAfter implements ObserverInterface
@@ -20,14 +20,14 @@ class ProductImportBunchSaveAfter implements ObserverInterface
     protected $loggerHelper;
 
     /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
      * @var Config
      */
     protected $synchronization;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var Publisher
@@ -36,19 +36,19 @@ class ProductImportBunchSaveAfter implements ObserverInterface
 
     /**
      * @param Logger $loggerHelper
+     * @param ConfigFactory $configFactory
      * @param Config $synchronization
-     * @param Tracking $trackingHelper
      * @param Publisher $publisher
      */
     public function __construct(
         Logger $loggerHelper,
+        ConfigFactory $configFactory,
         Config $synchronization,
-        Tracking $trackingHelper,
         Publisher $publisher
     ) {
         $this->loggerHelper = $loggerHelper;
+        $this->configFactory = $configFactory;
         $this->synchronization = $synchronization;
-        $this->trackingHelper = $trackingHelper;
         $this->publisher = $publisher;
     }
 
@@ -69,10 +69,10 @@ class ProductImportBunchSaveAfter implements ObserverInterface
             $bunch = $observer->getEvent()->getData('bunch');
             foreach ($bunch as $product) {
                 if (isset($product['entity_id']) && isset($product['store_id'])) {
-                    if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $product['store_id'])) {
-                        return;
+                    $config = $this->configFactory->create($product['store_id']);
+                    if ($config->isEventTrackingEnabled(self::EVENT)) {
+                        $productsByStore[$product['store_id']][] = $product['entity_id'];
                     }
-                    $productsByStore[$product['store_id']][] = $product['entity_id'];
                 }
             }
 

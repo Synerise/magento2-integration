@@ -7,15 +7,21 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\State;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
 
 class NewsletterSubscriberSaveAfter implements ObserverInterface
 {
     public const EVENT = 'newsletter_subscriber_save_after';
+
+    /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
 
     /**
      * @var DataItemPublisher
@@ -33,14 +39,14 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $loggerHelper;
 
     /**
+     * @var State
+     */
+    protected $stateHelper;
+
+    /**
      * @var Config
      */
     protected $synchronization;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var UuidManagement
@@ -48,26 +54,29 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
     protected $uuidHelper;
 
     /**
+     * @param ConfigFactory $configFactory
      * @param DataItemPublisher $dataItemPublisher
      * @param Sender $sender
      * @param Logger $loggerHelper
+     * @param State $stateHelper
      * @param Config $synchronization
-     * @param Tracking $trackingHelper
      * @param UuidManagement $uuidHelper
      */
     public function __construct(
+        ConfigFactory $configFactory,
         DataItemPublisher $dataItemPublisher,
         Sender $sender,
         Logger $loggerHelper,
+        State $stateHelper,
         Config $synchronization,
-        Tracking $trackingHelper,
         UuidManagement $uuidHelper
     ) {
+        $this->configFactory = $configFactory;
         $this->dataItemPublisher = $dataItemPublisher;
         $this->sender = $sender;
         $this->loggerHelper = $loggerHelper;
+        $this->stateHelper = $stateHelper;
         $this->synchronization = $synchronization;
-        $this->trackingHelper = $trackingHelper;
         $this->uuidHelper = $uuidHelper;
     }
 
@@ -82,25 +91,24 @@ class NewsletterSubscriberSaveAfter implements ObserverInterface
             return;
         }
 
-        $context = $this->trackingHelper->getContext();
-
         /** @var Subscriber $subscriber */
         $subscriber = $observer->getEvent()->getDataObject();
         $storeId = $subscriber->getStoreId();
 
-        if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+        $config = $this->configFactory->create($storeId);
+        if (!$config->isEventTrackingEnabled(self::EVENT)) {
             return;
         }
 
         try {
-            if (!$context->isLoggedIn() && !$context->isAdminStore()) {
+            if (!$this->stateHelper->isLoggedIn() && !$this->stateHelper->isAdminStore()) {
                 $this->uuidHelper->manageByEmail(
                     $subscriber->getEmail(),
-                    $this->trackingHelper->getContext()->getStoreId()
+                    $storeId
                 );
             }
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->dataItemPublisher->publish(
                     Sender::MODEL,
                     $subscriber->getId(),

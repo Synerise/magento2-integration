@@ -6,10 +6,11 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Model\CustomeventRequestParams;
-use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Helper\Tracking\State;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\CartStatus as Mapper;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
 
@@ -18,9 +19,14 @@ class CartStatus implements ObserverInterface
     public const EVENT = 'sales_quote_save_after';
 
     /**
-     * @var CustomeventRequestParams
+     * @var CustomeventRequestParams|null
      */
     protected $previousParams = null;
+
+    /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
 
     /**
      * @var Cookie
@@ -33,9 +39,9 @@ class CartStatus implements ObserverInterface
     protected $loggerHelper;
 
     /**
-     * @var Tracking
+     * @var State
      */
-    protected $trackingHelper;
+    protected $stateHelper;
 
     /**
      * @var Mapper
@@ -53,24 +59,27 @@ class CartStatus implements ObserverInterface
     protected $sender;
 
     /**
+     * @param ConfigFactory $configFactory
      * @param Cookie $cookieHelper
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
+     * @param State $stateHelper
      * @param Mapper $mapper
      * @param EventPublisher $publisher
      * @param EventSender $sender
      */
     public function __construct(
+        ConfigFactory $configFactory,
         Cookie $cookieHelper,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
+        State $stateHelper,
         Mapper $mapper,
         EventPublisher $publisher,
         EventSender $sender
     ) {
+        $this->configFactory = $configFactory;
         $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
+        $this->stateHelper = $stateHelper;
         $this->mapper = $mapper;
         $this->publisher = $publisher;
         $this->sender = $sender;
@@ -84,7 +93,7 @@ class CartStatus implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if ($this->trackingHelper->getContext()->isAdminStore()) {
+        if ($this->stateHelper->isAdminStore()) {
             return;
         }
 
@@ -93,11 +102,12 @@ class CartStatus implements ObserverInterface
             $quote = $observer->getQuote();
             $storeId = $quote->getStoreId();
 
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
-            $uuid = $this->trackingHelper->getClientUuid();
+            $uuid = $this->cookieHelper->getSnrsUuid();
             if (!$uuid && !$quote->getCustomerEmail()) {
                 return;
             }
@@ -113,7 +123,7 @@ class CartStatus implements ObserverInterface
                 return;
             }
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->publisher->publish(self::EVENT, $cartStatusEvent, $storeId);
             } else {
                 $this->sender->send(self::EVENT, $cartStatusEvent, $storeId);

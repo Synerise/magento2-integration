@@ -8,9 +8,9 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\Model\Synchronization\Config;
+use Synerise\Integration\Model\Tracking\ConfigFactory;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as Sender;
 
 class CustomerSaveAfter implements ObserverInterface
@@ -27,14 +27,14 @@ class CustomerSaveAfter implements ObserverInterface
     protected $synchronization;
 
     /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
-
-    /**
-     * @var Tracking
-     */
-    protected $trackingHelper;
 
     /**
      * @var Http
@@ -53,23 +53,23 @@ class CustomerSaveAfter implements ObserverInterface
 
     /**
      * @param Config $synchronization
+     * @param ConfigFactory $configFactory
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
      * @param Http $request
      * @param DataItemPublisher $dataItemPublisher
      * @param Sender $sender
      */
     public function __construct(
         Config $synchronization,
+        ConfigFactory $configFactory,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
         Http $request,
         DataItemPublisher $dataItemPublisher,
         Sender $sender
     ) {
         $this->synchronization = $synchronization;
+        $this->configFactory = $configFactory;
         $this->loggerHelper = $loggerHelper;
-        $this->trackingHelper = $trackingHelper;
         $this->request = $request;
         $this->dataItemPublisher = $dataItemPublisher;
         $this->sender = $sender;
@@ -96,11 +96,12 @@ class CustomerSaveAfter implements ObserverInterface
             $customer = $observer->getCustomer();
             $storeId = $customer->getStoreId();
 
-            if (!$this->trackingHelper->isEventTrackingAvailable(self::EVENT, $storeId)) {
+            $config = $this->configFactory->create($storeId);
+            if (!$config->isEventTrackingEnabled(self::EVENT)) {
                 return;
             }
 
-            if ($this->trackingHelper->isEventMessageQueueAvailable(self::EVENT, $storeId)) {
+            if ($config->isEventMessageQueueEnabled(self::EVENT)) {
                 $this->dataItemPublisher->publish(
                     Sender::MODEL,
                     (int) $customer->getEntityId(),
