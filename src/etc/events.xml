@@ -49,24 +49,27 @@
         <observer name="synerise_newsletter_subscriber_delete_after" instance="Synerise\Integration\Observer\Data\SubscriberDelete" />
     </event>
     <event name="review_save_after">
-        <observer name = "synerise_review_save_after" instance = "Synerise\Integration\Observer\Event\ProductReview" />
+        <observer name="synerise_review_save_after" instance="Synerise\Integration\Observer\Event\ProductReview" />
     </event>
     <event name="controller_action_postdispatch_review_product_post">
-        <observer name = "synerise_controller_action_postdispatch_review_product_post" instance = "Synerise\Integration\Observer\Event\ProductReview" />
+        <observer name="synerise_controller_action_postdispatch_review_product_post" instance="Synerise\Integration\Observer\Event\ProductReview" />
     </event>
     <event name="admin_system_config_changed_section_synerise_data">
-        <observer name = "synerise_changed_section_synerise_data" instance = "Synerise\Integration\Observer\CleanConsumerCache" />
+        <observer name="synerise_changed_section_synerise_data" instance="Synerise\Integration\Observer\CleanConsumerCache" />
     </event>
     <event name="admin_system_config_changed_section_synerise_event_tacking">
-        <observer name = "synerise_changed_section_synerise_data" instance = "Synerise\Integration\Observer\CleanConsumerCache" />
+        <observer name="synerise_changed_section_synerise_data" instance="Synerise\Integration\Observer\CleanConsumerCache" />
     </event>
     <event name="admin_system_config_changed_section_synerise_workspace">
-        <observer name = "synerise_clean_consumer_cache" instance = "Synerise\Integration\Observer\CleanConsumerCache" />
+        <observer name="synerise_clean_consumer_cache" instance="Synerise\Integration\Observer\CleanConsumerCache" />
     </event>
     <event name="synerise_workspace_mapping_changed">
-        <observer name = "synerise_workspace_mapping_changed" instance = "Synerise\Integration\Observer\UpdateTrackerKey" />
+        <observer name="synerise_workspace_mapping_changed" instance="Synerise\Integration\Observer\UpdateTrackerKey" />
     </event>
     <event name="synerise_workspace_save_after">
         <observer name="synerise_workspace_save_after" instance="Synerise\Integration\Observer\UpdateTrackerKey" />
+    </event>
+    <event name="synerise_merge_uuids">
+        <observer name="synerise_merge_uuids" instance="Synerise\Integration\Observer\MergeUuids" />
     </event>
 </config>

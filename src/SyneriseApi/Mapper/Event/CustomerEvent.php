@@ -3,6 +3,7 @@
 namespace Synerise\Integration\SyneriseApi\Mapper\Event;
 
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\Customer;
 use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\EventClientAction;
 use Synerise\Integration\Helper\Tracking\Context;
@@ -27,14 +28,14 @@ class CustomerEvent
      * Prepare request
      *
      * @param string $event
-     * @param CustomerInterface $customer
+     * @param CustomerInterface|Customer $customer
      * @param string|null $uuid
      * @return EventClientAction
      * @throws \Exception
      */
     public function prepareRequest(
         string $event,
-        CustomerInterface $customer,
+        $customer,
         ?string $uuid = null
     ) {
         return new EventClientAction([
@@ -52,11 +53,11 @@ class CustomerEvent
     /**
      * Prepare client data from customer object
      *
-     * @param CustomerInterface $customer
+     * @param CustomerInterface|Customer $customer
      * @param null|string $uuid
      * @return Client
      */
-    public function prepareClientData(CustomerInterface $customer, ?string $uuid = null): Client
+    public function prepareClientData($customer, ?string $uuid = null): Client
     {
         return new Client([
             'email' => $customer->getEmail(),
