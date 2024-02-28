@@ -3,23 +3,18 @@
 namespace Synerise\Integration\SyneriseApi\Sender\Data;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
-use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Model\Customer as CustomerModel;
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
-use Magento\Store\Model\ScopeInterface;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
-use Synerise\ApiClient\Model\InBodyClientSex;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
-use Synerise\Integration\SyneriseApi\Mapper\CustomerAdd;
+use Synerise\Integration\SyneriseApi\Mapper\Data\CustomerCRUD;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
@@ -30,7 +25,6 @@ class Customer extends AbstractSender implements SenderInterface
     public const MODEL = 'customer';
 
     public const ENTITY_ID = 'entity_id';
-
 
     /**
      * @var AddressRepositoryInterface
@@ -48,9 +42,9 @@ class Customer extends AbstractSender implements SenderInterface
     protected $resource;
 
     /**
-     * @var CustomerAdd
+     * @var CustomerCRUD
      */
-    protected $customerAdd;
+    protected $customerCRUD;
 
     /**
      * @param ResourceConnection $resource
@@ -58,7 +52,7 @@ class Customer extends AbstractSender implements SenderInterface
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
-     * @param CustomerAdd $customerAdd
+     * @param CustomerCRUD $customerCRUD
      */
     public function __construct(
         ResourceConnection $resource,
@@ -66,10 +60,10 @@ class Customer extends AbstractSender implements SenderInterface
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory,
-        CustomerAdd $customerAdd
+        CustomerCRUD $customerCRUD
     ) {
         $this->resource = $resource;
-        $this->customerAdd = $customerAdd;
+        $this->customerCRUD = $customerCRUD;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
@@ -89,7 +83,7 @@ class Customer extends AbstractSender implements SenderInterface
         $ids = [];
 
         foreach ($collection as $customer) {
-            $createAClientInCrmRequests[] = $this->customerAdd->prepareRequest($customer, $storeId);
+            $createAClientInCrmRequests[] = $this->customerCRUD->prepareRequest($customer, $storeId);
             $ids[] = $customer->getEntityId();
         }
 
@@ -159,7 +153,7 @@ class Customer extends AbstractSender implements SenderInterface
     public function getAttributesToSelect(int $storeId): array
     {
         return array_merge(
-            $this->customerAdd->getEnabledAttributes($storeId),
+            $this->customerCRUD->getEnabledAttributes($storeId),
             Attributes::REQUIRED
         );
     }

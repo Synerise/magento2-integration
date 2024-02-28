@@ -10,7 +10,7 @@ use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Event as EventPublisher;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Tracking\ConfigFactory;
-use Synerise\Integration\SyneriseApi\Mapper\CustomerMerge;
+use Synerise\Integration\SyneriseApi\Mapper\Data\CustomerMerge;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 
 class UuidManagement

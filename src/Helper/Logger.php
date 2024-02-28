@@ -56,7 +56,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function emergency($message, array $context = [])
     {
@@ -64,7 +64,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function alert($message, array $context = [])
     {
@@ -72,7 +72,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function critical($message, array $context = [])
     {
@@ -80,7 +80,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function error($message, array $context = [])
     {
@@ -88,7 +88,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function warning($message, array $context = [])
     {
@@ -96,7 +96,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function notice($message, array $context = [])
     {
@@ -104,7 +104,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function info($message, array $context = [])
     {
@@ -112,7 +112,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function debug($message, array $context = [])
     {
@@ -120,7 +120,7 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function log($level, $message, array $context = [])
     {
