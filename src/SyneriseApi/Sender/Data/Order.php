@@ -13,7 +13,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
-use Synerise\Integration\SyneriseApi\Mapper\OrderAdd;
+use Synerise\Integration\SyneriseApi\Mapper\Data\OrderCRUD;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -30,9 +30,9 @@ class Order extends AbstractSender implements SenderInterface
     protected $resource;
 
     /**
-     * @var OrderAdd
+     * @var OrderCRUD
      */
-    protected $orderAdd;
+    protected $orderCRUD;
 
     /**
      * @var UuidGenerator
@@ -45,7 +45,7 @@ class Order extends AbstractSender implements SenderInterface
      * @param InstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
      * @param Logger $loggerHelper
-     * @param OrderAdd $orderAdd
+     * @param OrderCRUD $orderCRUD
      * @param UuidGenerator $uuidGenerator
      */
     public function __construct(
@@ -54,11 +54,11 @@ class Order extends AbstractSender implements SenderInterface
         InstanceFactory $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory,
         Logger $loggerHelper,
-        OrderAdd $orderAdd,
+        OrderCRUD $orderCRUD,
         UuidGenerator $uuidGenerator
     ) {
         $this->resource = $resource;
-        $this->orderAdd = $orderAdd;
+        $this->orderCRUD = $orderCRUD;
         $this->uuidGenerator = $uuidGenerator;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
@@ -86,7 +86,7 @@ class Order extends AbstractSender implements SenderInterface
             $uuid = $email ? $this->uuidGenerator->generateByEmail($email) : null;
 
             try {
-                $createATransactionRequest[] = $this->orderAdd->prepareRequest($order, $uuid);
+                $createATransactionRequest[] = $this->orderCRUD->prepareRequest($order, $uuid);
             } catch (NotFoundException $e) {
                 if ($this->isSent($order->getEntityId())) {
                     $this->loggerHelper->warning(
@@ -184,7 +184,6 @@ class Order extends AbstractSender implements SenderInterface
     {
         return[];
     }
-
 
     /**
      * Get default API instance

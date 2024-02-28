@@ -14,7 +14,7 @@ use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Catalogs\Config;
-use Synerise\Integration\SyneriseApi\Mapper\CatalogAddItem;
+use Synerise\Integration\SyneriseApi\Mapper\Data\ProductCRUD;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -28,14 +28,15 @@ class Product extends AbstractSender implements SenderInterface
     public const API_EXCEPTION = CatalogsApiException::class;
 
     /**
-     * @var CatalogAddItem
+     * @var ProductCRUD
      */
-    protected $catalogAddItem;
+    protected $productCRUD;
 
     /**
      * @var Config
      */
     protected $catalogsConfig;
+
     /**
      * @var AdapterInterface
      */
@@ -46,7 +47,7 @@ class Product extends AbstractSender implements SenderInterface
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
-     * @param CatalogAddItem $catalogAddItem
+     * @param ProductCRUD $productCRUD
      * @param Config $catalogsConfig
      * @param ResourceConnection $resource
      */
@@ -55,11 +56,11 @@ class Product extends AbstractSender implements SenderInterface
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory,
-        CatalogAddItem $catalogAddItem,
+        ProductCRUD $productCRUD,
         Config $catalogsConfig,
         ResourceConnection $resource
     ) {
-        $this->catalogAddItem = $catalogAddItem;
+        $this->productCRUD = $productCRUD;
         $this->catalogsConfig = $catalogsConfig;
         $this->connection = $resource->getConnection();
 
@@ -92,7 +93,7 @@ class Product extends AbstractSender implements SenderInterface
         /** @var $product \Magento\Catalog\Model\Product */
         foreach ($collection as $product) {
             $ids[] = $product->getEntityId();
-            $addItemRequest[] = $this->catalogAddItem->prepareRequest($product, $websiteId);
+            $addItemRequest[] = $this->productCRUD->prepareRequest($product, $websiteId);
         }
 
         $this->addItemsBatchWithInvalidCatalogIdCatch($addItemRequest, $storeId);
@@ -104,13 +105,13 @@ class Product extends AbstractSender implements SenderInterface
      */
     public function getAttributesToSelect(int $storeId): array
     {
-        return $this->catalogAddItem->getAttributesToSelect($storeId);
+        return $this->productCRUD->getAttributesToSelect($storeId);
     }
 
     /**
      * Delete items
      *
-     * @param $payload
+     * @param mixed $payload
      * @param int $storeId
      * @param int|null $entityId
      * @return void
@@ -118,7 +119,7 @@ class Product extends AbstractSender implements SenderInterface
      * @throws CatalogsApiException
      * @throws ValidatorException
      */
-    public function deleteItem($payload,  int $storeId, ?int $entityId)
+    public function deleteItem($payload, int $storeId, ?int $entityId)
     {
         $this->addItemsBatchWithInvalidCatalogIdCatch([$payload], $storeId);
         if ($entityId) {

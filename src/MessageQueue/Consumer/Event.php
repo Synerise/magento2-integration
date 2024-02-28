@@ -26,7 +26,7 @@ use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as ProductSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
-use Synerise\Integration\Observer\CatalogProductDeleteBefore;
+use Synerise\Integration\Observer\ProductDelete;
 use Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter;
 use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
 use Synerise\Integration\Observer\OrderPlace;
@@ -168,7 +168,7 @@ class Event
     private function execute(array $event)
     {
         switch ($event['event_name']) {
-            case CatalogProductDeleteBefore::EVENT:
+            case ProductDelete::EVENT:
                 $this->productSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
                 break;
             case NewsletterSubscriberDeleteAfter::EVENT:
@@ -234,9 +234,9 @@ class Event
                     $event['event_name'] = NewsletterSubscriberDeleteAfter::EVENT;
                     break;
                 }
-            case CatalogProductDeleteBefore::EVENT_FOR_CONFIG:
+            case ProductDelete::EVENT_FOR_CONFIG:
                 $event['event_payload'] = $event['event_payload'][0];
-                $event['event_name'] = CatalogProductDeleteBefore::EVENT;
+                $event['event_name'] = ProductDelete::EVENT;
                 break;
             case 'ADD_OR_UPDATE_CLIENT':
                 $entityId = $event['event_payload']['customId'] ?? null;

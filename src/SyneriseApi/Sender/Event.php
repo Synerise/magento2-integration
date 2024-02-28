@@ -6,16 +6,16 @@ use InvalidArgumentException;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
-use Synerise\Integration\Observer\CartAddProduct;
-use Synerise\Integration\Observer\CartQtyUpdate;
-use Synerise\Integration\Observer\CartRemoveProduct;
-use Synerise\Integration\Observer\CartStatus;
-use Synerise\Integration\Observer\CustomerLogin;
-use Synerise\Integration\Observer\CustomerLogout;
-use Synerise\Integration\Observer\CustomerRegister;
-use Synerise\Integration\Observer\ProductReview;
-use Synerise\Integration\Observer\WishlistAddProduct;
-use Synerise\Integration\Observer\WishlistRemoveProduct;
+use Synerise\Integration\Observer\Event\CartAddProduct;
+use Synerise\Integration\Observer\Event\CartQtyUpdate;
+use Synerise\Integration\Observer\Event\CartRemoveProduct;
+use Synerise\Integration\Observer\Event\CartStatus;
+use Synerise\Integration\Observer\Event\CustomerLogin;
+use Synerise\Integration\Observer\Event\CustomerLogout;
+use Synerise\Integration\Observer\Event\CustomerRegister;
+use Synerise\Integration\Observer\Event\ProductReview;
+use Synerise\Integration\Observer\Event\WishlistAddProduct;
+use Synerise\Integration\Observer\Event\WishlistRemoveProduct;
 
 class Event extends AbstractSender
 {

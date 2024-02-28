@@ -11,7 +11,7 @@ use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
-use Synerise\Integration\SyneriseApi\Mapper\SubscriberAdd;
+use Synerise\Integration\SyneriseApi\Mapper\Data\SubscriberCRUD;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -28,10 +28,9 @@ class Subscriber extends AbstractSender implements SenderInterface
     protected $connection;
 
     /**
-     * @var SubscriberAdd
+     * @var SubscriberCRUD
      */
-    protected $subscriberAdd;
-
+    protected $SubscriberCRUD;
 
     /**
      * @param ResourceConnection $resource
@@ -39,7 +38,7 @@ class Subscriber extends AbstractSender implements SenderInterface
      * @param InstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
      * @param Logger $loggerHelper
-     * @param SubscriberAdd $subscriberAdd
+     * @param SubscriberCRUD $SubscriberCRUD
      */
     public function __construct(
         ResourceConnection $resource,
@@ -47,10 +46,10 @@ class Subscriber extends AbstractSender implements SenderInterface
         InstanceFactory $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory,
         Logger $loggerHelper,
-        SubscriberAdd $subscriberAdd
+        SubscriberCRUD $SubscriberCRUD
     ) {
         $this->connection = $resource->getConnection();
-        $this->subscriberAdd = $subscriberAdd;
+        $this->SubscriberCRUD = $SubscriberCRUD;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
@@ -70,7 +69,7 @@ class Subscriber extends AbstractSender implements SenderInterface
         $ids = [];
 
         foreach ($collection as $subscriber) {
-            $requests[] = $this->subscriberAdd->prepareRequest($subscriber);
+            $requests[] = $this->SubscriberCRUD->prepareRequest($subscriber);
             $ids[] =  $subscriber->getId();
         }
 
