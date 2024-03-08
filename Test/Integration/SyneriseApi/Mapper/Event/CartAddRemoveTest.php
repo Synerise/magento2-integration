@@ -59,6 +59,7 @@ class CartAddRemoveTest extends \PHPUnit\Framework\TestCase
      * @magentoDbIsolation enabled
      * @magentoAppIsolation enabled
      * @magentoDataFixture Magento/ConfigurableProduct/_files/quote_with_configurable_product.php
+     * @magentoDataFixture Magento/Customer/_files/customer.php
      */
     public function testPrepareAddToCartRequestWithConfigurableProduct(): void
     {
@@ -73,24 +74,24 @@ class CartAddRemoveTest extends \PHPUnit\Framework\TestCase
 
         foreach ($quote->getAllVisibleItems() as $quoteItem) {
             $quoteItem->getProduct()->setQty($quoteItem->getQty());
-            $response = $this->mapper->prepareRequest(
+            $request = $this->mapper->prepareRequest(
                 CartAddProduct::EVENT,
                 $quoteItem,
                 $uuid
             );
 
-            $this->assertTrue($response->valid());
-            $this->assertInstanceOf(ClientaddedproducttocartRequest::class, $response);
-            $this->assertEquals(self::ADD_LABEL, $response->getLabel());
+            $this->assertTrue($request->valid());
+            $this->assertInstanceOf(ClientaddedproducttocartRequest::class, $request);
+            $this->assertEquals(self::ADD_LABEL, $request->getLabel());
 
-            $client = $response->getClient();
+            $client = $request->getClient();
             $this->assertInstanceOf(Client::class, $client);
-            $this->assertEquals('c2f2a1b6-f1b3-51e8-b78a-40c0f35d55c7', $client->getUuid());
-            $this->assertEquals('roni_cost@example.com', $client->getEmail());
+            $this->assertEquals('f95a6e19-158c-5dfa-a4de-5b77fbb55edd', $client->getUuid());
+            $this->assertEquals('customer@example.com', $client->getEmail());
             $this->assertNull($client->getId());
             $this->assertEquals(1, $client->getCustomId());
 
-            $params = $response->getParams();
+            $params = $request->getParams();
             $this->assertEquals($product->getSku(), $params['sku']);
             $this->assertEquals($product->getName(), $params['name']);
             $this->assertEquals('simple_10', $params['skuVariant']);
@@ -121,24 +122,24 @@ class CartAddRemoveTest extends \PHPUnit\Framework\TestCase
 
         foreach ($quote->getAllVisibleItems() as $quoteItem) {
             $quoteItem->getProduct()->setQty($quoteItem->getQty());
-            $response = $this->mapper->prepareRequest(
+            $request = $this->mapper->prepareRequest(
                 CartRemoveProduct::EVENT,
                 $quoteItem,
                 $uuid
             );
 
-            $this->assertTrue($response->valid());
-            $this->assertInstanceOf(ClientaddedproducttocartRequest::class, $response);
-            $this->assertEquals(self::REMOVE_LABEL, $response->getLabel());
+            $this->assertTrue($request->valid());
+            $this->assertInstanceOf(ClientaddedproducttocartRequest::class, $request);
+            $this->assertEquals(self::REMOVE_LABEL, $request->getLabel());
 
-            $client = $response->getClient();
+            $client = $request->getClient();
             $this->assertInstanceOf(Client::class, $client);
             $this->assertEquals($uuid, $client->getUuid());
             $this->assertNull($client->getEmail());
             $this->assertNull($client->getId());
             $this->assertNull($client->getCustomId());
 
-            $params = $response->getParams();
+            $params = $request->getParams();
             $this->assertEquals($product->getSku(), $params['sku']);
             $this->assertEquals($product->getName(), $params['name']);
             $this->assertFalse(isset($params['skuVariant']));

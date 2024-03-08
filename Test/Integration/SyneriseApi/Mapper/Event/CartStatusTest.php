@@ -70,14 +70,14 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
 
         $uuid = (string) Uuid::Uuid4();
 
-        $response = $this->mapper->prepareRequest($quote, $uuid);
-        $client = $response->getClient();
+        $request = $this->mapper->prepareRequest($quote, $uuid);
+        $client = $request->getClient();
 
-        $this->assertTrue($response->valid());
-        $this->assertInstanceOf(CustomeventRequest::class, $response);
+        $this->assertTrue($request->valid());
+        $this->assertInstanceOf(CustomeventRequest::class, $request);
 
-        $this->assertEquals(self::ACTION, $response->getAction());
-        $this->assertEquals(self::LABEL, $response->getLabel());
+        $this->assertEquals(self::ACTION, $request->getAction());
+        $this->assertEquals(self::LABEL, $request->getLabel());
 
         $this->assertInstanceOf(Client::class, $client);
         $this->assertEquals($uuid, $client->getUuid());
@@ -85,13 +85,13 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($client->getId());
         $this->assertNull($client->getCustomId());
 
-        $params = $response->getParams();
+        $params = $request->getParams();
 
         $this->assertEquals(1, count($params['products']));
-        foreach($params['products'] as $responseProduct) {
-            $this->assertEquals($product->getSku(), $responseProduct['sku']);
-            $this->assertEquals(self::PRODUCT_QTY, $responseProduct['quantity']);
-            $this->assertFalse(isset($responseProduct['skuVariant']));
+        foreach($params['products'] as $requestProduct) {
+            $this->assertEquals($product->getSku(), $requestProduct['sku']);
+            $this->assertEquals(self::PRODUCT_QTY, $requestProduct['quantity']);
+            $this->assertFalse(isset($requestProduct['skuVariant']));
         }
 
         $this->assertEquals(self::TOTAL_AMOUNT, $params['totalAmount']);
@@ -99,6 +99,7 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/quote_with_configurable_product.php
+     * @magentoDataFixture Magento/Customer/_files/customer.php
      */
     public function testCustomerCartStatusWithConfigurableProduct(): void
     {
@@ -111,28 +112,28 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
         // should be ignored in this test
         $uuid = (string) Uuid::Uuid4();
 
-        $response = $this->mapper->prepareRequest($quote, $uuid);
-        $client = $response->getClient();
+        $request = $this->mapper->prepareRequest($quote, $uuid);
+        $client = $request->getClient();
 
-        $this->assertTrue($response->valid());
-        $this->assertInstanceOf(CustomeventRequest::class, $response);
+        $this->assertTrue($request->valid());
+        $this->assertInstanceOf(CustomeventRequest::class, $request);
 
-        $this->assertEquals(self::ACTION, $response->getAction());
-        $this->assertEquals(self::LABEL, $response->getLabel());
+        $this->assertEquals(self::ACTION, $request->getAction());
+        $this->assertEquals(self::LABEL, $request->getLabel());
 
         $this->assertInstanceOf(Client::class, $client);
-        $this->assertEquals('c2f2a1b6-f1b3-51e8-b78a-40c0f35d55c7', $client->getUuid());
-        $this->assertEquals('roni_cost@example.com', $client->getEmail());
+        $this->assertEquals('f95a6e19-158c-5dfa-a4de-5b77fbb55edd', $client->getUuid());
+        $this->assertEquals('customer@example.com', $client->getEmail());
         $this->assertNull($client->getId());
         $this->assertEquals(1, $client->getCustomId());
 
-        $params = $response->getParams();
+        $params = $request->getParams();
 
         $this->assertEquals(1, count($params['products']));
-        foreach($params['products'] as $responseProduct) {
-            $this->assertEquals($product->getSku(), $responseProduct['sku']);
-            $this->assertEquals(self::PRODUCT_QTY, $responseProduct['quantity']);
-            $this->assertEquals('simple_10', $responseProduct['skuVariant']);
+        foreach($params['products'] as $requestProduct) {
+            $this->assertEquals($product->getSku(), $requestProduct['sku']);
+            $this->assertEquals(self::PRODUCT_QTY, $requestProduct['quantity']);
+            $this->assertEquals('simple_10', $requestProduct['skuVariant']);
         }
 
         $this->assertEquals(self::TOTAL_AMOUNT, $params['totalAmount']);

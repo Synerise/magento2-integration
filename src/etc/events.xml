@@ -7,7 +7,7 @@
         <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\Data\ProductSave" />
     </event>
     <event name="catalog_product_import_bunch_save_after">
-        <observer name="synerise_catalog_product_import_bunch_save_after" instance="\Synerise\Integration\Observer\Data\ProductImportBunch"/>
+        <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\Data\ProductImportBunch"/>
     </event>
     <event name="customer_register_success">
         <observer name="synerise_customer_register_observer" instance="Synerise\Integration\Observer\Event\CustomerRegister" />
@@ -43,7 +43,7 @@
         <observer name="synerise_wishlist_item_delete_after" instance="Synerise\Integration\Observer\Event\WishlistRemoveProduct" />
     </event>
     <event name="newsletter_subscriber_save_after">
-        <observer name="synerise_newsletter_subscriber_save_after" instance="\Synerise\Integration\Observer\Data\SubscriberSave" />
+        <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\Data\SubscriberSave" />
     </event>
     <event name="newsletter_subscriber_delete_after">
         <observer name="synerise_newsletter_subscriber_delete_after" instance="Synerise\Integration\Observer\Data\SubscriberDelete" />
