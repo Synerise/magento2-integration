@@ -6,7 +6,6 @@ use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Ramsey\Uuid\Uuid;
 use Synerise\Integration\SyneriseApi\Mapper\Data\CustomerCRUD;
 
 class CustomerCRUDTest extends \PHPUnit\Framework\TestCase
