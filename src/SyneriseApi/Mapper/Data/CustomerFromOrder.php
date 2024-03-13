@@ -12,7 +12,7 @@ class CustomerFromOrder
      *
      * @param Order $order
      * @param string|null $uuid
-     * @return CreateaClientinCRMRequest|null
+     * @return CreateaClientinCRMRequest
      */
     public function prepareRequest(Order $order, ?string $uuid): CreateaClientinCRMRequest
     {

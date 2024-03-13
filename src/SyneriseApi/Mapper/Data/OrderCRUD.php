@@ -9,7 +9,12 @@ use Magento\Framework\Exception\NotFoundException;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
+use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\CreateatransactionRequest;
+use Synerise\ApiClient\Model\CreateatransactionRequestDiscountAmount;
+use Synerise\ApiClient\Model\CreateatransactionRequestRevenue;
+use Synerise\ApiClient\Model\CreateatransactionRequestValue;
+use Synerise\ApiClient\Model\PaymentInfo;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Product\Category;
 use Synerise\Integration\Helper\Product\Image;
@@ -105,21 +110,6 @@ class OrderCRUD
      */
     public function prepareRequest(Order $order, ?string $uuid = null): CreateatransactionRequest
     {
-        $shippingAddress = $order->getShippingAddress();
-
-        $customerData = [
-            'email' => $order->getCustomerEmail(),
-            'phone' => $shippingAddress ? $shippingAddress->getTelephone() : null
-        ];
-
-        if ($uuid) {
-            $customerData["uuid"] = $uuid;
-        }
-
-        if (!$order->getCustomerIsGuest()) {
-            $customerData['customId'] = $order->getCustomerId();
-        }
-
         $products = [];
         foreach ($order->getAllItems() as $item) {
             if ($item->getParentItem()) {
@@ -138,41 +128,32 @@ class OrderCRUD
         }
 
         $params = [
-            'client' => $customerData,
-            "discount_amount" => [
-                "amount" => (float) $order->getDiscountAmount(),
-                "currency" => $order->getOrderCurrencyCode()
-            ],
-            'metadata' => [
-                "orderStatus" => $order->getStatus(),
-                "discountCode" => $order->getCouponCode(),
-                "shipping" => [
-                    'method' => $order->getShippingMethod(),
-                    'amount' => (float) $order->getShippingAmount()
-                ],
-                'applicationName' => $this->contextHelper->getApplicationName(),
-                'storeId' => $order->getStoreId(),
-                'storeUrl' => $this->contextHelper->getStoreBaseUrl($order->getStoreId())
-            ],
+            'client' => $this->prepareClient($order, $uuid),
+            'metadata' => $this->prepareMetadata($order),
             'order_id' => $order->getRealOrderId(),
-            "payment_info" => [
-                "method" => $order->getPayment()->getMethod()
-            ],
-            "products" => $products,
+            'payment_info' => $this->preparePaymentInfo($order),
+            'products' => $products,
             'recorded_at' => $order->getCreatedAt() ?
                 $this->contextHelper->formatDateTimeAsIso8601(new \DateTime($order->getCreatedAt())) :
                 $this->contextHelper->getCurrentTime(),
-            'revenue' => [
-                "amount" => $this->getOrderSubtotal($order, $order->getStoreId()),
-                "currency" => $order->getOrderCurrencyCode()
-            ],
-            'value' => [
-                "amount" => (float) $order->getSubTotal(),
-                "currency" => $order->getOrderCurrencyCode()
-            ],
+            'revenue' => $this->prepareRevenue(
+                $this->getOrderSubtotal($order, $order->getStoreId()),
+                $order->getOrderCurrencyCode()
+            ),
+            'value' => $this->prepareValue(
+                (float) $order->getSubTotal(),
+                $order->getOrderCurrencyCode()
+            ),
             'source' => $this->contextHelper->getSource(),
             'event_salt' => $order->getRealOrderId()
         ];
+
+        if ($order->getDiscountAmount()) {
+            $params['discount_amount'] = $this->prepareDiscount(
+                (float) $order->getDiscountAmount(),
+                $order->getOrderCurrencyCode()
+            );
+        }
 
         $snrs_params = $this->cookieHelper->shouldIncludeSnrsParams($order->getStoreId()) ?
             $this->cookieHelper->getSnrsParams() : null;
@@ -180,12 +161,34 @@ class OrderCRUD
             $params['snrs_params'] = $snrs_params;
         }
 
-        $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
-        if (!empty($orderRules)) {
-            $params['metadata']['promotionRules'] = $orderRules;
+        return new CreateatransactionRequest($params);
+    }
+
+    /**
+     * Prepare client data
+     *
+     * @param Order $order
+     * @param string|null $uuid
+     * @return Client
+     */
+    public function prepareClient(Order $order, ?string $uuid = null): Client
+    {
+        $shippingAddress = $order->getShippingAddress();
+
+        $customerData = [
+            'email' => $order->getCustomerEmail(),
+            'phone' => $shippingAddress ? $shippingAddress->getTelephone() : null
+        ];
+
+        if ($uuid) {
+            $customerData['uuid'] = $uuid;
         }
 
-        return new CreateatransactionRequest($params);
+        if (!$order->getCustomerIsGuest()) {
+            $customerData['customId'] = $order->getCustomerId();
+        }
+
+        return new Client($customerData);
     }
 
     /**
@@ -268,6 +271,90 @@ class OrderCRUD
     }
 
     /**
+     * Prepare order discount data
+     *
+     * @param float $amount
+     * @param string $currency
+     * @return CreateatransactionRequestDiscountAmount
+     */
+    public function prepareDiscount(float $amount, string $currency): CreateatransactionRequestDiscountAmount
+    {
+        return new CreateatransactionRequestDiscountAmount([
+            'amount' => $amount,
+            'currency' => $currency
+        ]);
+    }
+
+    /**
+     * Prepare order revenue data
+     *
+     * @param float $amount
+     * @param string $currency
+     * @return CreateatransactionRequestRevenue
+     */
+    public function prepareRevenue(float $amount, string $currency): CreateatransactionRequestRevenue
+    {
+        return new CreateatransactionRequestRevenue([
+            'amount' => $amount,
+            'currency' => $currency
+        ]);
+    }
+
+    /**
+     * Prepare order value data
+     *
+     * @param float $amount
+     * @param string $currency
+     * @return CreateatransactionRequestValue
+     */
+    public function prepareValue(float $amount, string $currency): CreateatransactionRequestValue
+    {
+        return new CreateatransactionRequestValue([
+            'amount' => $amount,
+            'currency' => $currency
+        ]);
+    }
+
+    /**
+     * Prepare order payment info
+     *
+     * @param Order $order
+     * @return PaymentInfo
+     */
+    public function preparePaymentInfo(Order $order): PaymentInfo
+    {
+        return new PaymentInfo(['method' => $order->getPayment()->getMethod()]);
+    }
+
+    /**
+     * Prepare order metadata
+     *
+     * @param Order $order
+     * @return array
+     */
+    public function prepareMetadata(Order $order): array
+    {
+        $metadata = [
+            'orderStatus' => $order->getStatus(),
+            'discountCode' => $order->getCouponCode(),
+            'shipping' => [
+                'method' => $order->getShippingMethod(),
+                'amount' => (float) $order->getShippingAmount()
+            ],
+            'applicationName' => $this->contextHelper->getApplicationName(),
+            'storeId' => $order->getStoreId(),
+            'storeUrl' => $this->contextHelper->getStoreBaseUrl($order->getStoreId())
+        ];
+
+        $orderRules = $this->prepareRulesList((string) $order->getAppliedRuleIds());
+        if (!empty($orderRules)) {
+            $metadata['promotionRules'] = $orderRules;
+        }
+
+        return $metadata;
+    }
+
+    /**
      * Prepare rule list
      *
      * @param string $appliedRuleIds
@@ -313,4 +400,5 @@ class OrderCRUD
             return (float) $order->getSubtotal();
         }
     }
+
 }

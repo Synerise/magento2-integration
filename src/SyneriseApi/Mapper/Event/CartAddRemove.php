@@ -73,7 +73,7 @@ class CartAddRemove
     ): ClientaddedproducttocartRequest {
         $params = array_merge(
             $this->contextHelper->prepareContextParams(),
-            $this->prepareParamsFromQuoteProduct($quoteItem->getProduct(), $quoteItem->getStoreId())
+            $this->prepareParamsFromQuoteProduct($quoteItem)
         );
 
         if ($cookieParams) {
@@ -121,8 +121,11 @@ class CartAddRemove
      * @throws LocalizedException
      * @throws NoSuchEntityException
      */
-    public function prepareParamsFromQuoteProduct(Product $product, ?int $storeId = null): array
+    public function prepareParamsFromQuoteProduct(Item $quoteItem): array
     {
+        $product = $quoteItem->getProduct();
+        $storeId = $quoteItem->getStoreId();
+
         $currencyCode = $this->contextHelper->getCurrencyCode($storeId);
         $sku = $product->getData('sku');
         $skuVariant = $product->getSku();
@@ -131,7 +134,7 @@ class CartAddRemove
             "sku" => $sku,
             "name" => $product->getName(),
             "productUrl" => $product->getUrlInStore(),
-            "quantity" => $product->getQty()
+            "quantity" => $quoteItem->getQty()
         ];
 
         if ($sku!= $skuVariant) {

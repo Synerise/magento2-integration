@@ -3,6 +3,7 @@
 namespace Synerise\Integration\SyneriseApi\Mapper\Data;
 
 use Magento\Newsletter\Model\Subscriber;
+use Synerise\ApiClient\Model\Agreements;
 use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
 
@@ -35,9 +36,9 @@ class SubscriberCRUD
             [
                 'email' => $email,
                 'uuid' => $this->uuidGenerator->generateByEmail($email),
-                'agreements' => [
+                'agreements' => new Agreements([
                     'email' => !$unsubscribe && $this->isSubscribed($subscriber) ? 1 : 0
-                ]
+                ])
             ]
         );
     }
