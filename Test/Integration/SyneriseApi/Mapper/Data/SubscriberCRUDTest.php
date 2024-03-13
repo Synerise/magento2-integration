@@ -72,9 +72,6 @@ class SubscriberCRUDTest extends \PHPUnit\Framework\TestCase
 
             $agreements = $request->getAgreements();
             $this->assertEquals(1, $agreements->getEmail());
-
-var_dump($request);
-
         }
 
     }

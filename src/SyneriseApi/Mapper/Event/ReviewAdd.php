@@ -9,6 +9,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Review\Model\ResourceModel\Rating\Option\Vote\CollectionFactory as VoteCollectionFactory;
 use Magento\Review\Model\Review;
+use Synerise\ApiClient\Model\Client;
 use Synerise\ApiClient\Model\CustomeventRequest;
 use Synerise\Integration\Helper\Tracking\Context;
 
@@ -69,21 +70,6 @@ class ReviewAdd
             throw new NotFoundException(__('Product with ID "%1" not found.', $review->getEntityPkValue()));
         }
 
-        $client = [];
-
-        if ($uuid) {
-            $client['uuid'] = $uuid;
-        }
-
-        $customerId = $review->getCustomerId();
-        if ($customerId) {
-            $client['custom_id'] = $customerId;
-        }
-
-        if (empty($client)) {
-            throw new InvalidArgumentException(__('Client identity could not be determined.'));
-        }
-        
         $params = $this->contextHelper->prepareContextParams();
         $params['sku'] = $product->getSku();
         $params['nickname'] = $review->getNickname();
@@ -110,8 +96,36 @@ class ReviewAdd
             'time' => $this->contextHelper->getCurrentTime(),
             'label' => $this->contextHelper->getEventLabel($event),
             'action' => 'product.addReview',
-            'client' => $client,
+            'client' => $this->prepareClient($review, $uuid),
             'params' => $params
         ]);
+    }
+
+    /**
+     * Prepare client data
+     *
+     * @param Review $review
+     * @param string|null $uuid
+     * @return Client
+     * @throws InvalidArgumentException
+     */
+    public function prepareClient(Review $review, ?string $uuid = null): Client
+    {
+        $data = [];
+
+        if ($uuid) {
+            $data['uuid'] = $uuid;
+        }
+
+        $customerId = $review->getCustomerId();
+        if ($customerId) {
+            $data['custom_id'] = $customerId;
+        }
+
+        if (empty($data)) {
+            throw new InvalidArgumentException(__('Client identity could not be determined.'));
+        }
+
+        return new Client($data);
     }
 }
