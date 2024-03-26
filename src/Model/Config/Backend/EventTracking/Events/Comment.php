@@ -30,7 +30,7 @@ class Comment implements CommentInterface
     public function getCommentText($elementValue): string
     {
         $url = $this->urlInterface->getUrl('adminhtml/system_config/edit/section/synerise_data');
-        return 'Orders are sent via <a href="' . $url . '">synchronization</a>. Please make sure it is configured & enabled to collect order events.';
+        return 'Orders are sent via <a href="' . $url .
+            '">synchronization</a>. Please make sure it is configured & enabled to collect order events.';
     }
-
 }

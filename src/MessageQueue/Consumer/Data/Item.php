@@ -4,6 +4,7 @@ namespace Synerise\Integration\MessageQueue\Consumer\Data;
 
 use Exception;
 use Synerise\Integration\Communication\Config;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\MessageQueue\Retry;
 use Zend_Db_Adapter_Exception;
 use GuzzleHttp\Exception\TransferException;
@@ -15,7 +16,6 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\TemporaryStateExceptionInterface;
 use Magento\Framework\MessageQueue\MessageEncoder;
 use Magento\Framework\ObjectManagerInterface;
-use Psr\Log\LoggerInterface;
 use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
@@ -27,7 +27,7 @@ use Synerise\Integration\MessageQueue\Publisher\Data\Item as Publisher;
 class Item
 {
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -57,7 +57,7 @@ class Item
     protected $filter;
 
     /**
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param ObjectManagerInterface $objectManager
      * @param MessageEncoder $messageEncoder
      * @param CollectionFactoryProvider $collectionFactoryProvider
@@ -65,7 +65,7 @@ class Item
      * @param Filter $filter
      */
     public function __construct(
-        LoggerInterface $logger,
+        Logger $logger,
         ObjectManagerInterface $objectManager,
         MessageEncoder $messageEncoder,
         CollectionFactoryProvider $collectionFactoryProvider,

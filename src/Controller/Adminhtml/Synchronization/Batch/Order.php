@@ -11,7 +11,7 @@ use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as Sender;
@@ -24,7 +24,7 @@ class Order extends Action
     public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_order';
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     private $logger;
 
@@ -50,7 +50,7 @@ class Order extends Action
 
     /**
      * @param Context $context
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
      * @param Publisher $publisher
@@ -58,7 +58,7 @@ class Order extends Action
      */
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
+        Logger $logger,
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,

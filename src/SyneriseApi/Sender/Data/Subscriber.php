@@ -9,10 +9,9 @@ use Magento\Newsletter\Model\Subscriber as SubscriberModel;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
-use Synerise\ApiClient\Model\CreateaClientinCRMRequest;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking;
-use Synerise\Integration\Helper\Tracking\UuidGenerator;
+use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
+use Synerise\Integration\SyneriseApi\Mapper\Data\SubscriberCRUD;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\SyneriseApi\ConfigFactory;
 use Synerise\Integration\SyneriseApi\InstanceFactory;
@@ -29,36 +28,30 @@ class Subscriber extends AbstractSender implements SenderInterface
     protected $connection;
 
     /**
-     * @var Tracking
+     * @var SubscriberCRUD
      */
-    protected $trackingHelper;
-
-    /**
-     * @var UuidGenerator
-     */
-    protected $uuidGenerator;
+    protected $SubscriberCRUD;
 
     /**
      * @param ResourceConnection $resource
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
+     * @param WorkspaceConfigFactory $workspaceConfigFactory
      * @param Logger $loggerHelper
-     * @param Tracking $trackingHelper
-     * @param UuidGenerator $uuidGenerator
+     * @param SubscriberCRUD $SubscriberCRUD
      */
     public function __construct(
         ResourceConnection $resource,
         ConfigFactory $configFactory,
         InstanceFactory $apiInstanceFactory,
+        WorkspaceConfigFactory $workspaceConfigFactory,
         Logger $loggerHelper,
-        Tracking $trackingHelper,
-        UuidGenerator $uuidGenerator
+        SubscriberCRUD $SubscriberCRUD
     ) {
         $this->connection = $resource->getConnection();
-        $this->trackingHelper = $trackingHelper;
-        $this->uuidGenerator = $uuidGenerator;
+        $this->SubscriberCRUD = $SubscriberCRUD;
 
-        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory);
+        parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
 
     /**
@@ -76,7 +69,7 @@ class Subscriber extends AbstractSender implements SenderInterface
         $ids = [];
 
         foreach ($collection as $subscriber) {
-            $requests[] = $this->prepareRequestFromSubscription($subscriber);
+            $requests[] = $this->SubscriberCRUD->prepareRequest($subscriber);
             $ids[] =  $subscriber->getId();
         }
 
@@ -127,7 +120,7 @@ class Subscriber extends AbstractSender implements SenderInterface
             );
 
             if ($statusCode == 207) {
-                $this->loggerHelper->getLogger()->warning('Request partially accepted', ['response_body' => $body]);
+                $this->loggerHelper->warning('Request partially accepted', ['response_body' => $body]);
             }
         } catch (ApiException $e) {
             $this->logApiException($e);
@@ -146,26 +139,6 @@ class Subscriber extends AbstractSender implements SenderInterface
     protected function getDefaultApiInstance(int $storeId): DefaultApi
     {
         return $this->getApiInstance('default', $storeId);
-    }
-
-    /**
-     * Prepare request from subscription
-     *
-     * @param SubscriberModel $subscriber
-     * @return CreateaClientinCRMRequest
-     */
-    public function prepareRequestFromSubscription(SubscriberModel $subscriber): CreateaClientinCRMRequest
-    {
-        $email = $subscriber->getSubscriberEmail();
-        return new CreateaClientinCRMRequest(
-            [
-                'email' => $email,
-                'uuid' => $this->uuidGenerator->generateByEmail($email),
-                'agreements' => [
-                    'email' => $subscriber->getSubscriberStatus() == SubscriberModel::STATUS_SUBSCRIBED ? 1 : 0
-                ]
-            ]
-        );
     }
 
     /**

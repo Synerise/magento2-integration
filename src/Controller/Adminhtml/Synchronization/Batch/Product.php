@@ -13,7 +13,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Ui\Component\MassAction\Filter;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
@@ -31,7 +31,7 @@ class Product extends Action
     private $storeManager;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     private $logger;
 
@@ -58,7 +58,7 @@ class Product extends Action
     /**
      * @param Context $context
      * @param StoreManagerInterface $storeManager
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
      * @param Publisher $publisher
@@ -67,7 +67,7 @@ class Product extends Action
     public function __construct(
         Context $context,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
+        Logger $logger,
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,

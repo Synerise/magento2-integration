@@ -18,7 +18,7 @@ use Magento\Customer\Model\ResourceModel\Customer\Collection as CustomerCollecti
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection as SubscriberCollection;
 use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
@@ -35,7 +35,7 @@ abstract class AbstractScheduler
     protected $storeManager;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -71,7 +71,7 @@ abstract class AbstractScheduler
 
     /**
      * @param StoreManagerInterface $storeManager
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param SerializerInterface $serializer
      * @param EntityManager $entityManager
      * @param CollectionFactoryProvider $collectionFactoryProvider
@@ -81,7 +81,7 @@ abstract class AbstractScheduler
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
+        Logger $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
         CollectionFactoryProvider $collectionFactoryProvider,

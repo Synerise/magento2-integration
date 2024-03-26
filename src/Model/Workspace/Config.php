@@ -3,8 +3,9 @@
 namespace Synerise\Integration\Model\Workspace;
 
 use Synerise\Integration\Model\Workspace\Config\DataFactory;
+use Synerise\Integration\Model\WorkspaceInterface;
 
-class Config
+class Config implements WorkspaceInterface
 {
     /**
      * @var Config\Data
@@ -55,5 +56,35 @@ class Config
     public function getGuid(): ?string
     {
         return $this->dataStorage->get('guid');
+    }
+
+    /**
+     * Get API host
+     *
+     * @return string
+     */
+    public function getApiHost(): string
+    {
+        return $this->dataStorage->get('apiHost');
+    }
+
+    /**
+     * Get tracker host
+     *
+     * @return string
+     */
+    public function getTrackerHost(): string
+    {
+        return $this->dataStorage->get('trackerHost');
+    }
+
+    /**
+     * Check if basic auth is enabled
+     *
+     * @return bool
+     */
+    public function isBasicAuthEnabled(): bool
+    {
+        return $this->dataStorage->get('isBasicAuthEnabled');
     }
 }

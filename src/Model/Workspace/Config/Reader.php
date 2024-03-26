@@ -93,8 +93,11 @@ class Reader implements ReaderInterface
                 foreach ($workspaces as $workspace) {
                     if ($workspace->getId() == $workspaceId) {
                         $data = [
+                            'apiHost' => $workspace->getApiHost(),
                             'apiKey' => $workspace->getApiKey(),
+                            'isBasicAuthEnabled' => $workspace->isBasicAuthEnabled(),
                             'guid' => $workspace->getGuid(),
+                            'trackerHost' => $workspace->getTrackerHost()
                         ];
 
                         foreach ($website->getStores() as $store) {

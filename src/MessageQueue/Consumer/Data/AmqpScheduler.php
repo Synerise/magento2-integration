@@ -6,7 +6,7 @@ use Magento\Framework\Amqp\Config as AmqpConfig;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Publisher\Data\All as Publisher;
 use Synerise\Integration\MessageQueue\Filter;
@@ -21,7 +21,7 @@ class AmqpScheduler extends AbstractScheduler
 
     /**
      * @param StoreManagerInterface $storeManager
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param SerializerInterface $serializer
      * @param EntityManager $entityManager
      * @param CollectionFactoryProvider $collectionFactoryProvider
@@ -32,7 +32,7 @@ class AmqpScheduler extends AbstractScheduler
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
+        Logger $logger,
         SerializerInterface $serializer,
         EntityManager $entityManager,
         CollectionFactoryProvider $collectionFactoryProvider,

@@ -23,6 +23,7 @@ class ConfigMigration implements DataPatchInterface
         'synerise/cron_status/enabled',
         'synerise/cron_queue/enabled'
     ];
+    public const XML_PATH_API_KEY = 'synerise/api/key';
 
     /**
      * @var ModuleDataSetupInterface
@@ -130,7 +131,7 @@ class ConfigMigration implements DataPatchInterface
                         $enabledModels[] = $pathParts[1];
                     }
                 }
-            } elseif ($config->getPath() == Workspace::XML_PATH_API_KEY &&
+            } elseif ($config->getPath() == self::XML_PATH_API_KEY &&
                 $config->getScope() != ScopeInterface::SCOPE_WEBSITES) {
                 $configToDelete[] = $config;
             } elseif ($config->getPath() == 'synerise/synchronization/enabled') {

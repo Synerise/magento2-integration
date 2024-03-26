@@ -61,9 +61,9 @@ class Configuration
     /**
      * Access token for OAuth/Bearer authentication
      *
-     * @var string
+     * @var string|null
      */
-    protected $accessToken = '';
+    protected $accessToken = null;
 
     /**
      * Username for HTTP basic authentication

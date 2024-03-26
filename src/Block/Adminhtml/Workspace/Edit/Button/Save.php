@@ -24,7 +24,7 @@ class Save extends Generic implements ButtonProviderInterface
                             [
                                 'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                 'actionName' => 'save',
-                                'params' => [false],
+                                'params' => [false]
                             ],
                         ],
                     ],
@@ -53,11 +53,7 @@ class Save extends Generic implements ButtonProviderInterface
                                 [
                                     'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                     'actionName' => 'save',
-                                    'params' => [
-                                        true, [
-                                            'back' => 'add',
-                                        ],
-                                    ],
+                                    'params' => [true, ['back' => 'new']]
                                 ],
                             ],
                         ],
@@ -74,7 +70,7 @@ class Save extends Generic implements ButtonProviderInterface
                                 [
                                     'targetName' => 'synerise_workspace_form.synerise_workspace_form',
                                     'actionName' => 'save',
-                                    'params' => [true],
+                                    'params' => [true]
                                 ],
                             ],
                         ],

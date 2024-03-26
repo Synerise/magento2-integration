@@ -76,11 +76,11 @@ class All extends AbstractBulk
 
         foreach ($entityIds as $entityIdsChunk) {
             $operations[] = $this->makeOperation(
-                $bulkUuid,
                 $model,
                 self::TYPE,
                 $entityIdsChunk,
                 $storeId,
+                $bulkUuid,
                 $websiteId
             );
         }

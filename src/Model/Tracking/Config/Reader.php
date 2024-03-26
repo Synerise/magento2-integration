@@ -119,31 +119,4 @@ class Reader implements ReaderInterface
             $storeId
         ));
     }
-
-    /**
-     * Add config value as array to output
-     *
-     * @param array $output
-     * @param string $path
-     * @param mixed $value
-     * @return void
-     */
-    public function addValue(array &$output, string $path, $value)
-    {
-        $chunks = explode('/', $path ?: '');
-        $data = [];
-        $element = &$data;
-
-        while ($chunks) {
-            $key = array_shift($chunks);
-            if ($chunks) {
-                $element[$key] = [];
-                $element = &$element[$key];
-            } else {
-                $element[$key] = $value;
-            }
-        }
-
-        $output = array_merge_recursive($output, $data);
-    }
 }

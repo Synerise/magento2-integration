@@ -7,6 +7,7 @@ use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\Bulk\BulkManagementInterface;
 use Magento\Framework\DataObject\IdentityGeneratorInterface;
+use Magento\Framework\MessageQueue\PublisherInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 
 abstract class AbstractBulk
@@ -62,24 +63,23 @@ abstract class AbstractBulk
     /**
      * Make asynchronous operation
      *
-     * @param string $bulkUuid
      * @param string $model
      * @param string $type
      * @param int[] $entityIds
      * @param int $storeId
+     * @param string|null $bulkUuid
      * @param int|null $websiteId
      * @return OperationInterface
      */
     protected function makeOperation(
-        string $bulkUuid,
         string $model,
         string $type,
         array $entityIds,
         int $storeId,
+        ?string $bulkUuid = null,
         ?int $websiteId = null
     ): OperationInterface {
         $dataToEncode = [
-            'bulk_uuid' => $bulkUuid,
             'type' => $type,
             'model' => $model,
             'entity_ids' => $entityIds,
@@ -87,13 +87,24 @@ abstract class AbstractBulk
             'website_id' => $websiteId
         ];
 
-        $operation = [
-            'data' => [
+        if ($bulkUuid) {
+            $dataToEncode['bulk_uuid'] = $bulkUuid;
+            $data = [
                 'bulk_uuid' => $bulkUuid,
                 'topic_name' => self::getTopicName($model, $type, $storeId),
                 'serialized_data' => $this->serializer->serialize($dataToEncode),
                 'status' => \Magento\Framework\Bulk\OperationInterface::STATUS_TYPE_OPEN,
-            ]
+            ];
+        } else {
+            $data = [
+                'topic_name' => self::getTopicName($model, $type, $storeId),
+                'serialized_data' => $this->serializer->serialize($dataToEncode),
+                'status' => \Magento\Framework\Bulk\OperationInterface::STATUS_TYPE_OPEN
+            ];
+        }
+
+        $operation = [
+            'data' => $data
         ];
 
         return $this->operationFactory->create($operation);

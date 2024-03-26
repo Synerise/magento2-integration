@@ -11,7 +11,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as Sender;
@@ -24,7 +24,7 @@ class Subscriber extends Action implements HttpPostActionInterface
     public const ADMIN_RESOURCE = 'Synerise_Integration::synchronization_subscriber';
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     protected $logger;
 
@@ -50,7 +50,7 @@ class Subscriber extends Action implements HttpPostActionInterface
 
     /**
      * @param Context $context
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param Filter $filter
      * @param CollectionFactory $collectionFactory
      * @param Publisher $publisher
@@ -58,7 +58,7 @@ class Subscriber extends Action implements HttpPostActionInterface
      */
     public function __construct(
         Context $context,
-        LoggerInterface $logger,
+        Logger $logger,
         Filter $filter,
         CollectionFactory $collectionFactory,
         Publisher $publisher,

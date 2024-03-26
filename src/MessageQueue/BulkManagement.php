@@ -19,7 +19,7 @@ use Magento\Framework\Bulk\BulkManagementInterface;
 use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\EntityManager\MetadataPool;
 use Magento\Framework\MessageQueue\BulkPublisherInterface;
-use Psr\Log\LoggerInterface;
+use Synerise\Integration\Helper\Logger;
 use Throwable;
 
 class BulkManagement implements BulkManagementInterface
@@ -60,7 +60,7 @@ class BulkManagement implements BulkManagementInterface
     private $userContext;
 
     /**
-     * @var LoggerInterface
+     * @var Logger
      */
     private $logger;
 
@@ -72,7 +72,7 @@ class BulkManagement implements BulkManagementInterface
      * @param BulkPublisherInterface $publisher
      * @param MetadataPool $metadataPool
      * @param ResourceConnection $resourceConnection
-     * @param LoggerInterface $logger
+     * @param Logger $logger
      * @param UserContextInterface $userContext
      */
     public function __construct(
@@ -82,7 +82,7 @@ class BulkManagement implements BulkManagementInterface
         BulkPublisherInterface $publisher,
         MetadataPool $metadataPool,
         ResourceConnection $resourceConnection,
-        LoggerInterface $logger,
+        Logger $logger,
         UserContextInterface $userContext
     ) {
         $this->entityManager = $entityManager;
