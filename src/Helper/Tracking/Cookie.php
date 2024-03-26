@@ -167,7 +167,7 @@ class Cookie
     {
         if (!isset($this->data[self::COOKIE_SNRS_PARAMS])) {
             $paramsString = $this->getSnrsParamsString();
-            $this->data[self::COOKIE_SNRS_PARAMS] = $paramsString ? json_decode($paramsString) : [];
+            $this->data[self::COOKIE_SNRS_PARAMS] = $paramsString ? json_decode($paramsString, true) : [];
         }
 
         if ($value) {
