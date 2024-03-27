@@ -18,10 +18,10 @@
   },
   "autoload": {
     "files": [
-      "src/registration.php"
+      "registration.php"
     ],
     "psr-4": {
-      "Synerise\\Integration\\": "src/",
+      "Synerise\\Integration\\": "/",
       "Synerise\\ApiClient\\" : "lib/api-client/",
       "Synerise\\CatalogsApiClient\\" : "lib/api-catalogs/"
     }
