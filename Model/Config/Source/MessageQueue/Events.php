@@ -24,7 +24,8 @@ class Events implements OptionSourceInterface
         'catalog_product_import_bunch_save_after'   => 'Product import',
         'product_is_salable_change'                 => 'Product "is salable" value changed',
         'stock_status_change'                       => 'Product stock status changed',
-        'newsletter_subscriber_save_after'          => 'Subscription updated'
+        'newsletter_subscriber_save_after'          => 'Subscription updated',
+        'customer_merge_by_email'                   => 'Merge customer uuids'
     ];
 
     /**
