@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="catalog_product_delete_before">
+        <observer name="synerise_catalog_product_delete_before" instance="Synerise\Integration\Observer\Data\ProductDelete" />
+    </event>
+    <event name="catalog_product_save_after">
+        <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\Data\ProductSave" />
+    </event>
+    <event name="catalog_product_import_bunch_save_after">
+        <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\Data\ProductImportBunch"/>
+    </event>
+    <event name="customer_register_success">
+        <observer name="synerise_customer_register_observer" instance="Synerise\Integration\Observer\Event\CustomerRegister" />
+    </event>
+    <event name="customer_login">
+        <observer name="synerise_customer_login_observer" instance="Synerise\Integration\Observer\Event\CustomerLogin" />
+    </event>
+    <event name="customer_logout">
+        <observer name="synerise_customer_logout_observer" instance="Synerise\Integration\Observer\Event\CustomerLogout" />
+    </event>
+    <event name="customer_save_after">
+        <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\Data\CustomerSave" />
+    </event>
+    <event name="sales_order_save_after">
+        <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\Data\OrderSave" />
+    </event>
+    <event name="sales_quote_add_item">
+        <observer name="synerise_checkout_cart_add_product_complete" instance="Synerise\Integration\Observer\Event\CartAddProduct" />
+    </event>
+    <event name="checkout_cart_update_items_after">
+        <observer name="synerise_checkout_cart_update_items_after" instance="Synerise\Integration\Observer\Event\CartQtyUpdate" />
+    </event>
+    <event name="sales_quote_save_after">
+        <observer name="synerise_sales_quote_save_after" instance="Synerise\Integration\Observer\Event\CartStatus" />
+    </event>
+    <event name="sales_quote_remove_item">
+        <observer name="synerise_sales_quote_remove_item" instance="Synerise\Integration\Observer\Event\CartRemoveProduct" />
+    </event>
+    <event name="wishlist_add_product">
+        <observer name="synerise_wishlist_add_product" instance="Synerise\Integration\Observer\Event\WishlistAddProduct" />
+    </event>
+    <event name="wishlist_item_delete_after">
+        <observer name="synerise_wishlist_item_delete_after" instance="Synerise\Integration\Observer\Event\WishlistRemoveProduct" />
+    </event>
+    <event name="newsletter_subscriber_save_after">
+        <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\Data\SubscriberSave" />
+    </event>
+    <event name="newsletter_subscriber_delete_after">
+        <observer name="synerise_newsletter_subscriber_delete_after" instance="Synerise\Integration\Observer\Data\SubscriberDelete" />
+    </event>
+    <event name="review_save_after">
+        <observer name="synerise_review_save_after" instance="Synerise\Integration\Observer\Event\ProductReview" />
+    </event>
+    <event name="controller_action_postdispatch_review_product_post">
+        <observer name="synerise_controller_action_postdispatch_review_product_post" instance="Synerise\Integration\Observer\Event\ProductReview" />
+    </event>
+    <event name="admin_system_config_changed_section_synerise_data">
+        <observer name="synerise_changed_section_synerise_data" instance="Synerise\Integration\Observer\CleanConsumerCache" />
+    </event>
+    <event name="admin_system_config_changed_section_synerise_event_tacking">
+        <observer name="synerise_changed_section_synerise_data" instance="Synerise\Integration\Observer\CleanConsumerCache" />
+    </event>
+    <event name="admin_system_config_changed_section_synerise_workspace">
+        <observer name="synerise_clean_consumer_cache" instance="Synerise\Integration\Observer\CleanConsumerCache" />
+    </event>
+    <event name="synerise_workspace_mapping_changed">
+        <observer name="synerise_workspace_mapping_changed" instance="Synerise\Integration\Observer\UpdateTrackerKey" />
+    </event>
+    <event name="synerise_workspace_save_after">
+        <observer name="synerise_workspace_save_after" instance="Synerise\Integration\Observer\UpdateTrackerKey" />
+    </event>
+    <event name="synerise_merge_uuids">
+        <observer name="synerise_merge_uuids" instance="Synerise\Integration\Observer\MergeUuids" />
+    </event>
+</config>

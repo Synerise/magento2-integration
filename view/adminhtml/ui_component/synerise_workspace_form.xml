@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">synerise_workspace_form.synerise_workspace_form_data_source</item>
+            <item name="deps" xsi:type="string">synerise_workspace_form.synerise_workspace_form_data_source</item>
+        </item>
+        <item name="label" xsi:type="string" translate="true">Credentials</item>
+        <item name="config" xsi:type="array">
+            <item name="dataScope" xsi:type="string">data</item>
+            <item name="namespace" xsi:type="string">synerise_workspace_form</item>
+        </item>
+        <item name="spinner" xsi:type="string">credentials</item>
+        <item name="template" xsi:type="string">templates/form/collapsible</item>
+    </argument>
+    <settings>
+        <buttons>
+            <button name="save" class="Synerise\Integration\Block\Adminhtml\Workspace\Edit\Button\Save"/>
+            <button name="back" class="Synerise\Integration\Block\Adminhtml\Workspace\Edit\Button\Back"/>
+        </buttons>
+    </settings>
+    <dataSource name="synerise_workspace_form_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+            <argument name="class" xsi:type="string">Synerise\Integration\Ui\DataProvider\Workspace\Form\DataProvider</argument>
+            <argument name="name" xsi:type="string">synerise_workspace_form_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">id</argument>
+            <argument name="requestFieldName" xsi:type="string">id</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="submit_url" xsi:type="url" path="*/*/save" />
+                </item>
+            </argument>
+        </argument>
+        <argument name="data" xsi:type="array">
+            <item name="js_config" xsi:type="array">
+                <item name="component" xsi:type="string">Magento_Ui/js/form/provider</item>
+            </item>
+        </argument>
+    </dataSource>
+    <fieldset name="api">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="collapsible" xsi:type="boolean">false</item>
+                <item name="label" xsi:type="string" translate="true">API</item>
+                <item name="sortOrder" xsi:type="number">10</item>
+            </item>
+        </argument>
+        <field name="environment" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="source" xsi:type="string">environment</item>
+                </item>
+            </argument>
+            <settings>
+                <dataType>integer</dataType>
+                <label translate="true">Environment</label>
+                <dataScope>environment</dataScope>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options class="Synerise\Integration\Model\Config\Source\Environment"/>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+        <field name="api_key">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="elementTmpl" xsi:type="string">Synerise_Integration/form/element/password</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="required" xsi:type="boolean">true</item>
+                    <item name="label" xsi:type="string" translate="true">Api Key</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">api_key</item>
+                    <item name="dataScope" xsi:type="string">api_key</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="required-entry" xsi:type="boolean">true</item>
+                    </item>
+                </item>
+            </argument>
+        </field>
+    </fieldset>
+    <fieldset name="basic_auth">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="collapsible" xsi:type="boolean">false</item>
+                <item name="label" xsi:type="string" translate="true">Basic Authenticaiton</item>
+                <item name="sortOrder" xsi:type="number">20</item>
+            </item>
+        </argument>
+        <field name="basic_auth_enabled" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="source" xsi:type="string">basic_auth_enabled</item>
+                </item>
+            </argument>
+            <settings>
+                <dataType>integer</dataType>
+                <label translate="true">Enable</label>
+                <dataScope>basic_auth_enabled</dataScope>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+        <field name="guid">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="elementTmpl" xsi:type="string">Synerise_Integration/form/element/password</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="label" xsi:type="string" translate="true">GUID</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">guid</item>
+                    <item name="dataScope" xsi:type="string">guid</item>
+                </item>
+            </argument>
+        </field>
+    </fieldset>
+</form>
