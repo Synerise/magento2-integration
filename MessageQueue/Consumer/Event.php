@@ -18,19 +18,19 @@ use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\ApiException as CatalogApiException;
 use Synerise\Integration\Communication\Config;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\Model\MessageQueue\Retry;
+use Synerise\Integration\Observer\MergeUuids;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as ProductSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Subscriber as SubscriberSender;
 use Synerise\Integration\SyneriseApi\Sender\Event as EventSender;
-use Synerise\Integration\Observer\ProductDelete;
-use Synerise\Integration\Observer\NewsletterSubscriberDeleteAfter;
-use Synerise\Integration\Observer\NewsletterSubscriberSaveAfter;
-use Synerise\Integration\Observer\OrderPlace;
-use Synerise\Integration\Observer\ProductReview;
+use Synerise\Integration\Observer\Data\ProductDelete;
+use Synerise\Integration\Observer\Data\SubscriberDelete;
+use Synerise\Integration\Observer\Data\SubscriberSave;
+use Synerise\Integration\Observer\Data\OrderSave;
+use Synerise\Integration\Observer\Event\ProductReview;
 use Zend_Db_Adapter_Exception;
 
 class Event
@@ -171,13 +171,13 @@ class Event
             case ProductDelete::EVENT:
                 $this->productSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
                 break;
-            case NewsletterSubscriberDeleteAfter::EVENT:
+            case SubscriberDelete::EVENT:
                 $this->subscriberSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
                 break;
-            case UuidManagement::EVENT:
+            case MergeUuids::EVENT:
                 $this->customerSender->batchAddOrUpdateClients($event['event_payload'], $event['store_id']);
                 break;
-            case OrderPlace::CUSTOMER_UPDATE:
+            case OrderSave::CUSTOMER_UPDATE:
             case ProductReview::CUSTOMER_UPDATE:
                 $this->customerSender->batchAddOrUpdateClients([$event['event_payload']], $event['store_id']);
                 break;
@@ -223,15 +223,15 @@ class Event
     protected function handleDeprecatedEvent(array &$event): bool
     {
         switch ($event['event_name']) {
-            case OrderPlace::EVENT:
+            case OrderSave::EVENT:
                 $this->publishAsDataItem(OrderSender::MODEL, $event['entity_id'], $event['store_id']);
                 return true;
-            case NewsletterSubscriberSaveAfter::EVENT:
+            case SubscriberSave::EVENT:
                 if ($event['entity_id']) {
                     $this->publishAsDataItem(SubscriberSender::MODEL, $event['entity_id'], $event['store_id']);
                     return true;
                 } else {
-                    $event['event_name'] = NewsletterSubscriberDeleteAfter::EVENT;
+                    $event['event_name'] = SubscriberDelete::EVENT;
                     break;
                 }
             case ProductDelete::EVENT_FOR_CONFIG:
@@ -246,7 +246,7 @@ class Event
                 } elseif (isset($event['event_payload']['displayName'])) {
                     $event['event_name'] = ProductReview::CUSTOMER_UPDATE;
                 } else {
-                    $event['event_name'] = OrderPlace::CUSTOMER_UPDATE;
+                    $event['event_name'] = OrderSave::CUSTOMER_UPDATE;
                 }
                 break;
         }
