@@ -83,7 +83,7 @@ class Reader implements ReaderInterface
      */
     public function getEventsSelectedForTracking(int $storeId): array
     {
-        return explode(',', $this->scopeConfig->getValue(
+        return explode(',', (string) $this->scopeConfig->getValue(
             Config::XML_PATH_EVENT_TRACKING_EVENTS,
             ScopeInterface::SCOPE_STORE,
             $storeId
@@ -113,7 +113,7 @@ class Reader implements ReaderInterface
      */
     protected function getEventsSelectedForMessageQueue(int $storeId): array
     {
-        return explode(',', $this->scopeConfig->getValue(
+        return explode(',', (string) $this->scopeConfig->getValue(
             Config::XML_PATH_QUEUE_EVENTS,
             ScopeInterface::SCOPE_STORE,
             $storeId
