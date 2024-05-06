@@ -313,7 +313,9 @@ class Product extends AbstractSender implements SenderInterface
             }
         }
 
-        $value['price'] = $this->priceHelper->getPrice($product, $product->getPrice(), $product->getStoreId());
+        if ($product->getPrice()) {
+            $value['price'] = $this->priceHelper->getPrice($product, $product->getPrice(), $product->getStoreId());
+        }
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
 

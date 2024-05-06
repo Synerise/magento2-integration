@@ -5,7 +5,7 @@ namespace Synerise\Integration\SyneriseApi\Sender;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\ApiException as DefaultApiException;
 use Synerise\CatalogsApiClient\Api\BagsApi;
-use Synerise\CatalogsApiClient\CatalogsApiException;
+use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\CatalogsApiClient\Model\AddBag;
 use Synerise\CatalogsApiClient\Model\Bag;
 

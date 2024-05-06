@@ -48,7 +48,7 @@ class Logger
      */
     public function isExcludedFromLogging(string $exception): bool
     {
-        $exclusions = explode(',', $this->scopeConfig->getValue(
+        $exclusions = explode(',', (string) $this->scopeConfig->getValue(
             Exclude::XML_PATH_DEBUG_LOGGER_EXCLUDE,
         ));
 
