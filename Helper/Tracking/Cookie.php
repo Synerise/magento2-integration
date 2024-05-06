@@ -128,7 +128,7 @@ class Cookie
     {
         if (!isset($this->data[self::COOKIE_SNRS_P])) {
             $paramsArray = [];
-            $items = explode('&', $this->getSnrsPString());
+            $items = explode('&', (string) $this->getSnrsPString());
             if ($items) {
                 foreach ($items as $item) {
                     $values = explode(':', $item);
