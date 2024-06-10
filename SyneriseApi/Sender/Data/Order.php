@@ -70,12 +70,13 @@ class Order extends AbstractSender implements SenderInterface
      * @param Collection|OrderModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
+     * @param array $options
      * @return void
      * @throws ApiException
      * @throws ValidatorException
      * @throws Exception
      */
-    public function sendItems($collection, int $storeId, ?int $websiteId = null)
+    public function sendItems($collection, int $storeId, ?int $websiteId = null, array $options = [])
     {
         $ids = $createATransactionRequest = [];
 
@@ -84,9 +85,10 @@ class Order extends AbstractSender implements SenderInterface
 
             $email = $order->getCustomerEmail();
             $uuid = $email ? $this->uuidGenerator->generateByEmail($email) : null;
+            $snrsParams = $options['snrs_params'] ?: [];
 
             try {
-                $createATransactionRequest[] = $this->orderCRUD->prepareRequest($order, $uuid);
+                $createATransactionRequest[] = $this->orderCRUD->prepareRequest($order, $uuid, $snrsParams);
             } catch (NotFoundException $e) {
                 if ($this->isSent($order->getEntityId())) {
                     $this->loggerHelper->warning(

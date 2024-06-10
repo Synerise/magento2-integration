@@ -88,7 +88,7 @@ class CartRemoveProduct implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        if ($this->stateHelper->isAdminStore()) {
+        if ($this->stateHelper->isAdmin()) {
             return;
         }
 

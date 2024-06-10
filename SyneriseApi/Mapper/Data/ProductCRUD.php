@@ -166,9 +166,10 @@ class ProductCRUD
             $value['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
         }
 
-        $stockStatus = $this->getStockStatus($product->getSku(), $websiteId);
-        $value['stock_status'] = $stockStatus['is_in_stock'];
-        $value['is_salable'] = $product->getIsSalable();
+        if (!$delete && $stockStatus = $this->getStockStatus($product->getSku(), $websiteId)) {
+            $value['stock_status'] = $stockStatus['is_in_stock'];
+            $value['is_salable'] = $product->getIsSalable();
+        }
 
         return new AddItem([
             'item_key' => $value['itemId'],

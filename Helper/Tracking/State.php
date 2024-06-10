@@ -68,10 +68,13 @@ class State
      * Check is request use default scope
      *
      * @return bool
+     * @throws LocalizedException
      */
-    public function isAdminStore(): bool
+    public function isAdmin(): bool
     {
-        return $this->isAdminLoggedIn() || $this->scopeResolver->getScope()->getCode() == Store::ADMIN_CODE;
+        return $this->isAdminLoggedIn() ||
+            $this->scopeResolver->getScope()->getCode() == Store::ADMIN_CODE ||
+            $this->state->getAreaCode() == Area::AREA_ADMINHTML;
     }
 
     /**
@@ -89,7 +92,7 @@ class State
      *
      * @return bool
      */
-    public function isLoggedIn(): bool
+    public function isCustomerLoggedIn(): bool
     {
         return $this->customerSession->isLoggedIn();
     }

@@ -1,12 +1,11 @@
 <?php
 
-namespace Synerise\Integration\Observer\Data;
+namespace Synerise\Integration\Plugin;
 
 use Magento\Catalog\Model\ResourceModel\Product\Website\Link;
 use Magento\CatalogInventory\Api\StockConfigurationInterface;
 use Magento\CatalogInventory\Model\Stock;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Debug;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Indexer\ActionInterface;
@@ -125,6 +124,10 @@ class ProductIndexStock
     public function afterExecuteList(ActionInterface $subject)
     {
         if (!$this->synchronizationConfig->isModelEnabled(Sender::MODEL)) {
+            return;
+        }
+
+        if (empty($this->productStatusesBefore)) {
             return;
         }
 

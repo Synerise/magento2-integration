@@ -60,10 +60,11 @@ class Subscriber extends AbstractSender implements SenderInterface
      * @param Collection|SubscriberModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
+     * @param array $options
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function sendItems($collection, int $storeId, ?int $websiteId = null)
+    public function sendItems($collection, int $storeId, ?int $websiteId = null, array $options = [])
     {
         $requests = [];
         $ids = [];

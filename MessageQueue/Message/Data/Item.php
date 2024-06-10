@@ -32,19 +32,32 @@ class Item
     private $retries;
 
     /**
+     * @var string
+     */
+    private $options;
+
+    /**
      * @param string $model
      * @param int $entity_id
      * @param int $store_id
      * @param int|null $website_id
      * @param int $retries
+     * @param string $options
      */
-    public function __construct(string $model, int $entity_id, int $store_id, ?int $website_id = null, int $retries = 0)
-    {
+    public function __construct(
+        string $model,
+        int $entity_id,
+        int $store_id,
+        ?int $website_id = null,
+        int $retries = 0,
+        string $options = ''
+    ) {
         $this->model = $model;
         $this->entityId = $entity_id;
         $this->storeId = $store_id;
         $this->websiteId = $website_id;
         $this->retries = $retries;
+        $this->options = $options;
 
         if ($model == Product::MODEL && !$website_id) {
             throw new InvalidArgumentException('Website id required for Product');
@@ -154,5 +167,22 @@ class Item
     public function setRetries(int $retries): void
     {
         $this->retries = $retries;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOptions(): string
+    {
+        return $this->options;
+    }
+
+    /**
+     * @param string $options
+     * @return void
+     */
+    public function setOptions(string $options): void
+    {
+        $this->options = $options;
     }
 }
