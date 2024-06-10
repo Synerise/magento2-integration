@@ -105,10 +105,11 @@ class OrderCRUD
      *
      * @param Order $order
      * @param string|null $uuid
+     * @param array $snrsParams
      * @return CreateatransactionRequest
      * @throws Exception
      */
-    public function prepareRequest(Order $order, ?string $uuid = null): CreateatransactionRequest
+    public function prepareRequest(Order $order, ?string $uuid = null, array $snrsParams = []): CreateatransactionRequest
     {
         $products = [];
         foreach ($order->getAllItems() as $item) {
@@ -123,7 +124,8 @@ class OrderCRUD
             $products[] = $this->prepareProductParamsFromOrderItem(
                 $item,
                 $order->getOrderCurrencyCode(),
-                $order->getStoreId()
+                $order->getStoreId(),
+                $snrsParams
             );
         }
 
@@ -155,10 +157,8 @@ class OrderCRUD
             );
         }
 
-        $snrs_params = $this->cookieHelper->shouldIncludeSnrsParams($order->getStoreId()) ?
-            $this->cookieHelper->getSnrsParams() : null;
-        if ($snrs_params) {
-            $params['snrs_params'] = $snrs_params;
+        if (!empty($snrsParams) && $this->cookieHelper->shouldIncludeSnrsParams($order->getStoreId())) {
+            $params['metadata']['snrs_params'] = $snrsParams;
         }
 
         return new CreateatransactionRequest($params);
@@ -202,7 +202,8 @@ class OrderCRUD
     public function prepareProductParamsFromOrderItem(
         OrderItemInterface $item,
         string $currency,
-        ?int $storeId = null
+        ?int $storeId = null,
+        $snrsParams = null
     ): array {
         $product = $item->getProduct();
 
@@ -231,10 +232,8 @@ class OrderCRUD
             "quantity" => $item->getQtyOrdered()
         ];
 
-        $snrs_params = $this->cookieHelper->shouldIncludeSnrsParams($storeId) ?
-            $this->cookieHelper->getSnrsParams() : null;
-        if ($snrs_params) {
-            $params['snrs_params'] = $snrs_params;
+        if ($this->cookieHelper->shouldIncludeSnrsParams($storeId)) {
+            $params['snrs_params'] = $snrsParams;
         }
 
         if ($storeId) {
@@ -319,11 +318,15 @@ class OrderCRUD
      * Prepare order payment info
      *
      * @param Order $order
-     * @return PaymentInfo
+     * @return PaymentInfo|null
      */
-    public function preparePaymentInfo(Order $order): PaymentInfo
+    public function preparePaymentInfo(Order $order): ?PaymentInfo
     {
-        return new PaymentInfo(['method' => $order->getPayment()->getMethod()]);
+        if ($order->getPayment()) {
+            return new PaymentInfo(['method' => $order->getPayment()->getMethod()]);
+        }
+
+        return null;
     }
 
     /**

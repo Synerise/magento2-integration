@@ -101,7 +101,7 @@ class SubscriberSave implements ObserverInterface
         }
 
         try {
-            if (!$this->stateHelper->isLoggedIn() && !$this->stateHelper->isAdminStore()) {
+            if (!$this->stateHelper->isCustomerLoggedIn() && !$this->stateHelper->isAdmin()) {
                 $this->uuidHelper->manageByEmail(
                     $subscriber->getEmail(),
                     $storeId

@@ -73,11 +73,12 @@ class Product extends AbstractSender implements SenderInterface
      * @param Collection $collection
      * @param int $storeId
      * @param int|null $websiteId
+     * @param array $options
      * @return void
      * @throws CatalogsApiException
      * @throws NoSuchEntityException|ValidatorException|ApiException
      */
-    public function sendItems($collection, int $storeId, ?int $websiteId = null)
+    public function sendItems($collection, int $storeId, ?int $websiteId = null, array $options = [])
     {
         if (!$collection->getSize()) {
             return;

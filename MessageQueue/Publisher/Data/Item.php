@@ -3,6 +3,7 @@
 namespace Synerise\Integration\MessageQueue\Publisher\Data;
 
 use Magento\Framework\MessageQueue\PublisherInterface;
+use Magento\Framework\Serialize\Serializer\Json;
 use Synerise\Integration\MessageQueue\Message\Data\Item as MessageItem;
 
 class Item
@@ -13,11 +14,18 @@ class Item
     private $publisher;
 
     /**
-     * @param PublisherInterface $publisher
+     * @var Json
      */
-    public function __construct(PublisherInterface $publisher)
+    private $json;
+
+    /**
+     * @param PublisherInterface $publisher
+     * @param Json $json
+     */
+    public function __construct(PublisherInterface $publisher, Json $json)
     {
         $this->publisher = $publisher;
+        $this->json = $json;
     }
 
     public const TOPIC_NAME = 'synerise.queue.data.item';
@@ -28,12 +36,22 @@ class Item
      * @param string $model
      * @param int $entityId
      * @param int $storeId
+     * @param array $options
      * @param int|null $websiteId
      * @param int|null $retries
      * @return void
      */
-    public function publish(string $model, int $entityId, int $storeId, ?int $websiteId = null, ?int $retries = 0)
-    {
-        $this->publisher->publish(self::TOPIC_NAME, new MessageItem($model, $entityId, $storeId, $websiteId, $retries));
+    public function publish(
+        string $model,
+        int $entityId,
+        int $storeId,
+        array $options = [],
+        ?int $websiteId = null,
+        ?int $retries = 0
+    ) {
+        $this->publisher->publish(
+            self::TOPIC_NAME,
+            new MessageItem($model, $entityId, $storeId, $websiteId, $retries, $this->json->serialize($options))
+        );
     }
 }

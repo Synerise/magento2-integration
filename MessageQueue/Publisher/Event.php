@@ -2,7 +2,6 @@
 
 namespace Synerise\Integration\MessageQueue\Publisher;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\MessageQueue\PublisherInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 

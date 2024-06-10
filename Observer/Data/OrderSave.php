@@ -139,7 +139,7 @@ class OrderSave implements ObserverInterface
                 return;
             }
 
-            if ($this->stateHelper->isFrontend() && $order->getCustomerEmail()) {
+            if (!$this->stateHelper->isAdmin() && $order->getCustomerEmail()) {
                 $this->uuidHelper->manageByEmail(
                     $order->getCustomerEmail(),
                     $storeId
@@ -147,7 +147,13 @@ class OrderSave implements ObserverInterface
             }
 
             if ($this->synchronization->isModelEnabled(OrderSender::MODEL)) {
-                $this->dataItemPublisher->publish(OrderSender::MODEL, $order->getId(), $storeId);
+                $this->dataItemPublisher->publish(
+                    OrderSender::MODEL, $order->getId(),
+                    $storeId,
+                    [
+                        'snrs_params' => $this->cookieHelper->getSnrsParams()
+                    ]
+                );
             }
 
             if ($order->getCustomerIsGuest() && $order->getCustomerEmail()) {

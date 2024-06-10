@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\Observer\Data;
+namespace Synerise\Integration\Plugin;
 
 use Magento\Catalog\Model\ResourceModel\Product\Website\Link;
 use Magento\Framework\Exception\LocalizedException;
@@ -138,7 +138,7 @@ class ProductIndexSalability
                     }
 
                     if ($this->synchronizationConfig->isStoreConfigured($storeId)) {
-                        $this->publisher->publish(Sender::MODEL, $productId, $storeId, $websiteId);
+                        $this->publisher->publish(Sender::MODEL, $productId, $storeId, [], $websiteId);
                     }
                 }
             } catch (NoSuchEntityException $e) {

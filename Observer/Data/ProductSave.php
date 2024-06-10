@@ -100,6 +100,7 @@ class ProductSave implements ObserverInterface
                         Sender::MODEL,
                         (int) $product->getEntityId(),
                         (int) $storeId,
+                        [],
                         $this->getWebsiteIdByStoreId($storeId)
                     );
                 }

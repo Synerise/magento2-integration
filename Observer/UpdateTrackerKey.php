@@ -162,7 +162,8 @@ class UpdateTrackerKey implements ObserverInterface
      */
     protected function getWorkspaceMap(): array
     {
-        return $this->serializer->unserialize($this->config->getValue(Workspace::XML_PATH_WORKSPACE_MAP));
+        $value = $this->config->getValue(Workspace::XML_PATH_WORKSPACE_MAP);
+        return $value ? $this->serializer->unserialize($value) : [];
     }
 
     /**

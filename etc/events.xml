@@ -6,6 +6,9 @@
     <event name="catalog_product_save_after">
         <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\Data\ProductSave" />
     </event>
+    <event name="catalog_product_import_bunch_delete_commit_before">
+        <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\Data\ProductImportBunchDelete"/>
+    </event>
     <event name="catalog_product_import_bunch_save_after">
         <observer name="synerise_catalog_product_import_bunch_save_after" instance="Synerise\Integration\Observer\Data\ProductImportBunch"/>
     </event>

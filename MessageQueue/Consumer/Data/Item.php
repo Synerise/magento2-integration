@@ -3,6 +3,7 @@
 namespace Synerise\Integration\MessageQueue\Consumer\Data;
 
 use Exception;
+use Magento\Framework\Serialize\Serializer\Json;
 use Synerise\Integration\Communication\Config;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\MessageQueue\Retry;
@@ -57,12 +58,18 @@ class Item
     protected $filter;
 
     /**
+     * @var Json
+     */
+    protected $json;
+
+    /**
      * @param Logger $logger
      * @param ObjectManagerInterface $objectManager
      * @param MessageEncoder $messageEncoder
      * @param CollectionFactoryProvider $collectionFactoryProvider
      * @param SenderFactory $senderFactory
      * @param Filter $filter
+     * @param Json $json
      */
     public function __construct(
         Logger $logger,
@@ -70,7 +77,8 @@ class Item
         MessageEncoder $messageEncoder,
         CollectionFactoryProvider $collectionFactoryProvider,
         SenderFactory $senderFactory,
-        Filter $filter
+        Filter $filter,
+        Json $json
     ) {
         $this->logger = $logger;
         $this->objectManager = $objectManager;
@@ -78,6 +86,7 @@ class Item
         $this->collectionFactoryProvider = $collectionFactoryProvider;
         $this->senderFactory = $senderFactory;
         $this->filter = $filter;
+        $this->json = $json;
     }
 
     /**
@@ -146,7 +155,12 @@ class Item
             $collection->addAttributeToSelect($attributes);
         }
 
-        $sender->sendItems($collection, $item->getStoreId(), $item->getWebsiteId());
+        $sender->sendItems(
+            $collection,
+            $item->getStoreId(),
+            $item->getWebsiteId(),
+            $item->getOptions() ? $this->json->unserialize($item->getOptions()) : []
+        );
     }
 
     /**

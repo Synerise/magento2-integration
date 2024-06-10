@@ -74,10 +74,11 @@ class Customer extends AbstractSender implements SenderInterface
      * @param Collection|CustomerModel[] $collection
      * @param int $storeId
      * @param int|null $websiteId
+     * @param array $options
      * @return void
      * @throws ApiException|ValidatorException
      */
-    public function sendItems($collection, int $storeId, ?int $websiteId = null)
+    public function sendItems($collection, int $storeId, ?int $websiteId = null, array $options = [])
     {
         $createAClientInCrmRequests = [];
         $ids = [];

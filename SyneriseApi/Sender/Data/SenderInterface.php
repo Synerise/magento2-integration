@@ -13,10 +13,11 @@ interface SenderInterface
      * @param mixed $collection
      * @param int $storeId
      * @param int|null $websiteId
+     * @param array $options
      * @return mixed
      * @throws ApiException | CatalogsApiException
      */
-    public function sendItems($collection, int $storeId, ?int $websiteId = null);
+    public function sendItems($collection, int $storeId, ?int $websiteId = null, array $options = []);
 
     /**
      * Get Attributes to collection

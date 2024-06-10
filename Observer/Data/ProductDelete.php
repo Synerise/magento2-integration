@@ -100,7 +100,6 @@ class ProductDelete implements ObserverInterface
         $product = $observer->getEvent()->getProduct();
 
         try {
-            $enabledStores = $this->synchronization->getConfiguredStores();
             $productStores = $product->getStoreIds();
             foreach ($productStores as $storeId) {
                 $config = $this->configFactory->create($storeId);
@@ -108,18 +107,16 @@ class ProductDelete implements ObserverInterface
                     return;
                 }
 
-                if (in_array($storeId, $enabledStores)) {
-                    $addItemRequest = $this->productCRUD->prepareRequest(
-                        $product,
-                        $this->getWebsiteIdByStoreId($storeId),
-                        1
-                    );
+                $addItemRequest = $this->productCRUD->prepareRequest(
+                    $product,
+                    $this->getWebsiteIdByStoreId($storeId),
+                    1
+                );
 
-                    if ($config->isEventMessageQueueEnabled(self::EVENT_FOR_CONFIG)) {
-                        $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());
-                    } else {
-                        $this->sender->deleteItem($addItemRequest, $storeId, $product->getEntityId());
-                    }
+                if ($config->isEventMessageQueueEnabled(self::EVENT_FOR_CONFIG)) {
+                    $this->publisher->publish(self::EVENT, $addItemRequest, $storeId, $product->getEntityId());
+                } else {
+                    $this->sender->deleteItem($addItemRequest, $storeId, $product->getEntityId());
                 }
             }
         } catch (\Exception $e) {
