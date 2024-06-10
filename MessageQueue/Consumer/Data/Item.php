@@ -159,7 +159,7 @@ class Item
             $collection,
             $item->getStoreId(),
             $item->getWebsiteId(),
-            $this->json->unserialize($item->getOptions())
+            $item->getOptions() ? $this->json->unserialize($item->getOptions()) : []
         );
     }
 

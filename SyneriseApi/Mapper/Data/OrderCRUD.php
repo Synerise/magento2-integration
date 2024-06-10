@@ -318,11 +318,15 @@ class OrderCRUD
      * Prepare order payment info
      *
      * @param Order $order
-     * @return PaymentInfo
+     * @return PaymentInfo|null
      */
-    public function preparePaymentInfo(Order $order): PaymentInfo
+    public function preparePaymentInfo(Order $order): ?PaymentInfo
     {
-        return new PaymentInfo(['method' => $order->getPayment()->getMethod()]);
+        if ($order->getPayment()) {
+            return new PaymentInfo(['method' => $order->getPayment()->getMethod()]);
+        }
+
+        return null;
     }
 
     /**

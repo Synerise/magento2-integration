@@ -77,7 +77,7 @@
         <plugin name="synerise_update_index_salability_status" type="Synerise\Integration\Plugin\ProductIndexSalability" />
     </type>
     <type name="Magento\CatalogImportExport\Model\Import\Product">
-        <plugin name="synerise_import_entity_abstract" type="Synerise\Integration\Plugin\ProductImportInterceptor" />
+        <plugin name="synerise_import_entity_abstract" type="Synerise\Integration\Plugin\ProductImport" />
     </type>
     <type name="Magento\CatalogInventory\Model\Indexer\Stock">
         <plugin name="synerise_indexer_stock" type="Synerise\Integration\Plugin\ProductIndexStock" />
