@@ -134,7 +134,7 @@ class CartAddRemove
             "sku" => $sku,
             "name" => $product->getName(),
             "productUrl" => $product->getUrlInStore(),
-            "quantity" => $quoteItem->getQty()
+            "quantity" => $quoteItem->getQty() ?: $product->getData('cart_qty')
         ];
 
         if ($sku!= $skuVariant) {
