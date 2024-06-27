@@ -109,7 +109,7 @@ class Order extends AbstractSender implements SenderInterface
         }
 
         if ($ids) {
-            $this->markItemsAsSent($ids);
+            $this->markItemsAsSent($ids, $storeId);
         }
     }
 
@@ -162,15 +162,17 @@ class Order extends AbstractSender implements SenderInterface
     /**
      * Mark orders as sent
      *
-     * @param string[] $ids
+     * @param int[] $ids
+     * @param int $storeId
      * @return void
      */
-    public function markItemsAsSent(array $ids)
+    public function markItemsAsSent(array $ids, int $storeId)
     {
         $data = [];
         foreach ($ids as $id) {
             $data[] = [
-                'order_id' => $id
+                'order_id' => $id,
+                'store_id' => $storeId
             ];
         }
         $this->resource->getConnection()->insertOnDuplicate(
