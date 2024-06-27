@@ -79,7 +79,7 @@ class Subscriber extends AbstractSender implements SenderInterface
                 $requests,
                 $storeId
             );
-            $this->markSubscribersAsSent($ids);
+            $this->markSubscribersAsSent($ids, $storeId);
         }
     }
 
@@ -146,13 +146,15 @@ class Subscriber extends AbstractSender implements SenderInterface
      * Mark subscribers as sent
      *
      * @param int[] $ids
+     * @param int $storeId
      */
-    public function markSubscribersAsSent($ids)
+    public function markSubscribersAsSent(array $ids, int $storeId)
     {
         $data = [];
         foreach ($ids as $id) {
             $data[] = [
-                'subscriber_id' => $id
+                'subscriber_id' => $id,
+                'store_id' => $storeId
             ];
         }
 

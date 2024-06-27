@@ -43,6 +43,7 @@
     <table name="synerise_sync_order" resource="default" engine="innodb"
            comment="Synerise Synchronization Order Status">
         <column xsi:type="int" name="order_id" unsigned="true" nullable="false" comment="Order ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="true" comment="Store ID"/>
         <column xsi:type="timestamp" name="synerise_updated_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Synerise Updated At"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
             <column name="order_id"/>
@@ -61,6 +62,7 @@
     <table name="synerise_sync_subscriber" resource="default" engine="innodb"
            comment="Synerise Synchronization Subscriber Status">
         <column xsi:type="int" name="subscriber_id" unsigned="true" nullable="false" comment="Subscriber ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="true" comment="Store ID"/>
         <column xsi:type="timestamp" name="synerise_updated_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Synerise Updated At"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
             <column name="subscriber_id"/>

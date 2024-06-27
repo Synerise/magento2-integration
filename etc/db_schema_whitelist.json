@@ -12,7 +12,8 @@
     "synerise_sync_order": {
         "column": {
             "order_id": true,
-            "synerise_updated_at": true
+            "synerise_updated_at": true,
+            "store_id": true
         },
         "constraint": {
             "PRIMARY": true
@@ -31,7 +32,8 @@
     "synerise_sync_subscriber": {
         "column": {
             "subscriber_id": true,
-            "synerise_updated_at": true
+            "synerise_updated_at": true,
+            "store_id": true
         },
         "constraint": {
             "PRIMARY": true

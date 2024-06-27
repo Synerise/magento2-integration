@@ -11,9 +11,9 @@ use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Helper\Tracking\UuidManagement;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
+use Synerise\Integration\Observer\MergeUuids;
 use Synerise\Integration\SyneriseApi\Mapper\Data\CustomerCRUD;
 use Synerise\Integration\SyneriseApi\Sender\AbstractSender;
 use Synerise\Integration\Model\Config\Source\Customers\Attributes;
@@ -122,7 +122,7 @@ class Customer extends AbstractSender implements SenderInterface
             }
         } catch (ApiException $e) {
             $shouldLogException = true;
-            if ($eventName == UuidManagement::EVENT) {
+            if ($eventName == MergeUuids::EVENT) {
                 $shouldLogException = $this->loggerHelper->isExcludedFromLogging(
                     Exclude::EXCEPTION_CLIENT_MERGE_FAIL
                 );
