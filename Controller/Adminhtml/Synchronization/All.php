@@ -8,6 +8,8 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
+use PhpAmqpLib\Exception\AMQPExceptionInterface;
+use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\CollectionFactoryProvider;
 use Synerise\Integration\MessageQueue\Filter;
 use Synerise\Integration\MessageQueue\Publisher\Data\Scheduler as Publisher;
@@ -42,23 +44,31 @@ class All extends Action implements HttpPostActionInterface
     protected $synchronization;
 
     /**
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
      * @param Context $context
      * @param Publisher $publisher
      * @param Filter $filter
      * @param CollectionFactoryProvider $collectionFactoryProvider
      * @param Config $synchronization
+     * @param Logger $logger
      */
     public function __construct(
         Context $context,
         Publisher $publisher,
         Filter $filter,
         CollectionFactoryProvider $collectionFactoryProvider,
-        Config $synchronization
+        Config $synchronization,
+        Logger $logger
     ) {
         $this->publisher = $publisher;
         $this->filter = $filter;
         $this->collectionFactoryProvider = $collectionFactoryProvider;
         $this->synchronization = $synchronization;
+        $this->logger = $logger;
 
         parent::__construct($context);
     }
@@ -130,9 +140,12 @@ class All extends Action implements HttpPostActionInterface
                     )
                 );
             }
-
+        } catch (\LogicException|AMQPExceptionInterface $e) {
+            $this->logger->debug('Failed to schedule synchronization', ['exception' => $e]);
+            $this->messageManager->addErrorMessage(__('Failed to schedule synchronization. Please review your amqp config.'));
         } catch (\Exception $e) {
-            $this->messageManager->addErrorMessage(__('Something went wrong while processing the request.'));
+            $this->logger->error('Failed to schedule synchronization', ['exception' => $e]);
+            $this->messageManager->addErrorMessage(__('Failed to schedule synchronization'));
         }
 
         return $resultRedirect->setPath('*/*/index', $params);

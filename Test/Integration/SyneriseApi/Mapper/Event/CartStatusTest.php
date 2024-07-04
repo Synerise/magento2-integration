@@ -88,7 +88,7 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
         $params = $request->getParams();
 
         $this->assertEquals(1, count($params['products']));
-        foreach($params['products'] as $requestProduct) {
+        foreach ($params['products'] as $requestProduct) {
             $this->assertEquals($product->getSku(), $requestProduct['sku']);
             $this->assertEquals(self::PRODUCT_QTY, $requestProduct['quantity']);
             $this->assertFalse(isset($requestProduct['skuVariant']));
@@ -130,7 +130,7 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
         $params = $request->getParams();
 
         $this->assertEquals(1, count($params['products']));
-        foreach($params['products'] as $requestProduct) {
+        foreach ($params['products'] as $requestProduct) {
             $this->assertEquals($product->getSku(), $requestProduct['sku']);
             $this->assertEquals(self::PRODUCT_QTY, $requestProduct['quantity']);
             $this->assertEquals('simple_10', $requestProduct['skuVariant']);
@@ -138,5 +138,4 @@ class CartStatusTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals(self::TOTAL_AMOUNT, $params['totalAmount']);
     }
-
 }

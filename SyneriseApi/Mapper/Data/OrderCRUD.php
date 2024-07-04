@@ -403,5 +403,4 @@ class OrderCRUD
             return (float) $order->getSubtotal();
         }
     }
-
 }

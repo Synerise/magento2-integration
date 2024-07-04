@@ -27,9 +27,9 @@ class CustomerMergeTest extends \PHPUnit\Framework\TestCase
 
     public function testPrepareRequest(): void
     {
-       $email = 'customer@example.com';
-       $prevUuid = (string) Uuid::Uuid4();
-       $currUuid = (string) Uuid::Uuid4();
+        $email = 'customer@example.com';
+        $prevUuid = (string) Uuid::Uuid4();
+        $currUuid = (string) Uuid::Uuid4();
 
         $request = $this->mapper->prepareRequest(
             $email,

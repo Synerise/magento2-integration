@@ -9,6 +9,8 @@ class Events implements \Magento\Framework\Data\OptionSourceInterface
         'customer_login'                            => 'Customer login',
         'customer_logout'                           => 'Customer logout',
         'customer_save_after'                       => 'Customer updated',
+        'customer_delete'                           => 'Customer deleted',
+        'customer_import_interceptor'               => 'Customer import',
         'checkout_cart_add_product_complete'        => 'Customer added product to cart',
         'sales_quote_remove_item'                   => 'Customer removed product from cart',
         'product_review_save_after'                 => 'Customer reviewed product',

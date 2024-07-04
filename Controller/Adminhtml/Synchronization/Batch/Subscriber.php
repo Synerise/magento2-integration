@@ -11,6 +11,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\Collection;
+use PhpAmqpLib\Exception\AMQPExceptionInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
@@ -137,9 +138,12 @@ class Subscriber extends Action implements HttpPostActionInterface
                             )
                         );
                     }
+                } catch (\LogicException|AMQPExceptionInterface $e) {
+                    $this->logger->debug('Failed to add subscribers to synchronization queue', ['exception' => $e]);
+                    $this->messageManager->addErrorMessage(__('Failed to add subscribers to synchronization queue. Please review your amqp config.'));
                 } catch (Exception $e) {
-                    $this->logger->error('Failed to add records to synchronization queue', ['exception' => $e]);
-                    $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
+                    $this->logger->error('Failed to add subscribers to synchronization queue', ['exception' => $e]);
+                    $this->messageManager->addErrorMessage(__('Failed to add subscribers to synchronization queue'));
                 }
             }
         }

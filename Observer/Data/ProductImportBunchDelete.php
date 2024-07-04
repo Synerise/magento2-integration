@@ -99,7 +99,7 @@ class ProductImportBunchDelete implements ObserverInterface
             foreach ($this->productImport->getProductsToDelete() as $storeId => $storeData) {
                 $config = $this->configFactory->get($storeId);
 
-                foreach($storeData['products'] as $product) {
+                foreach ($storeData['products'] as $product) {
                     $entityId = $product->getEntityId();
                     $addItemRequest = $this->productCRUD->prepareRequest(
                         $product,

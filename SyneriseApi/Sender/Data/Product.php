@@ -120,7 +120,7 @@ class Product extends AbstractSender implements SenderInterface
      * @throws CatalogsApiException
      * @throws ValidatorException
      */
-    public function deleteItem($payload, int $storeId, ?int $entityId)
+    public function deleteItem($payload, int $storeId, ?int $entityId = null)
     {
         $this->addItemsBatchWithInvalidCatalogIdCatch([$payload], $storeId);
         if ($entityId) {

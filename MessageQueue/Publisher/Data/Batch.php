@@ -8,10 +8,8 @@ use Magento\Framework\Bulk\BulkManagementInterface;
 use Magento\Framework\DataObject\IdentityGeneratorInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\MessageQueue\PublisherInterface;
-use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Phrase;
 use Magento\Framework\Serialize\SerializerInterface;
-use Synerise\Integration\Model\ResourceModel\Bulk\CollectionFactory;
 
 class Batch extends AbstractBulk
 {

@@ -90,7 +90,6 @@ class UuidManagement
             'prevUuid' => $uuid,
             'storeId' => $storeId,
         ]);
-
     }
 
     /**

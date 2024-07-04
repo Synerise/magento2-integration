@@ -97,6 +97,7 @@ class BulkManagement implements BulkManagementInterface
 
     /**
      * @inheritDoc
+     * @throws Exception
      */
     public function scheduleBulk($bulkUuid, array $operations, $description, $userId = null)
     {
@@ -131,8 +132,7 @@ class BulkManagement implements BulkManagementInterface
             $connection->commit();
         } catch (Exception $exception) {
             $connection->rollBack();
-            $this->logger->critical($exception->getMessage());
-            return false;
+            throw $exception;
         }
 
         return true;

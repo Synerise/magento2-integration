@@ -27,7 +27,7 @@ class OrderCRUDTest extends \PHPUnit\Framework\TestCase
     /**
      * @var Context
      */
-    private  $contextHelper;
+    private $contextHelper;
 
     /**
      * @var UuidGenerator

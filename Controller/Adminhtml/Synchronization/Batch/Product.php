@@ -13,6 +13,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Ui\Component\MassAction\Filter;
+use PhpAmqpLib\Exception\AMQPExceptionInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Synchronization\Config;
@@ -136,9 +137,12 @@ class Product extends Action
                         __('Nothing to synchronize. Stores for selected product(s) not enabled for synchronization.')
                     );
                 }
+            } catch (\LogicException|AMQPExceptionInterface $e) {
+                $this->logger->debug('Failed to add products to synchronization queue', ['exception' => $e]);
+                $this->messageManager->addErrorMessage(__('Failed to add products to synchronization queue. Please review your amqp config.'));
             } catch (Exception $e) {
-                $this->logger->error('Failed to schedule records to synchronization queue', ['exception' => $e]);
-                $this->messageManager->addErrorMessage(__('Failed to add records to synchronization queue'));
+                $this->logger->error('Failed to add products to synchronization queue', ['exception' => $e]);
+                $this->messageManager->addErrorMessage(__('Failed to add products to synchronization queue'));
             }
         }
 

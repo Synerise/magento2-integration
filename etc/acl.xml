@@ -26,12 +26,11 @@
                         <resource id="Magento_Config::config">
                             <resource id="Synerise_Integration::configuration" title="Synerise">
                                 <resource id="Synerise_Integration::configuration_workspace" title="Workspace" sortOrder="1" />
-                                <resource id="Synerise_Integration::configuration_synchronization" title="Synchronization" sortOrder="2" />
-                                <resource id="Synerise_Integration::configuration_attributes" title="Attributes" sortOrder="3"/>
+                                <resource id="Synerise_Integration::configuration_attributes" title="Data" sortOrder="3"/>
                                 <resource id="Synerise_Integration::configuration_page_tracking" title="Page Tracking" sortOrder="4"/>
                                 <resource id="Synerise_Integration::configuration_event_tracking" title="Event Tracking" sortOrder="5"/>
                                 <resource id="Synerise_Integration::configuration_api" title="Api" sortOrder="6" />
-                                <resource id="Synerise_Integration::configuration_queue" title="Queue" sortOrder="7" />
+                                <resource id="Synerise_Integration::configuration_debug" title="Debug" sortOrder="7" />
                             </resource>
                         </resource>
                     </resource>

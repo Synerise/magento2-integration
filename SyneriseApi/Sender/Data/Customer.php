@@ -136,6 +136,31 @@ class Customer extends AbstractSender implements SenderInterface
     }
 
     /**
+     * Delete item
+     *
+     * @param $payload
+     * @param int $storeId
+     * @param int|null $entityId
+     * @return void
+     * @throws ApiException
+     * @throws ValidatorException
+     */
+    public function deleteItem($payload, int $storeId, ?int $entityId = null)
+    {
+        list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(
+            function () use ($storeId, $payload) {
+                $this->getDefaultApiInstance($storeId)
+                    ->deleteAClientByCustomIdWithHttpInfo($payload, 'application/json', '4.4');
+            },
+            $storeId
+        );
+
+        if ($entityId) {
+            $this->deleteStatus([$entityId], $storeId);
+        }
+    }
+
+    /**
      * Get default API instance
      *
      * @param int $storeId
@@ -178,6 +203,24 @@ class Customer extends AbstractSender implements SenderInterface
         $this->resource->getConnection()->insertOnDuplicate(
             $this->resource->getTableName('synerise_sync_customer'),
             $data
+        );
+    }
+
+    /**
+     * Delete status
+     *
+     * @param int[] $entityIds
+     * @param int $storeId
+     * @return void
+     */
+    protected function deleteStatus(array $entityIds, int $storeId)
+    {
+        $this->resource->getConnection()->delete(
+            $this->resource->getConnection()->getTableName('synerise_sync_customer'),
+            [
+                'store_id = ?' => $storeId,
+                'customer_id IN (?)' => $entityIds,
+            ]
         );
     }
 }

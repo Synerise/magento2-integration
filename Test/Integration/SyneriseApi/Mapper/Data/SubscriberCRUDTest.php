@@ -30,7 +30,7 @@ class SubscriberCRUDTest extends \PHPUnit\Framework\TestCase
     /**
      * @var CollectionFactoryProvider
      */
-    private  $collectionFactoryProvider;
+    private $collectionFactoryProvider;
 
     /**
      * @var UuidGenerator
@@ -73,7 +73,6 @@ class SubscriberCRUDTest extends \PHPUnit\Framework\TestCase
             $agreements = $request->getAgreements();
             $this->assertEquals(1, $agreements->getEmail());
         }
-
     }
 
     protected function getEntityIds()

@@ -44,7 +44,7 @@ class CronCleanUp implements DataPatchInterface
             'crontab/default/jobs/synerise_sync_queue/run/model'
         ];
 
-        foreach($paths as $path) {
+        foreach ($paths as $path) {
             $this->deleteConfig($path);
         }
     }

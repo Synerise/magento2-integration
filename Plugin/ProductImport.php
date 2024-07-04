@@ -139,9 +139,10 @@ class ProductImport
      * @throws LocalizedException
      * @throws NoSuchEntityException
      */
-    private function loadProductsToDelete(string $sku) {
+    private function loadProductsToDelete(string $sku)
+    {
         $baseProduct = $this->retrieveProductBySku($sku);
-        if($baseProduct) {
+        if ($baseProduct) {
             $websiteIds = $baseProduct->getWebsiteIds();
             foreach ($websiteIds as $websiteId) {
                 foreach ($this->getEnabledStoreIds($websiteId, ProductImportBunchDelete::EVENT) as $storeId) {
@@ -175,7 +176,7 @@ class ProductImport
         if (!isset($this->storeIds[$websiteId])) {
             $this->storeIds[$websiteId] = [];
 
-            foreach($this->storeManager->getWebsite($websiteId)->getStoreIds() as $storeId) {
+            foreach ($this->storeManager->getWebsite($websiteId)->getStoreIds() as $storeId) {
                 if ($this->configFactory->get($storeId)->isEventTrackingEnabled($eventName)) {
                     $this->storeIds[$websiteId][] = $storeId;
                 }

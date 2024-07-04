@@ -60,6 +60,16 @@
             <argument name="bulkManagement" xsi:type="object">Synerise\Integration\MessageQueue\BulkManagement</argument>
         </arguments>
     </type>
+    <type name="Synerise\Integration\MessageQueue\Publisher\Data\Batch">
+        <arguments>
+            <argument name="bulkManagement" xsi:type="object">Synerise\Integration\MessageQueue\BulkManagement</argument>
+        </arguments>
+    </type>
+    <type name="Synerise\Integration\MessageQueue\Publisher\Data\Scheduler">
+        <arguments>
+            <argument name="bulkManagement" xsi:type="object">Synerise\Integration\MessageQueue\BulkManagement</argument>
+        </arguments>
+    </type>
     <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
         <arguments>
             <argument name="collections" xsi:type="array">
@@ -73,11 +83,17 @@
             <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace</argument>
         </arguments>
     </virtualType>
+    <type name="Magento\CustomerImportExport\Model\Import\Customer">
+        <plugin name="synerise_customer_import" type="Synerise\Integration\Plugin\CustomerImport" />
+    </type>
+    <type name="Magento\CustomerImportExport\Model\Import\Address">
+        <plugin name="synerise_customer_import" type="Synerise\Integration\Plugin\CustomerAddressImport" />
+    </type>
     <type name="Magento\InventoryIndexer\Model\Queue\UpdateIndexSalabilityStatus">
         <plugin name="synerise_update_index_salability_status" type="Synerise\Integration\Plugin\ProductIndexSalability" />
     </type>
     <type name="Magento\CatalogImportExport\Model\Import\Product">
-        <plugin name="synerise_import_entity_abstract" type="Synerise\Integration\Plugin\ProductImport" />
+        <plugin name="synerise_product_import" type="Synerise\Integration\Plugin\ProductImport" />
     </type>
     <type name="Magento\CatalogInventory\Model\Indexer\Stock">
         <plugin name="synerise_indexer_stock" type="Synerise\Integration\Plugin\ProductIndexStock" />

@@ -55,6 +55,8 @@ class Reader implements ReaderInterface
                     $output['queue_events'][] = $event;
                 }
             }
+
+            $output['customer_delete_behavior'] = $this->getCustomerDeleteBehavior($scope);
         }
 
         return $output;
@@ -118,5 +120,21 @@ class Reader implements ReaderInterface
             ScopeInterface::SCOPE_STORE,
             $storeId
         ));
+    }
+
+
+    /**
+     * Get customer delete behavior
+     *
+     * @param int $storeId
+     * @return string
+     */
+    public function getCustomerDeleteBehavior(int $storeId): string
+    {
+        return $this->scopeConfig->getValue(
+            Config::XML_PATH_CUSTOMER_DELETE_BEHAVIOR,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 }
