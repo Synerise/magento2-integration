@@ -37,7 +37,6 @@ class CustomerFromReviewTest extends \PHPUnit\Framework\TestCase
         $this->mapper = $this->objectManager->create(CustomerFromReview::class);
         $this->reviewCollection = $this->objectManager->create(Collection::class);
         $this->reviewResource =  $this->objectManager->create(Review::class);
-
     }
 
     /**

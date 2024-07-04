@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Model\Tracking;
 
+use Synerise\Integration\Model\Config\Source\CustomerDeleteBehavior;
 use Synerise\Integration\Model\Tracking\Config\Data;
 use Synerise\Integration\Model\Tracking\Config\DataFactory;
 
@@ -14,6 +15,8 @@ class Config
     public const XML_PATH_QUEUE_ENABLED = 'synerise/queue/enabled';
 
     public const XML_PATH_QUEUE_EVENTS = 'synerise/queue/events';
+
+    public const XML_PATH_CUSTOMER_DELETE_BEHAVIOR = 'synerise/customer/delete_behavior';
 
     /**
      * @var Data
@@ -83,5 +86,15 @@ class Config
     public function getEventsEnabledForQueue(): array
     {
         return $this->dataStorage->get('queue_events', []);
+    }
+
+    /**
+     * Get customer delete behavior
+     *
+     * @return string
+     */
+    public function getCustomerDeleteBehavior(): string
+    {
+        return $this->dataStorage->get('customer_delete_behavior', CustomerDeleteBehavior::SEND_EVENT);
     }
 }

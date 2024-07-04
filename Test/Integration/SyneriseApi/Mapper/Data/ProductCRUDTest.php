@@ -34,7 +34,7 @@ class ProductCRUDTest extends \PHPUnit\Framework\TestCase
     /**
      * @var CollectionFactoryProvider
      */
-    private  $collectionFactoryProvider;
+    private $collectionFactoryProvider;
 
     protected function setUp(): void
     {
@@ -80,6 +80,5 @@ class ProductCRUDTest extends \PHPUnit\Framework\TestCase
             $this->assertEquals(1, $value['stock_status']);
             $this->assertTrue($value['is_salable']);
         }
-
     }
 }

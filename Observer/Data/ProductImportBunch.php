@@ -90,7 +90,7 @@ class ProductImportBunch implements ObserverInterface
                 $websites = $adapter->getProductWebsites($rowData['sku']);
                 foreach ($websites as $websiteId) {
                     foreach ($this->getWebsiteEnabledStoreIds($websiteId) as $storeId) {
-                        if(!isset($productsByStore[$storeId])) {
+                        if (!isset($productsByStore[$storeId])) {
                             $productsByStore[$storeId] = [
                                 'entity_ids' => [],
                                 'website_id' => $websiteId
@@ -104,7 +104,7 @@ class ProductImportBunch implements ObserverInterface
             foreach ($productsByStore as $storeId => $storeData) {
                 $config = $this->configFactory->create($storeId);
                 if ($config->isEventTrackingEnabled(self::EVENT)) {
-                    $this->publisher->schedule(
+                    $this->publisher->publish(
                         Sender::MODEL,
                         array_unique($storeData['entity_ids']),
                         $storeId,
@@ -131,7 +131,7 @@ class ProductImportBunch implements ObserverInterface
             $this->storeIds[$websiteId] = [];
 
             $enabledStoreIds = $this->synchronization->getConfiguredStores();
-            foreach($this->storeManager->getWebsite($websiteId)->getStoreIds() as $storeId) {
+            foreach ($this->storeManager->getWebsite($websiteId)->getStoreIds() as $storeId) {
                 $config = $this->configFactory->create($storeId);
                 if (in_array($storeId, $enabledStoreIds) && $config->isEventTrackingEnabled(self::EVENT)) {
                     $this->storeIds[$websiteId][] = $storeId;

@@ -148,7 +148,8 @@ class OrderSave implements ObserverInterface
 
             if ($this->synchronization->isModelEnabled(OrderSender::MODEL)) {
                 $this->dataItemPublisher->publish(
-                    OrderSender::MODEL, $order->getId(),
+                    OrderSender::MODEL,
+                    $order->getId(),
                     $storeId,
                     [
                         'snrs_params' => $this->cookieHelper->getSnrsParams()

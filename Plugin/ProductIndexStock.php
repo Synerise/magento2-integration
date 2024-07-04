@@ -11,7 +11,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Indexer\ActionInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\MessageQueue\Publisher\Data\Batch;
+use Synerise\Integration\MessageQueue\Publisher\Data\Batch as Publisher;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Synchronization\Config as SynchronizationConfig;
 use Synerise\Integration\SyneriseApi\Sender\Data\Product as Sender;
@@ -73,7 +73,7 @@ class ProductIndexStock
      * @param StoreManagerInterface $storeManager
      * @param StockConfigurationInterface $stockConfiguration
      * @param Link $productWebsiteLink
-     * @param Batch $publisher
+     * @param Publisher $publisher
      * @param SynchronizationConfig $synchronizationConfig
      * @param Logger $loggerHelper
      */
@@ -82,7 +82,7 @@ class ProductIndexStock
         StoreManagerInterface $storeManager,
         StockConfigurationInterface $stockConfiguration,
         Link $productWebsiteLink,
-        Batch $publisher,
+        Publisher $publisher,
         SynchronizationConfig $synchronizationConfig,
         Logger $loggerHelper
     ) {

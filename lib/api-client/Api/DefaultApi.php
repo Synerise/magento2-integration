@@ -6373,7 +6373,7 @@ class DefaultApi
             );
         }
 
-        $resourcePath = '/clients/by-customid/{clientCustomID}';
+        $resourcePath = '/clients/by-custom-id/{clientCustomID}';
         $formParams = [];
         $queryParams = [];
         $headerParams = [];

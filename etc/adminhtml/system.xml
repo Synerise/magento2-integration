@@ -79,17 +79,23 @@
             </group>
             <group id="customer" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Customers</label>
-                <field id="limit" translate="label" type="select" sortOrder="2" showInDefault="1">
+                <field id="limit" translate="label" type="select" sortOrder="1" showInDefault="1">
                     <label>Max items per request</label>
                     <config_path>synerise/customer/limit</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Limit</source_model>
                     <comment><![CDATA[Number of items to be sent in single request during full and batch synchronization.]]></comment>
                 </field>
-                <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="attributes" type="multiselect" translate="label,comment,tooltip" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Attributes</label>
                     <config_path>synerise/customer/attributes</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Customers\Attributes</source_model>
                     <comment>The changes of attribute selection will apply only for customers who haven’t been sent to Synerise yet. To apply the changes to all customers schedule full synchronization for all affected scopes.</comment>
+                </field>
+                <field id="delete_behavior" translate="label" type="select" sortOrder="3" showInDefault="1">
+                    <label>Delete behavior</label>
+                    <config_path>synerise/customer/delete_behavior</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\CustomerDeleteBehavior</source_model>
+                    <comment><![CDATA[Deletion of customer can either trigger an event or delete the entity permanently from Synerise system.]]></comment>
                 </field>
             </group>
             <group id="order" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">

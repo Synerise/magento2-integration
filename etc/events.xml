@@ -24,6 +24,9 @@
     <event name="customer_save_after">
         <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\Data\CustomerSave" />
     </event>
+    <event name="customer_delete_before">
+        <observer name="synerise_customer_delete_before" instance="Synerise\Integration\Observer\Data\CustomerDelete" />
+    </event>
     <event name="sales_order_save_after">
         <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\Data\OrderSave" />
     </event>

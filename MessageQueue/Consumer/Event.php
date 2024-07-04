@@ -20,6 +20,7 @@ use Synerise\Integration\Communication\Config;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\MessageQueue\Publisher\Data\Item as DataItemPublisher;
 use Synerise\Integration\Model\MessageQueue\Retry;
+use Synerise\Integration\Observer\Data\CustomerDelete;
 use Synerise\Integration\Observer\MergeUuids;
 use Synerise\Integration\SyneriseApi\Sender\Data\Customer as CustomerSender;
 use Synerise\Integration\SyneriseApi\Sender\Data\Order as OrderSender;
@@ -173,6 +174,9 @@ class Event
                 break;
             case SubscriberDelete::EVENT:
                 $this->subscriberSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
+                break;
+            case CustomerDelete::REQUEST:
+                $this->customerSender->deleteItem($event['event_payload'], $event['store_id'], $event['entity_id']);
                 break;
             case MergeUuids::EVENT:
                 $this->customerSender->batchAddOrUpdateClients($event['event_payload'], $event['store_id']);

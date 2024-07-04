@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use Magento\Framework\Exception\ValidatorException;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
+use Synerise\Integration\Observer\Data\CustomerDelete;
 use Synerise\Integration\Observer\Event\CartAddProduct;
 use Synerise\Integration\Observer\Event\CartQtyUpdate;
 use Synerise\Integration\Observer\Event\CartRemoveProduct;
@@ -28,6 +29,7 @@ class Event extends AbstractSender
      * @return void
      * @throws ApiException
      * @throws ValidatorException
+     * @throws \Exception
      */
     public function send(
         string $event_name,
@@ -47,6 +49,7 @@ class Event extends AbstractSender
                 break;
             case CartQtyUpdate::EVENT:
             case CartStatus::EVENT:
+            case CustomerDelete::EVENT:
             case ProductReview::EVENT:
             case WishlistRemoveProduct::EVENT:
                 $requestCallback = function () use ($storeId, $payload) {
