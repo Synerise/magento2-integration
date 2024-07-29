@@ -65,7 +65,7 @@ class Config
      */
     public function isModelEnabled(string $model): bool
     {
-        return in_array($model, $this->getEnabledModels());
+        return $this->isEnabled() && in_array($model, $this->getEnabledModels());
     }
 
     /**
