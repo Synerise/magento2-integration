@@ -110,7 +110,7 @@ class WishlistRemoveProduct implements ObserverInterface
             $customEventRequest = $this->wishlistRemove->prepareRequest(
                 self::EVENT,
                 $wishlist,
-                $observer->getEvent()->getProduct()
+                $item->getProduct()
             );
 
             if ($config->isEventMessageQueueEnabled(self::EVENT)) {
