@@ -126,10 +126,10 @@ class CustomerCRUD
     /**
      * Get address if available
      *
-     * @param int $addressId
+     * @param int|null $addressId
      * @return AddressInterface|null
      */
-    protected function getAddressIfAvailable(int $addressId): ?AddressInterface
+    protected function getAddressIfAvailable(?int $addressId): ?AddressInterface
     {
         try {
             return $addressId ? $this->addressRepository->getById($addressId) : null;

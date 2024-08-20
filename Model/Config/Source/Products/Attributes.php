@@ -8,6 +8,7 @@ use Magento\Framework\Data\OptionSourceInterface;
 class Attributes implements OptionSourceInterface
 {
     public const REQUIRED = [
+        'entity_id',
         'sku',
         'price',
         'image',

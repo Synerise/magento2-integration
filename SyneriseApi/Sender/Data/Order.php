@@ -85,7 +85,8 @@ class Order extends AbstractSender implements SenderInterface
 
             $email = $order->getCustomerEmail();
             $uuid = $email ? $this->uuidGenerator->generateByEmail($email) : null;
-            $snrsParams = isset($options['snrs_params']) && $options['snrs_params'] ?: [];
+            $snrsParams = isset($options['snrs_params']) && is_array($options['snrs_params']) ?
+                $options['snrs_params'] : [];
 
             try {
                 $createATransactionRequest[] = $this->orderCRUD->prepareRequest($order, $uuid, $snrsParams);
