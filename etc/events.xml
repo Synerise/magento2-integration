@@ -3,7 +3,7 @@
     <event name="catalog_product_delete_before">
         <observer name="synerise_catalog_product_delete_before" instance="Synerise\Integration\Observer\Data\ProductDelete" />
     </event>
-    <event name="catalog_product_save_after">
+    <event name="catalog_product_save_commit_after">
         <observer name="synerise_catalog_product_save_after" instance="Synerise\Integration\Observer\Data\ProductSave" />
     </event>
     <event name="catalog_product_import_bunch_delete_commit_before">
@@ -21,13 +21,13 @@
     <event name="customer_logout">
         <observer name="synerise_customer_logout_observer" instance="Synerise\Integration\Observer\Event\CustomerLogout" />
     </event>
-    <event name="customer_save_after">
+    <event name="customer_save_commit_after">
         <observer name="synerise_customer_save_after" instance="Synerise\Integration\Observer\Data\CustomerSave" />
     </event>
     <event name="customer_delete_before">
         <observer name="synerise_customer_delete_before" instance="Synerise\Integration\Observer\Data\CustomerDelete" />
     </event>
-    <event name="sales_order_save_after">
+    <event name="sales_order_save_commit_after">
         <observer name="synerise_sales_order_save_after" instance="Synerise\Integration\Observer\Data\OrderSave" />
     </event>
     <event name="sales_quote_add_item">
@@ -48,7 +48,7 @@
     <event name="wishlist_item_delete_after">
         <observer name="synerise_wishlist_item_delete_after" instance="Synerise\Integration\Observer\Event\WishlistRemoveProduct" />
     </event>
-    <event name="newsletter_subscriber_save_after">
+    <event name="newsletter_subscriber_save_commit_after">
         <observer name="synerise_newsletter_subscriber_save_after" instance="Synerise\Integration\Observer\Data\SubscriberSave" />
     </event>
     <event name="newsletter_subscriber_delete_after">
