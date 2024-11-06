@@ -1,8 +1,8 @@
 # Synerise integration module for Magento 2
 
 ## Requirements
- * PHP 7.1+
- * Magento 2.3+ 
+ * PHP 7.4+
+ * Magento 2.4+ 
 
 ## Installation
 

@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
-use Mobile_Detect;
+use Detection\MobileDetect;
 use Ramsey\Uuid\Uuid;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Config\Source\EventTracking\Events;
@@ -30,15 +30,23 @@ class Context
     protected $loggerHelper;
 
     /**
+     * @var MobileDetect
+     */
+    protected MobileDetect $mobileDetect;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param Logger $loggerHelper
+     * @param MobileDetect $mobileDetect
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        Logger $loggerHelper
+        Logger $loggerHelper,
+        MobileDetect $mobileDetect
     ) {
         $this->storeManager = $storeManager;
         $this->loggerHelper = $loggerHelper;
+        $this->mobileDetect = $mobileDetect;
     }
 
     /**
@@ -120,8 +128,15 @@ class Context
      */
     public function getSource(): string
     {
-        $mobileDetect = new Mobile_Detect();
-        return $mobileDetect->isMobile() ? "WEB_MOBILE" : "WEB_DESKTOP";
+        try {
+            if ($this->mobileDetect->isMobile() || $this->mobileDetect->isTablet()) {
+                return "WEB_MOBILE";
+            }
+        } catch (\Exception $e) {
+            $this->loggerHelper->warning($e);
+        }
+
+        return "WEB_DESKTOP";
     }
 
     /**
