@@ -22,3 +22,6 @@ For more information regarding module management please refer with [Magento 2 do
 Setup guide is available at [Synerise help page](https://help.synerise.com/docs/settings/tool/magento-integration-multistore-support/). 
 
 Please make sure to follow it carefully through all the steps to integrate your application properly.
+
+
+hahaha
