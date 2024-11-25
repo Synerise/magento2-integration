@@ -5,6 +5,7 @@
         <add id="Synerise_Integration::workspace" title="Workspaces" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="10" dependsOnModule="Synerise_Integration" action="synerise/workspace" resource="Synerise_Integration::workspace"/>
         <add id="Synerise_Integration::configuration" title="Configuration" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="11" dependsOnModule="Synerise_Integration" action="adminhtml/system_config/edit/section/synerise_workspace" resource="Synerise_Integration::configuration"/>
         <add id="Synerise_Integration::synchronization" title="Synchronization" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="12" dependsOnModule="Synerise_Integration" action="synerise/synchronization" resource="Synerise_Integration::synchronization"/>
+        <add id="Synerise_Integration::search_index" title="Search Indexes" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="10" dependsOnModule="Synerise_Integration" action="synerise/searchIndex" resource="Synerise_Integration::search_index"/>
         <add id="Synerise_Integration::log" title="Logs" translate="title" module="Synerise_Integration" parent="Synerise_Integration::synerise" sortOrder="13" dependsOnModule="Synerise_Integration" action="synerise/log" resource="Synerise_Integration::log"/>
     </menu>
 </config>

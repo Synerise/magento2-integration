@@ -14,6 +14,11 @@ class Catalog extends AbstractSender
     public const API_EXCEPTION = CatalogsApiException::class;
 
     /**
+     * @var Bag[]
+     */
+    private $catalogs = [];
+
+    /**
      * Add catalog
      *
      * @param int $storeId
@@ -39,6 +44,29 @@ class Catalog extends AbstractSender
     }
 
     /**
+     * Get catalog by ID
+     *
+     * @param int $storeId
+     * @param int $id
+     * @return mixed
+     * @throws CatalogsApiException
+     * @throws DefaultApiException
+     * @throws ValidatorException
+     */
+    public function getCatalogById(int $storeId, int $id)
+    {
+        if (!isset($this->catalogs[$id])) {
+            $this->catalogs[$id] = $this->sendWithTokenExpiredCatch(
+                function () use ($storeId, $id) {
+                    return $this->getCatalogsApiInstance($storeId)->getBagById($id)->getData();
+                },
+                $storeId
+            );
+        }
+        return $this->catalogs[$id];
+    }
+
+    /**
      * Find existing catalog by store ID
      *
      * @param int $storeId
@@ -46,7 +74,7 @@ class Catalog extends AbstractSender
      * @return Bag|null
      * @throws CatalogsApiException|DefaultApiException|ValidatorException
      */
-    public function getCatalog(int $storeId, string $name): ?Bag
+    public function getCatalogByName(int $storeId, string $name): ?Bag
     {
         try {
             $getBagsResponse = $this->sendWithTokenExpiredCatch(
@@ -57,6 +85,7 @@ class Catalog extends AbstractSender
             );
 
             foreach ($getBagsResponse->getData() as $bag) {
+                $this->catalogs[$bag->getId()] = $bag;
                 if ($bag->getName() == $name) {
                     return $bag;
                 }

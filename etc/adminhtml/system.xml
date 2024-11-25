@@ -66,14 +66,20 @@
                     <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes</source_model>
                     <comment>The changes of attribute selection will apply only to products which haven’t been sent to Synerise yet. To apply the changes to all products schedule full synchronization for all affected scopes.</comment>
                 </field>
-                <field id="price_includes_tax" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1">
+                <field id="filterable_attributes" type="select" translate="label,comment,tooltip" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Include attributes used in search</label>
+                    <config_path>synerise/product/filterable_attributes</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>When enabled all searchable, filterable and sortable attributes will get synchronized.</comment>
+                </field>
+                <field id="labels_enabled" type="select" translate="label,comment,tooltip" sortOrder="20" showInDefault="1">
+                    <label>Selectable attribute value</label>
+                    <config_path>synerise/product/labels_enabled</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes\Format</source_model>
+                </field>
+                <field id="price_includes_tax" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1">
                     <label>Calculate tax</label>
                     <config_path>synerise/product/calculate_tax</config_path>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="labels" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1">
-                    <label>Labels as values</label>
-                    <config_path>synerise/product/labels_enabled</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
@@ -253,7 +259,7 @@
                 </field>
             </group>
         </section>
-        <section id="synerise_debug" translate="label" sortOrder="8" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="synerise_debug" translate="label" sortOrder="9" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>Debug</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_debug</resource>
@@ -279,6 +285,19 @@
                     </depends>
                     <config_path>synerise/debug/logger_exclude</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Debug\Exclude</source_model>
+                </field>
+            </group>
+        </section>
+        <section id="catalog">
+            <group id="search">
+                <field id="engine" showInDefault="1"/>
+                <field id="disable_fulltext" translate="label" type="select" sortOrder="61"  showInDefault="1">
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <label>Disable "Catalog Search" index</label>
+                    <comment>Full text index is not used by Synerise Ai Search, and it can be disabled.</comment>
+                    <depends>
+                        <field id="engine">synerise_ai</field>
+                    </depends>
                 </field>
             </group>
         </section>

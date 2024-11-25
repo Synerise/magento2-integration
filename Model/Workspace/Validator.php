@@ -78,7 +78,6 @@ class Validator extends AbstractValidator
      */
     public function checkPermissions(Workspace $workspace): ApiKeyPermissionCheckResponse
     {
-
         try {
             return $this->createApiKeyInstance($workspace)
                 ->checkPermissions(Workspace::REQUIRED_PERMISSIONS);

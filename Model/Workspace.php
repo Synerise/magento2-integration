@@ -40,7 +40,11 @@ class Workspace extends AbstractModel implements WorkspaceInterface
         "CATALOGS_CATALOG_CREATE",
         "CATALOGS_CATALOG_READ",
         "CATALOGS_ITEM_BATCH_CATALOG_CREATE",
-        "TRACKER_CREATE"
+        "TRACKER_CREATE",
+        "ITEMS_SEARCH_CONFIG_SEARCH_CREATE",
+        "ITEMS_SEARCH_CONFIG_SEARCH_UPDATE",
+        "ITEMS_SEARCH_CONFIG_SEARCH_READ",
+        "ITEMS_SEARCH_SEARCH_READ"
     ];
 
     /**

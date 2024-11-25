@@ -87,4 +87,20 @@
             <column name="uuid"/>
         </constraint>
     </table>
+    <table name="synerise_search_index" resource="default" engine="innodb"
+           comment="Synerise Search Index">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="varchar" name="index_name" length="100" nullable="false" comment="Search Index Name"/>
+        <column xsi:type="varchar" name="index_id" length="100" nullable="false" comment="Search Index ID"/>
+        <column xsi:type="int" name="items_catalog_id" unsigned="true" nullable="false" comment="Catalog ID"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="SYNERISE_SEARCH_INDEX_STORE_ID">
+            <column name="store_id"/>
+        </constraint>
+    </table>
 </schema>

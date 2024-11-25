@@ -20,10 +20,12 @@ use Synerise\Integration\Helper\Product\Image;
 use Synerise\Integration\Helper\Product\Price;
 use Synerise\Integration\Model\Config\Source\Debug\Exclude;
 use Synerise\Integration\Model\Config\Source\Products\Attributes;
+use Synerise\Integration\Model\Config\Source\Products\Attributes\Format;
+use Synerise\Integration\Search\Attributes\Config;
 
 class ProductCRUD
 {
-    public const XML_PATH_PRODUCTS_LABELS_ENABLED = 'synerise/product/labels_enabled';
+    public const XML_PATH_PRODUCT_FILTERABLE_ATTRIBUTES = 'synerise/product/filterable_attributes';
 
     /**
      * @var string|string[]
@@ -44,6 +46,11 @@ class ProductCRUD
      * @var ScopeConfigInterface
      */
     protected $scopeConfig;
+
+    /**
+     * @var Config
+     */
+    protected $attributesConfig;
 
     /**
      * @var StoreManagerInterface
@@ -84,9 +91,14 @@ class ProductCRUD
      * @var Price
      */
     protected $priceHelper;
+    /**
+     * @var \Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory
+     */
+    protected $attributeCollectionFactory;
 
     /**
      * @param ScopeConfigInterface $scopeConfig
+     * @param Config $attributesConfig
      * @param StoreManagerInterface $storeManager
      * @param ProductRepositoryInterface $productRepository
      * @param Configurable $configurable
@@ -98,6 +110,7 @@ class ProductCRUD
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
+        Config $attributesConfig,
         StoreManagerInterface $storeManager,
         ProductRepositoryInterface $productRepository,
         Configurable $configurable,
@@ -108,6 +121,7 @@ class ProductCRUD
         Price $priceHelper
     ) {
         $this->scopeConfig = $scopeConfig;
+        $this->attributesConfig = $attributesConfig;
         $this->storeManager = $storeManager;
         $this->productRepository = $productRepository;
         $this->configurable = $configurable;
@@ -116,6 +130,9 @@ class ProductCRUD
         $this->imageHelper = $imageHelper;
         $this->loggerHelper = $loggerHelper;
         $this->priceHelper = $priceHelper;
+
+        $this->attributeCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()
+            ->get(\Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory::class);
     }
 
     /**
@@ -133,16 +150,26 @@ class ProductCRUD
         $value['itemId'] = $product->getSku();
         $value['deleted'] = $delete;
 
+        $configurableAttributes = $this->getConfigurableAttributes($product);
+
         foreach ($this->getAttributesToSelect($product->getStoreId()) as $attributeCode) {
-            if ($this->isAttributeLabelEnabled()) {
-                $attributeText = $product->getAttributeText($attributeCode);
-                $productValue = $attributeText !== false ? $attributeText : $product->getData($attributeCode);
-            } else {
-                $productValue = $product->getData($attributeCode);
+            if (isset($configurableAttributes[$attributeCode])) {
+                $value[$attributeCode] = $configurableAttributes[$attributeCode];
+                continue;
             }
 
-            if ($productValue !== null && $productValue !== false) {
-                $value[$attributeCode] = $productValue;
+            if ($attributeCode == 'category_ids') {
+                $categoryIds = $product->getCategoryIds();
+                if ($categoryIds) {
+                    $value['category_ids'] = $this->categoryHelper->getAllCategoryIds($categoryIds);
+                    $value['category'] = $this->categoryHelper->getFormattedCategoryPath(array_shift($categoryIds));
+                }
+                continue;
+            }
+
+            $attributeValue = $this->formatAttribute($product, $attributeCode);
+            if ($attributeValue !== null && $attributeValue !== false) {
+                $value[$attributeCode] = $attributeValue;
             }
         }
         if ($product->getPrice()) {
@@ -150,11 +177,6 @@ class ProductCRUD
         }
         $value['storeId'] = $product->getStoreId();
         $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
-
-        $categoryIds = $product->getCategoryIds();
-        if ($categoryIds) {
-            $value['category'] = $this->categoryHelper->getFormattedCategoryPath(array_shift($categoryIds));
-        }
 
         if ($categoryIds) {
             foreach ($categoryIds as $categoryId) {
@@ -221,6 +243,31 @@ class ProductCRUD
     }
 
     /**
+     * Get configurable attributes
+     *
+     * @param Product $product
+     * @return array
+     */
+    public function getConfigurableAttributes(Product $product): array
+    {
+        $attributesToSend = [];
+        if ($product->getTypeId() == Configurable::TYPE_CODE) {
+            $configurableAttributes = $product->getTypeInstance()->getConfigurableAttributes($product);
+            if ($configurableAttributes) {
+                /** @var \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Attribute $attribute */
+                foreach ($configurableAttributes as $attribute) {
+                    $options = [];
+                    foreach ($attribute->getOptions() as $option) {
+                        $options[] = $this->formatOption($option);
+                    }
+                    $attributesToSend[$attribute->getProductAttribute()->getAttributeCode()] = $options;
+                }
+            }
+        }
+        return $attributesToSend;
+    }
+
+    /**
      * Get stock status
      *
      * @param string $sku
@@ -280,24 +327,26 @@ class ProductCRUD
     }
 
     /**
-     * Check if attribute labels are enabled
+     * Get attribute for select
      *
-     * @return bool
-     */
-    public function isAttributeLabelEnabled(): bool
-    {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_PRODUCTS_LABELS_ENABLED
-        );
-    }
-
-    /**
-     * @inheritDoc
+     * @param int $storeId
+     * @return array|string
      */
     public function getAttributesToSelect(int $storeId): array
     {
         if (!isset($this->attributes[$storeId])) {
-            $this->attributes[$storeId] = array_merge($this->getEnabledAttributes($storeId), Attributes::REQUIRED);
+            if ($this->includeAllFilterableAttributes($storeId)) {
+                $this->attributes[$storeId] = array_merge(
+                    $this->getEnabledAttributes($storeId),
+                    array_keys($this->attributesConfig->getFieldIds()),
+                    Attributes::REQUIRED
+                );
+            } else {
+                $this->attributes[$storeId] = array_merge(
+                    $this->getEnabledAttributes($storeId),
+                    Attributes::REQUIRED
+                );
+            }
         }
         return $this->attributes[$storeId];
     }
@@ -317,5 +366,105 @@ class ProductCRUD
         );
 
         return $attributes ? explode(',', $attributes) : [];
+    }
+
+    /**
+     * Format option
+     *
+     * @param $option
+     * @return array|mixed
+     */
+    protected function formatOption($option)
+    {
+        switch ($this->attributesConfig->getFieldFormatId()) {
+            case Format::OPTION_ID_AND_LABEL:
+                return [
+                    'id' => $option['value_index'],
+                    'label' => $option['label']
+                ];
+            case Format::OPTION_LABEL:
+                return $option['label'];
+            default:
+                return $option['value_index'];
+        }
+    }
+
+    /**
+     * Format attribute
+     *
+     * @param Product $product
+     * @param string $attributeCode
+     * @return array|false|mixed|string|string[]|null
+     */
+    protected function formatAttribute(Product $product, string $attributeCode)
+    {
+        $attribute = $product->getResource()->getAttribute($attributeCode);
+        if (!$attribute) {
+            return null;
+        }
+
+        $frontendInput = $attribute->getFrontendInput();
+
+        $id = $product->getData($attributeCode);
+        if ($id === null || !in_array($frontendInput, ['select', 'multiselect', 'boolean'])) {
+            return $id;
+        }
+
+        if ($this->isMultiple($id)) {
+            $id = explode(',', $id);
+        }
+
+        switch ($this->attributesConfig->getFieldFormatId()) {
+            case Format::OPTION_ID_AND_LABEL:
+                if (is_array($id)) {
+                    $options = $product->getResource()->getAttribute($attributeCode)->getSource()->getSpecificOptions($id);
+                    $optionValues = [];
+                    foreach ($options as $item) {
+                        if (in_array($item['value'], $id)) {
+                            $optionValues[] = [
+                                'id' => $item['value'],
+                                'label' => $item['label']
+                            ];
+                        }
+                    }
+                    return $optionValues;
+                } else {
+                    return [
+                        'id' => $id,
+                        'label' => (string) $product->getAttributeText($attributeCode)
+                    ];
+                }
+            case Format::OPTION_LABEL:
+                $attributeText = $product->getAttributeText($attributeCode);
+                return $this->isMultiple($attributeText) ? explode(',', $attributeText) : (string) $attributeText;
+            default:
+                return $id;
+        }
+    }
+
+    /**
+     * Check if value contains multiple items
+     *
+     * @param $value
+     * @return bool
+     */
+    protected function isMultiple($value): bool
+    {
+        return is_string($value) && strpos($value, ',') !== false;
+    }
+
+    /**
+     * Include all filterable attributes flag
+     *
+     * @param int $storeId
+     * @return bool
+     */
+    protected function includeAllFilterableAttributes(int $storeId): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_PRODUCT_FILTERABLE_ATTRIBUTES,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 }

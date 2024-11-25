@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">synerise_searchindex_store_form.synerise_searchindex_store_form_data_source</item>
+            <item name="deps" xsi:type="string">synerise_searchindex_store_form.synerise_searchindex_store_form_data_source</item>
+        </item>
+        <item name="label" xsi:type="string" translate="true">Credentials</item>
+        <item name="config" xsi:type="array">
+            <item name="dataScope" xsi:type="string">data</item>
+            <item name="namespace" xsi:type="string">synerise_searchindex_store_form</item>
+        </item>
+        <item name="spinner" xsi:type="string">credentials</item>
+        <item name="template" xsi:type="string">templates/form/collapsible</item>
+    </argument>
+    <settings>
+        <buttons>
+            <button name="save" class="Synerise\Integration\Block\Adminhtml\SearchIndex\Store\ApplyButton"/>
+            <button name="back" class="Synerise\Integration\Block\Adminhtml\SearchIndex\BackButton"/>
+        </buttons>
+    </settings>
+    <dataSource name="synerise_searchindex_store_form_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+            <argument name="class" xsi:type="string">Synerise\Integration\Ui\DataProvider\SearchIndex\Store\DataProvider</argument>
+            <argument name="name" xsi:type="string">synerise_searchindex_store_form_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">store</argument>
+            <argument name="requestFieldName" xsi:type="string">store</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="submit_url" xsi:type="url" path="*/*/assign" />
+                </item>
+            </argument>
+        </argument>
+        <argument name="data" xsi:type="array">
+            <item name="js_config" xsi:type="array">
+                <item name="component" xsi:type="string">Magento_Ui/js/form/provider</item>
+            </item>
+        </argument>
+    </dataSource>
+    <fieldset name="store">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="collapsible" xsi:type="boolean">false</item>
+                <item name="label" xsi:type="string" translate="true">Store</item>
+                <item name="sortOrder" xsi:type="number">10</item>
+            </item>
+        </argument>
+        <field name="store" formElement="select">
+            <argument name="data" xsi:type="array">
+            </argument>
+            <settings>
+                <dataType>string</dataType>
+                <label translate="true">Select</label>
+                <dataScope>store</dataScope>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options class="Magento\Store\Model\System\Store"/>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+    </fieldset>
+</form>

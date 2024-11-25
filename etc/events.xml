@@ -78,4 +78,11 @@
     <event name="synerise_merge_uuids">
         <observer name="synerise_merge_uuids" instance="Synerise\Integration\Observer\MergeUuids" />
     </event>
+    <!-- Advanced search disabled -->
+    <event name="controller_action_predispatch_catalogsearch_advanced_index">
+        <observer name="synerise_catalogsearch_advanced_index_redirect" instance="Synerise\Integration\Observer\AdvancedSearchRedirect" />
+    </event>
+    <event name="controller_action_predispatch_catalogsearch_advanced_result">
+        <observer name="synerise_catalogsearch_advanced_result_redirect" instance="Synerise\Integration\Observer\AdvancedSearchRedirect" />
+    </event>
 </config>
