@@ -6,6 +6,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use Loguzz\Middleware\LogMiddleware;
 use Magento\Framework\Exception\ValidatorException;
+use Synerise\ItemsSearchApiClient\Api\ListingApi;
+use Synerise\ItemsSearchApiClient\Api\SearchApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\ApiClient\Configuration;
 use Synerise\ApiClient\Api\ApiKeyControllerApi;
@@ -16,6 +18,7 @@ use Synerise\CatalogsApiClient\Api\ItemsApi;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 use Synerise\Integration\Model\WorkspaceInterface;
+use Synerise\ItemsSearchConfigApiClient\Api\SearchConfigurationApi;
 
 class InstanceFactory
 {
@@ -24,7 +27,10 @@ class InstanceFactory
         'catalogs' => BagsApi::class,
         'items' => ItemsApi::class,
         'tracker' => TrackerControllerApi::class,
-        'apiKey' => ApiKeyControllerApi::class
+        'apiKey' => ApiKeyControllerApi::class,
+        'search' => SearchApi::class,
+        'listing' => ListingApi::class,
+        'search-config' => SearchConfigurationApi::class
     ];
 
     public const API_CONFIGURATION_CLASSES = [
@@ -32,7 +38,10 @@ class InstanceFactory
         'catalogs' => \Synerise\CatalogsApiClient\Configuration::class,
         'items' => \Synerise\CatalogsApiClient\Configuration::class,
         'tracker' => \Synerise\ApiClient\Configuration::class,
-        'apiKey' => \Synerise\ApiClient\Configuration::class
+        'apiKey' => \Synerise\ApiClient\Configuration::class,
+        'search' => \Synerise\ItemsSearchApiClient\Configuration::class,
+        'listing' => \Synerise\ItemsSearchApiClient\Configuration::class,
+        'search-config' => \Synerise\ItemsSearchConfigApiClient\Configuration::class
     ];
 
     public const API_PATH_FORMATS = [
@@ -41,7 +50,10 @@ class InstanceFactory
         'catalogs' => '%s/catalogs',
         'items' => '%s/catalogs',
         'tracker' => '%s/business-profile-service',
-        'apiKey' => '%s/uauth'
+        'apiKey' => '%s/uauth',
+        'search' => '%s',
+        'listing' => '%s',
+        'search-config' => '%s'
     ];
 
     /**

@@ -8,9 +8,6 @@ use Magento\Framework\UrlInterface;
 
 /**
  * Class WorkspaceActions for Listing Columns
- *
- * @api
- * @since 100.0.2
  */
 class WorkspaceActions extends Column
 {

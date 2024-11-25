@@ -170,6 +170,8 @@ class Item
     }
 
     /**
+     * Get options
+     *
      * @return string
      */
     public function getOptions(): string
@@ -178,6 +180,8 @@ class Item
     }
 
     /**
+     * Set options
+     *
      * @param string $options
      * @return void
      */

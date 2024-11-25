@@ -53,4 +53,44 @@ class Category
 
         return $this->formattedCategoryPaths[$categoryId] ?: null;
     }
+
+    /**
+     * Get full list of category ids including indirect associations
+     *
+     * @param int[] $categoryIds
+     * @return int[]
+     */
+    public function getAllCategoryIds(array $categoryIds): array
+    {
+        $allCategoryIds = [];
+        foreach ($categoryIds as $categoryId) {
+            if (!in_array($categoryId, $allCategoryIds)) {
+                $allCategoryIds[] = (int) $categoryId;
+                $currentId = $categoryId;
+                while($currentId = $this->getParentCategoryId($currentId)) {
+                    if (!in_array($currentId, $allCategoryIds)) {
+                        $allCategoryIds[] = (int) $currentId;
+                    }
+                }
+            }
+        }
+        return $allCategoryIds;
+    }
+
+    /**
+     * Get parent category ID
+     *
+     * @param int $categoryId
+     * @return int|null
+     */
+    protected function getParentCategoryId(int $categoryId): ?int
+    {
+        try {
+            /** @var $category \Magento\Catalog\Model\Category */
+            $category = $this->categoryRepository->get($categoryId);
+            return $category->getParentId();
+        } catch (NoSuchEntityException $e) {
+            return null;
+        }
+    }
 }

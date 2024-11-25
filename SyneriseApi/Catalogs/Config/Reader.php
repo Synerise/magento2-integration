@@ -66,7 +66,7 @@ class Reader implements ReaderInterface
     {
         $catalogName = $this->getCatalogNameByStoreId($storeId);
         try {
-            return $this->catalog->getCatalog($storeId, $catalogName) ?:
+            return $this->catalog->getCatalogByName($storeId, $catalogName) ?:
                 $this->catalog->addCatalog($storeId, $catalogName);
         } catch (ValidatorException|ApiException|CatalogsApiException $e) {
             return null;

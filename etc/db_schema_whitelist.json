@@ -82,5 +82,21 @@
             "PRIMARY": true,
             "SYNERISE_BULK_UUID": true
         }
+    },
+    "synerise_search_index": {
+        "column": {
+            "entity_id": true,
+            "store_id": true,
+            "index_name": true,
+            "index_id": true,
+            "items_catalog_id": true,
+            "settings": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "SYNERISE_SEARCH_INDEX_STORE_ID": true
+        }
     }
 }

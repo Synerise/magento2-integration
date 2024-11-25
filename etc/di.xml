@@ -74,6 +74,7 @@
         <arguments>
             <argument name="collections" xsi:type="array">
                 <item name="synerise_workspace_listing_data_source" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace\Grid\Collection</item>
+                <item name="synerise_searchindex_listing_data_source" xsi:type="string">Synerise\Integration\Model\ResourceModel\SearchIndex\Grid\Collection</item>
             </argument>
         </arguments>
     </type>
@@ -81,6 +82,12 @@
         <arguments>
             <argument name="mainTable" xsi:type="string">synerise_workspace</argument>
             <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\Workspace</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Synerise\Integration\Model\ResourceModel\SearchIndex\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">synerise_search_index</argument>
+            <argument name="resourceModel" xsi:type="string">Synerise\Integration\Model\ResourceModel\SearchIndex</argument>
         </arguments>
     </virtualType>
     <type name="Magento\CustomerImportExport\Model\Import\Customer">
@@ -113,4 +120,203 @@
             <argument name="logger" xsi:type="object">Synerise\Integration\Model\Logger</argument>
         </arguments>
     </type>
+
+    <!-- Configuration: Catalog Search / Search Engine -->
+    <type name="Magento\Search\Model\Adminhtml\System\Config\Source\Engine">
+        <arguments>
+            <argument name="engines" xsi:type="array">
+                <item name="synerise_ai" xsi:type="string">Synerise AI Search</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Search\Model\EngineResolver">
+        <arguments>
+            <argument name="engines" xsi:type="array">
+                <item name="synerise_ai" xsi:type="string">synerise_ai</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\CatalogSearch\Model\ResourceModel\EngineProvider">
+        <arguments>
+            <argument name="engines" xsi:type="array">
+                <item name="synerise_ai" xsi:type="string">Magento\Elasticsearch\Model\ResourceModel\Engine</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Search\Model\SearchEngine\Validator">
+        <arguments>
+            <argument name="engineValidators" xsi:type="array">
+                <item name="synerise_ai" xsi:type="object">Synerise\Integration\Search\Validator</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Quick search -->
+    <virtualType name="elasticsearchLayerSearchItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Search\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="synerise_ai" xsi:type="object">syneriseAiFulltextSearchCollectionFactory</item>
+                <item name="elasticsuite" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\CollectionFactory</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="syneriseAiFulltextSearchCollectionFactory" type="elasticsearchFulltextSearchCollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">syneriseAiFulltextSearchCollection</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="syneriseAiFulltextSearchCollection" type="elasticsearchFulltextSearchCollection">
+        <arguments>
+            <argument name="search" xsi:type="object">Synerise\Integration\Search\FullTextSearch</argument>
+        </arguments>
+    </virtualType>
+    <type name="Synerise\Integration\SyneriseApi\Mapper\Search\FullText">
+        <arguments>
+            <argument name="filters" xsi:type="object">searchFiltersMapper</argument>
+        </arguments>
+    </type>
+    <virtualType name="searchFiltersMapper" type="Synerise\Integration\SyneriseApi\Mapper\Search\FullText\Filters">
+        <arguments>
+            <argument name="filterList" xsi:type="object">searchFilterList</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Category listing -->
+    <virtualType name="elasticsearchLayerCategoryItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="synerise_ai" xsi:type="object">syneriseAiCategoryCollectionFactory</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="syneriseAiCategoryCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
+        <arguments>
+            <argument name="search" xsi:type="object">Synerise\Integration\Search\ListingSearch </argument>
+            <argument name="searchRequestName" xsi:type="string">catalog_view_container</argument>
+            <argument name="searchCriteriaResolverFactory" xsi:type="object">elasticsearchSearchCriteriaResolverFactory</argument>
+            <argument name="searchResultApplierFactory" xsi:type="object">elasticsearchSearchResultApplier\Factory</argument>
+            <argument name="totalRecordsResolverFactory" xsi:type="object">elasticsearchTotalRecordsResolver\Factory</argument>
+            <argument name="defaultFilterStrategyApplyChecker" xsi:type="object">Magento\Elasticsearch\Model\ResourceModel\Fulltext\Collection\DefaultFilterStrategyApplyChecker</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="syneriseAiCategoryCollectionFactory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">syneriseAiCategoryCollection</argument>
+        </arguments>
+    </virtualType>
+    <type name="Synerise\Integration\SyneriseApi\Mapper\Search\Listing">
+        <arguments>
+            <argument name="filters" xsi:type="object">categoryFiltersMapper</argument>
+        </arguments>
+    </type>
+    <virtualType name="categoryFiltersMapper" type="Synerise\Integration\SyneriseApi\Mapper\Search\FullText\Filters">
+        <arguments>
+            <argument name="filterList" xsi:type="object">categoryFilterList</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Search frontend scripts -->
+    <type name="Magento\Framework\RequireJs\Config\File\Collector\Aggregated">
+        <plugin name="syneriseFilterList" type="Synerise\Integration\Plugin\RequireJs\Config\File\Collector\Aggregated" />
+    </type>
+
+    <!-- Search indexer disabled -->
+    <type name="Magento\CatalogSearch\Model\Indexer\IndexerHandlerFactory">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="synerise_ai" xsi:type="string">Synerise\Integration\Model\Search\Indexer\IndexerHandler</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Indexer\Model\Config">
+        <plugin name="synerise_customer_import" type="Synerise\Integration\Plugin\IndexerConfig" />
+    </type>
+
+    <!-- Search suggestions -->
+    <type name="Magento\AdvancedSearch\Model\SuggestedQueries">
+        <arguments>
+            <argument name="data" xsi:type="array">
+                <item name="synerise_ai" xsi:type="string">Synerise\Integration\Search\DataProvider\Suggestions</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Search autocomplete -->
+    <preference for="Magento\Search\Model\AutocompleteInterface" type="Synerise\Integration\Search\AutocompleteProxy" />
+    <type name="Synerise\Integration\Search\Autocomplete">
+        <arguments>
+            <argument name="dataProviders" xsi:type="array">
+                <item name="10" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Term</item>
+                <item name="20" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Product</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Search bucket builder -->
+    <preference for="\Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProviderInterface" type="\Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProvider"/>
+    <type name="Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProvider">
+        <arguments>
+            <argument name="engines" xsi:type="array">
+                <item name="default" xsi:type="string">defaultBucketBuilderFactory</item>
+                <item name="elasticsuite" xsi:type="string">elasticsuiteBucketBuilderFactory</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="defaultBucketBuilderFactory" type="Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactory">
+        <arguments>
+            <argument name="types" xsi:type="array">
+                <item name="default" xsi:type="string">Synerise\Integration\Search\SearchResponse\Aggregation\Bucket\AttributeBuilder</item>
+                <item name="price" xsi:type="string">Synerise\Integration\Search\SearchResponse\Aggregation\Bucket\PriceBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="elasticsuiteBucketBuilderFactory" type="Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactory">
+        <arguments>
+            <argument name="types" xsi:type="array">
+                <item name="default" xsi:type="string">Synerise\Integration\Search\SearchResponse\Aggregation\Bucket\AttributeBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- ES?? -->
+    <type name="Magento\Catalog\Model\Layer\Search">
+        <arguments>
+            <argument name="context" xsi:type="object">Magento\Elasticsearch\Model\Layer\Search\Context</argument>
+        </arguments>
+    </type>
+    <virtualType name="Magento\Elasticsearch\Model\Layer\Search\Context" type="Magento\Catalog\Model\Layer\Search\Context">
+        <arguments>
+            <argument name="collectionProvider" xsi:type="object">elasticsearchLayerSearchItemCollectionProvider</argument>
+            <argument name="stateKey" xsi:type="object">Magento\CatalogSearch\Model\Layer\Search\StateKey</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\CatalogSearch\Model\Search\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="synerise_ai" xsi:type="object">elasticsearchAdvancedCollectionFactory</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Search Engine - elasticsuite compatibility -->
+    <type name="Smile\ElasticsuiteCatalog\Model\Layer\FilterList">
+        <plugin name="syneriseFilterList" type="Synerise\Integration\Plugin\FilterList" />
+    </type>
+    <type name="Synerise\Integration\Search\FilterList">
+        <arguments>
+            <argument name="filterableAttributes" xsi:type="object">Smile\ElasticsuiteCatalog\Model\Layer\Search\FilterableAttributeList</argument>
+            <argument name="filters" xsi:type="array">
+                <item name="attribute" xsi:type="string">Magento\CatalogSearch\Model\Layer\Filter\Attribute</item>
+                <item name="price" xsi:type="string">Synerise\Integration\Model\Layer\Filter\ElasticsuiteCatalog\Price</item>
+                <item name="decimal" xsi:type="string">Magento\CatalogSearch\Model\Layer\Filter\Decimal</item>
+                <item name="category" xsi:type="string">Magento\CatalogSearch\Model\Layer\Filter\Category</item>
+                    <item name="boolean" xsi:type="string">Smile\ElasticsuiteCatalog\Model\Layer\Filter\Boolean</item>
+            </argument>
+        </arguments>
+    </type>
+    <preference for="Smile\ElasticsuiteTracker\Block\Variables\Page\Search" type="Synerise\Integration\Block\ElasticsuiteTracker\Variables\Page\Search" />
+    <preference for="Smile\ElasticsuiteCatalog\Plugin\LayerPlugin" type="Synerise\Integration\Plugin\ElasticsuiteCatalog\LayerPlugin" />
+    <preference for="Smile\ElasticsuiteCatalog\Block\Plugin\ResultPlugin" type="Synerise\Integration\Plugin\ElasticsuiteCatalog\ResultPlugin" />
+    <preference for="Smile\ElasticsuiteSwatches\Model\Plugin\ProductImage" type="Synerise\Integration\Plugin\ElasticsuiteCatalog\ProductImage" />
+    <preference for="Smile\ElasticsuiteSwatches\Block\Navigation\Renderer\Swatches\RenderLayered" type="Synerise\Integration\Block\ElasticsuiteSwatches\Navigation\Renderer\Swatches\RenderLayered" />
 </config>
