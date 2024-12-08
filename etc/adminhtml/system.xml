@@ -77,10 +77,17 @@
                     <config_path>synerise/product/labels_enabled</config_path>
                     <source_model>Synerise\Integration\Model\Config\Source\Products\Attributes\Format</source_model>
                 </field>
+                <field id="price" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1">
+                    <label>Price</label>
+                    <config_path>synerise/product/price</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Products\Price</source_model>
+                    <comment>Attribute 'price' presented in catalog.</comment>
+                </field>
                 <field id="price_includes_tax" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1">
-                    <label>Calculate tax</label>
+                    <label>Prices including tax</label>
                     <config_path>synerise/product/calculate_tax</config_path>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Include tax in events and catalog.</comment>
                 </field>
             </group>
             <group id="customer" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">

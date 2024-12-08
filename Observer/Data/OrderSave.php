@@ -8,6 +8,7 @@ use Magento\Sales\Model\Order;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Tracking\Context;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Helper\Tracking\State;
 use Synerise\Integration\Helper\Tracking\UuidManagement;
@@ -66,6 +67,11 @@ class OrderSave implements ObserverInterface
     protected $cookieHelper;
 
     /**
+     * @var Context
+     */
+    protected $contextHelper;
+
+    /**
      * @var Logger
      */
     protected $loggerHelper;
@@ -101,6 +107,7 @@ class OrderSave implements ObserverInterface
         CustomerFromOrder $customerFromOrder,
         Cookie $cookieHelper,
         Logger $loggerHelper,
+        Context $contextHelper,
         State $stateHelper,
         ConfigFactory $configFactory,
         Config $synchronization,
@@ -113,6 +120,7 @@ class OrderSave implements ObserverInterface
         $this->customerFromOrder = $customerFromOrder;
         $this->cookieHelper = $cookieHelper;
         $this->loggerHelper = $loggerHelper;
+        $this->contextHelper = $contextHelper;
         $this->stateHelper = $stateHelper;
         $this->configFactory = $configFactory;
         $this->synchronization = $synchronization;
@@ -139,11 +147,17 @@ class OrderSave implements ObserverInterface
                 return;
             }
 
-            if (!$this->stateHelper->isAdmin() && $order->getCustomerEmail()) {
-                $this->uuidHelper->manageByEmail(
-                    $order->getCustomerEmail(),
-                    $storeId
-                );
+            $options = [];
+            if (!$this->stateHelper->isAdmin()) {
+                if ($order->getCustomerEmail()) {
+                    $this->uuidHelper->manageByEmail(
+                        $order->getCustomerEmail(),
+                        $storeId
+                    );
+                }
+
+                $options['snrs_params'] = $this->cookieHelper->getSnrsParams();
+                $options['source'] = $this->contextHelper->getSource();
             }
 
             if ($this->synchronization->isModelEnabled(OrderSender::MODEL)) {
@@ -151,9 +165,7 @@ class OrderSave implements ObserverInterface
                     OrderSender::MODEL,
                     $order->getId(),
                     $storeId,
-                    [
-                        'snrs_params' => $this->cookieHelper->getSnrsParams()
-                    ]
+                    $options
                 );
             }
 

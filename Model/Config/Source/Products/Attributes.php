@@ -47,6 +47,13 @@ class Attributes implements OptionSourceInterface
             }
         }
 
+        foreach (Price::OPTIONS as $item) {
+            $options[] = [
+                'value' => $item['value'],
+                'label' => $item['value']
+            ];
+        }
+
         return $options;
     }
 }

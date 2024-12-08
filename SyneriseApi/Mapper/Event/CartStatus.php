@@ -152,9 +152,9 @@ class CartStatus
      */
     public function getQuoteSubtotal(Quote $quote, int $storeId): float
     {
-        if ($this->priceHelper->calculateTax($storeId)) {
+        if ($this->priceHelper->includeTax($storeId)) {
             $totals = $quote->getTotals();
-            return isset($totals['subtotal']) ? (float)$totals['subtotal']->getValue() : $quote->getSubtotal();
+            return isset($totals['subtotal']) ? (float) $totals['subtotal']->getValue() : $quote->getSubtotal();
         } else {
             return $quote->getSubtotal();
         }
