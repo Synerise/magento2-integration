@@ -12,8 +12,12 @@ class Attributes implements OptionSourceInterface
         'sku',
         'price',
         'image',
-        'visibility',
-        'tax_class_id'
+        'visibility'
+    ];
+
+    public const REQUIRED_FOR_SELECT = [
+        'tax_class_id',
+        'special_price'
     ];
 
     public const XML_PATH_PRODUCT_ATTRIBUTES = 'synerise/product/attributes';
@@ -45,6 +49,13 @@ class Attributes implements OptionSourceInterface
                     'label' => $item->getAttributeCode()
                 ];
             }
+        }
+
+        foreach (Price::OPTIONS as $item) {
+            $options[] = [
+                'value' => $item['value'],
+                'label' => $item['value']
+            ];
         }
 
         return $options;

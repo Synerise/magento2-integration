@@ -105,12 +105,15 @@ class OrderCRUD
      *
      * @param Order $order
      * @param string|null $uuid
-     * @param array $snrsParams
+     * @param array $options
      * @return CreateatransactionRequest
      * @throws Exception
      */
-    public function prepareRequest(Order $order, ?string $uuid = null, array $snrsParams = []): CreateatransactionRequest
+    public function prepareRequest(Order $order, ?string $uuid = null, array $options = []): CreateatransactionRequest
     {
+        $snrsParams = isset($options['snrs_params']) && is_array($options['snrs_params']) ?
+            $options['snrs_params'] : [];
+
         $products = [];
         foreach ($order->getAllItems() as $item) {
             if ($item->getParentItem()) {
@@ -146,9 +149,12 @@ class OrderCRUD
                 (float) $order->getSubTotal(),
                 $order->getOrderCurrencyCode()
             ),
-            'source' => $this->contextHelper->getSource(),
             'event_salt' => $order->getRealOrderId()
         ];
+
+        if (!empty($options['source'])) {
+            $params['source'] = $options['source'];
+        }
 
         if ($order->getDiscountAmount()) {
             $params['discount_amount'] = $this->prepareDiscount(
@@ -208,7 +214,7 @@ class OrderCRUD
         $product = $item->getProduct();
 
         $regularPrice = [
-            "amount" => $this->priceHelper->getPrice($product, $item->getOriginalPrice(), $storeId),
+            "amount" => $this->priceHelper->getTaxPrice($product, $item->getOriginalPrice(), $storeId),
             "currency" => $currency
         ];
 
@@ -342,7 +348,7 @@ class OrderCRUD
             'discountCode' => $order->getCouponCode(),
             'shipping' => [
                 'method' => $order->getShippingMethod(),
-                'amount' => (float) $order->getShippingAmount()
+                'amount' => $this->getShippingAmount($order, $order->getStoreId())
             ],
             'applicationName' => $this->contextHelper->getApplicationName(),
             'storeId' => $order->getStoreId(),
@@ -397,10 +403,26 @@ class OrderCRUD
      */
     public function getOrderSubtotal(Order $order, int $storeId): float
     {
-        if ($this->priceHelper->calculateTax($storeId)) {
+        if ($this->priceHelper->includeTax($storeId)) {
             return (float) $order->getSubtotalInclTax();
         } else {
             return (float) $order->getSubtotal();
+        }
+    }
+
+    /**
+     * Get order subtotal including tax if enabled by config
+     *
+     * @param Order $order
+     * @param int $storeId
+     * @return float
+     */
+    public function getShippingAmount(Order $order, int $storeId): float
+    {
+        if ($this->priceHelper->includeTax($storeId)) {
+            return (float) $order->getShippingInclTax();
+        } else {
+            return (float) $order->getShippingAmount();
         }
     }
 }

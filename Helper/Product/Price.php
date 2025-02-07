@@ -7,10 +7,11 @@ use Magento\Catalog\Model\Product;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Store\Model\ScopeInterface;
+use Synerise\Integration\Model\Config\Source\Products\Price as PriceCode;
 
 class Price
 {
-    public const XML_PATH_PRODUCT_CALCULATE_TAX = 'synerise/product/calculate_tax';
+    public const XML_PATH_PRODUCT_INCLUDE_TAX = 'synerise/product/calculate_tax';
 
     /**
      * @var ScopeConfigInterface
@@ -20,18 +21,18 @@ class Price
     /**
      * @var Data
      */
-    private $helper;
+    private $catalogHelper;
 
     /**
      * @param ScopeConfigInterface $scopeConfig
-     * @param Data $helper
+     * @param Data $catalogHelper
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        Data $helper
+        Data $catalogHelper
     ) {
         $this->scopeConfig = $scopeConfig;
-        $this->helper = $helper;
+        $this->catalogHelper = $catalogHelper;
     }
 
     /**
@@ -43,17 +44,21 @@ class Price
      * @param bool|null $includingTax
      * @return float
      */
-    public function getPrice(Product $product, float $price, ?int $storeId = null, ?bool $includingTax = null): float
+    public function getTaxPrice(Product $product, float $price, ?int $storeId = null, ?bool $includingTax = null): float
     {
         if ($includingTax === null) {
-            $includingTax = $this->calculateTax($storeId);
+            $includingTax = $this->includeTax($storeId);
         }
 
-        if ($includingTax) {
-            return $this->helper->getTaxPrice($product, $price, true);
-        } else {
-            return $price;
-        }
+        return $this->catalogHelper->getTaxPrice(
+            $product,
+            $price,
+            $includingTax,
+            null,
+            null,
+            null,
+            $storeId
+        );
     }
 
     /**
@@ -65,7 +70,7 @@ class Price
      */
     public function getFinalUnitPrice(OrderItemInterface $item, ?int $storeId): float
     {
-        if ($this->calculateTax($storeId)) {
+        if ($this->includeTax($storeId)) {
             return round(($item->getRowTotal() + $item->getTaxAmount() - $item->getDiscountAmount()) /
                 $item->getQtyOrdered(), 2);
         } else {
@@ -79,10 +84,25 @@ class Price
      * @param int|null $storeId
      * @return bool
      */
-    public function calculateTax(?int $storeId = null): bool
+    public function includeTax(?int $storeId = null): bool
     {
         return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_PRODUCT_CALCULATE_TAX,
+            self::XML_PATH_PRODUCT_INCLUDE_TAX,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Get price code for price attribute
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getPriceCode(?int $storeId = null): string
+    {
+        return $this->scopeConfig->getValue(
+            PriceCode::XML_PATH_PRODUCT_PRICE,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
