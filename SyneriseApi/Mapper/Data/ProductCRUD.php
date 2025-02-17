@@ -155,23 +155,23 @@ class ProductCRUD
         $value['storeUrl'] = $this->getStoreBaseUrl($storeId);
 
         $priceInfo = $product->getPriceInfo();
-        $categoryIds = $product->getCategoryIds();
 
         $configurableAttributes = $this->getConfigurableAttributes($product);
-        foreach ($this->getAttributesToSend($storeId) as $attributeCode) {
+        foreach ($this->getAttributesToSelect($storeId) as $attributeCode) {
             if (isset($configurableAttributes[$attributeCode])) {
                 $value[$attributeCode] = $configurableAttributes[$attributeCode];
             } elseif ($attributeCode == 'category_ids') {
+                $categoryIds = $product->getCategoryIds();
                 if ($categoryIds) {
                     $value['category_ids'] = $this->categoryHelper->getAllCategoryIds($categoryIds);
+                    $value['category'] = $this->categoryHelper->getFormattedCategoryPath(array_shift($categoryIds));
+                    foreach ($categoryIds as $categoryId) {
+                        $value['additionalCategories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
+                    }
                 }
             } elseif($attributeCode == 'image') {
                 if ($product->getImage()) {
                     $value['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
-                }
-            } elseif($attributeCode == 'price') {
-                if ($priceInfo && $price = $priceInfo->getPrice($this->priceHelper->getPriceCode($storeId))) {
-                    $value['price'] = $this->priceHelper->getTaxPrice($product, $price->getValue(), $storeId);
                 }
             } elseif(in_array($attributeCode, $this->priceCodes)) {
                 if ($priceInfo && ($price = $priceInfo->getPrice($attributeCode)) && $price->getValue()) {
@@ -185,11 +185,8 @@ class ProductCRUD
             }
         }
 
-        if ($categoryIds) {
-            $value['category'] = $this->categoryHelper->getFormattedCategoryPath(array_shift($categoryIds));
-            foreach ($categoryIds as $categoryId) {
-                $value['additionalCategories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
-            }
+        if ($priceInfo && $price = $priceInfo->getPrice($this->priceHelper->getPriceCode($storeId))) {
+            $value['price'] = $this->priceHelper->getTaxPrice($product, $price->getValue(), $storeId);
         }
 
         if (!$delete && $stockStatus = $this->getStockStatus($product->getSku(), $websiteId)) {
