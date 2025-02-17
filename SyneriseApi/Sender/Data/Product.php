@@ -12,6 +12,7 @@ use Synerise\ApiClient\ApiException;
 use Synerise\CatalogsApiClient\Api\ItemsApi;
 use Synerise\CatalogsApiClient\ApiException as CatalogsApiException;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Model\Config\Source\Products\Attributes;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Catalogs\Config;
 use Synerise\Integration\SyneriseApi\Mapper\Data\ProductCRUD;
@@ -106,7 +107,10 @@ class Product extends AbstractSender implements SenderInterface
      */
     public function getAttributesToSelect(int $storeId): array
     {
-        return $this->productCRUD->getAttributesToSelect($storeId);
+        return array_merge(
+            $this->productCRUD->getAttributesToSend($storeId),
+            Attributes::REQUIRED_FOR_SELECT
+        );
     }
 
     /**

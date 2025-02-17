@@ -328,12 +328,12 @@ class ProductCRUD
     }
 
     /**
-     * Get attribute for select
+     * Get attribute to send
      *
      * @param int $storeId
      * @return array|string
      */
-    public function getAttributesToSelect(int $storeId): array
+    public function getAttributesToSend(int $storeId): array
     {
         if (!isset($this->attributes[$storeId])) {
             if ($this->includeAllFilterableAttributes($storeId)) {
