@@ -91,10 +91,13 @@ class ProductCRUD
      * @var Price
      */
     protected $priceHelper;
+
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory
+     * Array of available price codes
+     *
+     * @var array
      */
-    protected $attributeCollectionFactory;
+    protected $priceCodes = ['regular_price', 'final_price', 'special_price','tier_price','minimal_price'];
 
     /**
      * @param ScopeConfigInterface $scopeConfig
@@ -130,9 +133,6 @@ class ProductCRUD
         $this->imageHelper = $imageHelper;
         $this->loggerHelper = $loggerHelper;
         $this->priceHelper = $priceHelper;
-
-        $this->attributeCollectionFactory = \Magento\Framework\App\ObjectManager::getInstance()
-            ->get(\Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory::class);
     }
 
     /**
@@ -150,42 +150,43 @@ class ProductCRUD
         $value['itemId'] = $product->getSku();
         $value['deleted'] = $delete;
 
-        $configurableAttributes = $this->getConfigurableAttributes($product);
+        $storeId = $product->getStoreId();
+        $value['storeId'] = $storeId;
+        $value['storeUrl'] = $this->getStoreBaseUrl($storeId);
 
-        foreach ($this->getAttributesToSelect($product->getStoreId()) as $attributeCode) {
+        $priceInfo = $product->getPriceInfo();
+
+        $configurableAttributes = $this->getConfigurableAttributes($product);
+        foreach ($this->getAttributesToSelect($storeId) as $attributeCode) {
             if (isset($configurableAttributes[$attributeCode])) {
                 $value[$attributeCode] = $configurableAttributes[$attributeCode];
-                continue;
-            }
-
-            if ($attributeCode == 'category_ids') {
+            } elseif ($attributeCode == 'category_ids') {
                 $categoryIds = $product->getCategoryIds();
                 if ($categoryIds) {
                     $value['category_ids'] = $this->categoryHelper->getAllCategoryIds($categoryIds);
                     $value['category'] = $this->categoryHelper->getFormattedCategoryPath(array_shift($categoryIds));
+                    foreach ($categoryIds as $categoryId) {
+                        $value['additionalCategories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
+                    }
                 }
-                continue;
-            }
-
-            $attributeValue = $this->formatAttribute($product, $attributeCode);
-            if ($attributeValue !== null && $attributeValue !== false) {
-                $value[$attributeCode] = $attributeValue;
-            }
-        }
-        if ($product->getPrice()) {
-            $value['price'] = $this->priceHelper->getPrice($product, $product->getPrice(), $product->getStoreId());
-        }
-        $value['storeId'] = $product->getStoreId();
-        $value['storeUrl'] = $this->getStoreBaseUrl($product->getStoreId());
-
-        if ($categoryIds) {
-            foreach ($categoryIds as $categoryId) {
-                $value['additionalCategories'][] = $this->categoryHelper->getFormattedCategoryPath($categoryId);
+            } elseif($attributeCode == 'image') {
+                if ($product->getImage()) {
+                    $value['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
+                }
+            } elseif(in_array($attributeCode, $this->priceCodes)) {
+                if ($priceInfo && ($price = $priceInfo->getPrice($attributeCode)) && $price->getValue()) {
+                    $value[$attributeCode] = $this->priceHelper->getTaxPrice($product, $price->getValue(), $storeId);
+                }
+            } else {
+                $attributeValue = $this->formatAttribute($product, $attributeCode);
+                if ($attributeValue !== null && $attributeValue !== false) {
+                    $value[$attributeCode] = $attributeValue;
+                }
             }
         }
 
-        if ($product->getImage()) {
-            $value['image'] = $this->imageHelper->getOriginalImageUrl($product->getImage());
+        if ($priceInfo && $price = $priceInfo->getPrice($this->priceHelper->getPriceCode($storeId))) {
+            $value['price'] = $this->priceHelper->getTaxPrice($product, $price->getValue(), $storeId);
         }
 
         if (!$delete && $stockStatus = $this->getStockStatus($product->getSku(), $websiteId)) {
@@ -336,10 +337,12 @@ class ProductCRUD
     {
         if (!isset($this->attributes[$storeId])) {
             if ($this->includeAllFilterableAttributes($storeId)) {
-                $this->attributes[$storeId] = array_merge(
-                    $this->getEnabledAttributes($storeId),
-                    array_keys($this->attributesConfig->getFieldIds()),
-                    Attributes::REQUIRED
+                $this->attributes[$storeId] = array_unique(
+                    array_merge(
+                        $this->getEnabledAttributes($storeId),
+                        array_keys($this->attributesConfig->getFieldIds()),
+                        Attributes::REQUIRED
+                    )
                 );
             } else {
                 $this->attributes[$storeId] = array_merge(

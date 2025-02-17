@@ -28,6 +28,8 @@
             </order>
             <product>
                 <limit>50</limit>
+                <price>regular_price</price>
+                <calculate_tax>1</calculate_tax>
             </product>
             <subscriber>
                 <limit>50</limit>

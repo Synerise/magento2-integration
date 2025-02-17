@@ -32,7 +32,7 @@ class Context
     /**
      * @var MobileDetect
      */
-    protected MobileDetect $mobileDetect;
+    protected $mobileDetect;
 
     /**
      * @param StoreManagerInterface $storeManager
