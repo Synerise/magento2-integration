@@ -47,8 +47,12 @@
         </argument>
         <field name="searchable" formElement="multiselect">
             <argument name="data" xsi:type="array">
+                <item name="required" xsi:type="boolean">true</item>
                 <item name="config" xsi:type="array">
                     <item name="source" xsi:type="string">searchable</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="required-entry" xsi:type="boolean">true</item>
+                    </item>
                 </item>
             </argument>
             <settings>

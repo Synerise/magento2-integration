@@ -171,12 +171,12 @@ class Save extends Action
         
         $searchable = $attributeValidator->getValid($formData['searchable']);
         $sortable = [
-            'text' => $attributeValidator->getValid($formData['sortable']),
+            'text' => is_array($formData['sortable']) ? $attributeValidator->getValid($formData['sortable']) : [],
             'range' => []
         ];
          $facetable = [
              'text' => array_merge(
-                 $attributeValidator->getValid($formData['filterable']),
+                 is_array($formData['filterable']) ? $attributeValidator->getValid($formData['filterable']) : [],
                  $this->attributeConfig->getFacetableRequired()['text']
              ),
              'range' => $this->attributeConfig->getFacetableRequired()['range']
