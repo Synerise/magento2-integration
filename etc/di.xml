@@ -156,7 +156,6 @@
         <arguments>
             <argument name="factories" xsi:type="array">
                 <item name="synerise_ai" xsi:type="object">syneriseAiFulltextSearchCollectionFactory</item>
-                <item name="elasticsuite" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\CollectionFactory</item>
             </argument>
         </arguments>
     </virtualType>
@@ -258,7 +257,6 @@
         <arguments>
             <argument name="engines" xsi:type="array">
                 <item name="default" xsi:type="string">defaultBucketBuilderFactory</item>
-                <item name="elasticsuite" xsi:type="string">elasticsuiteBucketBuilderFactory</item>
             </argument>
         </arguments>
     </type>
@@ -270,53 +268,4 @@
             </argument>
         </arguments>
     </virtualType>
-    <virtualType name="elasticsuiteBucketBuilderFactory" type="Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactory">
-        <arguments>
-            <argument name="types" xsi:type="array">
-                <item name="default" xsi:type="string">Synerise\Integration\Search\SearchResponse\Aggregation\Bucket\AttributeBuilder</item>
-            </argument>
-        </arguments>
-    </virtualType>
-
-    <!-- ES?? -->
-    <type name="Magento\Catalog\Model\Layer\Search">
-        <arguments>
-            <argument name="context" xsi:type="object">Magento\Elasticsearch\Model\Layer\Search\Context</argument>
-        </arguments>
-    </type>
-    <virtualType name="Magento\Elasticsearch\Model\Layer\Search\Context" type="Magento\Catalog\Model\Layer\Search\Context">
-        <arguments>
-            <argument name="collectionProvider" xsi:type="object">elasticsearchLayerSearchItemCollectionProvider</argument>
-            <argument name="stateKey" xsi:type="object">Magento\CatalogSearch\Model\Layer\Search\StateKey</argument>
-        </arguments>
-    </virtualType>
-    <type name="Magento\CatalogSearch\Model\Search\ItemCollectionProvider">
-        <arguments>
-            <argument name="factories" xsi:type="array">
-                <item name="synerise_ai" xsi:type="object">elasticsearchAdvancedCollectionFactory</item>
-            </argument>
-        </arguments>
-    </type>
-
-    <!-- Search Engine - elasticsuite compatibility -->
-    <type name="Smile\ElasticsuiteCatalog\Model\Layer\FilterList">
-        <plugin name="syneriseFilterList" type="Synerise\Integration\Plugin\FilterList" />
-    </type>
-    <type name="Synerise\Integration\Search\FilterList">
-        <arguments>
-            <argument name="filterableAttributes" xsi:type="object">Smile\ElasticsuiteCatalog\Model\Layer\Search\FilterableAttributeList</argument>
-            <argument name="filters" xsi:type="array">
-                <item name="attribute" xsi:type="string">Magento\CatalogSearch\Model\Layer\Filter\Attribute</item>
-                <item name="price" xsi:type="string">Synerise\Integration\Model\Layer\Filter\ElasticsuiteCatalog\Price</item>
-                <item name="decimal" xsi:type="string">Magento\CatalogSearch\Model\Layer\Filter\Decimal</item>
-                <item name="category" xsi:type="string">Magento\CatalogSearch\Model\Layer\Filter\Category</item>
-                    <item name="boolean" xsi:type="string">Smile\ElasticsuiteCatalog\Model\Layer\Filter\Boolean</item>
-            </argument>
-        </arguments>
-    </type>
-    <preference for="Smile\ElasticsuiteTracker\Block\Variables\Page\Search" type="Synerise\Integration\Block\ElasticsuiteTracker\Variables\Page\Search" />
-    <preference for="Smile\ElasticsuiteCatalog\Plugin\LayerPlugin" type="Synerise\Integration\Plugin\ElasticsuiteCatalog\LayerPlugin" />
-    <preference for="Smile\ElasticsuiteCatalog\Block\Plugin\ResultPlugin" type="Synerise\Integration\Plugin\ElasticsuiteCatalog\ResultPlugin" />
-    <preference for="Smile\ElasticsuiteSwatches\Model\Plugin\ProductImage" type="Synerise\Integration\Plugin\ElasticsuiteCatalog\ProductImage" />
-    <preference for="Smile\ElasticsuiteSwatches\Block\Navigation\Renderer\Swatches\RenderLayered" type="Synerise\Integration\Block\ElasticsuiteSwatches\Navigation\Renderer\Swatches\RenderLayered" />
 </config>

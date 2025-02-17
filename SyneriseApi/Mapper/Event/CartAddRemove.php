@@ -143,21 +143,21 @@ class CartAddRemove
 
         if ($product->getFinalPrice()) {
             $params['finalUnitPrice'] = [
-                "amount" => $this->priceHelper->getPrice($product, $product->getFinalPrice(), $storeId),
+                "amount" => $this->priceHelper->getTaxPrice($product, $product->getFinalPrice(), $storeId),
                 "currency" => $currencyCode
             ];
         }
 
         if ($product->getPrice()) {
             $params['regularUnitPrice'] = [
-                "amount" => $this->priceHelper->getPrice($product, $product->getPrice(), $storeId),
+                "amount" => $this->priceHelper->getTaxPrice($product, $product->getPrice(), $storeId),
                 "currency" => $currencyCode
             ];
         }
 
         if ($product->getSpecialPrice()) {
             $params['discountedUnitPrice'] = [
-                "amount" => $this->priceHelper->getPrice($product, $product->getSpecialPrice(), $storeId),
+                "amount" => $this->priceHelper->getTaxPrice($product, $product->getSpecialPrice(), $storeId),
                 "currency" => $currencyCode
             ];
         }
