@@ -74,8 +74,8 @@ class MergeUuids implements ObserverInterface
 
             $mergeRequest = $this->customerMerge->prepareRequest(
                 $observer->getData('email'),
-                $observer->getData('prevUuid'),
-                $observer->getData('curUuid')
+                $observer->getData('curUuid'),
+                $observer->getData('prevUuid')
             );
 
             if ($this->configFactory->create($storeId)->isEventMessageQueueEnabled(self::EVENT)) {

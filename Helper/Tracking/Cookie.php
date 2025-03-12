@@ -22,6 +22,8 @@ class Cookie
 
     public const COOKIE_SNRS_RESET_UUID = '_snrs_reset_uuid';
 
+    public const COOKIE_SNRS_RESET_UUID_AND_IDENTITY_HASH = '_snrs_reset_uuid_and_identity_hash';
+
     public const XML_PATH_PAGE_TRACKING_DOMAIN = 'synerise/page_tracking/domain';
 
     public const XML_PATH_EVENT_TRACKING_INCLUDE_PARAMS = 'synerise/event_tracking/include_params';
@@ -106,6 +108,30 @@ class Cookie
             ->setHttpOnly(false);
 
         $this->cookieManager->setPublicCookie(self::COOKIE_SNRS_RESET_UUID, $uuid, $cookieMeta);
+    }
+
+    /**
+     * Set _snrs_reset_uuid cookie to reset uuid value via frontend tracker
+     *
+     * @param string $uuid
+     * @return void
+     * @throws CookieSizeLimitReachedException
+     * @throws FailureToSendException
+     * @throws InputException|NoSuchEntityException
+     */
+    public function setSnrsResetUuidAndIdentityHashCookie(string $uuid, string $identityHash)
+    {
+        $cookieMeta = $this->cookieMetadataFactory
+            ->createPublicCookieMetadata()
+            ->setDurationOneYear()
+            ->setDomain($this->getCookieDomain())
+            ->setPath('/')
+            ->setHttpOnly(false);
+
+        $this->cookieManager->setPublicCookie(
+            self::COOKIE_SNRS_RESET_UUID_AND_IDENTITY_HASH,
+            $uuid .':'.$identityHash,
+            $cookieMeta);
     }
 
     /**

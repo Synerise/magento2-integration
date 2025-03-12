@@ -72,24 +72,27 @@ class UuidManagement
 
         try {
             // reset uuid via cookie
-            $this->cookieHelper->setSnrsResetUuidCookie($emailUuid);
+            $this->cookieHelper->setSnrsResetUuidAndIdentityHashCookie($emailUuid, $this->hashString($email));
             $this->cookieHelper->setSnrsUuid($emailUuid);
         } catch (InputException|FailureToSendException|CookieSizeLimitReachedException|NoSuchEntityException $e) {
             $this->loggerHelper->error($e);
         }
 
-        $identityHash = $this->cookieHelper->getSnrsP('identityHash');
-        if ($identityHash && $identityHash != $this->hashString($email)) {
-            // Different user, skip merge.
-            return;
+        if ($this->cookieHelper->getSnrsP('identityHash')) {
+            $this->eventManager->dispatch('synerise_merge_uuids', [
+                'email' => $email,
+                'curUuid' => $emailUuid,
+                'prevUuid' => null,
+                'storeId' => $storeId,
+            ]);
+        } else {
+            $this->eventManager->dispatch('synerise_merge_uuids', [
+                'email' => $email,
+                'curUuid' => $emailUuid,
+                'prevUuid' => $uuid,
+                'storeId' => $storeId,
+            ]);
         }
-
-        $this->eventManager->dispatch('synerise_merge_uuids', [
-            'email' => $email,
-            'curUuid' => $emailUuid,
-            'prevUuid' => $uuid,
-            'storeId' => $storeId,
-        ]);
     }
 
     /**
