@@ -10,21 +10,26 @@ class CustomerMerge
      * Prepare request
      *
      * @param string $email
-     * @param string $previousUuid
      * @param string $currentUuid
+     * @param string|null $previousUuid
      * @return CreateaClientinCRMRequest[]
      */
-    public function prepareRequest(string $email, string $previousUuid, string $currentUuid): array
+    public function prepareRequest(string $email, string $currentUuid, ?string $previousUuid = null): array
     {
-        return [
+        $response = [
             new CreateaClientinCRMRequest([
                 'email' => $email,
                 'uuid' => $currentUuid
-            ]),
-            new CreateaClientinCRMRequest([
-                'email' => $email,
-                'uuid' => $previousUuid
             ])
         ];
+
+        if ($previousUuid) {
+            $response[] = new CreateaClientinCRMRequest([
+                'email' => $email,
+                'uuid' => $previousUuid
+            ]);
+        }
+
+        return $response;
     }
 }

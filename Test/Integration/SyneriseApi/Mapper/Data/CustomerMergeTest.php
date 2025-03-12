@@ -33,8 +33,8 @@ class CustomerMergeTest extends \PHPUnit\Framework\TestCase
 
         $request = $this->mapper->prepareRequest(
             $email,
-            $prevUuid,
-            $currUuid
+            $currUuid,
+            $prevUuid
         );
 
         $this->assertTrue($request[0]->valid());
