@@ -139,7 +139,8 @@ class Bulk
             $sender->sendItems(
                 $collection,
                 $data['store_id'],
-                $data['website_id'] ?: null
+                $data['website_id'] ?: null,
+                ['type' => $data['type']]
             );
         }
     }

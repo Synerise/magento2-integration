@@ -95,7 +95,7 @@ class Product extends AbstractSender implements SenderInterface
         /** @var $product \Magento\Catalog\Model\Product */
         foreach ($collection as $product) {
             $ids[] = $product->getEntityId();
-            $addItemRequest[] = $this->productCRUD->prepareRequest($product, $websiteId);
+            $addItemRequest[] = $this->productCRUD->prepareRequest($product, $websiteId, 0, $options);
         }
 
         $this->addItemsBatchWithInvalidCatalogIdCatch($addItemRequest, $storeId);

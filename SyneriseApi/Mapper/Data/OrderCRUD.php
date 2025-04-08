@@ -163,6 +163,10 @@ class OrderCRUD
             );
         }
 
+        if ($options['type']) {
+            $params['metadata']['lastUpdateType'] = $options['type'];
+        }
+
         if (!empty($snrsParams) && $this->cookieHelper->shouldIncludeSnrsParams($order->getStoreId())) {
             $params['metadata']['snrs_params'] = $snrsParams;
         }
@@ -203,13 +207,14 @@ class OrderCRUD
      * @param OrderItemInterface $item
      * @param string $currency
      * @param int|null $storeId
+     * @param array|null $snrsParams
      * @return array
      */
     public function prepareProductParamsFromOrderItem(
         OrderItemInterface $item,
         string $currency,
         ?int $storeId = null,
-        $snrsParams = null
+        ?array $snrsParams = null,
     ): array {
         $product = $item->getProduct();
 

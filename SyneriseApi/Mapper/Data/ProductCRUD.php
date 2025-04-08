@@ -144,7 +144,7 @@ class ProductCRUD
      * @return AddItem
      * @throws NoSuchEntityException
      */
-    public function prepareRequest(Product $product, int $websiteId, $delete = 0): AddItem
+    public function prepareRequest(Product $product, int $websiteId, $delete = 0, array $options = []): AddItem
     {
         $value = $this->getTypeSpecificData($product);
         $value['itemId'] = $product->getSku();
@@ -196,6 +196,11 @@ class ProductCRUD
             $value['stock_status'] = $stockStatus['is_in_stock'];
             $value['is_salable'] = $product->getIsSalable();
         }
+
+        if (isset($options['type'])) {
+            $value['lastUpdateType'] = $options['type'];
+        }
+
 
         return new AddItem([
             'item_key' => $value['itemId'],
