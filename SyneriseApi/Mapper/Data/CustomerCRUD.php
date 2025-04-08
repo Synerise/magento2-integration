@@ -47,9 +47,14 @@ class CustomerCRUD
      *
      * @param Customer|\Magento\Customer\Model\Data\Customer $customer
      * @param int|null $storeId
+     * @param array $options
      * @return CreateaClientinCRMRequest
      */
-    public function prepareRequest($customer, ?int $storeId = null): CreateaClientinCRMRequest
+    public function prepareRequest(
+        $customer,
+        ?int $storeId = null,
+        array $options = []
+    ): CreateaClientinCRMRequest
     {
         $params = [
             'custom_id' => $customer->getId(),
@@ -64,6 +69,10 @@ class CustomerCRUD
         } else {
             /** @var \Magento\Customer\Model\Customer $customer */
             $data = (array) $customer->getData();
+        }
+
+        if (isset($options['type'])) {
+            $params['attributes']['lastUpdateType'] = $options['type'];
         }
 
         $selectedAttributes = $this->getEnabledAttributes($storeId);

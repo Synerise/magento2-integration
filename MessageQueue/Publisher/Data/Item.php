@@ -49,6 +49,8 @@ class Item
         ?int $websiteId = null,
         ?int $retries = 0
     ) {
+        $options['type'] = 'item';
+
         $this->publisher->publish(
             self::TOPIC_NAME,
             new MessageItem($model, $entityId, $storeId, $websiteId, $retries, $this->json->serialize($options))
