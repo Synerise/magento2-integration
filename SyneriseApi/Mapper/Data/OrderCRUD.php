@@ -240,7 +240,7 @@ class OrderCRUD
             "name" => $item->getName(),
             "regularPrice" => $regularPrice,
             "finalUnitPrice" => $finalUnitPrice,
-            "quantity" => $item->getQtyOrdered()
+            "quantity" => (float) $item->getQtyOrdered()
         ];
 
         if ($this->cookieHelper->shouldIncludeSnrsParams($storeId)) {

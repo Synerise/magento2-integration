@@ -60,7 +60,7 @@ class CartStatus
         $params = $this->contextHelper->prepareContextParams();
         $params['products'] = !$emptyCart ? $this->prepareProductsFromQuote($quote) : [];
         $params['totalAmount'] = !$emptyCart ? $this->getQuoteSubtotal($quote, $quote->getStoreId()): 0;
-        $params['totalQuantity'] = !$emptyCart ? (int) $quote->getItemsQty() : 0;
+        $params['totalQuantity'] = !$emptyCart ? (float) $quote->getItemsQty() : 0;
 
         if ($cookieParams) {
             $params['snrs_params'] = $cookieParams;
@@ -133,7 +133,7 @@ class CartStatus
 
         $params = [
             "sku" => $sku,
-            "quantity" => $item->getQty()
+            "quantity" => (float) $item->getQty()
         ];
 
         if ($sku!= $skuVariant) {
