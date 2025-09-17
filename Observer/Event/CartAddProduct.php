@@ -18,6 +18,8 @@ class CartAddProduct implements ObserverInterface
 {
     public const EVENT = 'checkout_cart_add_product_complete';
 
+    protected $processedItems = [];
+
     /**
      * @var ConfigFactory
      */
@@ -106,6 +108,10 @@ class CartAddProduct implements ObserverInterface
                 return;
             }
 
+            if (in_array($quoteItem->getSku(), $this->processedItems)) {
+                return;
+            }
+
             $uuid = $this->cookieHelper->getSnrsUuid();
             if (!$uuid && !$quoteItem->getQuote()->getCustomerEmail()) {
                 return;
@@ -123,6 +129,9 @@ class CartAddProduct implements ObserverInterface
             } else {
                 $this->sender->send(self::EVENT, $eventClientAction, $storeId);
             }
+
+            $this->processedItems[] = $quoteItem->getSku();
+
         } catch (\Exception $e) {
             if (!$e instanceof ApiException) {
                 $this->loggerHelper->error($e);
