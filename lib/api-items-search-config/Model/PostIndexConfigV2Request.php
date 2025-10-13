@@ -362,7 +362,7 @@ class PostIndexConfigV2Request implements ModelInterface, ArrayAccess, \JsonSeri
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->setIfExists('index_name', $data ?? [], null);
         $this->setIfExists('description', $data ?? [], null);

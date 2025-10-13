@@ -54,7 +54,7 @@ class Debug extends Base
     /**
      * @inheritdoc
      */
-    public function isHandling(array $record): bool
+    public function isHandling($record): bool
     {
         return parent::isHandling($record) && $this->isLoggingEnabled();
     }

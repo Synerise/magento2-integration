@@ -214,7 +214,7 @@ class OrderCRUD
         OrderItemInterface $item,
         string $currency,
         ?int $storeId = null,
-        ?array $snrsParams = null,
+        ?array $snrsParams = null
     ): array {
         $product = $item->getProduct();
 

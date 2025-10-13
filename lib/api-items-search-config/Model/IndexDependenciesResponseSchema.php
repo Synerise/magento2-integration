@@ -248,7 +248,7 @@ class IndexDependenciesResponseSchema implements ModelInterface, ArrayAccess, \J
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->setIfExists('dependent_suggestion_indices', $data ?? [], null);
         $this->setIfExists('strictly_dependent_suggestion_indices', $data ?? [], null);

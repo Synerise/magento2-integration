@@ -78,8 +78,8 @@ class Workspace extends AbstractModel implements WorkspaceInterface
         Registry $registry,
         EncryptorInterface $encryptor,
         Validator $validator,
-        AbstractResource $resource = null,
-        AbstractDb $resourceCollection = null,
+        ?AbstractResource $resource = null,
+        ?AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         $this->encryptor = $encryptor;

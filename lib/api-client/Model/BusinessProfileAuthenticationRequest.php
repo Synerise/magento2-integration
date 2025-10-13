@@ -180,7 +180,7 @@ class BusinessProfileAuthenticationRequest implements ModelInterface, ArrayAcces
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->container['api_key'] = $data['api_key'] ?? null;
     }

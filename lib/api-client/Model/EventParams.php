@@ -258,7 +258,7 @@ class EventParams implements ModelInterface, ArrayAccess, \JsonSerializable
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->container['sdk_version'] = $data['sdk_version'] ?? null;
         $this->container['sdk_version_code'] = $data['sdk_version_code'] ?? null;

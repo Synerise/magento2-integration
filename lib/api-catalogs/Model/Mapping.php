@@ -195,7 +195,7 @@ class Mapping implements ModelInterface, ArrayAccess, \JsonSerializable
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->container['action'] = $data['action'] ?? null;
         $this->container['param_key'] = $data['param_key'] ?? null;
