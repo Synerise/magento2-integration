@@ -41,7 +41,7 @@ class Event
      * @param int $retries
      * @return void
      */
-    public function publish(string $eventName, $eventPayload, int $storeId, int $entityId = null, int $retries = 0)
+    public function publish(string $eventName, $eventPayload, int $storeId, ?int $entityId = null, int $retries = 0)
     {
         $this->publisher->publish(
             self::TOPIC_NAME,

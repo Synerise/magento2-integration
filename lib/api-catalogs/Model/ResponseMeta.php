@@ -186,7 +186,7 @@ class ResponseMeta implements ModelInterface, ArrayAccess, \JsonSerializable
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->container['total_count'] = $data['total_count'] ?? null;
         $this->container['request_time'] = $data['request_time'] ?? null;

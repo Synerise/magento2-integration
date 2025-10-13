@@ -200,7 +200,7 @@ class AuthorDetails implements ModelInterface, ArrayAccess, \JsonSerializable
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->container['avatar_url'] = $data['avatar_url'] ?? null;
         $this->container['email'] = $data['email'] ?? null;

@@ -106,7 +106,7 @@ class Customer extends AbstractSender implements SenderInterface
      * @throws ApiException
      * @throws ValidatorException
      */
-    public function batchAddOrUpdateClients($payload, int $storeId, string $eventName = null)
+    public function batchAddOrUpdateClients($payload, int $storeId, ?string $eventName = null)
     {
         try {
             list ($body, $statusCode, $headers) = $this->sendWithTokenExpiredCatch(

@@ -255,7 +255,7 @@ class DistinctFilterSearch implements ModelInterface, ArrayAccess, \JsonSerializ
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->setIfExists('attribute', $data ?? [], null);
         $this->setIfExists('max_num_items', $data ?? [], null);

@@ -62,7 +62,7 @@ class ProductImport
         Logger $loggerHelper,
         ConfigFactory $configFactory,
         Config $synchronization,
-        ProductRepositoryInterface $productRepository = null
+        ?ProductRepositoryInterface $productRepository = null
     ) {
         $this->storeManager = $storeManager;
         $this->loggerHelper = $loggerHelper;
@@ -192,7 +192,7 @@ class ProductImport
      * @param int|null $storeId
      * @return \Magento\Catalog\Model\Product|null
      */
-    private function retrieveProductBySku(string $sku, int $storeId = null): ?\Magento\Catalog\Model\Product
+    private function retrieveProductBySku(string $sku, ?int $storeId = null): ?\Magento\Catalog\Model\Product
     {
         try {
             $product = $this->productRepository->get($sku, $storeId);

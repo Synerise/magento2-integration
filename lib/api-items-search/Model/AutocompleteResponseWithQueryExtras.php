@@ -285,7 +285,7 @@ class AutocompleteResponseWithQueryExtras implements ModelInterface, ArrayAccess
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->setIfExists('filtered_result_facets', $data ?? [], null);
         $this->setIfExists('unfiltered_result_facets', $data ?? [], null);

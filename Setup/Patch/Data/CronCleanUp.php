@@ -25,7 +25,7 @@ class CronCleanUp implements DataPatchInterface
      * @param WriterInterface $configWriter
      */
     public function __construct(
-        WriterInterface $configWriter,
+        WriterInterface $configWriter
     ) {
         $this->configWriter = $configWriter;
     }

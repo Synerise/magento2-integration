@@ -181,7 +181,7 @@ class ApiKeyPermissionCheckResponse implements ModelInterface, ArrayAccess, \Jso
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->container['business_profile_name'] = $data['business_profile_name'] ?? null;
         $this->container['permissions'] = $data['permissions'] ?? null;

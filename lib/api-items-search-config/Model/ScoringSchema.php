@@ -273,7 +273,7 @@ class ScoringSchema implements ModelInterface, ArrayAccess, \JsonSerializable
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         $this->setIfExists('page_visits_popularity', $data ?? [], 0);
         $this->setIfExists('transactions_popularity', $data ?? [], 0);
