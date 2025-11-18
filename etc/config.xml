@@ -30,6 +30,7 @@
                 <limit>50</limit>
                 <price>regular_price</price>
                 <calculate_tax>1</calculate_tax>
+                <labels_enabled>1</labels_enabled>
             </product>
             <subscriber>
                 <limit>50</limit>

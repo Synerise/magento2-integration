@@ -191,6 +191,6 @@ class Reader implements ReaderInterface
     {
         return $this->scopeConfig->getValue(
             self::XML_PATH_PRODUCTS_LABELS_ENABLED
-        );
+        ) ?? Format::OPTION_LABEL;
     }
 }
