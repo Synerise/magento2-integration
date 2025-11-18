@@ -129,7 +129,7 @@ class Config
      */
     public function getFieldFormatId(): string
     {
-        return $this->dataStorage->get('field_format_id', 0);
+        return $this->dataStorage->get('field_format_id', 1);
     }
 
     /**
