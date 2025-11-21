@@ -214,11 +214,6 @@
         </arguments>
     </virtualType>
 
-    <!-- Search frontend scripts -->
-    <type name="Magento\Framework\RequireJs\Config\File\Collector\Aggregated">
-        <plugin name="syneriseFilterList" type="Synerise\Integration\Plugin\RequireJs\Config\File\Collector\Aggregated" />
-    </type>
-
     <!-- Search indexer disabled -->
     <type name="Magento\CatalogSearch\Model\Indexer\IndexerHandlerFactory">
         <arguments>
@@ -268,4 +263,16 @@
             </argument>
         </arguments>
     </virtualType>
+
+    <virtualType name="SyneriseSearchSession" type="Magento\Framework\Session\Generic">
+        <arguments>
+            <argument name="name" xsi:type="string">search_session</argument>
+            <argument name="sessionConfig" xsi:type="object">Synerise\Integration\Model\Search\SessionConfig</argument>
+        </arguments>
+    </virtualType>
+    <type name="Synerise\Integration\Search\Container\SearchResponse">
+        <arguments>
+            <argument name="session" xsi:type="object">SyneriseSearchSession</argument>
+        </arguments>
+    </type>
 </config>

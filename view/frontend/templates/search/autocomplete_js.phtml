@@ -1,0 +1,43 @@
+<?php /** @var \Synerise\Integration\Block\Search\Autocomplete $block */ ?>
+<?php if ($block->isSyneriseAiEnabled()): ?>
+<script type="text/javascript">
+    require(['jquery'], function ($) {
+        try {
+            $('#search_autocomplete').html(`
+            <div id="search_autocomplete_results" data-bind="scope: 'autocomplete_search_results'">
+                <!-- ko template: getTemplate() --><!-- /ko -->
+            </div>
+        `);
+        } catch (err) {
+            console.warn(err.message);
+        }
+
+        $(document).on('click', '#search_autocomplete_results a[data-search-click]', function (e) {
+            const json = $(this).attr('data-search-click');
+
+            if (SR && json) {
+                try {
+                    SR.event.itemSearchClick(JSON.parse(json));
+                } catch (err) {
+                    console.error('Invalid data-search-click JSON:', json);
+                }
+            }
+        });
+    });
+
+    require.config({
+        map: {
+            '*': {
+                quickSearch: 'Synerise_Integration/js/search-form-mini'
+            }
+        }
+    });
+</script>
+<script type="text/x-magento-init">
+    {
+        "#search_autocomplete": {
+            "Magento_Ui/js/core/app": <?= /* @noEscape */ $block->getJsLayout() ?>
+        }
+    }
+</script>
+<?php endif; ?>

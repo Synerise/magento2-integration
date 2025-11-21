@@ -1,0 +1,10 @@
+<?php
+/** @var $block Synerise\Integration\Block\Search\ResultsClickData */
+if ($block->isSyneriseAiEnabled()):
+$data = json_encode([
+    'correlation_id' => $block->getCurrentCorrelationId(),
+    'item' => $block->getProduct()->getSku(),
+]);
+?>
+<div class="product-search-click-data" data-search-click='<?= $data ?>'></div>
+<?php endif; ?>

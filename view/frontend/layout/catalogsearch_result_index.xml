@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+<body>
+    <referenceContainer name="before.body.end">
+        <block class="Synerise\Integration\Block\Search\EngineResolver" name="synerise.search.results.click.js"
+               template="Synerise_Integration::search/results_click_js.phtml"/>
+    </referenceContainer>
+    <referenceContainer name="content">
+        <referenceBlock name="catalogsearch.product.addto">
+            <block class="Synerise\Integration\Block\Search\ResultsClickData" name="synerise.search.results.click.data"
+                   template="Synerise_Integration::search/results_click_data.phtml" />
+        </referenceBlock>
+    </referenceContainer>
+</body>
+</page>

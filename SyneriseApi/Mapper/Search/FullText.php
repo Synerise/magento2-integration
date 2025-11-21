@@ -27,14 +27,20 @@ class FullText
      *
      * @param SearchCriteriaInterface $searchCriteria
      * @param string|null $uuid
+     * @param string|null $correlationId
      * @return SearchFullTextPostRequest
      */
-    public function prepareRequest(SearchCriteriaInterface $searchCriteria, ?string $uuid = null): SearchFullTextPostRequest
+    public function prepareRequest(
+        SearchCriteriaInterface $searchCriteria,
+        ?string $uuid = null,
+        ?string $correlationId = null
+    ): SearchFullTextPostRequest
     {
         $criteria = $this->searchCriteriaBuilder->build($searchCriteria);
 
         return new SearchFullTextPostRequest([
             'client_uuid' => $uuid,
+            'correlation_id' => $correlationId,
             'query' => $criteria->getQuery(),
             'page' => $criteria->getPage(),
             'limit' => $criteria->getLimit(),

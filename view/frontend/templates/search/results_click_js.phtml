@@ -1,0 +1,19 @@
+<?php /** @var \Synerise\Integration\Block\Search\EngineResolver $block */ ?>
+<?php if($block->isSyneriseAiEnabled()): ?>
+<script type="text/javascript">
+    require(['jquery'], function ($) {
+        $(document).on('click', '.products-grid a', function (e) {
+            const $productItem = $(this).closest('.product-item');
+            const $dataNode = $productItem.find('.product-search-click-data');
+
+            if (SR && $dataNode.length) {
+                let data = JSON.parse($dataNode.attr('data-search-click'));
+                data.index = $productItem.index('.product-item') + 1;
+                data.searchType = "full-text-search";
+
+                SR.event.itemSearchClick(data);
+            }
+        });
+    });
+</script>
+<?php endif; ?>

@@ -86,6 +86,9 @@ class Product implements DataProviderInterface
                     }
                 }
 
+                $extras = $response->getExtras();
+                $correlationId = $extras ? $extras->getCorrelationId() : null;
+
                 $collection = $this->productCollectionFactory->create()
                     ->addIdFilter(array_keys($ids))
                     ->addAttributeToSelect(
@@ -99,7 +102,13 @@ class Product implements DataProviderInterface
                         'title' => $product->getName(),
                         'image' => $this->getImageUrl($product),
                         'url' => $product->getProductUrl(),
-                        'price' => $this->renderProductPrice($product, FinalPrice::PRICE_CODE)
+                        'price' => $this->renderProductPrice($product, FinalPrice::PRICE_CODE),
+                        'clickData' => json_encode([
+                            'correlation_id' => $correlationId,
+                            'item' => $product->getSku(),
+                            'position' => $key+1,
+                            'searchType' => "autocomplete"
+                        ])
                     ]);
                 }
 
