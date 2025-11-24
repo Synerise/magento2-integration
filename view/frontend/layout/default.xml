@@ -7,8 +7,7 @@
                 template="Synerise_Integration::tracking/code.phtml"
                 ifconfig="synerise/page_tracking/enabled"
             />
-        </referenceContainer>
-        <referenceBlock name="top.search">
+
             <block class="Synerise\Integration\Block\Search\Autocomplete" name="synerise-search-autocomplete"
                    template="Synerise_Integration::search/autocomplete_js.phtml">
                 <arguments>
@@ -53,6 +52,6 @@
                     </argument>
                 </arguments>
             </block>
-        </referenceBlock>
+        </referenceContainer>
     </body>
 </page>
