@@ -4,7 +4,7 @@
         <tab id="synerise" translate="label" sortOrder="1000">
             <label>Synerise</label>
         </tab>
-        <section id="synerise_workspace" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1">
+        <section id="synerise_workspace" translate="label" sortOrder="1" showInDefault="1">
             <label>Workspaces</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_workspace</resource>
@@ -231,6 +231,48 @@
                     <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Events</source_model>
                     <depends>
                         <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+        <section id="synerise_ai_search" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>AI Search</label>
+            <tab>synerise</tab>
+            <resource>Synerise_Integration::configuration_ai_search</resource>
+            <group id="autocomplete" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Autocomplete</label>
+                <field id="products_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Products Enabled</label>
+                    <config_path>synerise/ai_search/products_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="products_count" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Products Count</label>
+                    <config_path>synerise/ai_search/products_count</config_path>
+                    <validate>validate-digits validate-zero-or-greater</validate>
+                    <depends>
+                        <field id="products_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="suggestions_enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Suggestions Enabled</label>
+                    <config_path>synerise/ai_search/suggestions_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="suggestions_index" translate="label" type="select" sortOrder="40" showInStore="1">
+                    <label>Suggestions Index</label>
+                    <config_path>synerise/ai_search/suggestions_index</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Search\SuggestionIndex</source_model>
+                    <depends>
+                        <field id="suggestions_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="suggestions_count" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Suggestions Count</label>
+                    <config_path>synerise/ai_search/suggestions_count</config_path>
+                    <validate>validate-digits validate-zero-or-greater</validate>
+                    <depends>
+                        <field id="suggestions_enabled">1</field>
                     </depends>
                 </field>
             </group>

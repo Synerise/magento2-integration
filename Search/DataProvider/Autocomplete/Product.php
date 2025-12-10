@@ -2,15 +2,20 @@
 
 namespace Synerise\Integration\Search\DataProvider\Autocomplete;
 
-use Magento\Catalog\Helper\Image;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\Catalog\Pricing\Price\FinalPrice;
-use Magento\Framework\Pricing\Render;
 use Magento\Search\Model\Autocomplete\DataProviderInterface;
-use Magento\Search\Model\Autocomplete\ItemFactory;
+use Magento\Search\Model\QueryFactory;
+use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Helper\Logger;
-use Synerise\Integration\Search\Container\Autocomplete;
-use Synerise\Integration\Search\DataProvider\Autocomplete\Product\PriceRendererResolver;
+use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Search\Attributes\Config as AttributesConfig;
+use Synerise\Integration\Search\DataProvider\Autocomplete\Product\ItemFactory;
+use Synerise\Integration\Search\ConfigFactory;
+use Synerise\Integration\Search\SearchRequest\DefaultFiltersBuilder;
+use Synerise\Integration\Search\SearchRequest\Filters;
+use Synerise\Integration\SyneriseApi\Mapper\Search\Autocomplete as Mapper;
+use Synerise\Integration\SyneriseApi\Sender\Search as Sender;
 
 class Product implements DataProviderInterface
 {
@@ -26,24 +31,34 @@ class Product implements DataProviderInterface
     ];
 
     /**
-     * @var Autocomplete
+     * @var QueryFactory
      */
-    protected $autocomplete;
+    protected $queryFactory;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    protected $storeManager;
 
     /**
      * @var CollectionFactory
      */
-    protected $productCollectionFactory;
+    protected $collectionFactory;
 
     /**
-     * @var PriceRendererResolver
+     * @var DefaultFiltersBuilder
      */
-    protected $priceRendererResolver;
+    protected $defaultFiltersBuilder;
 
     /**
-     * @var Image
+     * @var AttributesConfig
      */
-    protected $imageHelper;
+    protected $attributesConfig;
+
+    /**
+     * @var ConfigFactory
+     */
+    protected $configFactory;
 
     /**
      * @var ItemFactory
@@ -51,23 +66,48 @@ class Product implements DataProviderInterface
     protected $itemFactory;
 
     /**
+     * @var Cookie
+     */
+    protected $cookieHelper;
+
+    /**
+     * @var Sender
+     */
+    protected $sender;
+
+    /**
+     * @var Mapper
+     */
+    protected $mapper;
+
+    /**
      * @var Logger
      */
     protected $logger;
 
     public function __construct(
-        Autocomplete $autocomplete,
-        CollectionFactory $productCollectionFactory,
-        PriceRendererResolver $priceRendererResolver,
-        Image $imageHelper,
+        QueryFactory $queryFactory,
+        StoreManagerInterface $storeManager,
+        CollectionFactory $collectionFactory,
+        DefaultFiltersBuilder $defaultFiltersBuilder,
+        AttributesConfig $attributesConfig,
+        ConfigFactory $configFactory,
         ItemFactory $itemFactory,
+        Cookie $cookieHelper,
+        Sender $sender,
+        Mapper $mapper,
         Logger $logger
     ) {
-        $this->autocomplete = $autocomplete;
-        $this->productCollectionFactory = $productCollectionFactory;
-        $this->priceRendererResolver = $priceRendererResolver;
-        $this->imageHelper = $imageHelper;
+        $this->queryFactory = $queryFactory;
+        $this->storeManager = $storeManager;
+        $this->collectionFactory = $collectionFactory;
+        $this->defaultFiltersBuilder = $defaultFiltersBuilder;
+        $this->attributesConfig = $attributesConfig;
+        $this->configFactory = $configFactory;
         $this->itemFactory = $itemFactory;
+        $this->cookieHelper = $cookieHelper;
+        $this->sender = $sender;
+        $this->mapper = $mapper;
         $this->logger = $logger;
     }
 
@@ -77,8 +117,34 @@ class Product implements DataProviderInterface
     public function getItems()
     {
         $result = [];
+
         try {
-            if ($this->shouldIncludeProducts() && $response = $this->autocomplete->search()) {
+            $storeId = $this->storeManager->getStore()->getId();
+            $config = $this->configFactory->create($storeId);
+
+            if (!$config->isProductsAutocompleteEnabled()) {
+                return $result;
+            }
+
+            $indexId = $config->getSearchIndex();
+            if (!$indexId) {
+                throw new \InvalidArgumentException(sprintf('Search index not set for store: %d.', $storeId));
+            }
+
+            $request = $this->mapper->prepareRequest(
+                $this->queryFactory->get()->getQueryText(),
+                $config->getProductsAutocompleteLimit(),
+                $this->cookieHelper->getSnrsUuid(),
+                $this->getFilters()
+            );
+
+            $response = $this->sender->searchAutocomplete(
+                $storeId,
+                $indexId,
+                $request
+            );
+
+            if ($response) {
                 $ids = [];
                 foreach ($response->getData() as $key => $item) {
                     if (isset($item['entity_id'])) {
@@ -89,7 +155,7 @@ class Product implements DataProviderInterface
                 $extras = $response->getExtras();
                 $correlationId = $extras ? $extras->getCorrelationId() : null;
 
-                $collection = $this->productCollectionFactory->create()
+                $collection = $this->collectionFactory->create()
                     ->addIdFilter(array_keys($ids))
                     ->addAttributeToSelect(
                         $this->defaultSelectedAttributes
@@ -97,21 +163,8 @@ class Product implements DataProviderInterface
 
                 foreach ($collection as $product) {
                     $key = $ids[$product->getEntityId()];
-                    $result[$key] = $this->itemFactory->create([
-                        'type' => 'product',
-                        'title' => $product->getName(),
-                        'image' => $this->getImageUrl($product),
-                        'url' => $product->getProductUrl(),
-                        'price' => $this->renderProductPrice($product, FinalPrice::PRICE_CODE),
-                        'clickData' => json_encode([
-                            'correlation_id' => $correlationId,
-                            'item' => $product->getSku(),
-                            'position' => $key+1,
-                            'searchType' => "autocomplete"
-                        ])
-                    ]);
+                    $result[$key] = $this->itemFactory->create($product, $key+1, $correlationId);
                 }
-
             }
         } catch (\Exception $e) {
             $this->logger->debug($e);
@@ -121,43 +174,35 @@ class Product implements DataProviderInterface
         return $result;
     }
 
-    protected function shouldIncludeProducts()
+
+    protected function getFilters(): Filters
     {
-        return true;
+        $filters = $this->defaultFiltersBuilder->build();
+
+        $filters->setData(
+            $this->getVisibilityFiledName(), ['in' => $this->getVisibleInSearchIds()]
+        );
+
+        return $filters;
     }
 
     /**
-     * Get image url
+     * Get mapped field for visibility
      *
-     * @param \Magento\Catalog\Model\Product $product
      * @return string
      */
-    protected function getImageUrl(\Magento\Catalog\Model\Product $product): string
+    protected function getVisibilityFiledName(): string
     {
-        return $this->imageHelper->init($product, 'mini_cart_product_thumbnail')->getUrl();
+        return $this->attributesConfig->getMappedFieldName('visibility');
     }
 
     /**
-     * @param \Magento\Catalog\Model\Product $product
-     * @param string $priceCode
-     * @return string|null
+     * Retrieve visible in search ids array
+     *
+     * @return int[]
      */
-    protected function renderProductPrice(\Magento\Catalog\Model\Product $product, string $priceCode)
+    protected function getVisibleInSearchIds(): array
     {
-        $price = $product->getData($priceCode);
-        if ($priceRender = $this->priceRendererResolver->get()) {
-            $price = $priceRender->render(
-                $priceCode,
-                $product,
-                [
-                    'include_container' => false,
-                    'display_minimal_price' => true,
-                    'zone' => Render::ZONE_ITEM_LIST,
-                    'list_category_page' => true,
-                ]
-            );
-        }
-
-        return $price;
+        return [Visibility::VISIBILITY_IN_SEARCH, Visibility::VISIBILITY_BOTH];
     }
 }

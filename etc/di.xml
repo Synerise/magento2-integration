@@ -240,7 +240,7 @@
     <type name="Synerise\Integration\Search\Autocomplete">
         <arguments>
             <argument name="dataProviders" xsi:type="array">
-                <item name="10" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Term</item>
+                <item name="10" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Suggestion</item>
                 <item name="20" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Product</item>
             </argument>
         </arguments>

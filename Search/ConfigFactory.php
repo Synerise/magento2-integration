@@ -1,10 +1,10 @@
 <?php
 
-namespace Synerise\Integration\SyneriseApi\Config;
+namespace Synerise\Integration\Search;
 
 use Magento\Framework\ObjectManagerInterface;
 
-class DataFactory
+class ConfigFactory
 {
     /**
      * Object Manager instance
@@ -24,13 +24,13 @@ class DataFactory
     }
 
     /**
-     * Create api config for given store ID
+     * Create search config for given store ID
      *
      * @param int $storeId
-     * @return Data
+     * @return Config
      */
-    public function create(int $storeId): Data
+    public function create(int $storeId = 0): Config
     {
-        return $this->objectManager->create(Data::class, ['storeId' => $storeId]);
+        return $this->objectManager->create(Config::class, ['storeId' => $storeId]);
     }
 }

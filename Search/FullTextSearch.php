@@ -11,6 +11,7 @@ use Magento\Search\Api\SearchInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Search\Container\SearchResponse;
+use Synerise\Integration\Search\SearchRequest\SearchCriteriaBuilder;
 use Synerise\Integration\SyneriseApi\Mapper\Search\FullText;
 use Synerise\Integration\SyneriseApi\Sender\Search as Sender;
 use Synerise\ItemsSearchApiClient\Model\SearchFullTextPostRequest;
@@ -21,6 +22,11 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
      * @var Resolver
      */
     protected $layerResolver;
+
+    /**
+     * @var SearchCriteriaBuilder
+     */
+    protected $searchCriteriaBuilder;
 
     /**
      * @var SearchResponse
@@ -41,6 +47,7 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
      * @param ObjectManagerInterface $objectManager
      * @param Resolver $layerResolver
      * @param ScopeResolverInterface $scopeResolver
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param SearchResponseBuilder $searchResponseBuilder
      * @param SearchResponse $searchResponse
      * @param Sender $sender
@@ -52,6 +59,7 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
         ObjectManagerInterface $objectManager,
         Resolver $layerResolver,
         ScopeResolverInterface $scopeResolver,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
         SearchResponseBuilder $searchResponseBuilder,
         SearchResponse $searchResponse,
         Sender $sender,
@@ -60,6 +68,7 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
         Logger $logger
     ) {
         $this->layerResolver = $layerResolver;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->searchResponse = $searchResponse;
         $this->sender = $sender;
         $this->mapper = $mapper;
@@ -73,7 +82,11 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
     public function search(SearchCriteriaInterface $searchCriteria): SearchResultInterface
     {
         try {
-            $request = $this->mapper->prepareRequest($searchCriteria, $this->getUuid());
+            $request = $this->mapper->prepareRequest(
+                $this->searchCriteriaBuilder->build($searchCriteria, SearchCriteriaBuilder::TYPE_SEARCH),
+                $this->getUuid()
+            );
+
             $hash = $this->searchHash($request);
             $sessionCorrelationId = $this->searchResponse->getCorrelationId($hash);
             if ($sessionCorrelationId) {

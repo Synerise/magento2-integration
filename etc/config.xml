@@ -35,6 +35,12 @@
             <subscriber>
                 <limit>50</limit>
             </subscriber>
+            <ai_search>
+                <products_enabled>1</products_enabled>
+                <products_count>8</products_count>
+                <suggestions_enabled>1</suggestions_enabled>
+                <suggestions_count>3</suggestions_count>
+            </ai_search>
             <debug>
                 <logger_enabled>1</logger_enabled>
             </debug>

@@ -1,6 +1,6 @@
 <?php
 
-namespace Synerise\Integration\SyneriseApi\Config;
+namespace Synerise\Integration\Search\Config;
 
 use Magento\Framework\ObjectManagerInterface;
 
@@ -24,7 +24,7 @@ class DataFactory
     }
 
     /**
-     * Create api config for given store ID
+     * Create search config for given store ID
      *
      * @param int $storeId
      * @return Data

@@ -14,8 +14,6 @@ use Synerise\Integration\Model\SearchIndex;
 
 abstract class AbstractSearch implements SearchInterface
 {
-    public const XML_PATH_SYNERISE_SEARCH_INDEX = 'catalog/search/synerise_ai_index';
-
     /**
      * @var ObjectManagerInterface
      */
