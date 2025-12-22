@@ -156,6 +156,8 @@ class Reader implements ReaderInterface
         if (!isset($this->fieldFormat['name'])) {
             if ($this->getFieldFormatId() == Format::OPTION_ID_AND_LABEL) {
                 $this->fieldFormat['name'] = "%s.id";
+            } elseif ($this->getFieldFormatId() == Format::OPTION_ID_AND_LABEL_ATTR) {
+                $this->fieldFormat['name'] = "%s_oid";
             } else {
                 $this->fieldFormat['name'] = "%s";
             }

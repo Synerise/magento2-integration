@@ -161,6 +161,9 @@ class ProductCRUD
         foreach ($this->getAttributesToSend($storeId) as $attributeCode) {
             if (isset($configurableAttributes[$attributeCode])) {
                 $value[$attributeCode] = $configurableAttributes[$attributeCode];
+                if (isset($configurableAttributes[$attributeCode . '_oid'])) {
+                    $value[$attributeCode . '_oid'] = $configurableAttributes[$attributeCode . '_oid'];
+                }
             } elseif ($attributeCode == 'category_ids') {
                 if ($categoryIds) {
                     $value['category_ids'] = $this->categoryHelper->getAllCategoryIds($categoryIds);
@@ -178,10 +181,7 @@ class ProductCRUD
                     $value[$attributeCode] = $this->priceHelper->getTaxPrice($product, $price->getValue(), $storeId);
                 }
             } else {
-                $attributeValue = $this->formatAttribute($product, $attributeCode);
-                if ($attributeValue !== null && $attributeValue !== false) {
-                    $value[$attributeCode] = $attributeValue;
-                }
+                $this->formatAttribute($value, $product, $attributeCode);
             }
         }
 
@@ -265,11 +265,10 @@ class ProductCRUD
             if ($configurableAttributes) {
                 /** @var \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Attribute $attribute */
                 foreach ($configurableAttributes as $attribute) {
-                    $options = [];
+                    $attributeCode = $attribute->getProductAttribute()->getAttributeCode();
                     foreach ($attribute->getOptions() as $option) {
-                        $options[] = $this->formatOption($option);
+                        $this->formatOption($attributesToSend, $option, $attributeCode);
                     }
-                    $attributesToSend[$attribute->getProductAttribute()->getAttributeCode()] = $options;
                 }
             }
         }
@@ -339,7 +338,7 @@ class ProductCRUD
      * Get attribute to send
      *
      * @param int $storeId
-     * @return array|string
+     * @return array
      */
     public function getAttributesToSend(int $storeId): array
     {
@@ -382,54 +381,72 @@ class ProductCRUD
     /**
      * Format option
      *
-     * @param $option
-     * @return array|mixed
+     * @param array $value
+     * @param array $option
+     * @param string $attributeCode
+     * @return void
      */
-    protected function formatOption($option)
+    protected function formatOption(array &$value, array $option, string $attributeCode)
     {
+        if (!isset($value[$attributeCode])) {
+            $value[$attributeCode] = [];
+        }
+
         switch ($this->attributesConfig->getFieldFormatId()) {
             case Format::OPTION_ID_AND_LABEL:
-                return [
+                $value[$attributeCode][] = [
                     'id' => $option['value_index'],
                     'label' => $option['label']
                 ];
+                break;
+            case Format::OPTION_ID_AND_LABEL_ATTR:
+                if (!isset($value[$attributeCode . '_oid'])) {
+                    $value[$attributeCode . '_oid'] = [];
+                }
+                $value[$attributeCode][] = $option['label'];
+                $value[$attributeCode . '_oid'][] = $option['value_index'];
+                break;
             case Format::OPTION_LABEL:
-                return $option['label'];
+                $value[$attributeCode][] = $option['label'];
+                break;
             default:
-                return $option['value_index'];
+                $value[$attributeCode][] = $option['value_index'];
         }
     }
 
     /**
      * Format attribute
      *
+     * @param array $value
      * @param Product $product
      * @param string $attributeCode
-     * @return array|false|mixed|string|string[]|null
+     * @return void
      */
-    protected function formatAttribute(Product $product, string $attributeCode)
+    protected function formatAttribute(array &$value, Product $product, string $attributeCode)
     {
         $attribute = $product->getResource()->getAttribute($attributeCode);
         if (!$attribute) {
-            return null;
+            return;
         }
 
         $frontendInput = $attribute->getFrontendInput();
 
         $id = $product->getData($attributeCode);
         if ($id === null || !in_array($frontendInput, ['select', 'multiselect', 'boolean'])) {
-            return $id;
+            $value[$attributeCode] = $id;
+            return;
         }
 
-        if ($this->isMultiple($id)) {
+        if ($frontendInput == 'multiselect') {
             $id = explode(',', $id);
         }
 
         switch ($this->attributesConfig->getFieldFormatId()) {
             case Format::OPTION_ID_AND_LABEL:
                 if (is_array($id)) {
-                    $options = $product->getResource()->getAttribute($attributeCode)->getSource()->getSpecificOptions($id);
+                    $options = $product->getResource()->getAttribute($attributeCode)->getSource()->getSpecificOptions($id, false);
                     $optionValues = [];
+
                     foreach ($options as $item) {
                         if (in_array($item['value'], $id)) {
                             $optionValues[] = [
@@ -438,30 +455,56 @@ class ProductCRUD
                             ];
                         }
                     }
-                    return $optionValues;
+                    $value[$attributeCode] = $optionValues;
                 } else {
-                    return [
+                    $value[$attributeCode] = [
                         'id' => $id,
                         'label' => (string) $product->getAttributeText($attributeCode)
                     ];
                 }
-            case Format::OPTION_LABEL:
-                $attributeText = $product->getAttributeText($attributeCode);
-                return $this->isMultiple($attributeText) ? explode(',', $attributeText) : (string) $attributeText;
-            default:
-                return $id;
-        }
-    }
+                break;
+            case Format::OPTION_ID_AND_LABEL_ATTR:
+                if (is_array($id)) {
+                    $options = $product->getResource()->getAttribute($attributeCode)->getSource()->getSpecificOptions($id, false);
 
-    /**
-     * Check if value contains multiple items
-     *
-     * @param $value
-     * @return bool
-     */
-    protected function isMultiple($value): bool
-    {
-        return is_string($value) && strpos($value, ',') !== false;
+                    if (!isset($value[$attributeCode])) {
+                        $value[$attributeCode] = [];
+                    }
+                    if (!isset($value[$attributeCode . '_oid'])) {
+                        $value[$attributeCode . '_oid'] = [];
+                    }
+
+                    foreach ($options as $item) {
+                        if (in_array($item['value'], $id)) {
+                            $value[$attributeCode][] = $item['label'];
+                            $value[$attributeCode . '_oid'][] = $item['value'];
+                        }
+                    }
+                } else {
+                    $value[$attributeCode] = (string) $product->getAttributeText($attributeCode);
+                    $value[$attributeCode . '_oid'] = $id;
+                }
+                break;
+            case Format::OPTION_LABEL:
+                if (is_array($id)) {
+                    $options = $product->getResource()->getAttribute($attributeCode)->getSource()->getSpecificOptions($id);
+
+                    if (!isset($value[$attributeCode])) {
+                        $value[$attributeCode] = [];
+                    }
+
+                    foreach ($options as $item) {
+                        if (in_array($item['value'], $id)) {
+                            $value[$attributeCode][] = $item['label'];
+                        }
+                    }
+                } else {
+                    $value[$attributeCode] = (string) $product->getAttributeText($attributeCode);
+                }
+                break;
+            default:
+                $value[$attributeCode] = $id;;
+        }
     }
 
     /**

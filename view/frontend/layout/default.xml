@@ -3,12 +3,63 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceContainer name="before.body.end">
-            <block
-                class="Synerise\Integration\Block\Tracking\Code"
-                name="synerise.tracker"
+            <block class="Synerise\Integration\Block\Tracking\Code" name="synerise.tracker"
                 template="Synerise_Integration::tracking/code.phtml"
                 ifconfig="synerise/page_tracking/enabled"
             />
+
+            <block class="Synerise\Integration\Block\Search\Autocomplete" name="synerise-search-autocomplete"
+                   template="Synerise_Integration::search/autocomplete_js.phtml">
+                <arguments>
+                    <argument name="jsLayout" xsi:type="array">
+                        <item name="components" xsi:type="array">
+                            <item name="autocomplete_search_results" xsi:type="array">
+                                <item name="component" xsi:type="string">Synerise_Integration/js/view/search-autocomplete</item>
+                                <item name="template" xsi:type="string">Synerise_Integration/search-autocomplete/results</item>
+                                <item name="config" xsi:type="array">
+                                    <item name="itemRenderer" xsi:type="array">
+                                        <item name="default" xsi:type="string">defaultRenderer</item>
+                                        <item name="header" xsi:type="string">headerRenderer</item>
+                                        <item name="product" xsi:type="string">productRenderer</item>
+                                    </item>
+                                </item>
+                                <item name="children" xsi:type="array">
+                                    <item name="item.renderer.default" xsi:type="array">
+                                        <item name="component" xsi:type="string">uiCollection</item>
+                                        <item name="config" xsi:type="array">
+                                            <item name="displayArea" xsi:type="string">defaultRenderer</item>
+                                            <item name="template" xsi:type="string">Synerise_Integration/search-autocomplete/item-renderer/term</item>
+                                        </item>
+                                    </item>
+                                    <item name="item.renderer.header" xsi:type="array">
+                                        <item name="component" xsi:type="string">uiCollection</item>
+                                        <item name="config" xsi:type="array">
+                                            <item name="displayArea" xsi:type="string">headerRenderer</item>
+                                            <item name="template" xsi:type="string">Synerise_Integration/search-autocomplete/item-renderer/header</item>
+                                        </item>
+                                    </item>
+                                    <item name="item.renderer.product" xsi:type="array">
+                                        <item name="component" xsi:type="string">uiCollection</item>
+                                        <item name="config" xsi:type="array">
+                                            <item name="displayArea" xsi:type="string">productRenderer</item>
+                                            <item name="template" xsi:type="string">Synerise_Integration/search-autocomplete/item-renderer/product</item>
+                                        </item>
+                                        <item name="children" xsi:type="array">
+                                            <item name="item.image" xsi:type="array">
+                                                <item name="component" xsi:type="string">Magento_Catalog/js/view/image</item>
+                                                <item name="config" xsi:type="array">
+                                                    <item name="template" xsi:type="string">Magento_Catalog/product/image_with_borders</item>
+                                                    <item name="displayArea" xsi:type="string">itemImage</item>
+                                                </item>
+                                            </item>
+                                        </item>
+                                    </item>
+                                </item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
         </referenceContainer>
     </body>
 </page>

@@ -5,9 +5,15 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Config\ReaderInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Filter\TranslitUrl;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Synerise\Integration\Api\WorkspaceRepository;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Model\Workspace;
+use Synerise\Integration\Model\WorkspaceInterface;
+use Synerise\Sdk\Model\AuthenticationMethod;
+use Synerise\Sdk\Model\AuthenticationMethodInterface;
 
 class Reader implements ReaderInterface
 {
@@ -40,21 +46,37 @@ class Reader implements ReaderInterface
     private $scopeConfig;
 
     /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+
+    /**
+     * @var WorkspaceRepository
+     */
+    private $workspaceRepository;
+
+    /**
      * @param Logger $logger
      * @param ScopeConfigInterface $scopeConfig
      * @param TranslitUrl $translitUrl
      * @param StoreManagerInterface $storeManager
+     * @param SerializerInterface $serializer
+     * @param WorkspaceRepository $workspaceRepository
      */
     public function __construct(
         Logger $logger,
         ScopeConfigInterface $scopeConfig,
         TranslitUrl $translitUrl,
-        StoreManagerInterface $storeManager
+        StoreManagerInterface $storeManager,
+        SerializerInterface $serializer,
+        WorkspaceRepository $workspaceRepository
     ) {
         $this->translitUrl = $translitUrl;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
+        $this->serializer = $serializer;
+        $this->workspaceRepository = $workspaceRepository;
     }
 
     /**
@@ -65,7 +87,14 @@ class Reader implements ReaderInterface
      */
     public function read($scope = null): array
     {
+        $workspace = $this->getWorkspaceByStoreId($scope);
+
         return [
+            'apiHost' => $workspace ? $workspace->getApiHost() : null,
+            'apiKey' => $workspace ? $workspace->getApiKey() : null,
+            'guid' => $workspace ? $workspace->getGuid() : null,
+            'authenticationMethod' => $workspace ? ($workspace->isBasicAuthEnabled() ?
+                AuthenticationMethodInterface::BASIC_VALUE : AuthenticationMethodInterface::BEARER_VALUE) : null,
             'userAgent' => $this->getUserAgent($scope),
             'isLoggerEnabled' => $this->isLoggerEnabled($scope),
             'isKeepAliveEnabled' => $this->isKeepAliveEnabled($scope),
@@ -153,5 +182,34 @@ class Reader implements ReaderInterface
             $scopeId ? ScopeInterface::SCOPE_STORE : ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
             $scopeId
         );
+    }
+
+    protected function getWorkspaceByStoreId(int $storeId): ?WorkspaceInterface
+    {
+        $websiteId = $this->getWebsiteIdByStoreId($storeId);
+        $mapping = $this->getWorkspacesMapping();
+            foreach ($mapping as $id => $workspaceId) {
+            if ($websiteId == $id) {
+                return $this->workspaceRepository->getById($websiteId);
+            }
+        }
+
+        return null;
+    }
+
+    protected function getWebsiteIdByStoreId(int $storeId): int
+    {
+        return $this->storeManager
+            ->getStore($storeId)
+            ->getWebsiteId();
+    }
+
+    protected function getWorkspacesMapping(): array
+    {
+        $mapping = $this->scopeConfig->getValue(
+            Workspace::XML_PATH_WORKSPACE_MAP
+        );
+
+        return $mapping ? $this->serializer->unserialize($mapping) : [];
     }
 }

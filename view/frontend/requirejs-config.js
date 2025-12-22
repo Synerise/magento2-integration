@@ -1,7 +1,7 @@
 var config = {
     map: {
         '*': {
-            quickSearch: 'Synerise_Integration/js/form-mini'
+            snrsQuickSearch: 'Synerise_Integration/js/search-form-mini'
         }
     }
 };

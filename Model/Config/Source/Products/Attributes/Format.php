@@ -12,6 +12,8 @@ class Format implements OptionSourceInterface
 
     public const OPTION_ID_AND_LABEL = 2;
 
+    public const OPTION_ID_AND_LABEL_ATTR = 3;
+
     /**
      * @inheritDoc
      */
@@ -20,7 +22,8 @@ class Format implements OptionSourceInterface
         return [
             ['value' => self::OPTION_ID, 'label' => 'ID'],
             ['value' => self::OPTION_LABEL, 'label' => 'Label'],
-            ['value' => self::OPTION_ID_AND_LABEL, 'label' => 'ID & Label']
+            ['value' => self::OPTION_ID_AND_LABEL, 'label' => 'Label & ID (array)'],
+            ['value' => self::OPTION_ID_AND_LABEL_ATTR, 'label' => 'Label & ID (attributes)']
         ];
     }
 }

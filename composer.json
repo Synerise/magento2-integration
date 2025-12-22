@@ -2,7 +2,7 @@
   "name": "synerise/magento2-integration",
   "description": "Synerise Magento 2 integration module.",
   "type": "magento2-module",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "license": [
     "OSL-3.0",
     "AFL-3.0"
@@ -14,7 +14,8 @@
     "ext-mbstring": "*",
     "guzzlehttp/guzzle": "^6.2 || ^7.3",
     "anik/loguzz": "^2.2 || ^4.0",
-    "mobiledetect/mobiledetectlib": "^3.74 || ^4.8"
+    "mobiledetect/mobiledetectlib": "^3.74 || ^4.8",
+    "synerise/php-sdk": "^0.7.1"
   },
   "autoload": {
     "files": [

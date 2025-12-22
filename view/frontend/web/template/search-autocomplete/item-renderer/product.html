@@ -1,0 +1,22 @@
+<li role="option">
+    <a data-bind="attr: {href: url, 'data-search-click': clickData}">
+        <div class="product-item">
+            <!-- ko if: image -->
+                <!-- ko foreach: $parent.getRegion('itemImage') -->
+                    <!-- ko template: { name: getTemplate(), data: { src: $parents[0].image, alt: $parents[0].title, width: 150, height: 150 } } --><!-- /ko -->
+                <!-- /ko -->
+            <!-- /ko -->
+
+            <div class="product-details">
+                <div class="product-primary">
+                    <div class="product-name" data-bind="text: title"></div>
+                </div>
+                <div class="product-secondary">
+                    <div class="price-box">
+                        <span class="price" data-bind="html: price"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </a>
+</li>

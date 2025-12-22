@@ -1,0 +1,7 @@
+<ul id="synerise-quick-search" role="listbox">
+    <!-- ko foreach: results -->
+        <!-- ko foreach: $parent.getRegion($parent.getItemRenderer(type)) -->
+            <!-- ko template: {name: getTemplate(), data: $parents[0]} --><!-- /ko -->
+        <!-- /ko -->
+    <!-- /ko -->
+</ul>

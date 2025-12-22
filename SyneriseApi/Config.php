@@ -4,8 +4,10 @@ namespace Synerise\Integration\SyneriseApi;
 
 use Synerise\Integration\SyneriseApi\Config\Data;
 use Synerise\Integration\SyneriseApi\Config\DataFactory;
+use Synerise\Sdk\Model\AuthenticationMethod;
+use Synerise\Sdk\Model\AuthenticationMethodInterface;
 
-class Config implements ConfigInterface
+class Config implements ConfigInterface, \Synerise\Sdk\Api\Config
 {
     /**
      * @var Data
@@ -83,5 +85,32 @@ class Config implements ConfigInterface
     public function isLoggerEnabled(): bool
     {
         return $this->dataStorage->get('isLoggerEnabled', false);
+    }
+
+    public function isRequestLoggingEnabled(): bool
+    {
+        return $this->isLoggerEnabled();
+    }
+
+    public function getApiHost(): ?string
+    {
+        return $this->dataStorage->get('apiHost');
+    }
+
+
+    public function getApiKey(): ?string
+    {
+        return $this->dataStorage->get('apiKey');
+    }
+
+    public function getGuid(): ?string
+    {
+        return $this->dataStorage->get('guid');
+    }
+
+    public function getAuthenticationMethod(): ?AuthenticationMethodInterface
+    {
+        $value = $this->dataStorage->get('authenticationMethod');
+        return $value ? new AuthenticationMethod($value): null;
     }
 }

@@ -39,7 +39,7 @@ interface WorkspaceInterface
     public function getGuid(): ?string;
 
     /**
-     * Check if basic auth is enablled
+     * Check if basic auth is enabled
      *
      * @return bool
      */

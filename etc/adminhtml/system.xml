@@ -4,7 +4,7 @@
         <tab id="synerise" translate="label" sortOrder="1000">
             <label>Synerise</label>
         </tab>
-        <section id="synerise_workspace" translate="label" sortOrder="1" showInDefault="1" showInWebsite="1">
+        <section id="synerise_workspace" translate="label" sortOrder="1" showInDefault="1">
             <label>Workspaces</label>
             <tab>synerise</tab>
             <resource>Synerise_Integration::configuration_workspace</resource>
@@ -231,6 +231,124 @@
                     <source_model>Synerise\Integration\Model\Config\Source\MessageQueue\Events</source_model>
                     <depends>
                         <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+        <section id="synerise_ai_search" translate="label" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>AI Search</label>
+            <tab>synerise</tab>
+            <resource>Synerise_Integration::configuration_ai_search</resource>
+            <group id="autocomplete" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Autocomplete</label>
+                <field id="products_enabled" type="select" translate="label,comment,tooltip" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Products Enabled</label>
+                    <config_path>synerise_autocomplete/default/products_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="products_count" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Products Count</label>
+                    <config_path>synerise_autocomplete/default/products_count</config_path>
+                    <validate>validate-digits validate-zero-or-greater</validate>
+                    <depends>
+                        <field id="products_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="suggestions_enabled" type="select" translate="label,comment,tooltip" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Suggestions Enabled</label>
+                    <config_path>synerise_autocomplete/default/suggestions_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="suggestions_index" translate="label" type="select" sortOrder="40" showInStore="1">
+                    <label>Suggestions Index</label>
+                    <config_path>synerise_autocomplete/default/suggestions_index</config_path>
+                    <source_model>Synerise\Integration\Model\Config\Source\Search\SuggestionIndex</source_model>
+                    <depends>
+                        <field id="suggestions_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="suggestions_count" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Suggestions Count</label>
+                    <config_path>synerise_autocomplete/default/suggestions_count</config_path>
+                    <validate>validate-digits validate-zero-or-greater</validate>
+                    <depends>
+                        <field id="suggestions_enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+            <group id="autocomplete_zero_state" translate="label" sortOrder="10" showInStore="1">
+                <label>Autocomplete zero-state </label>
+                <field id="zero_state_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Zeros-state enabled</label>
+                    <config_path>synerise_autocomplete/zero_state/enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="zero_state_recent_enabled" type="select" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Recent searches enabled</label>
+                    <config_path>synerise_autocomplete/zero_state/recent_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="zero_state_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="zero_state_recent_header" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Recent searches header</label>
+                    <config_path>synerise_autocomplete/zero_state/recent_header</config_path>
+                    <depends>
+                        <field id="zero_state_enabled">1</field>
+                        <field id="zero_state_recent_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="zero_state_campaign_id" translate="label" type="text" sortOrder="50" showInStore="1">
+                    <label>Campaign Id</label>
+                    <config_path>synerise_autocomplete/zero_state/campaign_id</config_path>
+                    <depends>
+                        <field id="zero_state_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="zero_state_campaign_header" translate="label" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Campaign header</label>
+                    <config_path>synerise_autocomplete/zero_state/campaign_header</config_path>
+                    <depends>
+                        <field id="zero_state_enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+            <group id="autocomplete_no_results" translate="label" sortOrder="20" showInStore="1">
+                <label>Autocomplete no-results</label>
+                <field id="no_results_enabled" type="select" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>No-results enabled</label>
+                    <config_path>synerise_autocomplete/no_results/enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="no_results_top_enabled" type="select" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Most popular searches enabled</label>
+                    <config_path>synerise_autocomplete/no_results/top_enabled</config_path>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="no_results_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="no_results_top_header" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Most popular searches header</label>
+                    <config_path>synerise_autocomplete/no_results/top_header</config_path>
+                    <depends>
+                        <field id="no_results_enabled">1</field>
+                        <field id="no_results_top_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="no_results_campaign_id" translate="label" type="text" sortOrder="40" showInStore="1">
+                    <label>Campaign Id</label>
+                    <config_path>synerise_autocomplete/no_results/campaign_id</config_path>
+                    <depends>
+                        <field id="no_results_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="no_results_campaign_header" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Campaign header</label>
+                    <config_path>synerise_autocomplete/no_results/campaign_header</config_path>
+                    <depends>
+                        <field id="no_results_enabled">1</field>
                     </depends>
                 </field>
             </group>

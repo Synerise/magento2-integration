@@ -2,24 +2,23 @@
 
 namespace Synerise\Integration\Search;
 
-use Magento\Search\Model\Autocomplete\DataProviderInterface;
 use Magento\Search\Model\AutocompleteInterface;
+use Synerise\Integration\Search\Autocomplete\DataProviderResolver;
 
 class Autocomplete implements AutocompleteInterface
 {
     /**
-     * @var DataProviderInterface[]
+     * @var DataProviderResolver
      */
-    private $dataProviders;
+    private $resolver;
 
     /**
-     * @param array $dataProviders
+     * @param DataProviderResolver $resolver
      */
     public function __construct(
-        array $dataProviders
+        DataProviderResolver $resolver
     ) {
-        $this->dataProviders = $dataProviders;
-        ksort($this->dataProviders);
+        $this->resolver = $resolver;
     }
 
     /**
@@ -28,8 +27,19 @@ class Autocomplete implements AutocompleteInterface
     public function getItems()
     {
         $data = [];
-        foreach ($this->dataProviders as $dataProvider) {
-            $data[] = $dataProvider->getItems();
+
+        $dataProviders = $this->resolver->resolve($_GET['q'] == '#' ? 'zero_state' : 'default');
+        foreach ($dataProviders as $dataProvider) {
+            if ($items = $dataProvider->getItems()) {
+                $data[] = $items;
+            }
+        }
+
+        if (empty($data)) {
+            $dataProviders = $this->resolver->resolve('no_results');
+            foreach ($dataProviders as $dataProvider) {
+                $data[] = $dataProvider->getItems();
+            }
         }
 
         return array_merge([], ...$data);

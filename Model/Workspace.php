@@ -44,7 +44,8 @@ class Workspace extends AbstractModel implements WorkspaceInterface
         "ITEMS_SEARCH_CONFIG_SEARCH_CREATE",
         "ITEMS_SEARCH_CONFIG_SEARCH_UPDATE",
         "ITEMS_SEARCH_CONFIG_SEARCH_READ",
-        "ITEMS_SEARCH_SEARCH_READ"
+        "ITEMS_SEARCH_SEARCH_READ",
+        "ITEMS_SEARCH_RECENT_SEARCH_READ"
     ];
 
     /**

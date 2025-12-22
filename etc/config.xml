@@ -39,5 +39,21 @@
                 <logger_enabled>1</logger_enabled>
             </debug>
         </synerise>
+        <synerise_autocomplete>
+            <default>
+                <products_enabled>1</products_enabled>
+                <products_count>8</products_count>
+                <suggestions_enabled>1</suggestions_enabled>
+                <suggestions_count>3</suggestions_count>
+            </default>
+            <zero_state>
+                <enabled>1</enabled>
+                <recent_enabled>1</recent_enabled>
+            </zero_state>
+            <no_results>
+                <enabled>1</enabled>
+                <top_enabled>1</top_enabled>
+            </no_results>
+        </synerise_autocomplete>
     </default>
 </config>
