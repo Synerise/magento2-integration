@@ -8,6 +8,7 @@ use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Search\Api\SearchInterface;
+use Synerise\Integration\Api\SearchIndexRepositoryInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\Cookie;
 use Synerise\Integration\Search\Container\SearchResponse;
@@ -56,7 +57,7 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
      * @param Logger $logger
      */
     public function __construct(
-        ObjectManagerInterface $objectManager,
+        SearchIndexRepositoryInterface $searchIndexRepository,
         Resolver $layerResolver,
         ScopeResolverInterface $scopeResolver,
         SearchCriteriaBuilder $searchCriteriaBuilder,
@@ -73,7 +74,7 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
         $this->sender = $sender;
         $this->mapper = $mapper;
 
-        parent::__construct($objectManager, $scopeResolver, $searchResponseBuilder, $cookieHelper, $logger);
+        parent::__construct($searchIndexRepository, $scopeResolver, $searchResponseBuilder, $cookieHelper, $logger);
     }
 
     /**
