@@ -8,7 +8,7 @@ use Magento\Framework\Filter\TranslitUrl;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Synerise\Integration\Api\WorkspaceRepository;
+use Synerise\Integration\Api\WorkspaceRepositoryInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\WorkspaceInterface;
@@ -69,7 +69,7 @@ class Reader implements ReaderInterface
         TranslitUrl $translitUrl,
         StoreManagerInterface $storeManager,
         SerializerInterface $serializer,
-        WorkspaceRepository $workspaceRepository
+        WorkspaceRepositoryInterface $workspaceRepository
     ) {
         $this->translitUrl = $translitUrl;
         $this->storeManager = $storeManager;

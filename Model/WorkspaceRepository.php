@@ -1,11 +1,12 @@
 <?php
 
-namespace Synerise\Integration\Api;
+namespace Synerise\Integration\Model;
 
+use Magento\Framework\Exception\NoSuchEntityException;
+use Synerise\Integration\Api\WorkspaceRepositoryInterface;
 use Synerise\Integration\Model\ResourceModel\Workspace as WorkspaceResource;
 use Synerise\Integration\Model\WorkspaceFactory;
 use Synerise\Integration\Model\WorkspaceInterface;
-use Magento\Framework\Exception\NoSuchEntityException;
 
 class WorkspaceRepository implements WorkspaceRepositoryInterface
 {

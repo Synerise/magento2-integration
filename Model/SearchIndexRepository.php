@@ -1,11 +1,13 @@
 <?php
 
-namespace Synerise\Integration\Api;
+namespace Synerise\Integration\Model;
 
-use Synerise\Integration\Model\ResourceModel\SearchIndex as SearchIndexResource;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Synerise\Integration\Api\SearchIndexRepositoryInterface;
 use Synerise\Integration\Model\SearchIndexFactory;
 use Synerise\Integration\Model\SearchIndexInterface;
-use Magento\Framework\Exception\NoSuchEntityException;
+
+use Synerise\Integration\Model\ResourceModel\SearchIndex as SearchIndexResource;
 
 class SearchIndexRepository implements SearchIndexRepositoryInterface
 {
@@ -45,7 +47,7 @@ class SearchIndexRepository implements SearchIndexRepositoryInterface
         $this->resource->load($searchIndex, $storeId, 'store_id');
 
         if (!$searchIndex->getId()) {
-            throw new NoSuchEntityException(__('SearchIndex with ID %1 does not exist', $id));
+            throw new NoSuchEntityException(__('SearchIndex with ID %1 does not exist', $storeId));
         }
 
         return $searchIndex;
