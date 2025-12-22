@@ -121,6 +121,11 @@
         </arguments>
     </type>
 
+    <preference for="Synerise\Integration\Api\SearchIndexRepositoryInterface"
+                type="Synerise\Integration\Model\SearchIndexRepository" />
+    <preference for="Synerise\Integration\Api\WorkspaceRepositoryInterface"
+                type="Synerise\Integration\Model\WorkspaceRepository" />
+    
     <!-- Configuration: Catalog Search / Search Engine -->
     <type name="Magento\Search\Model\Adminhtml\System\Config\Source\Engine">
         <arguments>
