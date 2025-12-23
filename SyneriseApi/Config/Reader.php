@@ -190,7 +190,7 @@ class Reader implements ReaderInterface
         $mapping = $this->getWorkspacesMapping();
             foreach ($mapping as $id => $workspaceId) {
             if ($websiteId == $id) {
-                return $this->workspaceRepository->getById($websiteId);
+                return $this->workspaceRepository->getById($workspaceId);
             }
         }
 

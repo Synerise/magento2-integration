@@ -104,7 +104,7 @@ class DataProviderResolver
             }
 
             // no_results
-            if (!empty($config[$group]['top_enabled'])) {
+            if (!empty($config[$group]['top_enabled']) && !empty($config[$group]['suggestions_index'])) {
                 $sourceConfig = [
                     'header' => !empty($config[$group]['top_header']) ? $config[$group]['top_header'] : null,
                     'limit' => $config['default']['suggestions_count'],
