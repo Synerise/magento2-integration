@@ -1,0 +1,12 @@
+<li role="option" class="qs-option"
+    data-bind="
+        attr: { id: 'qs-option-' + key },
+        css: { selected: $parents[2].selectedItem() && key === $parents[2].selectedItem().key },
+        event: {
+            mouseover: () => $parents[2].hoveredItem($data),
+            mouseout: () => $parents[2].hoveredItem(null)
+        }
+">
+    <span class="qs-option-name" data-bind="text: title, click: $parents[2].onQueryClick"></span>
+    <span class="delete-recent" data-bind="click: $parents[2].deleteRecent">x</span>
+</li>
