@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<layout xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/layout_generic.xsd">
+
+    <block class="Synerise\Integration\Block\Widget\Recommendations\Dynamic" name="synerise.recommendations.dynamic"
+               template="Synerise_Integration::widget/recommendations/dynamic.phtml">
+        <arguments>
+            <argument name="ajax_url" xsi:type="string">/synerise/ajax/widget_recommendations</argument>
+        </arguments>
+    </block>
+    <block class="Synerise\Integration\Block\Widget\Recommendations\Wrapper" name="synerise.recommendations.wrapper"
+           template="Synerise_Integration::widget/recommendations/wrapper.phtml">
+        <block class="Synerise\Integration\Block\Widget\Recommendations\Content" name="synerise.recommendations.content"
+               template="Magento_CatalogWidget::product/widget/content/grid.phtml"/>
+        <block class="Synerise\Integration\Block\Tracking\Event\RecommendationView" name="synerise.event.recommendation.view"
+               template="Synerise_Integration::tracking/event/recommendation_view.phtml"/>
+    </block>
+</layout>

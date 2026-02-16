@@ -121,6 +121,11 @@
         </arguments>
     </type>
 
+    <preference for="Synerise\Integration\Api\SearchIndexRepositoryInterface"
+                type="Synerise\Integration\Model\SearchIndexRepository" />
+    <preference for="Synerise\Integration\Api\WorkspaceRepositoryInterface"
+                type="Synerise\Integration\Model\WorkspaceRepository" />
+    
     <!-- Configuration: Catalog Search / Search Engine -->
     <type name="Magento\Search\Model\Adminhtml\System\Config\Source\Engine">
         <arguments>
@@ -214,11 +219,6 @@
         </arguments>
     </virtualType>
 
-    <!-- Search frontend scripts -->
-    <type name="Magento\Framework\RequireJs\Config\File\Collector\Aggregated">
-        <plugin name="syneriseFilterList" type="Synerise\Integration\Plugin\RequireJs\Config\File\Collector\Aggregated" />
-    </type>
-
     <!-- Search indexer disabled -->
     <type name="Magento\CatalogSearch\Model\Indexer\IndexerHandlerFactory">
         <arguments>
@@ -241,18 +241,20 @@
     </type>
 
     <!-- Search autocomplete -->
-    <preference for="Magento\Search\Model\AutocompleteInterface" type="Synerise\Integration\Search\AutocompleteProxy" />
-    <type name="Synerise\Integration\Search\Autocomplete">
+    <type name="Synerise\Integration\Controller\Ajax\Search\Suggest">
         <arguments>
-            <argument name="dataProviders" xsi:type="array">
-                <item name="10" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Term</item>
-                <item name="20" xsi:type="object">Synerise\Integration\Search\DataProvider\Autocomplete\Product</item>
-            </argument>
+            <argument name="autocomplete" xsi:type="object">Synerise\Integration\Search\Autocomplete</argument>
+        </arguments>
+    </type>
+
+    <type name="Synerise\Integration\Controller\Ajax\Search\Recent\Delete">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Helper\Logger</argument>
         </arguments>
     </type>
 
     <!-- Search bucket builder -->
-    <preference for="\Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProviderInterface" type="\Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProvider"/>
+    <preference for="\Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProviderInterface" type="Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProvider"/>
     <type name="Synerise\Integration\Search\SearchResponse\Aggregation\BucketBuilderFactoryProvider">
         <arguments>
             <argument name="engines" xsi:type="array">
@@ -268,4 +270,59 @@
             </argument>
         </arguments>
     </virtualType>
+
+    <!-- Search session -->
+    <virtualType name="SyneriseSearchSession" type="Magento\Framework\Session\Generic">
+        <arguments>
+            <argument name="name" xsi:type="string">search_session</argument>
+            <argument name="sessionConfig" xsi:type="object">Synerise\Integration\Model\Search\SessionConfig</argument>
+        </arguments>
+    </virtualType>
+    <type name="Synerise\Integration\Search\Container\SearchResponse">
+        <arguments>
+            <argument name="session" xsi:type="object">SyneriseSearchSession</argument>
+        </arguments>
+    </type>
+
+    <!-- PHP SDK -->
+    <virtualType name="SyneriseLogMiddlewareFactory" type="Synerise\Sdk\Guzzle\Middleware\LogMiddlewareFactory">
+        <arguments>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Helper\Logger</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="SyneriseRetryMiddlewareFactory" type="Synerise\Sdk\Guzzle\Middleware\RetryMiddlewareFactory">
+        <arguments>
+            <argument name="authenticationProviderFactory" xsi:type="object">SyneriseApiDefaultAuthenticationProviderFactory</argument>
+            <argument name="logger" xsi:type="object">Synerise\Integration\Helper\Logger</argument>
+            <argument name="maxRetries" xsi:type="number">1</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="SyneriseSdkDefaultMiddlewareFactory" type="Synerise\Sdk\Guzzle\DefaultMiddlewareFactory">
+        <arguments>
+            <argument name="retryMiddlewareFactory" xsi:type="object">SyneriseRetryMiddlewareFactory</argument>
+            <argument name="logMiddlewareFactory" xsi:type="object">SyneriseLogMiddlewareFactory</argument>
+        </arguments>
+    </virtualType>
+    <preference for="Synerise\Sdk\Api\ClientBuilderFactoryInterface" type="SyneriseApiClientBuilderFactory"/>
+    <virtualType name="SyneriseApiClientBuilderFactory" type="Synerise\Sdk\Api\ClientBuilderFactory">
+        <arguments>
+            <argument name="authenticationProviderFactory" xsi:type="object">SyneriseApiDefaultAuthenticationProviderFactory</argument>
+            <argument name="requestAdapterFactory" xsi:type="object">Synerise\Sdk\Guzzle\RequestAdapterFactory</argument>
+            <argument name="middlewareFactory" xsi:type="object">SyneriseSdkDefaultMiddlewareFactory</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="SyneriseApiDefaultAuthenticationProviderFactory" type="Synerise\Sdk\Api\Authentication\DefaultAuthenticationProviderFactory">
+        <arguments>
+            <argument name="requestAdapterFactory" xsi:type="object">Synerise\Sdk\Guzzle\RequestAdapterFactory</argument>
+            <argument name="ttl" xsi:type="number">3550</argument>
+        </arguments>
+    </virtualType>
+    <type name="Synerise\Integration\Block\Widget\Recommendations\Content">
+        <plugin name="configurable_product_widget_product_list" disabled="true"/>
+        <plugin name="pagebuilder_product_list" disabled="true"/>
+    </type>
+    <type name="Magento\Widget\Model\Widget\Instance">
+        <plugin name="synerise_integration_widget_instance"
+                type="Synerise\Integration\Plugin\Widget\Instance" />
+    </type>
 </config>

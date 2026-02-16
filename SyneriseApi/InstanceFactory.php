@@ -19,6 +19,7 @@ use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Loguzz\Formatter\RequestCurlSanitizedFormatter;
 use Synerise\Integration\Model\WorkspaceInterface;
 use Synerise\ItemsSearchConfigApiClient\Api\SearchConfigurationApi;
+use Synerise\ItemsSearchConfigApiClient\Api\SuggestionsConfigurationApi;
 
 class InstanceFactory
 {
@@ -30,7 +31,8 @@ class InstanceFactory
         'apiKey' => ApiKeyControllerApi::class,
         'search' => SearchApi::class,
         'listing' => ListingApi::class,
-        'search-config' => SearchConfigurationApi::class
+        'search-config' => SearchConfigurationApi::class,
+        'suggestions-config' => SuggestionsConfigurationApi::class
     ];
 
     public const API_CONFIGURATION_CLASSES = [
@@ -41,7 +43,8 @@ class InstanceFactory
         'apiKey' => \Synerise\ApiClient\Configuration::class,
         'search' => \Synerise\ItemsSearchApiClient\Configuration::class,
         'listing' => \Synerise\ItemsSearchApiClient\Configuration::class,
-        'search-config' => \Synerise\ItemsSearchConfigApiClient\Configuration::class
+        'search-config' => \Synerise\ItemsSearchConfigApiClient\Configuration::class,
+        'suggestions-config' => \Synerise\ItemsSearchConfigApiClient\Configuration::class
     ];
 
     public const API_PATH_FORMATS = [
@@ -53,7 +56,8 @@ class InstanceFactory
         'apiKey' => '%s/uauth',
         'search' => '%s',
         'listing' => '%s',
-        'search-config' => '%s'
+        'search-config' => '%s',
+        'suggestions-config' => '%s'
     ];
 
     /**
