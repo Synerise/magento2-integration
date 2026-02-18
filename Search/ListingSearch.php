@@ -7,13 +7,20 @@ use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Search\Api\SearchInterface;
+use Synerise\Integration\Api\SearchIndexRepositoryInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Helper\Tracking\Cookie;
+use Synerise\Integration\Search\SearchRequest\SearchCriteriaBuilder;
 use Synerise\Integration\SyneriseApi\Mapper\Search\Listing;
 use Synerise\Integration\SyneriseApi\Sender\Search as Sender;
 
 class ListingSearch extends AbstractSearch implements SearchInterface
 {
+    /**
+     * @var SearchCriteriaBuilder
+     */
+    protected $searchCriteriaBuilder;
+
     /**
      * @var Sender
      */
@@ -27,6 +34,7 @@ class ListingSearch extends AbstractSearch implements SearchInterface
     /**
      * @param ObjectManagerInterface $objectManager
      * @param ScopeResolverInterface $scopeResolver
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param SearchResponseBuilder $searchResponseBuilder
      * @param Sender $sender
      * @param Listing $mapper
@@ -34,18 +42,20 @@ class ListingSearch extends AbstractSearch implements SearchInterface
      * @param Logger $logger
      */
     public function __construct(
-        ObjectManagerInterface $objectManager,
+        SearchIndexRepositoryInterface $searchIndexRepository,
         ScopeResolverInterface $scopeResolver,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
         SearchResponseBuilder $searchResponseBuilder,
         Sender $sender,
         Listing $mapper,
         Cookie $cookieHelper,
         Logger $logger
     ) {
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->sender = $sender;
         $this->mapper = $mapper;
 
-        parent::__construct($objectManager, $scopeResolver, $searchResponseBuilder, $cookieHelper, $logger);
+        parent::__construct($searchIndexRepository, $scopeResolver, $searchResponseBuilder, $cookieHelper, $logger);
     }
 
     /**
@@ -54,10 +64,15 @@ class ListingSearch extends AbstractSearch implements SearchInterface
     public function search(SearchCriteriaInterface $searchCriteria): SearchResultInterface
     {
         try {
+            $request = $this->mapper->prepareRequest(
+                $this->searchCriteriaBuilder->build($searchCriteria, SearchCriteriaBuilder::TYPE_LISTING),
+                $this->getUuid()
+            );
+
             $listingPostResponse = $this->sender->listing(
                 $this->getStoreId(),
                 $this->getSearchIndex($this->getStoreId()),
-                $this->mapper->prepareRequest($searchCriteria, $this->getUuid())
+                $request
             );
 
             return $this->searchResponseBuilder->build($searchCriteria, $listingPostResponse)

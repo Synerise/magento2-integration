@@ -1,0 +1,26 @@
+<script type="text/javascript">
+    require(['jquery'], function ($) {
+        $(document).on('click', '.recommendations .products-grid a', function (e) {
+            if (!SR) {
+                return;
+            }
+
+            let data = [];
+            const productItem = $(this).closest('.product-item');
+
+            const form = productItem.find('form[data-product-sku]');
+            data.index = productItem.index('.product-item') + 1;
+            if (form.length) {
+                data.item = form.data('product-sku');
+            }
+
+            const recommendations = $(this).closest('.recommendations')
+            if (recommendations.length) {
+                data.correlationId = recommendations.data('correlation-id');
+                data.campaignId = recommendations.data('campaign-id');
+            }
+
+            SR.event.recommendationClick(data);
+        });
+    });
+</script>

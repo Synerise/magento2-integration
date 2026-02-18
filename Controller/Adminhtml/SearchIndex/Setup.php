@@ -7,9 +7,11 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\View\Result\PageFactory;
+use Synerise\Integration\Api\SearchIndexRepositoryInterface;
 use Synerise\Integration\Helper\Logger;
 use Synerise\Integration\Model\SearchIndex;
 use Synerise\Integration\Model\SearchIndex\ErrorMessage;
+use Synerise\Integration\Model\SearchIndexInterface;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\Search\Container\Indices;
 use Synerise\Integration\SyneriseApi\ConfigFactory as ApiConfigFactory;
@@ -56,6 +58,11 @@ class Setup extends Action
     private $errorMessage;
 
     /**
+     * @var SearchIndexRepositoryInterface
+     */
+    private $searchIndexRepository;
+
+    /**
      * @var Indices
      */
     protected $indices;
@@ -71,6 +78,7 @@ class Setup extends Action
      * @param ApiConfigFactory $apiConfigFactory
      * @param ApiInstanceFactory $apiInstanceFactory
      * @param WorkspaceConfigFactory $workspaceConfigFactory
+     * @param SearchIndexRepositoryInterface $searchIndexRepository
      * @param ErrorMessage $errorMessage
      * @param Indices $indices
      * @param Logger $logger
@@ -81,6 +89,7 @@ class Setup extends Action
         ApiConfigFactory $apiConfigFactory,
         ApiInstanceFactory $apiInstanceFactory,
         WorkspaceConfigFactory $workspaceConfigFactory,
+        SearchIndexRepositoryInterface $searchIndexRepository,
         ErrorMessage $errorMessage,
         Indices $indices,
         Logger $logger
@@ -89,6 +98,7 @@ class Setup extends Action
         $this->apiConfigFactory = $apiConfigFactory;
         $this->apiInstanceFactory = $apiInstanceFactory;
         $this->workspaceConfigFactory = $workspaceConfigFactory;
+        $this->searchIndexRepository = $searchIndexRepository;
         $this->errorMessage = $errorMessage;
         $this->indices = $indices;
         $this->logger = $logger;
@@ -105,13 +115,14 @@ class Setup extends Action
     public function execute()
     {
         if ($id = $this->getRequest()->getParam('id')) {
-            $searchIndex = $this->loadSearchIndexEntity($id);
+            $searchIndex = $this->searchIndexRepository->getById($id);
 
             if (!$searchIndex->getEntityId()) {
                 $this->messageManager->addErrorMessage(self::ERROR_ENTITY_NOT_FOUND);
             } else {
                 try {
-                    $this->getIndex($searchIndex);
+                    $this->getSearchConfigApiInstance($searchIndex->getStoreId())
+                        ->getIndexConfigV2($searchIndex->getIndexId());
 
                     $resultPage = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
                     $resultPage->getConfig()->getTitle()->prepend(__('Setup Search Index'));
@@ -137,30 +148,6 @@ class Setup extends Action
         }
 
         return $this->resultRedirectFactory->create()->setPath('*/*');
-    }
-
-    /**
-     * @param $entityId
-     * @return SearchIndex
-     */
-    protected function loadSearchIndexEntity($entityId): SearchIndex
-    {
-        $searchIndex = $this->_objectManager->create(SearchIndex::class);
-        return $searchIndex->load($entityId);
-    }
-
-    /**
-     * Get index
-     *
-     * @param SearchIndex $searchIndex
-     * @return Error|SearchConfigSchema
-     * @throws ApiException
-     * @throws ValidatorException
-     */
-    protected function getIndex(SearchIndex $searchIndex)
-    {
-        return $this->getSearchConfigApiInstance($searchIndex->getStoreId())
-            ->getIndexConfigV2($searchIndex->getIndexId());
     }
 
     /**
