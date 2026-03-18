@@ -24,7 +24,7 @@ class ConfigFactory
     }
 
     /**
-     * Create tracking config for given store ID
+     * Create api config for given store ID
      *
      * @param int $storeId
      * @return Config

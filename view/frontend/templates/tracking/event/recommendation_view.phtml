@@ -1,0 +1,8 @@
+<?php /** @var $block Synerise\Integration\Block\Tracking\Event\RecommendationView */ ?>
+<script type="text/javascript">
+    require(['jquery'], function ($) {
+        $(document).ready(function() {
+            if (SR) SR.event.recommendationView(<?= $block->getEventDataJSON() ?>);
+        });
+    });
+</script>

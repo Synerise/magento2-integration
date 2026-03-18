@@ -1,0 +1,8 @@
+<?php /** @var $block Synerise\Integration\Block\Widget\Recommendations\Wrapper */ ?>
+<?php if($block->getCampaignId()): ?>
+    <div class="recommendations campaign-<?= $block->getCampaignId() ?>"
+         data-campaign-id="<?= $block->getCampaignId() ?>"
+         data-correlation-id="<?= $block->getCorrelationId() ?>">
+        <?= $block->getChildHtml() ?>
+    </div>
+<?php endif; ?>

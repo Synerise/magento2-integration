@@ -1,0 +1,6 @@
+<?php /** @var $block Synerise\Integration\Block\Search\NoResults */?>
+<?php if ($block->getResultCount() == 0): ?>
+<div id="synerise-no-results">
+    <?= /* @noEscape */ $block->getChildHtml() ?>
+</div>
+<?php endif; ?>
