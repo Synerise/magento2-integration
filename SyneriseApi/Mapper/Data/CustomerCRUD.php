@@ -106,9 +106,7 @@ class CustomerCRUD
                     $params[$attribute] = $this->valOrNull($data[$attribute]);
                     break;
                 default:
-                    if (!empty($data[$attribute])) {
-                        $params['attributes'][$attribute] = $data[$attribute];
-                    }
+                    $params['attributes'][$attribute] = $data[$attribute];
             }
         }
 
