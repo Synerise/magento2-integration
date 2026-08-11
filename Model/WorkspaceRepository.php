@@ -29,6 +29,10 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     }
 
 
+    /**
+     * @inheritDoc
+     * @throws NoSuchEntityException
+     */
     public function getById(int $id): WorkspaceInterface
     {
         $workspace = $this->factory->create();

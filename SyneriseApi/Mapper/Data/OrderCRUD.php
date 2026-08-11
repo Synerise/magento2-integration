@@ -5,6 +5,8 @@ namespace Synerise\Integration\SyneriseApi\Mapper\Data;
 use Exception;
 use Magento\Catalog\Helper\Data;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\DataObjectFactory;
+use Magento\Framework\Event\ManagerInterface as EventManagerInterface;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order;
@@ -24,6 +26,14 @@ use Synerise\Integration\Helper\Tracking\Cookie;
 
 class OrderCRUD
 {
+    /**
+     * Carries the order and a mutable DataObject transport of the full transaction-request
+     * params (client, metadata, products, revenue, value, …) so observers can override or
+     * enrich the outgoing order request before it is built. The `client` entry is a
+     * Synerise\ApiClient\Model\Client — mutate identity via its setters
+     * (setEmail/setUuid/setCustomId), keeping email and uuid in sync.
+     */
+    public const EVENT_TRANSACTION_DATA_PREPARE = 'synerise_order_request_prepare';
 
     /**
      * @var SearchCriteriaBuilder
@@ -71,6 +81,16 @@ class OrderCRUD
     protected $loggerHelper;
 
     /**
+     * @var EventManagerInterface
+     */
+    protected $eventManager;
+
+    /**
+     * @var DataObjectFactory
+     */
+    protected $dataObjectFactory;
+
+    /**
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param RuleRepositoryInterface $ruleRepository
      * @param Category $categoryHelper
@@ -79,6 +99,8 @@ class OrderCRUD
      * @param Image $imageHelper
      * @param Logger $loggerHelper
      * @param Price $priceHelper
+     * @param EventManagerInterface $eventManager
+     * @param DataObjectFactory $dataObjectFactory
      */
     public function __construct(
         SearchCriteriaBuilder $searchCriteriaBuilder,
@@ -88,7 +110,9 @@ class OrderCRUD
         Cookie $cookieHelper,
         Image $imageHelper,
         Logger $loggerHelper,
-        Price $priceHelper
+        Price $priceHelper,
+        EventManagerInterface $eventManager,
+        DataObjectFactory $dataObjectFactory
     ) {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->ruleRepository = $ruleRepository;
@@ -98,6 +122,8 @@ class OrderCRUD
         $this->cookieHelper = $cookieHelper;
         $this->imageHelper = $imageHelper;
         $this->loggerHelper = $loggerHelper;
+        $this->eventManager = $eventManager;
+        $this->dataObjectFactory = $dataObjectFactory;
     }
 
     /**
@@ -171,7 +197,15 @@ class OrderCRUD
             $params['metadata']['snrs_params'] = $snrsParams;
         }
 
-        return new CreateatransactionRequest($params);
+        // Let integrators override or enrich the whole outgoing request (client identity,
+        // metadata, products, revenue, …) via a mutable transport before it is built.
+        $transport = $this->dataObjectFactory->create(['data' => $params]);
+        $this->eventManager->dispatch(
+            self::EVENT_TRANSACTION_DATA_PREPARE,
+            ['order' => $order, 'transport' => $transport]
+        );
+
+        return new CreateatransactionRequest($transport->getData());
     }
 
     /**
@@ -192,10 +226,6 @@ class OrderCRUD
 
         if ($uuid) {
             $customerData['uuid'] = $uuid;
-        }
-
-        if (!$order->getCustomerIsGuest()) {
-            $customerData['customId'] = $order->getCustomerId();
         }
 
         return new Client($customerData);
