@@ -188,9 +188,18 @@ class Reader implements ReaderInterface
     {
         $websiteId = $this->getWebsiteIdByStoreId($storeId);
         $mapping = $this->getWorkspacesMapping();
-            foreach ($mapping as $id => $workspaceId) {
-            if ($websiteId == $id) {
-                return $this->workspaceRepository->getById($workspaceId);
+        foreach ($mapping as $id => $workspaceId) {
+            if ($websiteId == $id && $workspaceId) {
+                try {
+                    return $this->workspaceRepository->getById((int) $workspaceId);
+                } catch (NoSuchEntityException $e) {
+                    $this->logger->warning(sprintf(
+                        'Workspace %s mapped to website %s does not exist',
+                        $workspaceId,
+                        $websiteId
+                    ));
+                    return null;
+                }
             }
         }
 
