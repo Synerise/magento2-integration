@@ -11,6 +11,7 @@ use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Synerise\ApiClient\Api\DefaultApi;
 use Synerise\ApiClient\ApiException;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Order\UuidEmailResolver;
 use Synerise\Integration\Helper\Tracking\UuidGenerator;
 use Synerise\Integration\Model\Workspace\ConfigFactory as WorkspaceConfigFactory;
 use Synerise\Integration\SyneriseApi\Mapper\Data\OrderCRUD;
@@ -40,6 +41,11 @@ class Order extends AbstractSender implements SenderInterface
     protected $uuidGenerator;
 
     /**
+     * @var UuidEmailResolver
+     */
+    protected $uuidEmailResolver;
+
+    /**
      * @param ResourceConnection $resource
      * @param ConfigFactory $configFactory
      * @param InstanceFactory $apiInstanceFactory
@@ -47,6 +53,7 @@ class Order extends AbstractSender implements SenderInterface
      * @param Logger $loggerHelper
      * @param OrderCRUD $orderCRUD
      * @param UuidGenerator $uuidGenerator
+     * @param UuidEmailResolver $uuidEmailResolver
      */
     public function __construct(
         ResourceConnection $resource,
@@ -55,11 +62,13 @@ class Order extends AbstractSender implements SenderInterface
         WorkspaceConfigFactory $workspaceConfigFactory,
         Logger $loggerHelper,
         OrderCRUD $orderCRUD,
-        UuidGenerator $uuidGenerator
+        UuidGenerator $uuidGenerator,
+        UuidEmailResolver $uuidEmailResolver
     ) {
         $this->resource = $resource;
         $this->orderCRUD = $orderCRUD;
         $this->uuidGenerator = $uuidGenerator;
+        $this->uuidEmailResolver = $uuidEmailResolver;
 
         parent::__construct($loggerHelper, $configFactory, $apiInstanceFactory, $workspaceConfigFactory);
     }
@@ -83,8 +92,8 @@ class Order extends AbstractSender implements SenderInterface
         foreach ($collection as $order) {
             $ids[] = $order->getEntityId();
 
-            $email = $order->getCustomerEmail();
-            $uuid = $email ? $this->uuidGenerator->generateByEmail($email) : null;
+            $uuidEmail = $this->uuidEmailResolver->resolve($order, $order->getCustomerEmail());
+            $uuid = $uuidEmail ? $this->uuidGenerator->generateByEmail($uuidEmail) : null;
 
             try {
                 $createATransactionRequest[] = $this->orderCRUD->prepareRequest($order, $uuid, $options);
