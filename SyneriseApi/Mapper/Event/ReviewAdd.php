@@ -119,7 +119,7 @@ class ReviewAdd
 
         $customerId = $review->getCustomerId();
         if ($customerId) {
-            $data['custom_id'] = $customerId;
+            $data['custom_id'] = (string) $customerId;
         }
 
         if (empty($data)) {

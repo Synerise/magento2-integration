@@ -57,7 +57,7 @@ class CustomerCRUD
     ): CreateaClientinCRMRequest
     {
         $params = [
-            'custom_id' => $customer->getId(),
+            'custom_id' => $customer->getId() ? (string) $customer->getId() : null,
             'email' => $customer->getEmail(),
             'first_name' => $customer->getFirstname(),
             'last_name' => $customer->getLastname()

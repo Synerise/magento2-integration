@@ -188,10 +188,31 @@ class Event
             default:
                 $this->eventSender->send(
                     $event['event_name'],
-                    $event['event_payload'],
+                    $this->normalizeClientIdentifiers($event['event_payload']),
                     $event['store_id']
                 );
         }
+    }
+
+    /**
+     * Cast client.customId to a string.
+     *
+     * The events API expects customId as a JSON string; queued payloads may carry it as an integer.
+     *
+     * @param mixed $payload
+     * @return mixed
+     */
+    private function normalizeClientIdentifiers($payload)
+    {
+        if (!is_array($payload) || !isset($payload['client']) || !is_array($payload['client'])) {
+            return $payload;
+        }
+
+        if (isset($payload['client']['customId']) && is_scalar($payload['client']['customId'])) {
+            $payload['client']['customId'] = (string) $payload['client']['customId'];
+        }
+
+        return $payload;
     }
 
     /**

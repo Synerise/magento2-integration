@@ -92,7 +92,7 @@ class CartStatus
             $data['uuid'] = $this->uuidGenerator->generateByEmail($data['email']);
 
             if ($quote->getCustomerId()) {
-                $data['custom_id'] = $quote->getCustomerId();
+                $data['custom_id'] = (string) $quote->getCustomerId();
             }
         }
 
