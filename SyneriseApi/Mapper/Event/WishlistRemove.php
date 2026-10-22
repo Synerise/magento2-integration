@@ -83,10 +83,21 @@ class WishlistRemove
             'time' => $this->contextHelper->getCurrentTime(),
             'label' => $this->contextHelper->getEventLabel($event),
             'action' => 'product.removeFromFavorites',
-            'client' => new Client([
-                'custom_id' => $wishlist->getCustomerId()
-            ]),
+            'client' => $this->prepareClient($wishlist),
             'params' => $params
+        ]);
+    }
+
+    /**
+     * Prepare client data from wishlist owner
+     *
+     * @param Wishlist $wishlist
+     * @return Client
+     */
+    public function prepareClient(Wishlist $wishlist): Client
+    {
+        return new Client([
+            'custom_id' => (string) $wishlist->getCustomerId()
         ]);
     }
 }
