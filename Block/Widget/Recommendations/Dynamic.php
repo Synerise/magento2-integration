@@ -56,7 +56,10 @@ class Dynamic extends Template
             'params' => $this->getParams()
         ];
 
-        return $this->json->serialize($config);
+        return (string) json_encode(
+            $config,
+            JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_PARTIAL_OUTPUT_ON_ERROR
+        );
     }
 
     /**

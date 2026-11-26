@@ -1,5 +1,4 @@
 <?php
-// phpcs:ignoreFile
 /** @var $block Synerise\Integration\Block\Adminhtml\Form\Field\Workspaces */
 ?>
 
@@ -7,20 +6,20 @@
     <table class="admin__control-table" id="synerise_workspace_workspace_map">
         <thead>
         <tr>
-            <th><?= __('Website') ?></th>
-            <th><?= __('Workspace') ?></th>
+            <th><?= $block->escapeHtml(__('Website')) ?></th>
+            <th><?= $block->escapeHtml(__('Workspace')) ?></th>
         </tr>
         </thead>
         <tbody>
             <?php foreach ($block->getRows() as $row): ?>
-            <tr id="<?= $row['id']; ?>">
-                <td class="value"><?= $row['name']; ?></td>
+            <tr id="<?= $block->escapeHtmlAttr($row['id']); ?>">
+                <td class="value"><?= $block->escapeHtml($row['name']); ?></td>
                 <td>
-                    <select id="synerise_workspace_id" name="groups[websites][fields][map][value][<?= $row['id']; ?>]" class=" select admin__control-select">
+                    <select id="synerise_workspace_id" name="groups[websites][fields][map][value][<?= $block->escapeHtmlAttr($row['id']); ?>]" class=" select admin__control-select">
                         <option value="" style="display:block"></option>
                     <?php foreach ($block->getWorkspaces() as $workspace): ?>
                         <?php $isSelected = ($row['value'] == $workspace->getId()); ?>
-                        <option value="<?= $workspace->getId(); ?>" <?php if ($isSelected): ?> selected="selected"<?php endif;?>><?= $workspace->getName(); ?></option>
+                        <option value="<?= $block->escapeHtmlAttr($workspace->getId()); ?>" <?php if ($isSelected): ?> selected="selected"<?php endif;?>><?= $block->escapeHtml($workspace->getName()); ?></option>
                     <?php endforeach; ?>
                     </select>
                 </td>

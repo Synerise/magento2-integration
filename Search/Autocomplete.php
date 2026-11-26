@@ -2,6 +2,7 @@
 
 namespace Synerise\Integration\Search;
 
+use Magento\Framework\App\RequestInterface;
 use Magento\Search\Model\AutocompleteInterface;
 use Synerise\Integration\Search\Autocomplete\DataProviderResolver;
 
@@ -13,12 +14,20 @@ class Autocomplete implements AutocompleteInterface
     private $resolver;
 
     /**
+     * @var RequestInterface
+     */
+    private $request;
+
+    /**
      * @param DataProviderResolver $resolver
+     * @param RequestInterface $request
      */
     public function __construct(
-        DataProviderResolver $resolver
+        DataProviderResolver $resolver,
+        RequestInterface $request
     ) {
         $this->resolver = $resolver;
+        $this->request = $request;
     }
 
     /**
@@ -28,7 +37,7 @@ class Autocomplete implements AutocompleteInterface
     {
         $data = [];
 
-        $dataProviders = $this->resolver->resolve(!isset($_GET['q']) ? 'zero_state' : 'default');
+        $dataProviders = $this->resolver->resolve($this->request->getParam('q') !== null ? 'default' : 'zero_state');
         foreach ($dataProviders as $dataProvider) {
             if ($items = $dataProvider->getItems()) {
                 $data[] = $items;

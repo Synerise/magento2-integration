@@ -5,6 +5,7 @@ namespace Synerise\Integration\Block\Widget\Recommendations;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Layout\ProcessorInterface;
 use Magento\Framework\View\LayoutFactory;
 use Magento\Widget\Block\BlockInterface;
 
@@ -62,9 +63,10 @@ class Resolver extends Template implements BlockInterface
     protected function resolveBlock()
     {
         $layout = $this->layoutFactory->create(['cacheable' => false]);
-        $layoutHandle = $this->getLayoutHandle() ?: self::DEFAULT_LAYOUT_HANDLE;
+        $update = $layout->getUpdate();
+        $layoutHandle = $this->getValidatedLayoutHandle($update);
 
-        $layout->getUpdate()->addHandle($layoutHandle)->load();
+        $update->addHandle($layoutHandle)->load();
         $layout->generateXml()->generateElements();
 
         if ($this->isDynamic()) {
@@ -72,6 +74,54 @@ class Resolver extends Template implements BlockInterface
         }
 
         return $layout->getBlock('synerise.recommendations.wrapper');
+    }
+
+    /**
+     * Resolve a safe layout handle, falling back to the default when the requested one
+     * is not a widget handle
+     *
+     * @param ProcessorInterface $update
+     * @return string
+     */
+    protected function getValidatedLayoutHandle(ProcessorInterface $update): string
+    {
+        $handle = $this->getLayoutHandle();
+
+        if (is_string($handle)
+            && $handle !== ''
+            && preg_match('/^[a-z0-9_]+$/', $handle)
+            && $this->isWidgetHandle($update, $handle)
+        ) {
+            return $handle;
+        }
+
+        return self::DEFAULT_LAYOUT_HANDLE;
+    }
+
+    /**
+     * Check whether the layout handle defines the recommendations widget
+     *
+     * @param ProcessorInterface $update
+     * @param string $handle
+     * @return bool
+     */
+    protected function isWidgetHandle(ProcessorInterface $update, string $handle): bool
+    {
+        $xml = $update->getFileLayoutUpdatesXml();
+        if (!$xml) {
+            return false;
+        }
+
+        $wrapper = 'synerise.recommendations.wrapper';
+        $dynamic = 'synerise.recommendations.dynamic';
+        $default = self::DEFAULT_LAYOUT_HANDLE;
+        $nodes = $xml->xpath(
+            "/layouts/handle[@id='{$handle}'][.//block[@name='{$wrapper}'] or .//block[@name='{$dynamic}']"
+            . " or .//referenceBlock[@name='{$wrapper}'] or .//referenceBlock[@name='{$dynamic}']"
+            . " or .//update[@handle='{$default}']]"
+        );
+
+        return !empty($nodes);
     }
 
     /**

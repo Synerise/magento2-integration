@@ -1,11 +1,10 @@
 <?php
 /** @var $block Synerise\Integration\Block\Adminhtml\Log\Environment */
-// phpcs:ignoreFile
 ?>
 <section class="admin__page-section">
     <div class="admin__page-section-content">        
         <div class="admin__page-section-item-content">
-            <p><a href="<?= $block->getDownloadEnvironmentLogUrl(); ?>">Download environment debug data</a></p>
+            <p><a href="<?= $block->escapeUrl($block->getDownloadEnvironmentLogUrl()); ?>">Download environment debug data</a></p>
         </div>
     </div>
 </section>
