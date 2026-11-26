@@ -1,10 +1,9 @@
 <?php
-// phpcs:ignoreFile
 /** @var \Synerise\Integration\Block\Tracking\Code $block */
 ?>
 <script>
     function onSyneriseLoad() {
-        SR.init({<?= $block->getScriptOptions() ?>});
+        SR.init({<?= /* @noEscape */ $block->getScriptOptions() ?>});
     }
 
     (function(s,y,n,e,r,i,se){s['SyneriseObjectNamespace']=r;s[r]=s[r]||[],
@@ -13,5 +12,5 @@
         z.onload=z.onreadystatechange=function(){var rdy=z.readyState;
             if(!rdy||/complete|loaded/.test(z.readyState)){s[i]();z.onload = null;
                 z.onreadystatechange=null;}};})(window,document,'script',
-        '//<?= $block->getHost() ?>/synerise-javascript-sdk.min.js','SR', 'onSyneriseLoad');
+        '//<?= /* @noEscape */ $block->getHost() ?>/synerise-javascript-sdk.min.js','SR', 'onSyneriseLoad');
 </script>

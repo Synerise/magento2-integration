@@ -126,6 +126,7 @@ class FullTextSearch extends AbstractSearch implements SearchInterface
 
     protected function searchHash(SearchFullTextPostRequest $request): string
     {
+        // phpcs:ignore Magento2.Security.InsecureFunction -- session key, not cryptographic use
         return md5(json_encode([
             'query' => $request->getQuery(),
             'limit' => $request->getLimit(),

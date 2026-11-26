@@ -69,11 +69,24 @@ class Recommendations implements HttpGetActionInterface
     protected function getBlockData()
     {
         return [
-            'campaign_id' => $this->request->getParam('campaign_id'),
-            'title' => $this->request->getParam('title'),
+            'campaign_id' => $this->getStringParam('campaign_id'),
+            'title' => $this->getStringParam('title'),
             'store_id' => $this->storeManager->getStore()->getId(),
-            'layout_handle' => $this->request->getParam('layout_handle'),
+            'layout_handle' => $this->getStringParam('layout_handle'),
             'cache_lifetime' => false
         ];
+    }
+
+    /**
+     * Get a request param, ignoring anything that is not a plain string (i.e. array params).
+     *
+     * @param string $name
+     * @return string|null
+     */
+    protected function getStringParam(string $name): ?string
+    {
+        $value = $this->request->getParam($name);
+
+        return is_string($value) ? $value : null;
     }
 }

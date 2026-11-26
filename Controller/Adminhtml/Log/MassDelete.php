@@ -7,6 +7,7 @@ use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\NotFoundException;
 use Synerise\Integration\Helper\LogFile;
 use Synerise\Integration\Helper\Logger;
@@ -59,14 +60,20 @@ class MassDelete extends Action implements HttpPostActionInterface
 
         $deleted = 0;
         $fileNames = $this->getRequest()->getParam('selected');
-        foreach ($fileNames as $fileName) {
+        foreach (is_array($fileNames) ? $fileNames : [] as $fileName) {
             try {
+                if (!is_string($fileName)) {
+                    throw new FileSystemException(__('Invalid log file name.'));
+                }
+
                 // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                unlink($this->logFileHelper->getFileAbsolutePath($fileName));
+                unlink($this->logFileHelper->getExistingFilePath($fileName));
                 $deleted++;
             } catch (\Exception $e) {
                 $this->logger->error($e);
-                $this->messageManager->addErrorMessage("Failed do delete {$fileName}. Exception: ".$e->getMessage());
+                $this->messageManager->addErrorMessage(
+                    __('Failed to delete a log file. Exception: %1', $e->getMessage())
+                );
             }
         }
 

@@ -1,8 +1,7 @@
 <?php
 /** @var $block Synerise\Integration\Block\Adminhtml\Module\Version */
-// phpcs:ignoreFile
 ?>
 <div class="col-m-12">
-    <p><b>Synerise Integration</b> ver. <?= $block->getVersion(); ?></p>
+    <p><b>Synerise Integration</b> ver. <?= $block->escapeHtml($block->getVersion()); ?></p>
 </div>
 

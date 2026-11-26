@@ -11,6 +11,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Synerise\Integration\Api\WorkspaceRepositoryInterface;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Version;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\WorkspaceInterface;
 use Synerise\Integration\SyneriseApi\Config\Reader;
@@ -25,8 +26,12 @@ class ReaderTest extends TestCase
      */
     private $workspaceRepository;
 
-    private function createReader(string $workspaceMapJson): Reader
-    {
+    private function createReader(
+        string $workspaceMapJson = '',
+        string $moduleVersion = '3.4.3',
+        string $baseUrl = 'https://example.com/',
+        bool $storeExists = true
+    ): Reader {
         $scopeConfig = $this->createMock(ScopeConfigInterface::class);
         $scopeConfig->method('getValue')
             ->willReturnCallback(
@@ -36,24 +41,65 @@ class ReaderTest extends TestCase
 
         $store = $this->createMock(Store::class);
         $store->method('getWebsiteId')->willReturn(self::WEBSITE_ID);
-        $store->method('getBaseUrl')->willReturn('https://example.com/');
+        $store->method('getBaseUrl')->willReturn($baseUrl);
 
         $storeManager = $this->createMock(StoreManagerInterface::class);
-        $storeManager->method('getStore')->with(self::STORE_ID)->willReturn($store);
+        if ($storeExists) {
+            $storeManager->method('getStore')->with(self::STORE_ID)->willReturn($store);
+        } else {
+            $storeManager->method('getStore')->willThrowException(new NoSuchEntityException());
+        }
 
-        $translitUrl = $this->createMock(TranslitUrl::class);
-        $translitUrl->method('filter')->willReturnArgument(0);
+        $version = $this->createMock(Version::class);
+        $version->method('getMagentoModuleVersion')->with('Synerise_Integration')->willReturn($moduleVersion);
 
         $this->workspaceRepository = $this->createMock(WorkspaceRepositoryInterface::class);
 
         return new Reader(
             $this->createMock(Logger::class),
             $scopeConfig,
-            $translitUrl,
+            new TranslitUrl($scopeConfig),
             $storeManager,
             new Json(),
-            $this->workspaceRepository
+            $this->workspaceRepository,
+            $version
         );
+    }
+
+    public function testUserAgentEndsWithModuleVersion(): void
+    {
+        $reader = $this->createReader('', '3.4.3', 'https://www.example.com/');
+
+        $this->assertSame('magento2-example-com/3.4.3', $reader->getUserAgent(self::STORE_ID));
+        $this->assertSame('magento2-example-com/3.4.3', $reader->read(self::STORE_ID)['userAgent']);
+    }
+
+    public function testUserAgentKeepsLegacyFormatWhenModuleVersionIsUnknown(): void
+    {
+        $reader = $this->createReader('', '', 'https://www.example.com/');
+
+        $this->assertSame('magento2-example-com', $reader->getUserAgent(self::STORE_ID));
+    }
+
+    public function testDomainPartCannotContainTheVersionSeparator(): void
+    {
+        $reader = $this->createReader('', '3.4.3', 'https://shop.example.co.uk/pl_PL/');
+
+        $this->assertSame('magento2-shop-example-co-uk-pl-pl/3.4.3', $reader->getUserAgent(self::STORE_ID));
+    }
+
+    public function testUnexpectedCharactersAreStrippedFromModuleVersion(): void
+    {
+        $reader = $this->createReader('', "3.4.3\r\nX-Injected: 1");
+
+        $this->assertSame('magento2-example-com/3.4.3X-Injected1', $reader->getUserAgent(self::STORE_ID));
+    }
+
+    public function testUserAgentWhenStoreIsMissing(): void
+    {
+        $reader = $this->createReader('', '3.4.3', 'https://example.com/', false);
+
+        $this->assertSame('magento2/3.4.3', $reader->getUserAgent(self::STORE_ID));
     }
 
     public function testReadReturnsNullConfigWhenWebsiteMappingIsEmpty(): void

@@ -38,7 +38,7 @@ class Config implements ConfigInterface, \Synerise\Sdk\Api\Config
         $this->dataStorage = $dataFactory->create($storeId);
         $this->storeId = $storeId;
 
-        // phpcs:ignore
+        // phpcs:ignore Magento2.Security.Superglobal
         $this->mode = isset($_SERVER['REQUEST_METHOD']) ? ConfigInterface::MODE_LIVE : ConfigInterface::MODE_SCHEDULE;
     }
 

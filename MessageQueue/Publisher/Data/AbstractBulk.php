@@ -118,7 +118,7 @@ abstract class AbstractBulk
      * @param int|null $storeId
      * @return string
      */
-    // phpcs:ignore
+    // phpcs:ignore Magento2.Functions.StaticFunction
     public static function getTopicName(string $model, string $type, int $storeId): string
     {
         return sprintf(self::TOPIC_FORMAT, $type, $model, $storeId);

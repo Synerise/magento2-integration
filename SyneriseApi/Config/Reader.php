@@ -10,6 +10,7 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Synerise\Integration\Api\WorkspaceRepositoryInterface;
 use Synerise\Integration\Helper\Logger;
+use Synerise\Integration\Helper\Version;
 use Synerise\Integration\Model\Workspace;
 use Synerise\Integration\Model\WorkspaceInterface;
 use Synerise\Sdk\Model\AuthenticationMethod;
@@ -56,12 +57,18 @@ class Reader implements ReaderInterface
     private $workspaceRepository;
 
     /**
+     * @var Version
+     */
+    private $version;
+
+    /**
      * @param Logger $logger
      * @param ScopeConfigInterface $scopeConfig
      * @param TranslitUrl $translitUrl
      * @param StoreManagerInterface $storeManager
      * @param SerializerInterface $serializer
      * @param WorkspaceRepository $workspaceRepository
+     * @param Version $version
      */
     public function __construct(
         Logger $logger,
@@ -69,7 +76,8 @@ class Reader implements ReaderInterface
         TranslitUrl $translitUrl,
         StoreManagerInterface $storeManager,
         SerializerInterface $serializer,
-        WorkspaceRepositoryInterface $workspaceRepository
+        WorkspaceRepositoryInterface $workspaceRepository,
+        Version $version
     ) {
         $this->translitUrl = $translitUrl;
         $this->storeManager = $storeManager;
@@ -77,6 +85,7 @@ class Reader implements ReaderInterface
         $this->scopeConfig = $scopeConfig;
         $this->serializer = $serializer;
         $this->workspaceRepository = $workspaceRepository;
+        $this->version = $version;
     }
 
     /**
@@ -104,7 +113,7 @@ class Reader implements ReaderInterface
     }
 
     /**
-     * Get user agent
+     * Get user agent: magento2-<store domain>/<module version>
      *
      * @param int $scopeId
      * @return string
@@ -119,6 +128,15 @@ class Reader implements ReaderInterface
             $userAgent .= '-' . $this->translitUrl->filter($domain);
         } catch (NoSuchEntityException $e) {
             $this->logger->debug('Store not found');
+        }
+
+        $moduleVersion = (string) preg_replace(
+            '/[^0-9A-Za-z.+-]/',
+            '',
+            $this->version->getMagentoModuleVersion('Synerise_Integration')
+        );
+        if ($moduleVersion !== '') {
+            $userAgent .= '/' . $moduleVersion;
         }
 
         return $userAgent;

@@ -1,10 +1,9 @@
 <?php
-// phpcs:ignoreFile
 /** @var $block Synerise\Integration\Block\Opengraph\Additional */
 ?>
-    <meta property="product:original_price:amount" content="<?= $block->getOriginalPriceAmount(); ?>"/>
+    <meta property="product:original_price:amount" content="<?= $block->escapeHtmlAttr($block->getOriginalPriceAmount()); ?>"/>
     <?= $block->getChildHtml('meta.currency') ?>
-    <meta property="product:retailer_part_no" content="<?= $block->getSku(); ?>"/>
+    <meta property="product:retailer_part_no" content="<?= $block->escapeHtmlAttr($block->getSku()); ?>"/>
 <?php foreach ($block->getFormattedCategories() as $category): ?>
-    <meta property="product:category" content="<?= $category; ?>"/>
+    <meta property="product:category" content="<?= $block->escapeHtmlAttr($category); ?>"/>
 <?php endforeach;
